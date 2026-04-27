@@ -5,6 +5,7 @@ import {
   integer,
   boolean,
   timestamp,
+  doublePrecision,
 } from "drizzle-orm/pg-core";
 
 export const vendorsTable = pgTable("vendors", {
@@ -21,6 +22,12 @@ export const vendorsTable = pgTable("vendors", {
   imageUrl: text("image_url").notNull(),
   established: integer("established").notNull(),
   featured: boolean("featured").notNull().default(false),
+  phone: text("phone"),
+  instagramHandle: text("instagram_handle"),
+  facebookUrl: text("facebook_url"),
+  marketsText: text("markets_text"),
+  latitude: doublePrecision("latitude"),
+  longitude: doublePrecision("longitude"),
   createdAt: timestamp("created_at", { withTimezone: true })
     .notNull()
     .defaultNow(),

@@ -32,6 +32,10 @@ const formSchema = z.object({
   websiteUrl: z.string().url("Must be a valid URL").optional().or(z.literal("")),
   imageUrl: z.string().url("Must be a valid image URL").optional().or(z.literal("")),
   established: z.coerce.number().int().min(1800).max(new Date().getFullYear()),
+  phone: z.string().optional().or(z.literal("")),
+  instagramHandle: z.string().optional().or(z.literal("")),
+  facebookUrl: z.string().url("Must be a valid URL").optional().or(z.literal("")),
+  marketsText: z.string().optional().or(z.literal("")),
 });
 
 export default function Submit() {
@@ -48,16 +52,21 @@ export default function Submit() {
       description: "",
       category: "",
       location: "",
-      region: "",
+      region: "Florida",
       contactEmail: "",
       websiteUrl: "",
       imageUrl: "",
       established: new Date().getFullYear(),
+      phone: "",
+      instagramHandle: "",
+      facebookUrl: "",
+      marketsText: "",
     },
   });
 
   function onSubmit(values: z.infer<typeof formSchema>) {
     const slug = values.name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)+/g, '');
+    const instagramHandleClean = values.instagramHandle?.replace(/^@/, '');
     
     createVendor.mutate(
       {
@@ -66,6 +75,10 @@ export default function Submit() {
           slug,
           websiteUrl: values.websiteUrl || null,
           imageUrl: values.imageUrl || "https://images.unsplash.com/photo-1556742049-0cfed4f6a45d?auto=format&fit=crop&q=80&w=800", // Fallback if empty, though we're avoiding unsplash normally, here it's just a default value for a form
+          phone: values.phone || null,
+          instagramHandle: instagramHandleClean || null,
+          facebookUrl: values.facebookUrl || null,
+          marketsText: values.marketsText || null,
         },
       },
       {
@@ -95,7 +108,7 @@ export default function Submit() {
           <Store className="w-12 h-12 mx-auto mb-4 text-primary" />
           <h1 className="text-4xl font-serif font-bold text-foreground mb-4">List your business</h1>
           <p className="text-lg text-muted-foreground font-sans">
-            Join the directory of independent makers, farmers, and artisans.
+            Join the directory of independent makers, farmers, and artisans in Florida.
           </p>
         </div>
       </div>
@@ -181,7 +194,7 @@ export default function Submit() {
                         <FormItem>
                           <FormLabel>City / Town</FormLabel>
                           <FormControl>
-                            <Input placeholder="Portland" {...field} />
+                            <Input placeholder="Miami" {...field} />
                           </FormControl>
                           <FormMessage />
                         </FormItem>
@@ -194,7 +207,7 @@ export default function Submit() {
                         <FormItem>
                           <FormLabel>State / Region</FormLabel>
                           <FormControl>
-                            <Input placeholder="Oregon" {...field} />
+                            <Input placeholder="Florida" {...field} />
                           </FormControl>
                           <FormMessage />
                         </FormItem>
@@ -261,6 +274,65 @@ export default function Submit() {
                       </FormItem>
                     )}
                   />
+                </div>
+
+                <div className="space-y-4 pt-6">
+                  <h3 className="font-serif font-bold text-xl border-b border-border pb-2">Help people find you (optional)</h3>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <FormField
+                      control={form.control}
+                      name="phone"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Phone Number</FormLabel>
+                          <FormControl>
+                            <Input placeholder="(555) 123-4567" {...field} />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                    <FormField
+                      control={form.control}
+                      name="instagramHandle"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Instagram Handle</FormLabel>
+                          <FormControl>
+                            <Input placeholder="@acmeroasters" {...field} />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                    <FormField
+                      control={form.control}
+                      name="facebookUrl"
+                      render={({ field }) => (
+                        <FormItem className="md:col-span-2">
+                          <FormLabel>Facebook URL</FormLabel>
+                          <FormControl>
+                            <Input placeholder="https://facebook.com/acmeroasters" {...field} />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                    <FormField
+                      control={form.control}
+                      name="marketsText"
+                      render={({ field }) => (
+                        <FormItem className="md:col-span-2">
+                          <FormLabel>Markets you sell at</FormLabel>
+                          <FormControl>
+                            <Textarea placeholder="Miami Farmers Market, Coconut Grove Market" {...field} />
+                          </FormControl>
+                          <FormDescription>Separate multiple markets with commas.</FormDescription>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                  </div>
                 </div>
 
                 <div className="pt-6">

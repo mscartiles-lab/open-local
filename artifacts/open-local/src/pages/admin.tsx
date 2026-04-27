@@ -27,6 +27,7 @@ import {
   FormLabel,
   FormMessage,
 } from "@/components/ui/form";
+import { Textarea } from "@/components/ui/textarea";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -52,7 +53,8 @@ import {
   getListProductsQueryKey,
   getGetMarketplaceStatsQueryKey,
   getListFeaturedVendorsQueryKey,
-  getListFeaturedProductsQueryKey
+  getListFeaturedProductsQueryKey,
+  ListingType
 } from "@workspace/api-client-react";
 import { useQueryClient } from "@tanstack/react-query";
 
@@ -66,6 +68,10 @@ const productSchema = z.object({
   imageUrl: z.string().url("Must be a valid URL").optional().or(z.literal("")),
   inStock: z.boolean().default(true),
   featured: z.boolean().default(false),
+  listingType: z.enum(["regular", "batch_drop", "surplus", "pre_order"]).default("regular"),
+  originalPriceDollars: z.coerce.number().min(0).optional().or(z.literal("").transform(() => undefined)),
+  availableUntil: z.string().optional().or(z.literal("")),
+  pickupNote: z.string().optional().or(z.literal("")),
 });
 
 export default function Admin() {
@@ -95,8 +101,14 @@ export default function Admin() {
       imageUrl: "",
       inStock: true,
       featured: false,
+      listingType: "regular",
+      originalPriceDollars: undefined,
+      availableUntil: "",
+      pickupNote: "",
     },
   });
+
+  const watchListingType = productForm.watch("listingType");
 
   const invalidateAll = () => {
     queryClient.invalidateQueries({ queryKey: getListVendorsQueryKey() });
@@ -172,6 +184,18 @@ export default function Admin() {
   };
 
   const onSubmitProduct = (values: z.infer<typeof productSchema>) => {
+    const originalPriceCents = values.listingType === 'surplus' && values.originalPriceDollars 
+      ? Math.round(values.originalPriceDollars * 100) 
+      : null;
+      
+    const availableUntil = (values.listingType === 'batch_drop' || values.listingType === 'pre_order') && values.availableUntil 
+      ? new Date(values.availableUntil).toISOString() 
+      : null;
+      
+    const pickupNote = (values.listingType === 'batch_drop' || values.listingType === 'pre_order') && values.pickupNote 
+      ? values.pickupNote 
+      : null;
+
     createProduct.mutate(
       {
         data: {
@@ -184,6 +208,10 @@ export default function Admin() {
           imageUrl: values.imageUrl || "https://images.unsplash.com/photo-1595858603623-68d839352e64?auto=format&fit=crop&q=80&w=800",
           inStock: values.inStock,
           featured: values.featured,
+          listingType: values.listingType as ListingType,
+          originalPriceCents,
+          availableUntil,
+          pickupNote,
         }
       },
       {
@@ -293,7 +321,7 @@ export default function Admin() {
                     <Plus className="w-4 h-4" /> Add Product
                   </Button>
                 </DialogTrigger>
-                <DialogContent className="max-w-2xl">
+                <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
                   <DialogHeader>
                     <DialogTitle>Add New Product</DialogTitle>
                     <DialogDescription>
@@ -388,7 +416,7 @@ export default function Admin() {
                           <FormItem>
                             <FormLabel>Description</FormLabel>
                             <FormControl>
-                              <Input placeholder="Naturally leavened..." {...field} />
+                              <Textarea placeholder="Naturally leavened..." {...field} />
                             </FormControl>
                             <FormMessage />
                           </FormItem>
@@ -409,7 +437,80 @@ export default function Admin() {
                         )}
                       />
 
-                      <div className="flex gap-8">
+                      <div className="space-y-4 pt-4 border-t border-border">
+                        <h4 className="font-serif font-bold text-lg">Listing Type</h4>
+                        <FormField
+                          control={productForm.control}
+                          name="listingType"
+                          render={({ field }) => (
+                            <FormItem>
+                              <Select onValueChange={field.onChange} defaultValue={field.value}>
+                                <FormControl>
+                                  <SelectTrigger>
+                                    <SelectValue placeholder="Select a listing type" />
+                                  </SelectTrigger>
+                                </FormControl>
+                                <SelectContent>
+                                  <SelectItem value="regular">Regular</SelectItem>
+                                  <SelectItem value="batch_drop">Batch Drop</SelectItem>
+                                  <SelectItem value="surplus">Market Surplus</SelectItem>
+                                  <SelectItem value="pre_order">Pre-Order</SelectItem>
+                                </SelectContent>
+                              </Select>
+                              <FormMessage />
+                            </FormItem>
+                          )}
+                        />
+
+                        {watchListingType === 'surplus' && (
+                          <FormField
+                            control={productForm.control}
+                            name="originalPriceDollars"
+                            render={({ field }) => (
+                              <FormItem>
+                                <FormLabel>Original Price ($)</FormLabel>
+                                <FormControl>
+                                  <Input type="number" step="0.01" min="0" placeholder="12.00" {...field} />
+                                </FormControl>
+                                <FormMessage />
+                              </FormItem>
+                            )}
+                          />
+                        )}
+
+                        {(watchListingType === 'batch_drop' || watchListingType === 'pre_order') && (
+                          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <FormField
+                              control={productForm.control}
+                              name="availableUntil"
+                              render={({ field }) => (
+                                <FormItem>
+                                  <FormLabel>Available Until</FormLabel>
+                                  <FormControl>
+                                    <Input type="datetime-local" {...field} />
+                                  </FormControl>
+                                  <FormMessage />
+                                </FormItem>
+                              )}
+                            />
+                            <FormField
+                              control={productForm.control}
+                              name="pickupNote"
+                              render={({ field }) => (
+                                <FormItem>
+                                  <FormLabel>Pickup Note</FormLabel>
+                                  <FormControl>
+                                    <Input placeholder="Pickup Saturday 9AM-1PM at farmer's market..." {...field} />
+                                  </FormControl>
+                                  <FormMessage />
+                                </FormItem>
+                              )}
+                            />
+                          </div>
+                        )}
+                      </div>
+
+                      <div className="flex gap-8 pt-4 border-t border-border">
                         <FormField
                           control={productForm.control}
                           name="inStock"
@@ -462,6 +563,7 @@ export default function Admin() {
                           <TableHead>Product</TableHead>
                           <TableHead>Producer</TableHead>
                           <TableHead>Price</TableHead>
+                          <TableHead>Type</TableHead>
                           <TableHead>In Stock</TableHead>
                           <TableHead>Featured</TableHead>
                           <TableHead className="text-right">Actions</TableHead>
@@ -473,6 +575,7 @@ export default function Admin() {
                             <TableCell className="font-medium">{product.name}</TableCell>
                             <TableCell>{product.vendorName}</TableCell>
                             <TableCell>${(product.priceCents / 100).toFixed(2)} / {product.unit}</TableCell>
+                            <TableCell className="capitalize">{product.listingType?.replace('_', ' ')}</TableCell>
                             <TableCell>
                               <Switch 
                                 checked={product.inStock} 

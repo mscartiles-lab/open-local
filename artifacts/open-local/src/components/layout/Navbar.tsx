@@ -1,5 +1,5 @@
 import { Link, useLocation } from "wouter";
-import { Store, ShoppingBag, PlusCircle, Settings, Menu } from "lucide-react";
+import { Store, ShoppingBag, PlusCircle, Settings, Menu, Heart } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 
@@ -9,6 +9,7 @@ export function Navbar() {
   const links = [
     { href: "/vendors", label: "Vendors", icon: Store },
     { href: "/products", label: "Goods", icon: ShoppingBag },
+    { href: "/favorites", label: "Favorites", icon: Heart },
     { href: "/submit", label: "List your business", icon: PlusCircle },
   ];
 
@@ -19,7 +20,10 @@ export function Navbar() {
           <div className="w-8 h-8 bg-primary text-primary-foreground rounded-md flex items-center justify-center font-serif font-bold text-xl group-hover:-rotate-6 transition-transform duration-300">
             O
           </div>
-          <span className="font-serif font-bold text-xl tracking-tight text-foreground">Open Local</span>
+          <div className="flex flex-col">
+            <span className="font-serif font-bold text-xl tracking-tight text-foreground leading-tight">Open Local</span>
+            <span className="text-[10px] text-muted-foreground uppercase tracking-wider font-medium leading-none hidden sm:block">Shop Local Wherever You Are</span>
+          </div>
         </Link>
 
         {/* Desktop Nav */}

@@ -1,13 +1,14 @@
 import { useState } from "react";
 import { Link } from "wouter";
 import { motion } from "framer-motion";
-import { MapPin, Search, Store, Filter } from "lucide-react";
+import { MapPin, Search, Store, Filter, Heart } from "lucide-react";
 import Layout from "@/components/layout/Layout";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { useListVendors, useListCategories, useListLocations } from "@workspace/api-client-react";
+import { useFavorites } from "@/hooks/use-favorites";
 
 export default function Vendors() {
   const [search, setSearch] = useState("");
@@ -22,14 +23,15 @@ export default function Vendors() {
 
   const { data: categories } = useListCategories();
   const { data: locations } = useListLocations();
+  const { isFavoriteVendor, toggleVendor } = useFavorites();
 
   return (
     <Layout>
       <div className="bg-muted border-b border-border py-12">
         <div className="container max-w-6xl mx-auto px-4">
-          <h1 className="text-4xl font-serif font-bold text-foreground mb-4">Producers</h1>
+          <h1 className="text-4xl font-serif font-bold text-foreground mb-4">Florida Producers</h1>
           <p className="text-lg text-muted-foreground max-w-2xl font-sans">
-            Discover the independent makers, farmers, and artisans crafting small-batch goods in your region.
+            Discover the independent makers, farmers, and artisans crafting small-batch goods in Florida.
           </p>
         </div>
       </div>
@@ -121,7 +123,13 @@ export default function Vendors() {
                     transition={{ delay: i * 0.05 }}
                   >
                     <Link href={`/vendors/${vendor.id}`} className="group block h-full">
-                      <Card className="h-full overflow-hidden border-border bg-card hover-elevate transition-all duration-300 rounded-none">
+                      <Card className="h-full overflow-hidden border-border bg-card hover-elevate transition-all duration-300 rounded-none relative">
+                        <button 
+                          onClick={(e) => { e.preventDefault(); toggleVendor(vendor.id); }}
+                          className="absolute top-3 right-3 z-10 p-2 bg-background/80 backdrop-blur-sm rounded-full text-primary hover:scale-110 transition-transform"
+                        >
+                          <Heart className="w-5 h-5" fill={isFavoriteVendor(vendor.id) ? "currentColor" : "none"} />
+                        </button>
                         <div className="aspect-[4/3] w-full relative overflow-hidden bg-muted">
                           {vendor.imageUrl ? (
                             <img src={vendor.imageUrl} alt={vendor.name} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700" />

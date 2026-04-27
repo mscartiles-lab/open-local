@@ -21,6 +21,10 @@ export const productsTable = pgTable("products", {
   imageUrl: text("image_url").notNull(),
   inStock: boolean("in_stock").notNull().default(true),
   featured: boolean("featured").notNull().default(false),
+  listingType: text("listing_type").notNull().default("regular"),
+  originalPriceCents: integer("original_price_cents"),
+  availableUntil: timestamp("available_until", { withTimezone: true }),
+  pickupNote: text("pickup_note"),
   createdAt: timestamp("created_at", { withTimezone: true })
     .notNull()
     .defaultNow(),

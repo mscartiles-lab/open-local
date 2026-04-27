@@ -10,6 +10,7 @@ import Products from "@/pages/products";
 import ProductDetail from "@/pages/product-detail";
 import Submit from "@/pages/submit";
 import Admin from "@/pages/admin";
+import Favorites from "@/pages/favorites";
 import NotFound from "@/pages/not-found";
 
 const queryClient = new QueryClient({
@@ -29,6 +30,7 @@ function Router() {
       <Route path="/vendors/:id" component={VendorDetail} />
       <Route path="/products" component={Products} />
       <Route path="/products/:id" component={ProductDetail} />
+      <Route path="/favorites" component={Favorites} />
       <Route path="/submit" component={Submit} />
       <Route path="/admin" component={Admin} />
       <Route component={NotFound} />

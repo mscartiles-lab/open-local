@@ -3,7 +3,7 @@ info:
   # Do not change the title, if the title changes, the import paths will be broken
   title: Api
   version: 0.1.0
-  description: Open Local — open source marketplace for local vendors and producers
+  description: Open Local — Florida's local marketplace. Shop Local Wherever You Are.
 servers:
   - url: /api
     description: Base API path
@@ -16,6 +16,8 @@ tags:
     description: Product listing operations
   - name: discovery
     description: Marketplace discovery, stats and aggregates
+  - name: feed
+    description: Real-time local feed (Local Near Me Now, batch drops, surplus, pre-orders)
 
 paths:
   /healthz:
@@ -335,6 +337,20 @@ paths:
               schema:
                 $ref: "#/components/schemas/CategoryBreakdown"
 
+  /feed/local-now:
+    get:
+      operationId: getLocalNowFeed
+      tags: [feed]
+      summary: Real-time local feed grouped by listing type
+      description: Batch drops, surplus rescue, and pre-orders currently available.
+      responses:
+        "200":
+          description: Local Near Me Now feed
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/LocalNowFeed"
+
 components:
   schemas:
     HealthStatus:
@@ -365,6 +381,12 @@ components:
         imageUrl: { type: string }
         established: { type: integer }
         featured: { type: boolean }
+        phone: { type: ["string", "null"] }
+        instagramHandle: { type: ["string", "null"] }
+        facebookUrl: { type: ["string", "null"] }
+        marketsText: { type: ["string", "null"] }
+        latitude: { type: ["number", "null"] }
+        longitude: { type: ["number", "null"] }
         createdAt: { type: string, format: date-time }
       required:
         - id
@@ -380,6 +402,12 @@ components:
         - imageUrl
         - established
         - featured
+        - phone
+        - instagramHandle
+        - facebookUrl
+        - marketsText
+        - latitude
+        - longitude
         - createdAt
 
     VendorInput:
@@ -397,6 +425,12 @@ components:
         imageUrl: { type: string }
         established: { type: integer }
         featured: { type: boolean }
+        phone: { type: ["string", "null"] }
+        instagramHandle: { type: ["string", "null"] }
+        facebookUrl: { type: ["string", "null"] }
+        marketsText: { type: ["string", "null"] }
+        latitude: { type: ["number", "null"] }
+        longitude: { type: ["number", "null"] }
       required:
         - name
         - slug
@@ -424,6 +458,17 @@ components:
         imageUrl: { type: string }
         established: { type: integer }
         featured: { type: boolean }
+        phone: { type: ["string", "null"] }
+        instagramHandle: { type: ["string", "null"] }
+        facebookUrl: { type: ["string", "null"] }
+        marketsText: { type: ["string", "null"] }
+        latitude: { type: ["number", "null"] }
+        longitude: { type: ["number", "null"] }
+
+    ListingType:
+      type: string
+      enum: [regular, batch_drop, surplus, pre_order]
+      description: regular = standard storefront product. batch_drop = small fresh batch just released. surplus = market-leftover discount. pre_order = reserve for upcoming market pickup.
 
     Product:
       type: object
@@ -438,6 +483,10 @@ components:
         imageUrl: { type: string }
         inStock: { type: boolean }
         featured: { type: boolean }
+        listingType: { $ref: "#/components/schemas/ListingType" }
+        originalPriceCents: { type: ["integer", "null"] }
+        availableUntil: { type: ["string", "null"], format: date-time }
+        pickupNote: { type: ["string", "null"] }
         createdAt: { type: string, format: date-time }
       required:
         - id
@@ -450,6 +499,10 @@ components:
         - imageUrl
         - inStock
         - featured
+        - listingType
+        - originalPriceCents
+        - availableUntil
+        - pickupNote
         - createdAt
 
     ProductWithVendor:
@@ -465,6 +518,10 @@ components:
         imageUrl: { type: string }
         inStock: { type: boolean }
         featured: { type: boolean }
+        listingType: { $ref: "#/components/schemas/ListingType" }
+        originalPriceCents: { type: ["integer", "null"] }
+        availableUntil: { type: ["string", "null"], format: date-time }
+        pickupNote: { type: ["string", "null"] }
         createdAt: { type: string, format: date-time }
         vendorName: { type: string }
         vendorSlug: { type: string }
@@ -481,6 +538,10 @@ components:
         - imageUrl
         - inStock
         - featured
+        - listingType
+        - originalPriceCents
+        - availableUntil
+        - pickupNote
         - createdAt
         - vendorName
         - vendorSlug
@@ -499,6 +560,10 @@ components:
         imageUrl: { type: string }
         inStock: { type: boolean }
         featured: { type: boolean }
+        listingType: { $ref: "#/components/schemas/ListingType" }
+        originalPriceCents: { type: ["integer", "null"] }
+        availableUntil: { type: ["string", "null"], format: date-time }
+        pickupNote: { type: ["string", "null"] }
       required:
         - vendorId
         - name
@@ -519,6 +584,10 @@ components:
         imageUrl: { type: string }
         inStock: { type: boolean }
         featured: { type: boolean }
+        listingType: { $ref: "#/components/schemas/ListingType" }
+        originalPriceCents: { type: ["integer", "null"] }
+        availableUntil: { type: ["string", "null"], format: date-time }
+        pickupNote: { type: ["string", "null"] }
 
     MarketplaceStats:
       type: object
@@ -551,6 +620,23 @@ components:
         name: { type: string }
         count: { type: integer }
       required: [name, count]
+
+    LocalNowFeed:
+      type: object
+      properties:
+        batchDrops:
+          type: array
+          items:
+            $ref: "#/components/schemas/ProductWithVendor"
+        surplus:
+          type: array
+          items:
+            $ref: "#/components/schemas/ProductWithVendor"
+        preOrders:
+          type: array
+          items:
+            $ref: "#/components/schemas/ProductWithVendor"
+      required: [batchDrops, surplus, preOrders]
 
     CategoryBreakdown:
       type: object

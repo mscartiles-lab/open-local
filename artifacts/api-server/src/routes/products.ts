@@ -1,5 +1,5 @@
 import { Router, type IRouter } from "express";
-import { eq, and, ilike, or } from "drizzle-orm";
+import { eq, and, ilike, or, gt, isNull } from "drizzle-orm";
 import { db, productsTable, vendorsTable } from "@workspace/db";
 import {
   ListProductsQueryParams,
@@ -27,6 +27,10 @@ const productWithVendorSelect = {
   imageUrl: productsTable.imageUrl,
   inStock: productsTable.inStock,
   featured: productsTable.featured,
+  listingType: productsTable.listingType,
+  originalPriceCents: productsTable.originalPriceCents,
+  availableUntil: productsTable.availableUntil,
+  pickupNote: productsTable.pickupNote,
   createdAt: productsTable.createdAt,
   vendorName: vendorsTable.name,
   vendorSlug: vendorsTable.slug,
@@ -41,6 +45,7 @@ router.get("/products", async (req, res): Promise<void> => {
     return;
   }
   const { search, category, vendorId, featured, inStock } = parsed.data;
+  const listingType = typeof req.query.listingType === "string" ? req.query.listingType : undefined;
   const conditions = [];
   if (search) {
     conditions.push(
@@ -54,6 +59,7 @@ router.get("/products", async (req, res): Promise<void> => {
   if (vendorId !== undefined) conditions.push(eq(productsTable.vendorId, vendorId));
   if (featured !== undefined) conditions.push(eq(productsTable.featured, featured));
   if (inStock !== undefined) conditions.push(eq(productsTable.inStock, inStock));
+  if (listingType) conditions.push(eq(productsTable.listingType, listingType));
 
   const rows = await db
     .select(productWithVendorSelect)
@@ -81,7 +87,6 @@ router.post("/products", async (req, res): Promise<void> => {
     res.status(400).json({ error: parsed.error.message });
     return;
   }
-  // Ensure vendor exists
   const [vendor] = await db
     .select({ id: vendorsTable.id })
     .from(vendorsTable)
@@ -90,7 +95,13 @@ router.post("/products", async (req, res): Promise<void> => {
     res.status(400).json({ error: "Vendor not found" });
     return;
   }
-  const [row] = await db.insert(productsTable).values(parsed.data).returning();
+  const insertValues = {
+    ...parsed.data,
+    availableUntil: parsed.data.availableUntil
+      ? new Date(parsed.data.availableUntil)
+      : null,
+  };
+  const [row] = await db.insert(productsTable).values(insertValues).returning();
   res.status(201).json({
     id: row!.id,
     vendorId: row!.vendorId,
@@ -102,6 +113,10 @@ router.post("/products", async (req, res): Promise<void> => {
     imageUrl: row!.imageUrl,
     inStock: row!.inStock,
     featured: row!.featured,
+    listingType: row!.listingType,
+    originalPriceCents: row!.originalPriceCents,
+    availableUntil: row!.availableUntil ? row!.availableUntil.toISOString() : null,
+    pickupNote: row!.pickupNote,
     createdAt: row!.createdAt.toISOString(),
   });
 });
@@ -135,9 +150,15 @@ router.patch("/products/:id", async (req, res): Promise<void> => {
     res.status(400).json({ error: body.error.message });
     return;
   }
+  const updateValues: Record<string, unknown> = { ...body.data };
+  if ("availableUntil" in body.data) {
+    updateValues.availableUntil = body.data.availableUntil
+      ? new Date(body.data.availableUntil)
+      : null;
+  }
   const [row] = await db
     .update(productsTable)
-    .set(body.data)
+    .set(updateValues)
     .where(eq(productsTable.id, params.data.id))
     .returning();
   if (!row) {
@@ -162,6 +183,30 @@ router.delete("/products/:id", async (req, res): Promise<void> => {
     return;
   }
   res.sendStatus(204);
+});
+
+router.get("/feed/local-now", async (_req, res): Promise<void> => {
+  const now = new Date();
+  const stillAvailable = or(
+    isNull(productsTable.availableUntil),
+    gt(productsTable.availableUntil, now),
+  );
+
+  const fetchByType = async (type: string) =>
+    db
+      .select(productWithVendorSelect)
+      .from(productsTable)
+      .innerJoin(vendorsTable, eq(productsTable.vendorId, vendorsTable.id))
+      .where(and(eq(productsTable.listingType, type), eq(productsTable.inStock, true), stillAvailable))
+      .orderBy(productsTable.createdAt);
+
+  const [batchDrops, surplus, preOrders] = await Promise.all([
+    fetchByType("batch_drop"),
+    fetchByType("surplus"),
+    fetchByType("pre_order"),
+  ]);
+
+  res.json({ batchDrops, surplus, preOrders });
 });
 
 export default router;
