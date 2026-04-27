@@ -1,0 +1,266 @@
+Local Marketplace Platform
+MVP Product Requirements Document
+Tagline
+Shop Local Wherever You Are
+ 
+1. Product Vision
+The platform is a hyper-local digital marketplace designed to connect farmers market vendors, local producers, and small-batch artisans directly with consumers across Florida.
+The goal of the platform is to allow consumers to discover and purchase local products anytime, not just during farmers market hours.
+At the same time, the platform provides vendors with an affordable digital storefront that allows them to sell inventory between market days and prevent product spoilage.
+The platform functions as a local discovery engine, helping consumers find nearby vendors and products in real time.
+ 
+2. Problem Being Solved
+Local vendors face several structural challenges:
+Limited Selling Hours
+Farmers markets operate only certain days of the week and limited hours.
+Perishable Inventory
+Many vendors sell food products that spoil quickly. Unsold inventory often results in waste.
+Lack of Digital Infrastructure
+Small vendors often lack:
+• websites
+• online ordering systems
+• marketing tools
+• customer discovery outside market days
+Consumer Access
+Consumers increasingly want to support local businesses, but:
+• markets are not always open
+• vendors are difficult to locate outside of market days
+ 
+3. Platform Solution
+The platform creates a statewide local marketplace across Florida where:
+Consumers can:
+• discover nearby vendors
+• purchase products directly
+• reserve items for upcoming markets
+• support local producers anytime
+Vendors gain:
+• a digital storefront
+• a marketplace discovery engine
+• the ability to release inventory anytime
+• tools to prevent spoilage and sell excess inventory
+The platform enables consumers to truly Shop Local Wherever You Are.
+ 
+4. User Types
+Vendor Users
+Examples include:
+• farmers market vendors
+• cottage food producers
+• bakers
+• honey producers
+• jam and sauce makers
+• prepared food vendors
+• plant growers
+• artisan makers (soap, candles, crafts)
+ 
+Consumer Users
+Consumers are local residents searching for:
+• fresh food
+• baked goods
+• local produce
+• plants
+• handmade goods
+• small-batch artisan products
+ 
+5. Vendor Onboarding Flow (MVP)
+Vendor onboarding should be simple but structured to create trust.
+Step 1 — Account Creation
+Vendor registers using:
+• email or phone number
+• password creation
+• two-factor authentication
+ 
+Step 2 — Vendor Setup
+Vendor provides:
+• business / brand name
+• vendor category
+• location
+• product types
+Optional information may include:
+• markets they sell at
+• certifications
+• social media links
+ 
+Step 3 — Vendor Storefront Creation
+Each vendor receives a public storefront page that includes:
+• vendor bio
+• photos
+• product listings
+• ratings and reviews
+• optional market schedule
+ 
+Step 4 — Payment Setup
+Vendor connects a payout method.
+Platform payments are processed through a secure payment gateway with escrow functionality.
+Funds are released after transaction completion.
+ 
+6. Consumer Onboarding
+Consumer onboarding introduces the platform concept.
+Three onboarding screens:
+1. Discover local vendors near you
+2. Buy fresh products anytime
+3. Shop Local Wherever You Are
+Consumers can optionally select interests such as:
+• fresh food
+• baked goods
+• plants
+• artisan goods
+This helps personalize their discovery feed.
+ 
+7. Core Marketplace Features (MVP)
+Local Discovery Engine
+The platform automatically shows products and vendors near the user based on location.
+Discovery feed includes:
+• nearby vendors
+• new product listings
+• featured vendors
+• promoted listings
+ 
+Home Screen Feature: Local Near Me Now
+The home screen displays products currently available nearby.
+Examples:
+• bread baked today
+• honey available nearby
+• fresh produce available
+• small-batch food items
+This creates a real-time local marketplace.
+ 
+Vendor Storefront Pages
+Each vendor has a dedicated profile page acting as a mini online store.
+Vendor pages include:
+• vendor bio
+• product catalog
+• photos
+• customer reviews
+ 
+Batch Drops
+Vendors can release small-batch inventory when products become available.
+Example:
+“Fresh sourdough batch available.”
+Nearby users can receive notifications.
+This feature encourages real-time purchasing.
+ 
+Spoilage Rescue Listings
+Vendors can mark products as discounted surplus inventory.
+Examples:
+• leftover produce after market
+• extra baked goods
+• surplus prepared food
+Listings may appear as:
+Market Surplus – Discounted
+This feature helps reduce food waste and encourages quick sales.
+ 
+Pre-Orders for Market Pickup
+Consumers can reserve items before market day.
+Example reservations:
+• bread
+• produce
+• prepared food
+The vendor prepares the quantity needed.
+This reduces unsold inventory and improves vendor planning.
+ 
+8. Messaging and Communication
+The platform includes in-app messaging for:
+• order coordination
+• pickup instructions
+• communication between vendor and buyer
+ 
+9. Trust and Security
+Security features include:
+• two-factor authentication
+• escrow-based payments
+• vendor ratings and reviews
+• transaction history
+• verified vendor badges (future phase)
+ 
+10. Monetization Model
+The platform generates revenue through several channels.
+ 
+Buyer Processing Fee
+A small processing fee is added to each purchase.
+Example range:
+3–5% of transaction value.
+ 
+Vendor Subscription
+Vendors receive a 45-day free trial.
+After the trial period, vendors pay a monthly subscription to maintain their storefront and access marketplace tools.
+ 
+Boosted Listings
+Vendors can pay to increase visibility of products within the discovery feed.
+ 
+Brand Advertising
+Local and regional businesses may advertise on the platform.
+Examples:
+• kitchen supply companies
+• packaging suppliers
+• farm supply companies
+• local service providers
+Ad placements include:
+• home screen banners
+• featured sections
+• sponsored vendor placements
+ 
+11. Navigation Structure
+Primary navigation sections include:
+Home
+Includes:
+• Local Near Me Now
+• featured vendors
+• batch drops
+• spoilage rescue deals
+• Listings – in demand for barter or payment
+ 
+Messages
+Communication between buyers and vendors.
+ 
+Post Listing
+Vendor portal for creating:
+• product listings
+• batch drops
+• spoilage rescue listings
+ 
+Favorites
+Users can save:
+• vendors
+• products
+• listings
+ 
+Profile
+Account settings including:
+• user profile
+• vendor dashboard
+• transaction history
+ 
+12. Estimated Early Vendor Growth
+Initial platform rollout will focus on Florida vendors.
+Projected vendor adoption:
+Month 1
+Approximately 400 vendors
+Month 2
+Additional 800 vendors
+Month 3
+Additional 1200 vendors
+This results in approximately 2400 vendors on the platform within the first three months.
+This projection should be considered when determining:
+• hosting infrastructure
+• database scaling
+• notification systems
+• platform performance
+ 
+13. MVP Launch Feature Summary
+The initial MVP launch will include:
+• vendor onboarding
+• consumer onboarding
+• vendor storefront pages
+• product listings
+• local discovery engine
+• Local Near Me Now feed
+• batch drops
+• spoilage rescue listings
+• pre-orders for market pickup
+• messaging
+• secure payments
+• buyer processing fee
+• vendor subscription model
+• boosted listings
+• brand advertising placements
+ 

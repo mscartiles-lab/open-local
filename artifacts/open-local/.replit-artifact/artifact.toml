@@ -1,0 +1,31 @@
+kind = "web"
+previewPath = "/"
+title = "Open Local"
+version = "1.0.0"
+id = "artifacts/open-local"
+router = "path"
+
+[[integratedSkills]]
+name = "react-vite"
+version = "1.0.0"
+
+[[services]]
+name = "web"
+paths = [ "/" ]
+localPort = 25681
+
+[services.development]
+run = "pnpm --filter @workspace/open-local run dev"
+
+[services.production]
+build = [ "pnpm", "--filter", "@workspace/open-local", "run", "build" ]
+publicDir = "artifacts/open-local/dist/public"
+serve = "static"
+
+[[services.production.rewrites]]
+from = "/*"
+to = "/index.html"
+
+[services.env]
+PORT = "25681"
+BASE_PATH = "/"

@@ -3,20 +3,26 @@ info:
   # Do not change the title, if the title changes, the import paths will be broken
   title: Api
   version: 0.1.0
-  description: API specification
+  description: Open Local — open source marketplace for local vendors and producers
 servers:
   - url: /api
     description: Base API path
 tags:
   - name: health
     description: Health operations
+  - name: vendors
+    description: Vendor (producer / maker) operations
+  - name: products
+    description: Product listing operations
+  - name: discovery
+    description: Marketplace discovery, stats and aggregates
+
 paths:
   /healthz:
     get:
       operationId: healthCheck
       tags: [health]
       summary: Health check
-      description: Returns server health status
       responses:
         "200":
           description: Healthy
@@ -24,13 +30,537 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/HealthStatus"
+
+  /vendors:
+    get:
+      operationId: listVendors
+      tags: [vendors]
+      summary: List vendors
+      parameters:
+        - in: query
+          name: search
+          schema: { type: string }
+        - in: query
+          name: category
+          schema: { type: string }
+        - in: query
+          name: location
+          schema: { type: string }
+        - in: query
+          name: featured
+          schema: { type: boolean }
+      responses:
+        "200":
+          description: List of vendors
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Vendor"
+    post:
+      operationId: createVendor
+      tags: [vendors]
+      summary: Create a vendor
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/VendorInput"
+      responses:
+        "201":
+          description: Vendor created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Vendor"
+
+  /vendors/featured:
+    get:
+      operationId: listFeaturedVendors
+      tags: [vendors, discovery]
+      summary: Featured vendors
+      responses:
+        "200":
+          description: Featured vendors
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Vendor"
+
+  /vendors/{id}:
+    parameters:
+      - in: path
+        name: id
+        required: true
+        schema: { type: integer }
+    get:
+      operationId: getVendor
+      tags: [vendors]
+      summary: Get a vendor
+      responses:
+        "200":
+          description: Vendor
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Vendor"
+        "404":
+          description: Not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+    patch:
+      operationId: updateVendor
+      tags: [vendors]
+      summary: Update a vendor
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/VendorUpdate"
+      responses:
+        "200":
+          description: Updated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Vendor"
+        "404":
+          description: Not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+    delete:
+      operationId: deleteVendor
+      tags: [vendors]
+      summary: Delete a vendor
+      responses:
+        "204":
+          description: Deleted
+        "404":
+          description: Not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /vendors/{id}/products:
+    parameters:
+      - in: path
+        name: id
+        required: true
+        schema: { type: integer }
+    get:
+      operationId: listVendorProducts
+      tags: [vendors, products]
+      summary: List products for a vendor
+      responses:
+        "200":
+          description: Vendor products
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Product"
+
+  /products:
+    get:
+      operationId: listProducts
+      tags: [products]
+      summary: List products
+      parameters:
+        - in: query
+          name: search
+          schema: { type: string }
+        - in: query
+          name: category
+          schema: { type: string }
+        - in: query
+          name: vendorId
+          schema: { type: integer }
+        - in: query
+          name: featured
+          schema: { type: boolean }
+        - in: query
+          name: inStock
+          schema: { type: boolean }
+      responses:
+        "200":
+          description: List of products with vendor info
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/ProductWithVendor"
+    post:
+      operationId: createProduct
+      tags: [products]
+      summary: Create a product
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ProductInput"
+      responses:
+        "201":
+          description: Product created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Product"
+
+  /products/featured:
+    get:
+      operationId: listFeaturedProducts
+      tags: [products, discovery]
+      summary: Featured products
+      responses:
+        "200":
+          description: Featured products
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/ProductWithVendor"
+
+  /products/{id}:
+    parameters:
+      - in: path
+        name: id
+        required: true
+        schema: { type: integer }
+    get:
+      operationId: getProduct
+      tags: [products]
+      summary: Get a product
+      responses:
+        "200":
+          description: Product
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ProductWithVendor"
+        "404":
+          description: Not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+    patch:
+      operationId: updateProduct
+      tags: [products]
+      summary: Update a product
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ProductUpdate"
+      responses:
+        "200":
+          description: Updated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Product"
+        "404":
+          description: Not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+    delete:
+      operationId: deleteProduct
+      tags: [products]
+      summary: Delete a product
+      responses:
+        "204":
+          description: Deleted
+        "404":
+          description: Not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /stats:
+    get:
+      operationId: getMarketplaceStats
+      tags: [discovery]
+      summary: Marketplace overview stats
+      responses:
+        "200":
+          description: Stats summary
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/MarketplaceStats"
+
+  /locations:
+    get:
+      operationId: listLocations
+      tags: [discovery]
+      summary: All locations with vendor counts
+      responses:
+        "200":
+          description: Locations
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/LocationCount"
+
+  /categories:
+    get:
+      operationId: listCategories
+      tags: [discovery]
+      summary: All categories with vendor and product counts
+      responses:
+        "200":
+          description: Categories
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CategoryBreakdown"
+
 components:
   schemas:
     HealthStatus:
       type: object
       properties:
-        status:
-          type: string
-      required:
-        - status
+        status: { type: string }
+      required: [status]
 
+    ErrorResponse:
+      type: object
+      properties:
+        error: { type: string }
+      required: [error]
+
+    Vendor:
+      type: object
+      properties:
+        id: { type: integer }
+        name: { type: string }
+        slug: { type: string }
+        tagline: { type: string }
+        description: { type: string }
+        category: { type: string }
+        location: { type: string }
+        region: { type: string }
+        contactEmail: { type: string }
+        websiteUrl: { type: ["string", "null"] }
+        imageUrl: { type: string }
+        established: { type: integer }
+        featured: { type: boolean }
+        createdAt: { type: string, format: date-time }
+      required:
+        - id
+        - name
+        - slug
+        - tagline
+        - description
+        - category
+        - location
+        - region
+        - contactEmail
+        - websiteUrl
+        - imageUrl
+        - established
+        - featured
+        - createdAt
+
+    VendorInput:
+      type: object
+      properties:
+        name: { type: string }
+        slug: { type: string }
+        tagline: { type: string }
+        description: { type: string }
+        category: { type: string }
+        location: { type: string }
+        region: { type: string }
+        contactEmail: { type: string }
+        websiteUrl: { type: ["string", "null"] }
+        imageUrl: { type: string }
+        established: { type: integer }
+        featured: { type: boolean }
+      required:
+        - name
+        - slug
+        - tagline
+        - description
+        - category
+        - location
+        - region
+        - contactEmail
+        - imageUrl
+        - established
+
+    VendorUpdate:
+      type: object
+      properties:
+        name: { type: string }
+        slug: { type: string }
+        tagline: { type: string }
+        description: { type: string }
+        category: { type: string }
+        location: { type: string }
+        region: { type: string }
+        contactEmail: { type: string }
+        websiteUrl: { type: ["string", "null"] }
+        imageUrl: { type: string }
+        established: { type: integer }
+        featured: { type: boolean }
+
+    Product:
+      type: object
+      properties:
+        id: { type: integer }
+        vendorId: { type: integer }
+        name: { type: string }
+        description: { type: string }
+        priceCents: { type: integer }
+        unit: { type: string }
+        category: { type: string }
+        imageUrl: { type: string }
+        inStock: { type: boolean }
+        featured: { type: boolean }
+        createdAt: { type: string, format: date-time }
+      required:
+        - id
+        - vendorId
+        - name
+        - description
+        - priceCents
+        - unit
+        - category
+        - imageUrl
+        - inStock
+        - featured
+        - createdAt
+
+    ProductWithVendor:
+      type: object
+      properties:
+        id: { type: integer }
+        vendorId: { type: integer }
+        name: { type: string }
+        description: { type: string }
+        priceCents: { type: integer }
+        unit: { type: string }
+        category: { type: string }
+        imageUrl: { type: string }
+        inStock: { type: boolean }
+        featured: { type: boolean }
+        createdAt: { type: string, format: date-time }
+        vendorName: { type: string }
+        vendorSlug: { type: string }
+        vendorLocation: { type: string }
+        vendorCategory: { type: string }
+      required:
+        - id
+        - vendorId
+        - name
+        - description
+        - priceCents
+        - unit
+        - category
+        - imageUrl
+        - inStock
+        - featured
+        - createdAt
+        - vendorName
+        - vendorSlug
+        - vendorLocation
+        - vendorCategory
+
+    ProductInput:
+      type: object
+      properties:
+        vendorId: { type: integer }
+        name: { type: string }
+        description: { type: string }
+        priceCents: { type: integer }
+        unit: { type: string }
+        category: { type: string }
+        imageUrl: { type: string }
+        inStock: { type: boolean }
+        featured: { type: boolean }
+      required:
+        - vendorId
+        - name
+        - description
+        - priceCents
+        - unit
+        - category
+        - imageUrl
+
+    ProductUpdate:
+      type: object
+      properties:
+        name: { type: string }
+        description: { type: string }
+        priceCents: { type: integer }
+        unit: { type: string }
+        category: { type: string }
+        imageUrl: { type: string }
+        inStock: { type: boolean }
+        featured: { type: boolean }
+
+    MarketplaceStats:
+      type: object
+      properties:
+        vendorCount: { type: integer }
+        productCount: { type: integer }
+        locationCount: { type: integer }
+        categoryCount: { type: integer }
+        inStockCount: { type: integer }
+        featuredVendorCount: { type: integer }
+      required:
+        - vendorCount
+        - productCount
+        - locationCount
+        - categoryCount
+        - inStockCount
+        - featuredVendorCount
+
+    LocationCount:
+      type: object
+      properties:
+        location: { type: string }
+        region: { type: string }
+        vendorCount: { type: integer }
+      required: [location, region, vendorCount]
+
+    CategoryCount:
+      type: object
+      properties:
+        name: { type: string }
+        count: { type: integer }
+      required: [name, count]
+
+    CategoryBreakdown:
+      type: object
+      properties:
+        vendorCategories:
+          type: array
+          items:
+            $ref: "#/components/schemas/CategoryCount"
+        productCategories:
+          type: array
+          items:
+            $ref: "#/components/schemas/CategoryCount"
+      required: [vendorCategories, productCategories]

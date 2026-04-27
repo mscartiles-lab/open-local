@@ -1,0 +1,62 @@
+uploads = []
+outputs = []
+
+[[generated]]
+id = "fn1EDmYBomqpHUI2iy_0C"
+uri = "file://artifacts/open-local/src/assets/hero.png"
+type = "image"
+title = "Market guide hero banner"
+
+[[generated]]
+id = "uj1djU8tTi_OtN_N19eGE"
+uri = "file://artifacts/open-local/src/assets/vendor-1.png"
+type = "image"
+title = "Orchard vendor portrait"
+
+[[generated]]
+id = "OhbQaGVMvlJZdIrNdT1Tk"
+uri = "file://artifacts/open-local/src/assets/vendor-2.png"
+type = "image"
+title = "Ceramics studio shopfront"
+
+[[generated]]
+id = "qxWheknXT9a1xtXQ6N6ul"
+uri = "file://artifacts/open-local/src/assets/vendor-3.png"
+type = "image"
+title = "Microbrewery interior"
+
+[[generated]]
+id = "VI3nYpCtf-KLCjcdlARYp"
+uri = "file://artifacts/open-local/src/assets/vendor-4.png"
+type = "image"
+title = "Florist arranging flowers"
+
+[[generated]]
+id = "EUp13o3T6Xjeha8poOuJW"
+uri = "file://artifacts/open-local/src/assets/product-1.png"
+type = "image"
+title = "Artisan sourdough loaf"
+
+[[generated]]
+id = "_51BXifo3m4Xc-YLxEhI2"
+uri = "file://artifacts/open-local/src/assets/product-2.png"
+type = "image"
+title = "Handmade ceramic bowl"
+
+[[generated]]
+id = "H8xJNiEMUB4gKZCk7pTHK"
+uri = "file://artifacts/open-local/src/assets/product-3.png"
+type = "image"
+title = "Jar of raw honey"
+
+[[generated]]
+id = "RinAEqSp6P_Z-C8goF5UV"
+uri = "file://artifacts/open-local/src/assets/product-4.png"
+type = "image"
+title = "Fresh organic carrots"
+
+[[generated]]
+id = "STroGIUezXyB60LO5Yipj"
+uri = "file://artifacts/open-local/src/assets/product-5.png"
+type = "image"
+title = "Craft beer bottle"
