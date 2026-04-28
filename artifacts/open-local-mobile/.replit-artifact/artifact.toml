@@ -1,0 +1,27 @@
+kind = "mobile"
+previewPath = "/mobile/"
+title = "Open Local Mobile"
+version = "1.0.0"
+id = "artifacts/open-local-mobile"
+router = "expo-domain"
+
+[[integratedSkills]]
+name = "expo"
+version = "1.0.0"
+
+[[services]]
+ensurePreviewReachable = "/status"
+name = "expo"
+paths = [ "/mobile/" ]
+localPort = 24149
+
+[services.development]
+run = "pnpm --filter @workspace/open-local-mobile run dev"
+
+[services.production]
+build = [ "pnpm", "--filter", "@workspace/open-local-mobile", "run", "build" ]
+run = [ "pnpm", "--filter", "@workspace/open-local-mobile", "run", "serve" ]
+
+[services.env]
+PORT = "24149"
+BASE_PATH = "/mobile/"

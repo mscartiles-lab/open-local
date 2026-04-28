@@ -60,3 +60,9 @@ id = "STroGIUezXyB60LO5Yipj"
 uri = "file://artifacts/open-local/src/assets/product-5.png"
 type = "image"
 title = "Craft beer bottle"
+
+[[generated]]
+id = "Uu9p9reqU5ECT5xKMUonv"
+uri = "file://artifacts/open-local-mobile/assets/images/icon.png"
+type = "image"
+title = "open local app icon"

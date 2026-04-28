@@ -49,10 +49,23 @@ Two public entities + one short-lived verification table. No persistent user aut
 
 `artifacts/api-server/src/lib/email.ts` calls Resend's REST API directly via `fetch` using `RESEND_API_KEY` and optional `MAIL_FROM` (defaults to `Open Local <onboarding@resend.dev>`). Without the key, the verification flow still works in a demo-mode fallback that shows the code on screen.
 
+## Mobile App
+
+`artifacts/open-local-mobile` — Expo/React Native app using the shared API.
+
+- **Three tabs:** Feed (Local Near Me Now — batch drops, surplus, pre-orders via `/feed/local-now`), Browse (vendor search/list), Saved (AsyncStorage-backed favorites).
+- **Vendor detail screen:** `/vendor/[slug]` — shows vendor info, products list, links; tap heart to save/unsave.
+- **Design:** DM Sans font, Open Local brand palette (olive green primary #3c4a26), dark mode supported.
+- **API:** Uses `@workspace/api-client-react` generated hooks. `setBaseUrl` from `EXPO_PUBLIC_DOMAIN` env var.
+- **Fonts:** `@expo-google-fonts/dm-sans` — loaded as `DMSans_400Regular`, `DMSans_500Medium`, `DMSans_600SemiBold`, `DMSans_700Bold`.
+- **NativeTabs:** Liquid glass on iOS 26+, classic BlurView tabs on older iOS/Android.
+- **Favorites:** `AsyncStorage` key `open_local_favorites`, utils in `app/(tabs)/favorites.tsx`.
+
 ## Workflows
 
 - `artifacts/api-server: API Server` — serves `/api`.
 - `artifacts/open-local: web` — serves `/`.
+- `artifacts/open-local-mobile: expo` — Expo dev server; primary access via QR code in Expo Go.
 - `artifacts/mockup-sandbox: Component Preview Server`.
 
 ## Database
