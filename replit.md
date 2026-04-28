@@ -53,13 +53,14 @@ Two public entities + one short-lived verification table. No persistent user aut
 
 `artifacts/open-local-mobile` — Expo/React Native app using the shared API.
 
-- **Three tabs:** Feed (Local Near Me Now — batch drops, surplus, pre-orders via `/feed/local-now`), Browse (vendor search/list), Saved (AsyncStorage-backed favorites).
+- **Four tabs:** Feed (Local Near Me Now — batch drops, surplus, pre-orders via `/feed/local-now`), Browse (vendor search/list), Nearby (map with geofence), Saved (AsyncStorage-backed favorites).
 - **Vendor detail screen:** `/vendor/[slug]` — shows vendor info, products list, links; tap heart to save/unsave.
 - **Design:** DM Sans font, Open Local brand palette (olive green primary #3c4a26), dark mode supported.
 - **API:** Uses `@workspace/api-client-react` generated hooks. `setBaseUrl` from `EXPO_PUBLIC_DOMAIN` env var.
 - **Fonts:** `@expo-google-fonts/dm-sans` — loaded as `DMSans_400Regular`, `DMSans_500Medium`, `DMSans_600SemiBold`, `DMSans_700Bold`.
 - **NativeTabs:** Liquid glass on iOS 26+, classic BlurView tabs on older iOS/Android.
 - **Favorites:** `AsyncStorage` key `open_local_favorites`, utils in `app/(tabs)/favorites.tsx`.
+- **Nearby/Map tab:** `app/(tabs)/map.tsx` — `expo-location` foreground permission → `react-native-maps` MapView with `showsUserLocation`, `Circle` geofence overlay (olive green, 18% opacity fill), vendor `Marker` pins filtered by radius. Radius chips: 5/10/25/50 mi. Tap a pin → bottom panel with distance + "View" button. Haversine distance in `utils/distance.ts`. Web fallback shows sorted vendor list.
 
 ## Workflows
 

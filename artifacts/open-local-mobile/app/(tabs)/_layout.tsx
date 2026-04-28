@@ -21,6 +21,10 @@ function NativeTabLayout() {
         <Icon sf={{ default: "storefront", selected: "storefront.fill" }} />
         <Label>Browse</Label>
       </NativeTabs.Trigger>
+      <NativeTabs.Trigger name="map">
+        <Icon sf={{ default: "map", selected: "map.fill" }} />
+        <Label>Nearby</Label>
+      </NativeTabs.Trigger>
       <NativeTabs.Trigger name="favorites">
         <Icon sf={{ default: "heart", selected: "heart.fill" }} />
         <Label>Saved</Label>
@@ -90,6 +94,18 @@ function ClassicTabLayout() {
               <SymbolView name="storefront" tintColor={color} size={22} />
             ) : (
               <Feather name="grid" size={22} color={color} />
+            ),
+        }}
+      />
+      <Tabs.Screen
+        name="map"
+        options={{
+          title: "Nearby",
+          tabBarIcon: ({ color }) =>
+            isIOS ? (
+              <SymbolView name="map" tintColor={color} size={22} />
+            ) : (
+              <Feather name="map" size={22} color={color} />
             ),
         }}
       />

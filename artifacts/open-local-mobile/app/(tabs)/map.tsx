@@ -1,0 +1,549 @@
+import { useListVendors } from "@workspace/api-client-react";
+import * as Haptics from "expo-haptics";
+import * as Location from "expo-location";
+import { useRouter } from "expo-router";
+import { Feather } from "@expo/vector-icons";
+import React, { useEffect, useRef, useState } from "react";
+import {
+  ActivityIndicator,
+  Platform,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
+} from "react-native";
+import MapView, { Circle, Marker, Region } from "react-native-maps";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
+
+import { useColors } from "@/hooks/useColors";
+import { haversineDistanceMiles, latDeltaForMiles, milesToMeters } from "@/utils/distance";
+import type { Vendor } from "@workspace/api-client-react";
+
+const RADIUS_OPTIONS = [5, 10, 25, 50] as const;
+type RadiusMiles = (typeof RADIUS_OPTIONS)[number];
+
+const FLORIDA_CENTER = { latitude: 27.9944024, longitude: -81.7602544 };
+
+export default function MapScreen() {
+  const colors = useColors();
+  const insets = useSafeAreaInsets();
+  const router = useRouter();
+  const mapRef = useRef<MapView>(null);
+
+  const [permission, requestPermission] = Location.useForegroundPermissions();
+  const [userLocation, setUserLocation] = useState<{ latitude: number; longitude: number } | null>(null);
+  const [locating, setLocating] = useState(false);
+  const [radius, setRadius] = useState<RadiusMiles>(25);
+  const [selected, setSelected] = useState<Vendor | null>(null);
+
+  const topPad = Platform.OS === "web" ? 67 : insets.top;
+  const bottomPad = Platform.OS === "web" ? 34 : insets.bottom + 60;
+
+  const { data: vendors } = useListVendors();
+
+  const mappableVendors = (vendors ?? []).filter(
+    (v) => v.latitude != null && v.longitude != null,
+  );
+
+  const nearbyVendors = userLocation
+    ? mappableVendors.filter((v) =>
+        haversineDistanceMiles(
+          userLocation.latitude,
+          userLocation.longitude,
+          v.latitude!,
+          v.longitude!,
+        ) <= radius,
+      )
+    : mappableVendors;
+
+  useEffect(() => {
+    if (permission?.granted) {
+      locateUser();
+    }
+  }, [permission?.granted]);
+
+  const locateUser = async () => {
+    setLocating(true);
+    try {
+      const loc = await Location.getCurrentPositionAsync({
+        accuracy: Location.Accuracy.Balanced,
+      });
+      const coords = {
+        latitude: loc.coords.latitude,
+        longitude: loc.coords.longitude,
+      };
+      setUserLocation(coords);
+      mapRef.current?.animateToRegion(regionFor(coords, radius), 800);
+    } catch {
+    } finally {
+      setLocating(false);
+    }
+  };
+
+  const handleRequestPermission = async () => {
+    const result = await requestPermission();
+    if (result.granted) {
+      locateUser();
+    }
+  };
+
+  const regionFor = (
+    center: { latitude: number; longitude: number },
+    r: RadiusMiles,
+  ): Region => {
+    const delta = latDeltaForMiles(r);
+    return {
+      ...center,
+      latitudeDelta: delta,
+      longitudeDelta: delta,
+    };
+  };
+
+  const handleRadiusChange = (r: RadiusMiles) => {
+    Haptics.selectionAsync();
+    setRadius(r);
+    setSelected(null);
+    if (userLocation) {
+      mapRef.current?.animateToRegion(regionFor(userLocation, r), 600);
+    }
+  };
+
+  const handleMarkerPress = (vendor: Vendor) => {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    setSelected(vendor);
+  };
+
+  const handleViewVendor = () => {
+    if (selected) router.push(`/vendor/${selected.slug}`);
+  };
+
+  const s = styles(colors, topPad, bottomPad);
+  const mapCenter = userLocation ?? FLORIDA_CENTER;
+  const initialRegion = regionFor(mapCenter, radius);
+
+  if (Platform.OS === "web") {
+    return <WebFallback vendors={nearbyVendors} userLocation={userLocation} radius={radius} colors={colors} topPad={topPad} bottomPad={bottomPad} />;
+  }
+
+  if (!permission) {
+    return (
+      <View style={[s.container, s.center]}>
+        <ActivityIndicator color={colors.primary} />
+      </View>
+    );
+  }
+
+  if (!permission.granted) {
+    return (
+      <View style={[s.container, s.center, { paddingHorizontal: 32 }]}>
+        <View style={s.permissionIcon}>
+          <Feather name="map-pin" size={32} color={colors.primary} />
+        </View>
+        <Text style={s.permissionTitle}>Find Vendors Near You</Text>
+        <Text style={s.permissionBody}>
+          Open Local needs your location to show vendors within your area on the map.
+        </Text>
+        <TouchableOpacity style={s.permissionBtn} onPress={handleRequestPermission}>
+          <Feather name="crosshair" size={16} color={colors.primaryForeground} />
+          <Text style={s.permissionBtnText}>Enable Location</Text>
+        </TouchableOpacity>
+        {!permission.canAskAgain && (
+          <Text style={s.settingsHint}>
+            Location access was denied. Please enable it in Settings to continue.
+          </Text>
+        )}
+      </View>
+    );
+  }
+
+  return (
+    <View style={s.container}>
+      <MapView
+        ref={mapRef}
+        style={StyleSheet.absoluteFill}
+        initialRegion={initialRegion}
+        showsUserLocation
+        showsMyLocationButton={false}
+        onPress={() => setSelected(null)}
+      >
+        {userLocation && (
+          <Circle
+            center={userLocation}
+            radius={milesToMeters(radius)}
+            strokeColor={colors.primary}
+            strokeWidth={1.5}
+            fillColor={`${colors.primary}18`}
+          />
+        )}
+        {nearbyVendors.map((vendor) => (
+          <Marker
+            key={vendor.id}
+            coordinate={{ latitude: vendor.latitude!, longitude: vendor.longitude! }}
+            onPress={() => handleMarkerPress(vendor)}
+          >
+            <View
+              style={[
+                s.pin,
+                selected?.id === vendor.id && s.pinSelected,
+              ]}
+            >
+              <Feather
+                name="shopping-bag"
+                size={12}
+                color={selected?.id === vendor.id ? colors.primaryForeground : colors.primary}
+              />
+            </View>
+          </Marker>
+        ))}
+      </MapView>
+
+      <View style={[s.header, { paddingTop: topPad + 8 }]}>
+        <View style={s.radiusRow}>
+          {RADIUS_OPTIONS.map((r) => (
+            <TouchableOpacity
+              key={r}
+              style={[s.chip, radius === r && s.chipActive]}
+              onPress={() => handleRadiusChange(r)}
+            >
+              <Text style={[s.chipText, radius === r && s.chipTextActive]}>
+                {r} mi
+              </Text>
+            </TouchableOpacity>
+          ))}
+          <TouchableOpacity
+            style={s.locateBtn}
+            onPress={locateUser}
+            disabled={locating}
+          >
+            {locating ? (
+              <ActivityIndicator size="small" color={colors.primary} />
+            ) : (
+              <Feather name="crosshair" size={18} color={colors.primary} />
+            )}
+          </TouchableOpacity>
+        </View>
+        <View style={s.countBadge}>
+          <Text style={s.countText}>
+            {nearbyVendors.length} vendor{nearbyVendors.length !== 1 ? "s" : ""} within {radius} mi
+            {!userLocation ? " · Set your location" : ""}
+          </Text>
+        </View>
+      </View>
+
+      {selected && (
+        <View style={[s.vendorPanel, { paddingBottom: bottomPad }]}>
+          <View style={s.panelHandle} />
+          <View style={s.panelRow}>
+            <View style={s.panelAvatar}>
+              <Text style={s.panelAvatarLetter}>
+                {selected.name.charAt(0).toUpperCase()}
+              </Text>
+            </View>
+            <View style={s.panelInfo}>
+              <Text style={s.panelName} numberOfLines={1}>
+                {selected.name}
+              </Text>
+              <Text style={s.panelMeta} numberOfLines={1}>
+                {selected.category} · {selected.location}
+              </Text>
+              {userLocation && (
+                <Text style={s.panelDist}>
+                  {haversineDistanceMiles(
+                    userLocation.latitude,
+                    userLocation.longitude,
+                    selected.latitude!,
+                    selected.longitude!,
+                  ).toFixed(1)}{" "}
+                  mi away
+                </Text>
+              )}
+            </View>
+            <TouchableOpacity style={s.viewBtn} onPress={handleViewVendor}>
+              <Text style={s.viewBtnText}>View</Text>
+              <Feather name="arrow-right" size={14} color={colors.primaryForeground} />
+            </TouchableOpacity>
+          </View>
+        </View>
+      )}
+    </View>
+  );
+}
+
+interface WebFallbackProps {
+  vendors: Vendor[];
+  userLocation: { latitude: number; longitude: number } | null;
+  radius: RadiusMiles;
+  colors: ReturnType<typeof useColors>;
+  topPad: number;
+  bottomPad: number;
+}
+
+function WebFallback({ vendors, userLocation, radius, colors, topPad, bottomPad }: WebFallbackProps) {
+  const router = useRouter();
+  const s = styles(colors, topPad, bottomPad);
+
+  return (
+    <View style={s.container}>
+      <View style={[s.header, { paddingTop: topPad + 8 }]}>
+        <Text style={s.webTitle}>Nearby Vendors</Text>
+        <Text style={s.countText}>
+          {vendors.length} vendor{vendors.length !== 1 ? "s" : ""} with mapped locations
+        </Text>
+      </View>
+      <ScrollView contentContainerStyle={{ paddingHorizontal: 16, paddingBottom: bottomPad, paddingTop: 8, gap: 10 }}>
+        {vendors.length === 0 ? (
+          <View style={s.center}>
+            <Text style={s.permissionBody}>No vendors with map locations yet.</Text>
+          </View>
+        ) : (
+          vendors.map((v) => (
+            <TouchableOpacity
+              key={v.id}
+              style={s.webCard}
+              onPress={() => router.push(`/vendor/${v.slug}`)}
+              activeOpacity={0.85}
+            >
+              <View style={s.panelAvatar}>
+                <Text style={s.panelAvatarLetter}>{v.name.charAt(0).toUpperCase()}</Text>
+              </View>
+              <View style={{ flex: 1 }}>
+                <Text style={s.panelName}>{v.name}</Text>
+                <Text style={s.panelMeta}>{v.category} · {v.location}</Text>
+                {userLocation && (
+                  <Text style={s.panelDist}>
+                    {haversineDistanceMiles(userLocation.latitude, userLocation.longitude, v.latitude!, v.longitude!).toFixed(1)} mi away
+                  </Text>
+                )}
+              </View>
+              <Feather name="chevron-right" size={18} color={colors.mutedForeground} />
+            </TouchableOpacity>
+          ))
+        )}
+      </ScrollView>
+    </View>
+  );
+}
+
+const styles = (colors: ReturnType<typeof useColors>, topPad: number, bottomPad: number) =>
+  StyleSheet.create({
+    container: { flex: 1, backgroundColor: colors.background },
+    center: { flex: 1, alignItems: "center", justifyContent: "center" },
+
+    header: {
+      position: "absolute",
+      top: 0,
+      left: 0,
+      right: 0,
+      paddingHorizontal: 16,
+      paddingBottom: 10,
+      gap: 6,
+    },
+    radiusRow: {
+      flexDirection: "row",
+      alignItems: "center",
+      gap: 6,
+      backgroundColor: colors.card,
+      borderRadius: 12,
+      padding: 6,
+      shadowColor: "#000",
+      shadowOpacity: 0.12,
+      shadowRadius: 8,
+      shadowOffset: { width: 0, height: 2 },
+      elevation: 4,
+    },
+    chip: {
+      flex: 1,
+      paddingVertical: 7,
+      borderRadius: 8,
+      alignItems: "center",
+      backgroundColor: "transparent",
+    },
+    chipActive: { backgroundColor: colors.primary },
+    chipText: {
+      fontFamily: "DMSans_600SemiBold",
+      fontSize: 13,
+      color: colors.mutedForeground,
+    },
+    chipTextActive: { color: colors.primaryForeground },
+    locateBtn: {
+      width: 38,
+      height: 38,
+      borderRadius: 8,
+      backgroundColor: colors.muted,
+      alignItems: "center",
+      justifyContent: "center",
+    },
+    countBadge: {
+      alignSelf: "flex-start",
+      backgroundColor: colors.card,
+      borderRadius: 20,
+      paddingVertical: 5,
+      paddingHorizontal: 12,
+      shadowColor: "#000",
+      shadowOpacity: 0.1,
+      shadowRadius: 4,
+      shadowOffset: { width: 0, height: 1 },
+      elevation: 2,
+    },
+    countText: {
+      fontFamily: "DMSans_400Regular",
+      fontSize: 12,
+      color: colors.mutedForeground,
+    },
+
+    pin: {
+      width: 28,
+      height: 28,
+      borderRadius: 14,
+      backgroundColor: colors.card,
+      borderWidth: 1.5,
+      borderColor: colors.primary,
+      alignItems: "center",
+      justifyContent: "center",
+      shadowColor: "#000",
+      shadowOpacity: 0.15,
+      shadowRadius: 4,
+      shadowOffset: { width: 0, height: 2 },
+      elevation: 3,
+    },
+    pinSelected: {
+      backgroundColor: colors.primary,
+      transform: [{ scale: 1.2 }],
+    },
+
+    vendorPanel: {
+      position: "absolute",
+      bottom: 0,
+      left: 0,
+      right: 0,
+      backgroundColor: colors.card,
+      borderTopLeftRadius: 20,
+      borderTopRightRadius: 20,
+      paddingHorizontal: 20,
+      paddingTop: 12,
+      shadowColor: "#000",
+      shadowOpacity: 0.18,
+      shadowRadius: 16,
+      shadowOffset: { width: 0, height: -4 },
+      elevation: 10,
+    },
+    panelHandle: {
+      width: 36,
+      height: 4,
+      borderRadius: 2,
+      backgroundColor: colors.border,
+      alignSelf: "center",
+      marginBottom: 14,
+    },
+    panelRow: { flexDirection: "row", alignItems: "center", gap: 12 },
+    panelAvatar: {
+      width: 46,
+      height: 46,
+      borderRadius: 23,
+      backgroundColor: colors.muted,
+      alignItems: "center",
+      justifyContent: "center",
+    },
+    panelAvatarLetter: {
+      fontFamily: "DMSans_700Bold",
+      fontSize: 18,
+      color: colors.primary,
+    },
+    panelInfo: { flex: 1 },
+    panelName: {
+      fontFamily: "DMSans_600SemiBold",
+      fontSize: 15,
+      color: colors.foreground,
+      marginBottom: 2,
+    },
+    panelMeta: {
+      fontFamily: "DMSans_400Regular",
+      fontSize: 12,
+      color: colors.mutedForeground,
+    },
+    panelDist: {
+      fontFamily: "DMSans_500Medium",
+      fontSize: 12,
+      color: colors.primary,
+      marginTop: 2,
+    },
+    viewBtn: {
+      flexDirection: "row",
+      alignItems: "center",
+      gap: 4,
+      backgroundColor: colors.primary,
+      borderRadius: 20,
+      paddingVertical: 9,
+      paddingHorizontal: 14,
+    },
+    viewBtnText: {
+      fontFamily: "DMSans_600SemiBold",
+      fontSize: 13,
+      color: colors.primaryForeground,
+    },
+
+    permissionIcon: {
+      width: 72,
+      height: 72,
+      borderRadius: 36,
+      backgroundColor: colors.muted,
+      alignItems: "center",
+      justifyContent: "center",
+      marginBottom: 20,
+    },
+    permissionTitle: {
+      fontFamily: "DMSans_700Bold",
+      fontSize: 22,
+      color: colors.foreground,
+      textAlign: "center",
+      marginBottom: 10,
+    },
+    permissionBody: {
+      fontFamily: "DMSans_400Regular",
+      fontSize: 14,
+      color: colors.mutedForeground,
+      textAlign: "center",
+      lineHeight: 21,
+      marginBottom: 28,
+    },
+    permissionBtn: {
+      flexDirection: "row",
+      alignItems: "center",
+      gap: 8,
+      backgroundColor: colors.primary,
+      borderRadius: 24,
+      paddingVertical: 13,
+      paddingHorizontal: 28,
+    },
+    permissionBtnText: {
+      fontFamily: "DMSans_600SemiBold",
+      fontSize: 15,
+      color: colors.primaryForeground,
+    },
+    settingsHint: {
+      fontFamily: "DMSans_400Regular",
+      fontSize: 13,
+      color: colors.mutedForeground,
+      textAlign: "center",
+      marginTop: 16,
+      lineHeight: 19,
+    },
+
+    webTitle: {
+      fontFamily: "DMSans_700Bold",
+      fontSize: 26,
+      color: colors.foreground,
+      marginBottom: 2,
+    },
+    webCard: {
+      flexDirection: "row",
+      alignItems: "center",
+      backgroundColor: colors.card,
+      borderRadius: 10,
+      padding: 12,
+      borderWidth: 1,
+      borderColor: colors.border,
+      gap: 12,
+    },
+  });
