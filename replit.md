@@ -18,10 +18,11 @@ Shared workspace packages:
 
 ## Domain model
 
-Two entities, no auth (this is a public directory).
+Two public entities + one short-lived verification table. No persistent user auth yet.
 
 - **Vendors** — `id, name, slug (unique), tagline, description, category, location, region, contactEmail, websiteUrl, imageUrl, established, featured, phone?, instagramHandle?, facebookUrl?, marketsText?, latitude?, longitude?, createdAt`.
 - **Products** — `id, vendorId (FK cascade), name, description, priceCents, unit, category, imageUrl, inStock, featured, listingType, originalPriceCents?, availableUntil?, pickupNote?, createdAt`. Prices in cents.
+- **EmailVerifications** — `id, email, code, vendorPayload (jsonb), expiresAt, attempts, consumed, createdAt`. Holds the pending vendor data until the 6-digit code is verified (10-min TTL, 5-attempt cap).
 
 `listingType` is one of: `regular`, `batch_drop` (small fresh release just out), `surplus` (market-leftover discount with `originalPriceCents`), `pre_order` (reserve for upcoming market pickup with `availableUntil` and `pickupNote`).
 
@@ -31,7 +32,7 @@ Two entities, no auth (this is a public directory).
 - `/vendors`, `/vendors/:id` — Directory + profile (markets, phone, Instagram, Facebook, vendor's products).
 - `/products`, `/products/:id` — Browse + detail. Filter chips for listing type, syncing with `?listingType=` URL.
 - `/favorites` — localStorage-backed saved producers + saved goods (key: `open-local:favorites`).
-- `/submit` — 3-step onboarding wizard: (1) tap a category card, (2) name/tagline/story/city with FL city chips, (3) email + optional cover/socials/markets. Auto-generates slug, picks a category-themed default cover when no image URL is given, defaults region to Florida.
+- `/submit` — 4-step onboarding wizard: (1) tap a category card, (2) name/tagline/story/city with FL city chips, (3) email + optional cover/socials/markets, (4) **email verification** — enter a 6-digit code we email; only then is the vendor created. Auto-generates slug, picks a category-themed default cover when no image URL is given, defaults region to Florida.
 - `/admin` — Toggle featured / in-stock, delete, add product (full listing-type fields).
 
 ## API
@@ -40,6 +41,13 @@ Two entities, no auth (this is a public directory).
 - `GET/POST/PATCH/DELETE /api/products`, `/api/products/:id`, `/api/products/featured`. List supports `?listingType=` filter.
 - `GET /api/feed/local-now` → `{ batchDrops, surplus, preOrders }` (each ProductWithVendor[]). Filters out expired `availableUntil` and out-of-stock items.
 - `GET /api/stats`, `/api/locations`, `/api/categories`
+- `POST /api/auth/email/start` — body `{ email, vendorPayload }`. Generates a 6-digit code, sends via Resend if `RESEND_API_KEY` is set, otherwise returns `{ devFallback: true, devCode }` so the wizard can show it in a "demo mode" banner.
+- `POST /api/auth/email/resend` — `{ verificationId }` → new code + 10-min TTL.
+- `POST /api/auth/email/verify` — `{ verificationId, code }` → on success, creates the vendor from the stored payload and returns it.
+
+## Email
+
+`artifacts/api-server/src/lib/email.ts` calls Resend's REST API directly via `fetch` using `RESEND_API_KEY` and optional `MAIL_FROM` (defaults to `Open Local <onboarding@resend.dev>`). Without the key, the verification flow still works in a demo-mode fallback that shows the code on screen.
 
 ## Workflows
 

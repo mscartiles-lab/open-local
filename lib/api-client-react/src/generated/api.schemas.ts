@@ -214,6 +214,30 @@ export interface CategoryCount {
   count: number;
 }
 
+export interface StartEmailVerificationRequest {
+  email: string;
+  vendorPayload: VendorInput;
+}
+
+export interface StartEmailVerificationResponse {
+  verificationId: number;
+  email: string;
+  expiresAt: string;
+  devFallback: boolean;
+  /** @nullable */
+  devCode: string | null;
+}
+
+export interface ResendEmailVerificationRequest {
+  verificationId: number;
+}
+
+export interface VerifyEmailRequest {
+  verificationId: number;
+  /** @pattern ^[0-9]{6}$ */
+  code: string;
+}
+
 export interface LocalNowFeed {
   batchDrops: ProductWithVendor[];
   surplus: ProductWithVendor[];

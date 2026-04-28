@@ -68,6 +68,19 @@ router.post("/vendors", async (req, res): Promise<void> => {
   res.status(201).json(GetVendorResponse.parse(row));
 });
 
+router.get("/vendors/by-slug/:slug", async (req, res): Promise<void> => {
+  const slug = String(req.params.slug);
+  const [vendor] = await db
+    .select()
+    .from(vendorsTable)
+    .where(eq(vendorsTable.slug, slug));
+  if (!vendor) {
+    res.status(404).json({ error: "Vendor not found" });
+    return;
+  }
+  res.json(GetVendorResponse.parse(vendor));
+});
+
 router.get("/vendors/:id", async (req, res): Promise<void> => {
   const params = GetVendorParams.safeParse(req.params);
   if (!params.success) {

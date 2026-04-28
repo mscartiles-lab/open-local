@@ -29,9 +29,13 @@ import type {
   ProductInput,
   ProductUpdate,
   ProductWithVendor,
+  ResendEmailVerificationRequest,
+  StartEmailVerificationRequest,
+  StartEmailVerificationResponse,
   Vendor,
   VendorInput,
   VendorUpdate,
+  VerifyEmailRequest,
 } from "./api.schemas";
 
 import { customFetch } from "../custom-fetch";
@@ -1453,6 +1457,359 @@ export function useListCategories<
 
   return { ...query, queryKey: queryOptions.queryKey };
 }
+
+/**
+ * @summary Get a vendor by URL slug (used by the vendor dashboard)
+ */
+export const getGetVendorBySlugUrl = (slug: string) => {
+  return `/api/vendors/by-slug/${slug}`;
+};
+
+export const getVendorBySlug = async (
+  slug: string,
+  options?: RequestInit,
+): Promise<Vendor> => {
+  return customFetch<Vendor>(getGetVendorBySlugUrl(slug), {
+    ...options,
+    method: "GET",
+  });
+};
+
+export const getGetVendorBySlugQueryKey = (slug: string) => {
+  return [`/api/vendors/by-slug/${slug}`] as const;
+};
+
+export const getGetVendorBySlugQueryOptions = <
+  TData = Awaited<ReturnType<typeof getVendorBySlug>>,
+  TError = ErrorType<ErrorResponse>,
+>(
+  slug: string,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof getVendorBySlug>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey = queryOptions?.queryKey ?? getGetVendorBySlugQueryKey(slug);
+
+  const queryFn: QueryFunction<Awaited<ReturnType<typeof getVendorBySlug>>> = ({
+    signal,
+  }) => getVendorBySlug(slug, { signal, ...requestOptions });
+
+  return {
+    queryKey,
+    queryFn,
+    enabled: !!slug,
+    ...queryOptions,
+  } as UseQueryOptions<
+    Awaited<ReturnType<typeof getVendorBySlug>>,
+    TError,
+    TData
+  > & { queryKey: QueryKey };
+};
+
+export type GetVendorBySlugQueryResult = NonNullable<
+  Awaited<ReturnType<typeof getVendorBySlug>>
+>;
+export type GetVendorBySlugQueryError = ErrorType<ErrorResponse>;
+
+/**
+ * @summary Get a vendor by URL slug (used by the vendor dashboard)
+ */
+
+export function useGetVendorBySlug<
+  TData = Awaited<ReturnType<typeof getVendorBySlug>>,
+  TError = ErrorType<ErrorResponse>,
+>(
+  slug: string,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof getVendorBySlug>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+  const queryOptions = getGetVendorBySlugQueryOptions(slug, options);
+
+  const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
+    queryKey: QueryKey;
+  };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+/**
+ * @summary Start email verification for a new vendor listing
+ */
+export const getStartEmailVerificationUrl = () => {
+  return `/api/auth/email/start`;
+};
+
+export const startEmailVerification = async (
+  startEmailVerificationRequest: StartEmailVerificationRequest,
+  options?: RequestInit,
+): Promise<StartEmailVerificationResponse> => {
+  return customFetch<StartEmailVerificationResponse>(
+    getStartEmailVerificationUrl(),
+    {
+      ...options,
+      method: "POST",
+      headers: { "Content-Type": "application/json", ...options?.headers },
+      body: JSON.stringify(startEmailVerificationRequest),
+    },
+  );
+};
+
+export const getStartEmailVerificationMutationOptions = <
+  TError = ErrorType<ErrorResponse>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof startEmailVerification>>,
+    TError,
+    { data: BodyType<StartEmailVerificationRequest> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof startEmailVerification>>,
+  TError,
+  { data: BodyType<StartEmailVerificationRequest> },
+  TContext
+> => {
+  const mutationKey = ["startEmailVerification"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof startEmailVerification>>,
+    { data: BodyType<StartEmailVerificationRequest> }
+  > = (props) => {
+    const { data } = props ?? {};
+
+    return startEmailVerification(data, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type StartEmailVerificationMutationResult = NonNullable<
+  Awaited<ReturnType<typeof startEmailVerification>>
+>;
+export type StartEmailVerificationMutationBody =
+  BodyType<StartEmailVerificationRequest>;
+export type StartEmailVerificationMutationError = ErrorType<ErrorResponse>;
+
+/**
+ * @summary Start email verification for a new vendor listing
+ */
+export const useStartEmailVerification = <
+  TError = ErrorType<ErrorResponse>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof startEmailVerification>>,
+    TError,
+    { data: BodyType<StartEmailVerificationRequest> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof startEmailVerification>>,
+  TError,
+  { data: BodyType<StartEmailVerificationRequest> },
+  TContext
+> => {
+  return useMutation(getStartEmailVerificationMutationOptions(options));
+};
+
+/**
+ * @summary Resend the verification code
+ */
+export const getResendEmailVerificationUrl = () => {
+  return `/api/auth/email/resend`;
+};
+
+export const resendEmailVerification = async (
+  resendEmailVerificationRequest: ResendEmailVerificationRequest,
+  options?: RequestInit,
+): Promise<StartEmailVerificationResponse> => {
+  return customFetch<StartEmailVerificationResponse>(
+    getResendEmailVerificationUrl(),
+    {
+      ...options,
+      method: "POST",
+      headers: { "Content-Type": "application/json", ...options?.headers },
+      body: JSON.stringify(resendEmailVerificationRequest),
+    },
+  );
+};
+
+export const getResendEmailVerificationMutationOptions = <
+  TError = ErrorType<ErrorResponse>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof resendEmailVerification>>,
+    TError,
+    { data: BodyType<ResendEmailVerificationRequest> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof resendEmailVerification>>,
+  TError,
+  { data: BodyType<ResendEmailVerificationRequest> },
+  TContext
+> => {
+  const mutationKey = ["resendEmailVerification"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof resendEmailVerification>>,
+    { data: BodyType<ResendEmailVerificationRequest> }
+  > = (props) => {
+    const { data } = props ?? {};
+
+    return resendEmailVerification(data, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type ResendEmailVerificationMutationResult = NonNullable<
+  Awaited<ReturnType<typeof resendEmailVerification>>
+>;
+export type ResendEmailVerificationMutationBody =
+  BodyType<ResendEmailVerificationRequest>;
+export type ResendEmailVerificationMutationError = ErrorType<ErrorResponse>;
+
+/**
+ * @summary Resend the verification code
+ */
+export const useResendEmailVerification = <
+  TError = ErrorType<ErrorResponse>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof resendEmailVerification>>,
+    TError,
+    { data: BodyType<ResendEmailVerificationRequest> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof resendEmailVerification>>,
+  TError,
+  { data: BodyType<ResendEmailVerificationRequest> },
+  TContext
+> => {
+  return useMutation(getResendEmailVerificationMutationOptions(options));
+};
+
+/**
+ * @summary Verify the 6-digit code and create the vendor
+ */
+export const getVerifyEmailCodeUrl = () => {
+  return `/api/auth/email/verify`;
+};
+
+export const verifyEmailCode = async (
+  verifyEmailRequest: VerifyEmailRequest,
+  options?: RequestInit,
+): Promise<Vendor> => {
+  return customFetch<Vendor>(getVerifyEmailCodeUrl(), {
+    ...options,
+    method: "POST",
+    headers: { "Content-Type": "application/json", ...options?.headers },
+    body: JSON.stringify(verifyEmailRequest),
+  });
+};
+
+export const getVerifyEmailCodeMutationOptions = <
+  TError = ErrorType<ErrorResponse>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof verifyEmailCode>>,
+    TError,
+    { data: BodyType<VerifyEmailRequest> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof verifyEmailCode>>,
+  TError,
+  { data: BodyType<VerifyEmailRequest> },
+  TContext
+> => {
+  const mutationKey = ["verifyEmailCode"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof verifyEmailCode>>,
+    { data: BodyType<VerifyEmailRequest> }
+  > = (props) => {
+    const { data } = props ?? {};
+
+    return verifyEmailCode(data, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type VerifyEmailCodeMutationResult = NonNullable<
+  Awaited<ReturnType<typeof verifyEmailCode>>
+>;
+export type VerifyEmailCodeMutationBody = BodyType<VerifyEmailRequest>;
+export type VerifyEmailCodeMutationError = ErrorType<ErrorResponse>;
+
+/**
+ * @summary Verify the 6-digit code and create the vendor
+ */
+export const useVerifyEmailCode = <
+  TError = ErrorType<ErrorResponse>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof verifyEmailCode>>,
+    TError,
+    { data: BodyType<VerifyEmailRequest> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof verifyEmailCode>>,
+  TError,
+  { data: BodyType<VerifyEmailRequest> },
+  TContext
+> => {
+  return useMutation(getVerifyEmailCodeMutationOptions(options));
+};
 
 /**
  * Batch drops, surplus rescue, and pre-orders currently available.

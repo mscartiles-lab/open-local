@@ -18,6 +18,8 @@ tags:
     description: Marketplace discovery, stats and aggregates
   - name: feed
     description: Real-time local feed (Local Near Me Now, batch drops, surplus, pre-orders)
+  - name: auth
+    description: Email verification for vendor onboarding
 
 paths:
   /healthz:
@@ -337,6 +339,110 @@ paths:
               schema:
                 $ref: "#/components/schemas/CategoryBreakdown"
 
+  /vendors/by-slug/{slug}:
+    get:
+      operationId: getVendorBySlug
+      tags: [vendors]
+      summary: Get a vendor by URL slug (used by the vendor dashboard)
+      parameters:
+        - name: slug
+          in: path
+          required: true
+          schema: { type: string }
+      responses:
+        "200":
+          description: Vendor
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Vendor" }
+        "404":
+          description: Not found
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ErrorResponse" }
+
+  /auth/email/start:
+    post:
+      operationId: startEmailVerification
+      tags: [auth]
+      summary: Start email verification for a new vendor listing
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/StartEmailVerificationRequest"
+      responses:
+        "201":
+          description: Verification started
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/StartEmailVerificationResponse"
+        "400":
+          description: Invalid input
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ErrorResponse" }
+        "502":
+          description: Email provider error
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ErrorResponse" }
+
+  /auth/email/resend:
+    post:
+      operationId: resendEmailVerification
+      tags: [auth]
+      summary: Resend the verification code
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ResendEmailVerificationRequest"
+      responses:
+        "200":
+          description: Resent
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/StartEmailVerificationResponse"
+        "400":
+          description: Invalid
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ErrorResponse" }
+
+  /auth/email/verify:
+    post:
+      operationId: verifyEmailCode
+      tags: [auth]
+      summary: Verify the 6-digit code and create the vendor
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/VerifyEmailRequest"
+      responses:
+        "201":
+          description: Verified and vendor created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Vendor"
+        "400":
+          description: Invalid or expired code
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ErrorResponse" }
+        "429":
+          description: Too many attempts
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ErrorResponse" }
+
   /feed/local-now:
     get:
       operationId: getLocalNowFeed
@@ -620,6 +726,36 @@ components:
         name: { type: string }
         count: { type: integer }
       required: [name, count]
+
+    StartEmailVerificationRequest:
+      type: object
+      properties:
+        email: { type: string, format: email }
+        vendorPayload: { $ref: "#/components/schemas/VendorInput" }
+      required: [email, vendorPayload]
+
+    StartEmailVerificationResponse:
+      type: object
+      properties:
+        verificationId: { type: integer }
+        email: { type: string }
+        expiresAt: { type: string, format: date-time }
+        devFallback: { type: boolean }
+        devCode: { type: ["string", "null"] }
+      required: [verificationId, email, expiresAt, devFallback, devCode]
+
+    ResendEmailVerificationRequest:
+      type: object
+      properties:
+        verificationId: { type: integer }
+      required: [verificationId]
+
+    VerifyEmailRequest:
+      type: object
+      properties:
+        verificationId: { type: integer }
+        code: { type: string, pattern: "^[0-9]{6}$" }
+      required: [verificationId, code]
 
     LocalNowFeed:
       type: object

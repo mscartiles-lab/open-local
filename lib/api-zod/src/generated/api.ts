@@ -445,6 +445,88 @@ export const ListCategoriesResponse = zod.object({
 });
 
 /**
+ * @summary Get a vendor by URL slug (used by the vendor dashboard)
+ */
+export const GetVendorBySlugParams = zod.object({
+  slug: zod.coerce.string(),
+});
+
+export const GetVendorBySlugResponse = zod.object({
+  id: zod.number(),
+  name: zod.string(),
+  slug: zod.string(),
+  tagline: zod.string(),
+  description: zod.string(),
+  category: zod.string(),
+  location: zod.string(),
+  region: zod.string(),
+  contactEmail: zod.string(),
+  websiteUrl: zod.string().nullable(),
+  imageUrl: zod.string(),
+  established: zod.number(),
+  featured: zod.boolean(),
+  phone: zod.string().nullable(),
+  instagramHandle: zod.string().nullable(),
+  facebookUrl: zod.string().nullable(),
+  marketsText: zod.string().nullable(),
+  latitude: zod.number().nullable(),
+  longitude: zod.number().nullable(),
+  createdAt: zod.coerce.date(),
+});
+
+/**
+ * @summary Start email verification for a new vendor listing
+ */
+export const StartEmailVerificationBody = zod.object({
+  email: zod.string().email(),
+  vendorPayload: zod.object({
+    name: zod.string(),
+    slug: zod.string(),
+    tagline: zod.string(),
+    description: zod.string(),
+    category: zod.string(),
+    location: zod.string(),
+    region: zod.string(),
+    contactEmail: zod.string(),
+    websiteUrl: zod.string().nullish(),
+    imageUrl: zod.string(),
+    established: zod.number(),
+    featured: zod.boolean().optional(),
+    phone: zod.string().nullish(),
+    instagramHandle: zod.string().nullish(),
+    facebookUrl: zod.string().nullish(),
+    marketsText: zod.string().nullish(),
+    latitude: zod.number().nullish(),
+    longitude: zod.number().nullish(),
+  }),
+});
+
+/**
+ * @summary Resend the verification code
+ */
+export const ResendEmailVerificationBody = zod.object({
+  verificationId: zod.number(),
+});
+
+export const ResendEmailVerificationResponse = zod.object({
+  verificationId: zod.number(),
+  email: zod.string(),
+  expiresAt: zod.coerce.date(),
+  devFallback: zod.boolean(),
+  devCode: zod.string().nullable(),
+});
+
+/**
+ * @summary Verify the 6-digit code and create the vendor
+ */
+export const verifyEmailCodeBodyCodeRegExp = new RegExp("^[0-9]{6}$");
+
+export const VerifyEmailCodeBody = zod.object({
+  verificationId: zod.number(),
+  code: zod.string().regex(verifyEmailCodeBodyCodeRegExp),
+});
+
+/**
  * Batch drops, surplus rescue, and pre-orders currently available.
  * @summary Real-time local feed grouped by listing type
  */

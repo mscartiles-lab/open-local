@@ -1,4 +1,4 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, useRef, useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
@@ -27,6 +27,8 @@ import {
   Facebook,
   Plus,
   Minus,
+  Mail,
+  ShieldCheck,
 } from "lucide-react";
 import Layout from "@/components/layout/Layout";
 import { Button } from "@/components/ui/button";
@@ -34,7 +36,9 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
 import {
-  useCreateVendor,
+  useStartEmailVerification,
+  useResendEmailVerification,
+  useVerifyEmailCode,
   getListVendorsQueryKey,
 } from "@workspace/api-client-react";
 import { useQueryClient } from "@tanstack/react-query";
@@ -91,14 +95,27 @@ const stepFields: Record<number, (keyof FormValues)[]> = {
   3: ["contactEmail", "imageUrl", "websiteUrl", "phone", "instagramHandle", "facebookUrl", "marketsText"],
 };
 
+type VerificationState = {
+  verificationId: number;
+  email: string;
+  devCode: string | null;
+};
+
 export default function Submit() {
   const [, setLocation] = useLocation();
   const { toast } = useToast();
   const queryClient = useQueryClient();
-  const createVendor = useCreateVendor();
+  const startVerification = useStartEmailVerification();
+  const resendVerification = useResendEmailVerification();
+  const verifyCode = useVerifyEmailCode();
 
   const [step, setStep] = useState(1);
   const [showOptionalContact, setShowOptionalContact] = useState(false);
+  const [verification, setVerification] = useState<VerificationState | null>(
+    null,
+  );
+  const [code, setCode] = useState("");
+  const [verifyError, setVerifyError] = useState<string | null>(null);
 
   const form = useForm<FormValues>({
     resolver: zodResolver(formSchema),
@@ -157,32 +174,99 @@ export default function Submit() {
       .replace(/(^-|-$)+/g, "");
     const instagramHandleClean = values.instagramHandle?.replace(/^@/, "");
 
-    createVendor.mutate(
+    const vendorPayload = {
+      ...values,
+      slug,
+      imageUrl: values.imageUrl || defaultImage,
+      websiteUrl: values.websiteUrl || null,
+      phone: values.phone || null,
+      instagramHandle: instagramHandleClean || null,
+      facebookUrl: values.facebookUrl || null,
+      marketsText: values.marketsText || null,
+    };
+
+    startVerification.mutate(
       {
         data: {
-          ...values,
-          slug,
-          imageUrl: values.imageUrl || defaultImage,
-          websiteUrl: values.websiteUrl || null,
-          phone: values.phone || null,
-          instagramHandle: instagramHandleClean || null,
-          facebookUrl: values.facebookUrl || null,
-          marketsText: values.marketsText || null,
+          email: values.contactEmail,
+          vendorPayload,
         },
       },
       {
         onSuccess: (data) => {
-          queryClient.invalidateQueries({ queryKey: getListVendorsQueryKey() });
-          toast({
-            title: "You're on Open Local",
-            description: "Your business has been published.",
+          setVerification({
+            verificationId: data.verificationId,
+            email: data.email,
+            devCode: data.devCode,
           });
-          setLocation(`/vendors/${data.id}`);
+          setCode("");
+          setVerifyError(null);
+          setStep(4);
         },
         onError: () => {
           toast({
             variant: "destructive",
-            title: "Couldn't publish your business",
+            title: "Couldn't send verification email",
+            description:
+              "Please double-check the email and try again in a moment.",
+          });
+        },
+      },
+    );
+  }
+
+  function submitCode() {
+    if (!verification || code.length !== 6) return;
+    setVerifyError(null);
+    verifyCode.mutate(
+      {
+        data: { verificationId: verification.verificationId, code },
+      },
+      {
+        onSuccess: (vendor) => {
+          queryClient.invalidateQueries({
+            queryKey: getListVendorsQueryKey(),
+          });
+          toast({
+            title: "You're on Open Local",
+            description:
+              "Your business is published. Welcome to your dashboard.",
+          });
+          setLocation(`/dashboard/${vendor.slug}`);
+        },
+        onError: (err: unknown) => {
+          const msg =
+            err && typeof err === "object" && "message" in err
+              ? String((err as { message: unknown }).message)
+              : "That code didn't match. Try again.";
+          setVerifyError(msg);
+        },
+      },
+    );
+  }
+
+  function resendCode() {
+    if (!verification) return;
+    setVerifyError(null);
+    setCode("");
+    resendVerification.mutate(
+      { data: { verificationId: verification.verificationId } },
+      {
+        onSuccess: (data) => {
+          setVerification({
+            verificationId: data.verificationId,
+            email: data.email,
+            devCode: data.devCode,
+          });
+          toast({
+            title: "New code sent",
+            description: `Check ${data.email} for a fresh 6-digit code.`,
+          });
+        },
+        onError: () => {
+          toast({
+            variant: "destructive",
+            title: "Couldn't resend",
             description: "Please try again in a moment.",
           });
         },
@@ -545,16 +629,46 @@ export default function Submit() {
                 onBack={prevStep}
                 onNext={publish}
                 nextLabel={
-                  createVendor.isPending ? "Publishing..." : "Publish your business"
+                  startVerification.isPending
+                    ? "Sending code..."
+                    : "Verify email & publish"
                 }
                 nextIcon={
-                  createVendor.isPending ? (
+                  startVerification.isPending ? (
                     <Loader2 className="ml-2 h-4 w-4 animate-spin" />
                   ) : (
-                    <Check className="ml-2 h-4 w-4" />
+                    <Mail className="ml-2 h-4 w-4" />
                   )
                 }
-                disabled={createVendor.isPending}
+                disabled={startVerification.isPending}
+              />
+            </motion.div>
+          )}
+
+          {step === 4 && verification && (
+            <motion.div
+              key="step-4"
+              initial={{ opacity: 0, y: 12 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -12 }}
+              transition={{ duration: 0.25 }}
+            >
+              <VerifyStep
+                email={verification.email}
+                devCode={verification.devCode}
+                code={code}
+                setCode={setCode}
+                onSubmit={submitCode}
+                onResend={resendCode}
+                onBack={() => {
+                  setStep(3);
+                  setVerification(null);
+                  setCode("");
+                  setVerifyError(null);
+                }}
+                error={verifyError}
+                isVerifying={verifyCode.isPending}
+                isResending={resendVerification.isPending}
               />
             </motion.div>
           )}
@@ -565,7 +679,7 @@ export default function Submit() {
 }
 
 function Stepper({ step }: { step: number }) {
-  const labels = ["Category", "Story", "Contact"];
+  const labels = ["Category", "Story", "Contact", "Verify"];
   return (
     <div className="mt-8 flex items-center justify-center gap-2 sm:gap-4">
       {labels.map((label, i) => {
@@ -655,6 +769,138 @@ function Field({
         <p className="text-xs text-muted-foreground">{hint}</p>
       )}
       {error && <p className="text-xs text-destructive">{error}</p>}
+    </div>
+  );
+}
+
+function VerifyStep({
+  email,
+  devCode,
+  code,
+  setCode,
+  onSubmit,
+  onResend,
+  onBack,
+  error,
+  isVerifying,
+  isResending,
+}: {
+  email: string;
+  devCode: string | null;
+  code: string;
+  setCode: (v: string) => void;
+  onSubmit: () => void;
+  onResend: () => void;
+  onBack: () => void;
+  error: string | null;
+  isVerifying: boolean;
+  isResending: boolean;
+}) {
+  const inputRef = useRef<HTMLInputElement | null>(null);
+
+  useEffect(() => {
+    inputRef.current?.focus();
+  }, []);
+
+  useEffect(() => {
+    if (code.length === 6 && !isVerifying) {
+      onSubmit();
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [code]);
+
+  return (
+    <div>
+      <div className="text-center">
+        <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-full bg-primary/10 text-primary">
+          <Mail className="h-6 w-6" />
+        </div>
+        <p className="text-xs uppercase tracking-[0.2em] text-primary font-semibold mb-2">
+          Step 4 — Final check
+        </p>
+        <h2 className="text-3xl md:text-4xl font-serif font-bold text-foreground mb-2">
+          Verify your email
+        </h2>
+        <p className="text-muted-foreground max-w-lg mx-auto">
+          We just sent a 6-digit code to{" "}
+          <span className="font-semibold text-foreground">{email}</span>. Enter
+          it below to publish your business.
+        </p>
+      </div>
+
+      <div className="mt-10 mx-auto max-w-md">
+        <input
+          ref={inputRef}
+          inputMode="numeric"
+          pattern="\d{6}"
+          maxLength={6}
+          autoComplete="one-time-code"
+          value={code}
+          onChange={(e) => {
+            const digits = e.target.value.replace(/\D/g, "").slice(0, 6);
+            setCode(digits);
+          }}
+          className={cn(
+            "w-full rounded-lg border bg-card px-6 py-5 text-center font-mono text-3xl tracking-[0.6em] text-foreground shadow-sm focus:outline-none focus:ring-2",
+            error
+              ? "border-destructive focus:ring-destructive/30"
+              : "border-border focus:border-primary focus:ring-primary/30",
+          )}
+          placeholder="······"
+          aria-label="Six-digit verification code"
+        />
+        {error && (
+          <p className="mt-2 text-center text-sm text-destructive">{error}</p>
+        )}
+
+        {devCode && (
+          <div className="mt-4 rounded-md border border-amber-300 bg-amber-50 px-4 py-3 text-sm text-amber-900">
+            <p className="mb-1 flex items-center gap-2 font-semibold">
+              <ShieldCheck className="h-4 w-4" />
+              Demo mode — no email service connected
+            </p>
+            <p>
+              Email sending isn't configured yet, so here's your code for
+              testing:{" "}
+              <span className="font-mono text-base font-bold tracking-widest">
+                {devCode}
+              </span>
+            </p>
+          </div>
+        )}
+
+        <div className="mt-6 text-center text-sm text-muted-foreground">
+          Didn't get it?{" "}
+          <button
+            type="button"
+            onClick={onResend}
+            disabled={isResending}
+            className="font-semibold text-primary hover:underline disabled:opacity-50"
+          >
+            {isResending ? "Sending..." : "Send a new code"}
+          </button>
+        </div>
+      </div>
+
+      <div className="mt-10 flex items-center justify-between gap-3 border-t border-border pt-6">
+        <Button type="button" variant="ghost" onClick={onBack}>
+          <ArrowLeft className="mr-2 h-4 w-4" />
+          Use a different email
+        </Button>
+        <Button
+          type="button"
+          onClick={onSubmit}
+          disabled={code.length !== 6 || isVerifying}
+          className="px-6"
+        >
+          {isVerifying ? "Verifying..." : "Verify & publish"}
+          {isVerifying ? (
+            <Loader2 className="ml-2 h-4 w-4 animate-spin" />
+          ) : (
+            <Check className="ml-2 h-4 w-4" />
+          )}
+        </Button>
+      </div>
     </div>
   );
 }

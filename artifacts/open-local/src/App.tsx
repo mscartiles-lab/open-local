@@ -9,6 +9,7 @@ import VendorDetail from "@/pages/vendor-detail";
 import Products from "@/pages/products";
 import ProductDetail from "@/pages/product-detail";
 import Submit from "@/pages/submit";
+import Dashboard from "@/pages/dashboard";
 import Admin from "@/pages/admin";
 import Favorites from "@/pages/favorites";
 import NotFound from "@/pages/not-found";
@@ -32,6 +33,7 @@ function Router() {
       <Route path="/products/:id" component={ProductDetail} />
       <Route path="/favorites" component={Favorites} />
       <Route path="/submit" component={Submit} />
+      <Route path="/dashboard/:slug" component={Dashboard} />
       <Route path="/admin" component={Admin} />
       <Route component={NotFound} />
     </Switch>
