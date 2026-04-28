@@ -31,7 +31,7 @@ Two entities, no auth (this is a public directory).
 - `/vendors`, `/vendors/:id` — Directory + profile (markets, phone, Instagram, Facebook, vendor's products).
 - `/products`, `/products/:id` — Browse + detail. Filter chips for listing type, syncing with `?listingType=` URL.
 - `/favorites` — localStorage-backed saved producers + saved goods (key: `open-local:favorites`).
-- `/submit` — Public form to add a vendor with optional contact/social fields.
+- `/submit` — 3-step onboarding wizard: (1) tap a category card, (2) name/tagline/story/city with FL city chips, (3) email + optional cover/socials/markets. Auto-generates slug, picks a category-themed default cover when no image URL is given, defaults region to Florida.
 - `/admin` — Toggle featured / in-stock, delete, add product (full listing-type fields).
 
 ## API
