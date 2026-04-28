@@ -1,9 +1,10 @@
+import Slider from "@react-native-community/slider";
 import { useListVendors } from "@workspace/api-client-react";
 import * as Haptics from "expo-haptics";
 import * as Location from "expo-location";
 import { useRouter } from "expo-router";
 import { Feather } from "@expo/vector-icons";
-import React, { useEffect, useRef, useState } from "react";
+import React, { useRef, useState, useEffect } from "react";
 import {
   ActivityIndicator,
   Platform,
@@ -17,11 +18,18 @@ import MapView, { Circle, Marker, Region } from "react-native-maps";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import { useColors } from "@/hooks/useColors";
-import { haversineDistanceMiles, latDeltaForMiles, milesToMeters } from "@/utils/distance";
+import {
+  haversineDistanceMiles,
+  latDeltaForMiles,
+  milesToMeters,
+} from "@/utils/distance";
 import type { Vendor } from "@workspace/api-client-react";
 
-const RADIUS_OPTIONS = [5, 10, 25, 50] as const;
-type RadiusMiles = (typeof RADIUS_OPTIONS)[number];
+const MIN_MILES = 1;
+const MAX_MILES = 100;
+const DEFAULT_MILES = 25;
+
+const QUICK_PICKS = [5, 10, 25, 50] as const;
 
 const FLORIDA_CENTER = { latitude: 27.9944024, longitude: -81.7602544 };
 
@@ -32,9 +40,13 @@ export default function MapScreen() {
   const mapRef = useRef<MapView>(null);
 
   const [permission, requestPermission] = Location.useForegroundPermissions();
-  const [userLocation, setUserLocation] = useState<{ latitude: number; longitude: number } | null>(null);
+  const [userLocation, setUserLocation] = useState<{
+    latitude: number;
+    longitude: number;
+  } | null>(null);
   const [locating, setLocating] = useState(false);
-  const [radius, setRadius] = useState<RadiusMiles>(25);
+  const [radius, setRadius] = useState(DEFAULT_MILES);
+  const [sliderValue, setSliderValue] = useState(DEFAULT_MILES);
   const [selected, setSelected] = useState<Vendor | null>(null);
 
   const topPad = Platform.OS === "web" ? 67 : insets.top;
@@ -47,13 +59,14 @@ export default function MapScreen() {
   );
 
   const nearbyVendors = userLocation
-    ? mappableVendors.filter((v) =>
-        haversineDistanceMiles(
-          userLocation.latitude,
-          userLocation.longitude,
-          v.latitude!,
-          v.longitude!,
-        ) <= radius,
+    ? mappableVendors.filter(
+        (v) =>
+          haversineDistanceMiles(
+            userLocation.latitude,
+            userLocation.longitude,
+            v.latitude!,
+            v.longitude!,
+          ) <= radius,
       )
     : mappableVendors;
 
@@ -83,30 +96,39 @@ export default function MapScreen() {
 
   const handleRequestPermission = async () => {
     const result = await requestPermission();
-    if (result.granted) {
-      locateUser();
-    }
+    if (result.granted) locateUser();
   };
 
   const regionFor = (
     center: { latitude: number; longitude: number },
-    r: RadiusMiles,
+    r: number,
   ): Region => {
     const delta = latDeltaForMiles(r);
-    return {
-      ...center,
-      latitudeDelta: delta,
-      longitudeDelta: delta,
-    };
+    return { ...center, latitudeDelta: delta, longitudeDelta: delta };
   };
 
-  const handleRadiusChange = (r: RadiusMiles) => {
-    Haptics.selectionAsync();
-    setRadius(r);
+  const applyRadius = (r: number) => {
+    const snapped = Math.round(r);
+    setRadius(snapped);
+    setSliderValue(snapped);
     setSelected(null);
     if (userLocation) {
-      mapRef.current?.animateToRegion(regionFor(userLocation, r), 600);
+      mapRef.current?.animateToRegion(regionFor(userLocation, snapped), 500);
     }
+  };
+
+  const handleSliderChange = (v: number) => {
+    setSliderValue(Math.round(v));
+  };
+
+  const handleSliderComplete = (v: number) => {
+    Haptics.selectionAsync();
+    applyRadius(v);
+  };
+
+  const handleQuickPick = (r: number) => {
+    Haptics.selectionAsync();
+    applyRadius(r);
   };
 
   const handleMarkerPress = (vendor: Vendor) => {
@@ -114,16 +136,23 @@ export default function MapScreen() {
     setSelected(vendor);
   };
 
-  const handleViewVendor = () => {
-    if (selected) router.push(`/vendor/${selected.slug}`);
-  };
-
   const s = styles(colors, topPad, bottomPad);
-  const mapCenter = userLocation ?? FLORIDA_CENTER;
-  const initialRegion = regionFor(mapCenter, radius);
 
   if (Platform.OS === "web") {
-    return <WebFallback vendors={nearbyVendors} userLocation={userLocation} radius={radius} colors={colors} topPad={topPad} bottomPad={bottomPad} />;
+    return (
+      <WebFallback
+        vendors={nearbyVendors}
+        userLocation={userLocation}
+        radius={radius}
+        sliderValue={sliderValue}
+        onSliderChange={setSliderValue}
+        onSliderComplete={applyRadius}
+        onQuickPick={applyRadius}
+        colors={colors}
+        topPad={topPad}
+        bottomPad={bottomPad}
+      />
+    );
   }
 
   if (!permission) {
@@ -142,27 +171,33 @@ export default function MapScreen() {
         </View>
         <Text style={s.permissionTitle}>Find Vendors Near You</Text>
         <Text style={s.permissionBody}>
-          Open Local needs your location to show vendors within your area on the map.
+          Open Local needs your location to show vendors within your area on the
+          map.
         </Text>
-        <TouchableOpacity style={s.permissionBtn} onPress={handleRequestPermission}>
+        <TouchableOpacity
+          style={s.permissionBtn}
+          onPress={handleRequestPermission}
+        >
           <Feather name="crosshair" size={16} color={colors.primaryForeground} />
           <Text style={s.permissionBtnText}>Enable Location</Text>
         </TouchableOpacity>
         {!permission.canAskAgain && (
           <Text style={s.settingsHint}>
-            Location access was denied. Please enable it in Settings to continue.
+            Location was denied. Enable it in Settings to continue.
           </Text>
         )}
       </View>
     );
   }
 
+  const mapCenter = userLocation ?? FLORIDA_CENTER;
+
   return (
     <View style={s.container}>
       <MapView
         ref={mapRef}
         style={StyleSheet.absoluteFill}
-        initialRegion={initialRegion}
+        initialRegion={regionFor(mapCenter, radius)}
         showsUserLocation
         showsMyLocationButton={false}
         onPress={() => setSelected(null)}
@@ -179,19 +214,23 @@ export default function MapScreen() {
         {nearbyVendors.map((vendor) => (
           <Marker
             key={vendor.id}
-            coordinate={{ latitude: vendor.latitude!, longitude: vendor.longitude! }}
+            coordinate={{
+              latitude: vendor.latitude!,
+              longitude: vendor.longitude!,
+            }}
             onPress={() => handleMarkerPress(vendor)}
           >
             <View
-              style={[
-                s.pin,
-                selected?.id === vendor.id && s.pinSelected,
-              ]}
+              style={[s.pin, selected?.id === vendor.id && s.pinSelected]}
             >
               <Feather
                 name="shopping-bag"
                 size={12}
-                color={selected?.id === vendor.id ? colors.primaryForeground : colors.primary}
+                color={
+                  selected?.id === vendor.id
+                    ? colors.primaryForeground
+                    : colors.primary
+                }
               />
             </View>
           </Marker>
@@ -199,33 +238,60 @@ export default function MapScreen() {
       </MapView>
 
       <View style={[s.header, { paddingTop: topPad + 8 }]}>
-        <View style={s.radiusRow}>
-          {RADIUS_OPTIONS.map((r) => (
+        <View style={s.controlCard}>
+          <View style={s.radiusLabelRow}>
+            <Text style={s.radiusLabel}>Search radius</Text>
+            <Text style={s.radiusValue}>{sliderValue} mi</Text>
+          </View>
+
+          <Slider
+            style={s.slider}
+            minimumValue={MIN_MILES}
+            maximumValue={MAX_MILES}
+            step={1}
+            value={sliderValue}
+            onValueChange={handleSliderChange}
+            onSlidingComplete={handleSliderComplete}
+            minimumTrackTintColor={colors.primary}
+            maximumTrackTintColor={colors.border}
+            thumbTintColor={colors.primary}
+          />
+
+          <View style={s.quickRow}>
+            {QUICK_PICKS.map((r) => (
+              <TouchableOpacity
+                key={r}
+                style={[s.quickChip, radius === r && s.quickChipActive]}
+                onPress={() => handleQuickPick(r)}
+              >
+                <Text
+                  style={[
+                    s.quickChipText,
+                    radius === r && s.quickChipTextActive,
+                  ]}
+                >
+                  {r} mi
+                </Text>
+              </TouchableOpacity>
+            ))}
             <TouchableOpacity
-              key={r}
-              style={[s.chip, radius === r && s.chipActive]}
-              onPress={() => handleRadiusChange(r)}
+              style={s.locateBtn}
+              onPress={locateUser}
+              disabled={locating}
             >
-              <Text style={[s.chipText, radius === r && s.chipTextActive]}>
-                {r} mi
-              </Text>
+              {locating ? (
+                <ActivityIndicator size="small" color={colors.primary} />
+              ) : (
+                <Feather name="crosshair" size={17} color={colors.primary} />
+              )}
             </TouchableOpacity>
-          ))}
-          <TouchableOpacity
-            style={s.locateBtn}
-            onPress={locateUser}
-            disabled={locating}
-          >
-            {locating ? (
-              <ActivityIndicator size="small" color={colors.primary} />
-            ) : (
-              <Feather name="crosshair" size={18} color={colors.primary} />
-            )}
-          </TouchableOpacity>
+          </View>
         </View>
+
         <View style={s.countBadge}>
           <Text style={s.countText}>
-            {nearbyVendors.length} vendor{nearbyVendors.length !== 1 ? "s" : ""} within {radius} mi
+            {nearbyVendors.length} vendor
+            {nearbyVendors.length !== 1 ? "s" : ""} within {radius} mi
             {!userLocation ? " · Set your location" : ""}
           </Text>
         </View>
@@ -259,7 +325,10 @@ export default function MapScreen() {
                 </Text>
               )}
             </View>
-            <TouchableOpacity style={s.viewBtn} onPress={handleViewVendor}>
+            <TouchableOpacity
+              style={s.viewBtn}
+              onPress={() => router.push(`/vendor/${selected.slug}`)}
+            >
               <Text style={s.viewBtnText}>View</Text>
               <Feather name="arrow-right" size={14} color={colors.primaryForeground} />
             </TouchableOpacity>
@@ -273,28 +342,90 @@ export default function MapScreen() {
 interface WebFallbackProps {
   vendors: Vendor[];
   userLocation: { latitude: number; longitude: number } | null;
-  radius: RadiusMiles;
+  radius: number;
+  sliderValue: number;
+  onSliderChange: (v: number) => void;
+  onSliderComplete: (v: number) => void;
+  onQuickPick: (v: number) => void;
   colors: ReturnType<typeof useColors>;
   topPad: number;
   bottomPad: number;
 }
 
-function WebFallback({ vendors, userLocation, radius, colors, topPad, bottomPad }: WebFallbackProps) {
+function WebFallback({
+  vendors,
+  userLocation,
+  radius,
+  sliderValue,
+  onSliderChange,
+  onSliderComplete,
+  onQuickPick,
+  colors,
+  topPad,
+  bottomPad,
+}: WebFallbackProps) {
   const router = useRouter();
   const s = styles(colors, topPad, bottomPad);
 
   return (
     <View style={s.container}>
-      <View style={[s.header, { paddingTop: topPad + 8 }]}>
-        <Text style={s.webTitle}>Nearby Vendors</Text>
+      <View style={[s.webHeader, { paddingTop: topPad + 12 }]}>
+        <Text style={s.webTitle}>Nearby</Text>
+
+        <View style={s.controlCard}>
+          <View style={s.radiusLabelRow}>
+            <Text style={s.radiusLabel}>Search radius</Text>
+            <Text style={s.radiusValue}>{sliderValue} mi</Text>
+          </View>
+          <Slider
+            style={s.slider}
+            minimumValue={MIN_MILES}
+            maximumValue={MAX_MILES}
+            step={1}
+            value={sliderValue}
+            onValueChange={onSliderChange}
+            onSlidingComplete={onSliderComplete}
+            minimumTrackTintColor={colors.primary}
+            maximumTrackTintColor={colors.border}
+            thumbTintColor={colors.primary}
+          />
+          <View style={s.quickRow}>
+            {QUICK_PICKS.map((r) => (
+              <TouchableOpacity
+                key={r}
+                style={[s.quickChip, radius === r && s.quickChipActive]}
+                onPress={() => onQuickPick(r)}
+              >
+                <Text
+                  style={[
+                    s.quickChipText,
+                    radius === r && s.quickChipTextActive,
+                  ]}
+                >
+                  {r} mi
+                </Text>
+              </TouchableOpacity>
+            ))}
+          </View>
+        </View>
+
         <Text style={s.countText}>
-          {vendors.length} vendor{vendors.length !== 1 ? "s" : ""} with mapped locations
+          {vendors.length} vendor{vendors.length !== 1 ? "s" : ""} within{" "}
+          {radius} mi
         </Text>
       </View>
-      <ScrollView contentContainerStyle={{ paddingHorizontal: 16, paddingBottom: bottomPad, paddingTop: 8, gap: 10 }}>
+
+      <ScrollView
+        contentContainerStyle={{
+          paddingHorizontal: 16,
+          paddingBottom: bottomPad,
+          paddingTop: 8,
+          gap: 10,
+        }}
+      >
         {vendors.length === 0 ? (
-          <View style={s.center}>
-            <Text style={s.permissionBody}>No vendors with map locations yet.</Text>
+          <View style={[s.center, { paddingTop: 40 }]}>
+            <Text style={s.permissionBody}>No mapped vendors in this area.</Text>
           </View>
         ) : (
           vendors.map((v) => (
@@ -305,18 +436,32 @@ function WebFallback({ vendors, userLocation, radius, colors, topPad, bottomPad 
               activeOpacity={0.85}
             >
               <View style={s.panelAvatar}>
-                <Text style={s.panelAvatarLetter}>{v.name.charAt(0).toUpperCase()}</Text>
+                <Text style={s.panelAvatarLetter}>
+                  {v.name.charAt(0).toUpperCase()}
+                </Text>
               </View>
               <View style={{ flex: 1 }}>
                 <Text style={s.panelName}>{v.name}</Text>
-                <Text style={s.panelMeta}>{v.category} · {v.location}</Text>
+                <Text style={s.panelMeta}>
+                  {v.category} · {v.location}
+                </Text>
                 {userLocation && (
                   <Text style={s.panelDist}>
-                    {haversineDistanceMiles(userLocation.latitude, userLocation.longitude, v.latitude!, v.longitude!).toFixed(1)} mi away
+                    {haversineDistanceMiles(
+                      userLocation.latitude,
+                      userLocation.longitude,
+                      v.latitude!,
+                      v.longitude!,
+                    ).toFixed(1)}{" "}
+                    mi away
                   </Text>
                 )}
               </View>
-              <Feather name="chevron-right" size={18} color={colors.mutedForeground} />
+              <Feather
+                name="chevron-right"
+                size={18}
+                color={colors.mutedForeground}
+              />
             </TouchableOpacity>
           ))
         )}
@@ -325,7 +470,11 @@ function WebFallback({ vendors, userLocation, radius, colors, topPad, bottomPad 
   );
 }
 
-const styles = (colors: ReturnType<typeof useColors>, topPad: number, bottomPad: number) =>
+const styles = (
+  colors: ReturnType<typeof useColors>,
+  topPad: number,
+  bottomPad: number,
+) =>
   StyleSheet.create({
     container: { flex: 1, backgroundColor: colors.background },
     center: { flex: 1, alignItems: "center", justifyContent: "center" },
@@ -335,40 +484,65 @@ const styles = (colors: ReturnType<typeof useColors>, topPad: number, bottomPad:
       top: 0,
       left: 0,
       right: 0,
-      paddingHorizontal: 16,
-      paddingBottom: 10,
+      paddingHorizontal: 12,
+      paddingBottom: 8,
       gap: 6,
     },
-    radiusRow: {
-      flexDirection: "row",
-      alignItems: "center",
-      gap: 6,
+    controlCard: {
       backgroundColor: colors.card,
-      borderRadius: 12,
-      padding: 6,
+      borderRadius: 14,
+      paddingHorizontal: 14,
+      paddingTop: 12,
+      paddingBottom: 10,
       shadowColor: "#000",
       shadowOpacity: 0.12,
       shadowRadius: 8,
       shadowOffset: { width: 0, height: 2 },
       elevation: 4,
+      gap: 4,
     },
-    chip: {
-      flex: 1,
-      paddingVertical: 7,
-      borderRadius: 8,
+    radiusLabelRow: {
+      flexDirection: "row",
+      justifyContent: "space-between",
       alignItems: "center",
-      backgroundColor: "transparent",
     },
-    chipActive: { backgroundColor: colors.primary },
-    chipText: {
-      fontFamily: "DMSans_600SemiBold",
+    radiusLabel: {
+      fontFamily: "DMSans_500Medium",
       fontSize: 13,
       color: colors.mutedForeground,
     },
-    chipTextActive: { color: colors.primaryForeground },
+    radiusValue: {
+      fontFamily: "DMSans_700Bold",
+      fontSize: 20,
+      color: colors.primary,
+    },
+    slider: {
+      width: "100%",
+      height: 36,
+      marginVertical: 2,
+    },
+    quickRow: {
+      flexDirection: "row",
+      gap: 6,
+      alignItems: "center",
+    },
+    quickChip: {
+      flex: 1,
+      paddingVertical: 6,
+      borderRadius: 8,
+      alignItems: "center",
+      backgroundColor: colors.muted,
+    },
+    quickChipActive: { backgroundColor: colors.primary },
+    quickChipText: {
+      fontFamily: "DMSans_600SemiBold",
+      fontSize: 12,
+      color: colors.mutedForeground,
+    },
+    quickChipTextActive: { color: colors.primaryForeground },
     locateBtn: {
-      width: 38,
-      height: 38,
+      width: 34,
+      height: 34,
       borderRadius: 8,
       backgroundColor: colors.muted,
       alignItems: "center",
@@ -409,7 +583,7 @@ const styles = (colors: ReturnType<typeof useColors>, topPad: number, bottomPad:
     },
     pinSelected: {
       backgroundColor: colors.primary,
-      transform: [{ scale: 1.2 }],
+      transform: [{ scale: 1.25 }],
     },
 
     vendorPanel: {
@@ -530,11 +704,17 @@ const styles = (colors: ReturnType<typeof useColors>, topPad: number, bottomPad:
       lineHeight: 19,
     },
 
+    webHeader: {
+      paddingHorizontal: 16,
+      paddingBottom: 12,
+      borderBottomWidth: 1,
+      borderBottomColor: colors.border,
+      gap: 10,
+    },
     webTitle: {
       fontFamily: "DMSans_700Bold",
       fontSize: 26,
       color: colors.foreground,
-      marginBottom: 2,
     },
     webCard: {
       flexDirection: "row",
