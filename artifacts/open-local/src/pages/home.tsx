@@ -6,6 +6,7 @@ import Layout from "@/components/layout/Layout";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Card, CardContent } from "@/components/ui/card";
 import { useFavorites } from "@/hooks/use-favorites";
+import HeroMap from "@/components/HeroMap";
 
 export default function Home() {
   const { data: stats, isLoading: statsLoading } = useGetMarketplaceStats();
@@ -17,33 +18,8 @@ export default function Home() {
   return (
     <Layout>
       <div className="w-full">
-        {/* Hero Section */}
-        <section className="relative w-full min-h-[70vh] flex items-center justify-center bg-primary/5 border-b border-border overflow-hidden">
-          <div className="absolute inset-0 opacity-10 pointer-events-none" style={{ backgroundImage: 'url("/noise.png")' }}></div>
-          <div className="container max-w-6xl mx-auto px-4 py-20 relative z-10 flex flex-col items-center text-center">
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.6 }}
-            >
-              <h2 className="text-sm md:text-base text-primary uppercase tracking-widest font-bold mb-6">Shop Local Wherever You Are</h2>
-              <h1 className="text-5xl md:text-7xl font-serif font-bold text-foreground mb-6 leading-tight max-w-4xl">
-                The Locals
-              </h1>
-              <p className="text-xl text-muted-foreground mb-10 max-w-2xl mx-auto font-sans">
-                The marketplace for Florida producers — bakers in Miami, honey from the Everglades, mango from the Redland. A place where independent makers share the same shelf.
-              </p>
-              <div className="flex flex-col sm:flex-row gap-4 justify-center items-center">
-                <Link href="/products" className="bg-primary text-primary-foreground px-8 py-4 rounded-md font-medium text-lg hover:bg-primary/90 transition-colors inline-flex items-center gap-2">
-                  Browse Goods <ArrowRight className="w-5 h-5" />
-                </Link>
-                <Link href="/vendors" className="bg-transparent border border-primary text-primary px-8 py-4 rounded-md font-medium text-lg hover:bg-primary/5 transition-colors">
-                  Meet the Producers
-                </Link>
-              </div>
-            </motion.div>
-          </div>
-        </section>
+        {/* Hero Map */}
+        <HeroMap />
 
         {/* Stats */}
         <section className="py-12 bg-background border-b border-border">
