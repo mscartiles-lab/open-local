@@ -1,10 +1,19 @@
 import { useListVendors, useListEstablishments } from "@workspace/api-client-react";
 import "leaflet/dist/leaflet.css";
 import L from "leaflet";
-import { MapContainer, TileLayer, Marker, Popup } from "react-leaflet";
+import {
+  MapContainer,
+  TileLayer,
+  Marker,
+  Popup,
+  Circle,
+  CircleMarker,
+  useMap,
+} from "react-leaflet";
 import { Link } from "wouter";
+import { useState, useEffect, useCallback } from "react";
 
-// Fix Leaflet default marker icon broken by bundlers
+// Fix Leaflet marker icons broken by bundlers
 delete (L.Icon.Default.prototype as unknown as Record<string, unknown>)._getIconUrl;
 L.Icon.Default.mergeOptions({
   iconRetinaUrl: "https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon-2x.png",
@@ -12,48 +21,86 @@ L.Icon.Default.mergeOptions({
   shadowUrl: "https://unpkg.com/leaflet@1.9.4/dist/images/marker-shadow.png",
 });
 
-// Vendor pin — olive green with bag icon
-const vendorIcon = L.divIcon({
+const VENDOR_ICON = L.divIcon({
   className: "",
-  html: `<div style="
-    width:30px;height:30px;border-radius:50%;
-    background:#3c4a26;border:2.5px solid #fff;
-    box-shadow:0 2px 8px rgba(0,0,0,0.35);
-    display:flex;align-items:center;justify-content:center;
-  ">
-    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#f8f7f2" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+  html: `<div style="width:28px;height:28px;border-radius:50%;background:#3c4a26;border:2.5px solid #fff;box-shadow:0 2px 8px rgba(0,0,0,0.3);display:flex;align-items:center;justify-content:center;">
+    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#f8f7f2" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
       <path d="M6 2L3 6v14a2 2 0 002 2h14a2 2 0 002-2V6l-3-4z"/><line x1="3" y1="6" x2="21" y2="6"/><path d="M16 10a4 4 0 01-8 0"/>
     </svg>
   </div>`,
-  iconSize: [30, 30],
-  iconAnchor: [15, 15],
-  popupAnchor: [0, -18],
+  iconSize: [28, 28],
+  iconAnchor: [14, 14],
+  popupAnchor: [0, -17],
 });
 
-// Establishment pin — warm terracotta with storefront icon
-const establishmentIcon = L.divIcon({
+const EST_ICON = L.divIcon({
   className: "",
-  html: `<div style="
-    width:32px;height:32px;border-radius:8px;
-    background:#c0622f;border:2.5px solid #fff;
-    box-shadow:0 2px 8px rgba(0,0,0,0.35);
-    display:flex;align-items:center;justify-content:center;
-  ">
-    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+  html: `<div style="width:28px;height:28px;border-radius:7px;background:#c0622f;border:2.5px solid #fff;box-shadow:0 2px 8px rgba(0,0,0,0.3);display:flex;align-items:center;justify-content:center;">
+    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
       <path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/>
     </svg>
   </div>`,
-  iconSize: [32, 32],
-  iconAnchor: [16, 16],
-  popupAnchor: [0, -20],
+  iconSize: [28, 28],
+  iconAnchor: [14, 14],
+  popupAnchor: [0, -17],
 });
 
-// US center — zooms out to show the whole country over time
-const MAP_CENTER = { lat: 27.6, lng: -82.5 } as const;
+const FLORIDA_CENTER: [number, number] = [27.6, -82.5];
+const MILES_TO_METERS = 1609.344;
+const QUICK_PICKS = [5, 10, 25, 50] as const;
+
+function haversineMiles(lat1: number, lng1: number, lat2: number, lng2: number) {
+  const R = 3958.8;
+  const dLat = ((lat2 - lat1) * Math.PI) / 180;
+  const dLng = ((lng2 - lng1) * Math.PI) / 180;
+  const a =
+    Math.sin(dLat / 2) ** 2 +
+    Math.cos((lat1 * Math.PI) / 180) *
+      Math.cos((lat2 * Math.PI) / 180) *
+      Math.sin(dLng / 2) ** 2;
+  return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+}
+
+// Child component — uses useMap() to fly to a location
+function MapFlyTo({ position, zoom }: { position: [number, number]; zoom: number }) {
+  const map = useMap();
+  useEffect(() => {
+    map.flyTo(position, zoom, { duration: 1.2 });
+  }, [position[0], position[1], zoom]);
+  return null;
+}
 
 export default function HeroMap() {
   const { data: vendors } = useListVendors();
   const { data: establishments } = useListEstablishments();
+
+  const [userPos, setUserPos] = useState<[number, number] | null>(null);
+  const [locating, setLocating] = useState(false);
+  const [locationError, setLocationError] = useState<string | null>(null);
+  const [radius, setRadius] = useState(25);
+
+  const locate = useCallback(() => {
+    if (!navigator.geolocation) {
+      setLocationError("Geolocation not supported by your browser.");
+      return;
+    }
+    setLocating(true);
+    setLocationError(null);
+    navigator.geolocation.getCurrentPosition(
+      (pos) => {
+        setUserPos([pos.coords.latitude, pos.coords.longitude]);
+        setLocating(false);
+      },
+      () => {
+        setLocationError("Location access denied. Enable it in your browser settings.");
+        setLocating(false);
+      },
+      { timeout: 10000 },
+    );
+  }, []);
+
+  // Auto-request on mount
+  useEffect(() => { locate(); }, []);
 
   const mappedVendors = (vendors ?? []).filter(
     (v) => v.latitude != null && v.longitude != null,
@@ -62,37 +109,80 @@ export default function HeroMap() {
     (e) => e.latitude != null && e.longitude != null,
   );
 
+  const visibleVendors = userPos
+    ? mappedVendors.filter(
+        (v) => haversineMiles(userPos[0], userPos[1], v.latitude!, v.longitude!) <= radius,
+      )
+    : mappedVendors;
+
+  const visibleEstablishments = userPos
+    ? mappedEstablishments.filter(
+        (e) => haversineMiles(userPos[0], userPos[1], e.latitude!, e.longitude!) <= radius,
+      )
+    : mappedEstablishments;
+
+  const totalVisible = visibleVendors.length + visibleEstablishments.length;
+
   return (
-    <section className="relative w-full h-[88vh] min-h-[520px] overflow-hidden">
-      {/* Map fills full section */}
+    <section className="relative w-full" style={{ height: "calc(100vh - 57px)" }}>
+      {/* Map */}
       <MapContainer
-        center={[MAP_CENTER.lat, MAP_CENTER.lng]}
+        center={FLORIDA_CENTER}
         zoom={7}
-        scrollWheelZoom={false}
+        scrollWheelZoom
         zoomControl={false}
         attributionControl={false}
         style={{ position: "absolute", inset: 0, width: "100%", height: "100%", zIndex: 0 }}
       >
         <TileLayer
           url="https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png"
-          attribution='&copy; <a href="https://carto.com">CARTO</a>'
+          attribution='&copy; CARTO'
         />
 
+        {/* Fly to user when location obtained */}
+        {userPos && <MapFlyTo position={userPos} zoom={10} />}
+
+        {/* Radius circle */}
+        {userPos && (
+          <Circle
+            center={userPos}
+            radius={radius * MILES_TO_METERS}
+            pathOptions={{
+              color: "#3c4a26",
+              weight: 1.5,
+              fillColor: "#3c4a26",
+              fillOpacity: 0.07,
+            }}
+          />
+        )}
+
+        {/* User location dot */}
+        {userPos && (
+          <CircleMarker
+            center={userPos}
+            radius={8}
+            pathOptions={{
+              color: "#fff",
+              weight: 2.5,
+              fillColor: "#3c4a26",
+              fillOpacity: 1,
+            }}
+          />
+        )}
+
         {/* Vendor pins */}
-        {mappedVendors.map((v) => (
-          <Marker
-            key={`vendor-${v.id}`}
-            position={[v.latitude!, v.longitude!]}
-            icon={vendorIcon}
-          >
+        {visibleVendors.map((v) => (
+          <Marker key={`v-${v.id}`} position={[v.latitude!, v.longitude!]} icon={VENDOR_ICON}>
             <Popup>
               <div className="text-xs font-semibold uppercase tracking-wide text-[#3c4a26] mb-0.5">Vendor</div>
-              <div className="text-sm font-medium">{v.name}</div>
-              <div className="text-xs text-gray-500">{v.location}</div>
-              <a
-                href={`/vendors/${v.slug}`}
-                className="text-xs text-[#3c4a26] font-semibold mt-1 block hover:underline"
-              >
+              <div className="text-sm font-medium leading-snug">{v.name}</div>
+              <div className="text-xs text-gray-500 mb-1">{v.location}</div>
+              {userPos && (
+                <div className="text-xs text-[#3c4a26] font-medium mb-1">
+                  {haversineMiles(userPos[0], userPos[1], v.latitude!, v.longitude!).toFixed(1)} mi away
+                </div>
+              )}
+              <a href={`/vendors/${v.slug}`} className="text-xs text-[#3c4a26] font-semibold hover:underline">
                 View vendor →
               </a>
             </Popup>
@@ -100,23 +190,19 @@ export default function HeroMap() {
         ))}
 
         {/* Establishment pins */}
-        {mappedEstablishments.map((e) => (
-          <Marker
-            key={`est-${e.id}`}
-            position={[e.latitude!, e.longitude!]}
-            icon={establishmentIcon}
-          >
+        {visibleEstablishments.map((e) => (
+          <Marker key={`e-${e.id}`} position={[e.latitude!, e.longitude!]} icon={EST_ICON}>
             <Popup>
               <div className="text-xs font-semibold uppercase tracking-wide text-[#c0622f] mb-0.5">{e.type}</div>
-              <div className="text-sm font-medium">{e.name}</div>
-              <div className="text-xs text-gray-500">{e.city}, {e.state}</div>
+              <div className="text-sm font-medium leading-snug">{e.name}</div>
+              <div className="text-xs text-gray-500 mb-1">{e.city}, {e.state}</div>
+              {userPos && (
+                <div className="text-xs text-[#c0622f] font-medium mb-1">
+                  {haversineMiles(userPos[0], userPos[1], e.latitude!, e.longitude!).toFixed(1)} mi away
+                </div>
+              )}
               {e.website && (
-                <a
-                  href={e.website}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="text-xs text-[#c0622f] font-semibold mt-1 block hover:underline"
-                >
+                <a href={e.website} target="_blank" rel="noopener noreferrer" className="text-xs text-[#c0622f] font-semibold hover:underline">
                   Visit website →
                 </a>
               )}
@@ -125,71 +211,118 @@ export default function HeroMap() {
         ))}
       </MapContainer>
 
-      {/* Gradient vignette */}
+      {/* ── Floating top bar ── */}
       <div
-        className="absolute inset-0 pointer-events-none"
-        style={{
-          background:
-            "linear-gradient(to bottom, rgba(60,74,38,0.55) 0%, rgba(60,74,38,0.08) 55%, rgba(0,0,0,0) 100%)",
-          zIndex: 1,
-        }}
-      />
-
-      {/* Hero text overlay */}
-      <div
-        className="absolute top-0 left-0 right-0 flex flex-col items-center text-center px-6 pt-16 pb-10"
-        style={{ zIndex: 2 }}
+        className="absolute top-0 left-0 right-0 flex items-center justify-between px-4 py-3 pointer-events-none"
+        style={{ zIndex: 10 }}
       >
-        <p className="text-xs md:text-sm text-white/80 uppercase tracking-[0.25em] font-semibold mb-4">
-          Shop Local Wherever You Are
-        </p>
-        <h1 className="text-6xl md:text-8xl font-serif font-bold text-white leading-tight mb-5 drop-shadow-md">
-          The Locals
-        </h1>
-        <p className="text-base md:text-lg text-white/85 mb-8 max-w-lg font-sans leading-relaxed">
-          Discover independent makers, farms, and neighborhood establishments across the map.
-        </p>
-        <div className="flex flex-col sm:flex-row gap-3 justify-center">
+        {/* Brand pill */}
+        <div className="bg-white/95 backdrop-blur-sm rounded-full px-4 py-2 shadow-md flex items-center gap-2 pointer-events-auto">
+          <span className="font-serif font-bold text-[#3c4a26] text-lg leading-none">The Locals</span>
+        </div>
+
+        {/* CTAs */}
+        <div className="flex gap-2 pointer-events-auto">
           <Link
             href="/products"
-            className="bg-white text-[#3c4a26] px-7 py-3.5 rounded-md font-semibold text-base hover:bg-white/90 transition-colors inline-flex items-center gap-2 shadow-lg"
+            className="bg-white/95 backdrop-blur-sm text-[#3c4a26] px-4 py-2 rounded-full text-sm font-semibold shadow-md hover:bg-white transition-colors"
           >
             Browse Goods
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
           </Link>
           <Link
             href="/pin-your-business"
-            className="bg-[#c0622f]/90 backdrop-blur-sm border border-white/30 text-white px-7 py-3.5 rounded-md font-semibold text-base hover:bg-[#c0622f] transition-colors inline-flex items-center gap-2"
+            className="bg-[#c0622f] text-white px-4 py-2 rounded-full text-sm font-semibold shadow-md hover:bg-[#a85228] transition-colors flex items-center gap-1.5"
           >
-            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
             Pin Your Business
           </Link>
         </div>
       </div>
 
+      {/* ── Floating radius + locate controls (bottom-left) ── */}
+      <div
+        className="absolute bottom-6 left-4 flex flex-col gap-2 pointer-events-auto"
+        style={{ zIndex: 10 }}
+      >
+        {/* Radius quick-pick chips */}
+        <div className="bg-white/95 backdrop-blur-sm rounded-2xl shadow-lg px-3 py-2.5 flex flex-col gap-2">
+          <div className="flex items-center justify-between gap-3">
+            <span className="text-xs font-semibold text-gray-500 uppercase tracking-wide">Radius</span>
+            <span className="text-sm font-bold text-[#3c4a26]">{radius} mi</span>
+          </div>
+          <div className="flex gap-1.5">
+            {QUICK_PICKS.map((r) => (
+              <button
+                key={r}
+                onClick={() => setRadius(r)}
+                className={`flex-1 py-1.5 rounded-lg text-xs font-semibold transition-colors ${
+                  radius === r
+                    ? "bg-[#3c4a26] text-white"
+                    : "bg-gray-100 text-gray-600 hover:bg-gray-200"
+                }`}
+              >
+                {r} mi
+              </button>
+            ))}
+          </div>
+        </div>
+
+        {/* Count badge */}
+        <div className="bg-white/95 backdrop-blur-sm rounded-xl shadow-md px-3 py-2 flex items-center gap-2">
+          <div className="flex gap-1.5">
+            <span className="w-3 h-3 rounded-full bg-[#3c4a26] inline-block mt-0.5 flex-shrink-0" />
+            <span className="w-3 h-3 rounded-[3px] bg-[#c0622f] inline-block mt-0.5 flex-shrink-0" />
+          </div>
+          <span className="text-xs text-gray-700">
+            {userPos
+              ? `${totalVisible} place${totalVisible !== 1 ? "s" : ""} within ${radius} mi`
+              : `${totalVisible} place${totalVisible !== 1 ? "s" : ""} on the map`}
+          </span>
+        </div>
+
+        {/* Location error */}
+        {locationError && (
+          <div className="bg-amber-50 border border-amber-200 rounded-xl shadow-md px-3 py-2 max-w-[220px]">
+            <p className="text-xs text-amber-700">{locationError}</p>
+          </div>
+        )}
+      </div>
+
+      {/* ── Locate me button (bottom-right) ── */}
+      <button
+        onClick={locate}
+        disabled={locating}
+        title="Use my location"
+        className="absolute bottom-6 right-4 w-11 h-11 rounded-full bg-white shadow-lg flex items-center justify-center hover:bg-gray-50 transition-colors disabled:opacity-60 pointer-events-auto"
+        style={{ zIndex: 10 }}
+      >
+        {locating ? (
+          <svg className="animate-spin w-5 h-5 text-[#3c4a26]" fill="none" viewBox="0 0 24 24">
+            <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="3" />
+            <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z" />
+          </svg>
+        ) : (
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#3c4a26" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+            <circle cx="12" cy="12" r="3"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3"/>
+            <path d="M12 8a4 4 0 100 8 4 4 0 000-8z"/>
+          </svg>
+        )}
+      </button>
+
       {/* Legend */}
       <div
-        className="absolute bottom-24 right-4 bg-white/90 backdrop-blur-sm rounded-lg px-3 py-2 shadow-md flex flex-col gap-1.5"
-        style={{ zIndex: 2 }}
+        className="absolute top-16 right-4 bg-white/90 backdrop-blur-sm rounded-lg px-3 py-2 shadow-md flex flex-col gap-1.5"
+        style={{ zIndex: 10 }}
       >
         <div className="flex items-center gap-2">
-          <div className="w-4 h-4 rounded-full bg-[#3c4a26] flex-shrink-0" />
+          <div className="w-3.5 h-3.5 rounded-full bg-[#3c4a26] flex-shrink-0" />
           <span className="text-xs text-gray-700 font-medium">Vendors</span>
         </div>
         <div className="flex items-center gap-2">
-          <div className="w-4 h-4 rounded-[4px] bg-[#c0622f] flex-shrink-0" />
+          <div className="w-3.5 h-3.5 rounded-[3px] bg-[#c0622f] flex-shrink-0" />
           <span className="text-xs text-gray-700 font-medium">Establishments</span>
         </div>
       </div>
-
-      {/* Bottom fade */}
-      <div
-        className="absolute bottom-0 left-0 right-0 h-20 pointer-events-none"
-        style={{
-          background: "linear-gradient(to bottom, transparent, hsl(var(--background)))",
-          zIndex: 2,
-        }}
-      />
     </section>
   );
 }
