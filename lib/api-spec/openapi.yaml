@@ -24,6 +24,8 @@ tags:
     description: Independently-owned local establishments pinned on the map
   - name: listings
     description: Community classifieds — wanted services and service offerings
+  - name: events
+    description: Community events — local gatherings, markets, pop-ups, and workshops
 
 paths:
   /healthz:
@@ -539,6 +541,56 @@ paths:
             application/json:
               schema: { $ref: "#/components/schemas/ErrorResponse" }
 
+  /events:
+    get:
+      operationId: listEvents
+      tags: [events]
+      summary: List community events
+      parameters:
+        - in: query
+          name: category
+          schema: { type: string }
+        - in: query
+          name: city
+          schema: { type: string }
+        - in: query
+          name: search
+          schema: { type: string }
+        - in: query
+          name: upcoming
+          schema: { type: boolean }
+      responses:
+        "200":
+          description: List of events
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/EventItem"
+    post:
+      operationId: createEvent
+      tags: [events]
+      summary: Submit a community event
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/EventInput"
+      responses:
+        "201":
+          description: Created event
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/EventItem"
+        "400":
+          description: Validation error
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ErrorResponse" }
+
   /listings:
     get:
       operationId: listListings
@@ -1027,3 +1079,71 @@ components:
         - city
         - contactName
         - contactEmail
+
+    EventItem:
+      type: object
+      properties:
+        id: { type: integer }
+        title: { type: string }
+        description: { type: string }
+        category: { type: string }
+        venueName: { type: string }
+        address: { type: string }
+        city: { type: string }
+        state: { type: string }
+        startsAt: { type: string, format: date-time }
+        endsAt: { type: ["string", "null"], format: date-time }
+        isFree: { type: boolean }
+        priceCents: { type: ["integer", "null"] }
+        ticketUrl: { type: ["string", "null"] }
+        imageUrl: { type: ["string", "null"] }
+        organizerName: { type: string }
+        organizerEmail: { type: string }
+        status: { type: string }
+        featured: { type: boolean }
+        createdAt: { type: string, format: date-time }
+      required:
+        - id
+        - title
+        - description
+        - category
+        - venueName
+        - address
+        - city
+        - state
+        - startsAt
+        - isFree
+        - organizerName
+        - organizerEmail
+        - status
+        - featured
+        - createdAt
+
+    EventInput:
+      type: object
+      properties:
+        title: { type: string }
+        description: { type: string }
+        category: { type: string }
+        venueName: { type: string }
+        address: { type: string }
+        city: { type: string }
+        state: { type: string }
+        startsAt: { type: string }
+        endsAt: { type: string }
+        isFree: { type: boolean }
+        priceCents: { type: ["integer", "null"] }
+        ticketUrl: { type: ["string", "null"] }
+        imageUrl: { type: ["string", "null"] }
+        organizerName: { type: string }
+        organizerEmail: { type: string }
+      required:
+        - title
+        - description
+        - category
+        - venueName
+        - address
+        - city
+        - startsAt
+        - organizerName
+        - organizerEmail

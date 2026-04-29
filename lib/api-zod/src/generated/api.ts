@@ -699,6 +699,60 @@ export const UpdateEstablishmentResponse = zod.object({
 });
 
 /**
+ * @summary List community events
+ */
+export const ListEventsQueryParams = zod.object({
+  category: zod.coerce.string().optional(),
+  city: zod.coerce.string().optional(),
+  search: zod.coerce.string().optional(),
+  upcoming: zod.coerce.boolean().optional(),
+});
+
+export const ListEventsResponseItem = zod.object({
+  id: zod.number(),
+  title: zod.string(),
+  description: zod.string(),
+  category: zod.string(),
+  venueName: zod.string(),
+  address: zod.string(),
+  city: zod.string(),
+  state: zod.string(),
+  startsAt: zod.coerce.date(),
+  endsAt: zod.coerce.date().nullish(),
+  isFree: zod.boolean(),
+  priceCents: zod.number().nullish(),
+  ticketUrl: zod.string().nullish(),
+  imageUrl: zod.string().nullish(),
+  organizerName: zod.string(),
+  organizerEmail: zod.string(),
+  status: zod.string(),
+  featured: zod.boolean(),
+  createdAt: zod.coerce.date(),
+});
+export const ListEventsResponse = zod.array(ListEventsResponseItem);
+
+/**
+ * @summary Submit a community event
+ */
+export const CreateEventBody = zod.object({
+  title: zod.string(),
+  description: zod.string(),
+  category: zod.string(),
+  venueName: zod.string(),
+  address: zod.string(),
+  city: zod.string(),
+  state: zod.string().optional(),
+  startsAt: zod.string(),
+  endsAt: zod.string().optional(),
+  isFree: zod.boolean().optional(),
+  priceCents: zod.number().nullish(),
+  ticketUrl: zod.string().nullish(),
+  imageUrl: zod.string().nullish(),
+  organizerName: zod.string(),
+  organizerEmail: zod.string(),
+});
+
+/**
  * @summary List community classifieds
  */
 export const ListListingsQueryParams = zod.object({

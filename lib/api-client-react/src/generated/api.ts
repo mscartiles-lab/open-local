@@ -22,8 +22,11 @@ import type {
   Establishment,
   EstablishmentInput,
   EstablishmentUpdate,
+  EventInput,
+  EventItem,
   HealthStatus,
   ListEstablishmentsParams,
+  ListEventsParams,
   ListListingsParams,
   ListProductsParams,
   ListVendorsParams,
@@ -2163,6 +2166,186 @@ export const useUpdateEstablishment = <
   TContext
 > => {
   return useMutation(getUpdateEstablishmentMutationOptions(options));
+};
+
+/**
+ * @summary List community events
+ */
+export const getListEventsUrl = (params?: ListEventsParams) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? "null" : value.toString());
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0
+    ? `/api/events?${stringifiedParams}`
+    : `/api/events`;
+};
+
+export const listEvents = async (
+  params?: ListEventsParams,
+  options?: RequestInit,
+): Promise<EventItem[]> => {
+  return customFetch<EventItem[]>(getListEventsUrl(params), {
+    ...options,
+    method: "GET",
+  });
+};
+
+export const getListEventsQueryKey = (params?: ListEventsParams) => {
+  return [`/api/events`, ...(params ? [params] : [])] as const;
+};
+
+export const getListEventsQueryOptions = <
+  TData = Awaited<ReturnType<typeof listEvents>>,
+  TError = ErrorType<unknown>,
+>(
+  params?: ListEventsParams,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof listEvents>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey = queryOptions?.queryKey ?? getListEventsQueryKey(params);
+
+  const queryFn: QueryFunction<Awaited<ReturnType<typeof listEvents>>> = ({
+    signal,
+  }) => listEvents(params, { signal, ...requestOptions });
+
+  return { queryKey, queryFn, ...queryOptions } as UseQueryOptions<
+    Awaited<ReturnType<typeof listEvents>>,
+    TError,
+    TData
+  > & { queryKey: QueryKey };
+};
+
+export type ListEventsQueryResult = NonNullable<
+  Awaited<ReturnType<typeof listEvents>>
+>;
+export type ListEventsQueryError = ErrorType<unknown>;
+
+/**
+ * @summary List community events
+ */
+
+export function useListEvents<
+  TData = Awaited<ReturnType<typeof listEvents>>,
+  TError = ErrorType<unknown>,
+>(
+  params?: ListEventsParams,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof listEvents>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+  const queryOptions = getListEventsQueryOptions(params, options);
+
+  const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
+    queryKey: QueryKey;
+  };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+/**
+ * @summary Submit a community event
+ */
+export const getCreateEventUrl = () => {
+  return `/api/events`;
+};
+
+export const createEvent = async (
+  eventInput: EventInput,
+  options?: RequestInit,
+): Promise<EventItem> => {
+  return customFetch<EventItem>(getCreateEventUrl(), {
+    ...options,
+    method: "POST",
+    headers: { "Content-Type": "application/json", ...options?.headers },
+    body: JSON.stringify(eventInput),
+  });
+};
+
+export const getCreateEventMutationOptions = <
+  TError = ErrorType<ErrorResponse>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof createEvent>>,
+    TError,
+    { data: BodyType<EventInput> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof createEvent>>,
+  TError,
+  { data: BodyType<EventInput> },
+  TContext
+> => {
+  const mutationKey = ["createEvent"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof createEvent>>,
+    { data: BodyType<EventInput> }
+  > = (props) => {
+    const { data } = props ?? {};
+
+    return createEvent(data, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type CreateEventMutationResult = NonNullable<
+  Awaited<ReturnType<typeof createEvent>>
+>;
+export type CreateEventMutationBody = BodyType<EventInput>;
+export type CreateEventMutationError = ErrorType<ErrorResponse>;
+
+/**
+ * @summary Submit a community event
+ */
+export const useCreateEvent = <
+  TError = ErrorType<ErrorResponse>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof createEvent>>,
+    TError,
+    { data: BodyType<EventInput> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof createEvent>>,
+  TError,
+  { data: BodyType<EventInput> },
+  TContext
+> => {
+  return useMutation(getCreateEventMutationOptions(options));
 };
 
 /**

@@ -326,6 +326,53 @@ export interface ListingInput {
   contactEmail: string;
 }
 
+export interface EventItem {
+  id: number;
+  title: string;
+  description: string;
+  category: string;
+  venueName: string;
+  address: string;
+  city: string;
+  state: string;
+  startsAt: string;
+  /** @nullable */
+  endsAt?: string | null;
+  isFree: boolean;
+  /** @nullable */
+  priceCents?: number | null;
+  /** @nullable */
+  ticketUrl?: string | null;
+  /** @nullable */
+  imageUrl?: string | null;
+  organizerName: string;
+  organizerEmail: string;
+  status: string;
+  featured: boolean;
+  createdAt: string;
+}
+
+export interface EventInput {
+  title: string;
+  description: string;
+  category: string;
+  venueName: string;
+  address: string;
+  city: string;
+  state?: string;
+  startsAt: string;
+  endsAt?: string;
+  isFree?: boolean;
+  /** @nullable */
+  priceCents?: number | null;
+  /** @nullable */
+  ticketUrl?: string | null;
+  /** @nullable */
+  imageUrl?: string | null;
+  organizerName: string;
+  organizerEmail: string;
+}
+
 export type ListVendorsParams = {
   search?: string;
   category?: string;
@@ -350,6 +397,13 @@ export type ListEstablishmentsParams = {
    * Filter by establishment type
    */
   type?: string;
+};
+
+export type ListEventsParams = {
+  category?: string;
+  city?: string;
+  search?: string;
+  upcoming?: boolean;
 };
 
 export type ListListingsParams = {

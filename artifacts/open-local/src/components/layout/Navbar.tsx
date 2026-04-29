@@ -1,5 +1,5 @@
 import { Link, useLocation } from "wouter";
-import { Store, ShoppingBag, PlusCircle, Settings, Menu, Heart, HandHelping, Percent } from "lucide-react";
+import { Store, ShoppingBag, PlusCircle, Settings, Menu, Heart, HandHelping, Percent, CalendarDays } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 
@@ -11,6 +11,7 @@ export function Navbar() {
     { href: "/products", label: "Goods", icon: ShoppingBag },
     { href: "/listings", label: "Listings", icon: HandHelping },
     { href: "/surplus", label: "Sale", icon: Percent },
+    { href: "/events", label: "Events", icon: CalendarDays },
     { href: "/favorites", label: "Favorites", icon: Heart },
     { href: "/submit", label: "List your business", icon: PlusCircle },
   ];

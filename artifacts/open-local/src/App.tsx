@@ -16,6 +16,7 @@ import PinYourBusiness from "@/pages/pin-your-business";
 import MasterList from "@/pages/master-list";
 import Listings from "@/pages/listings";
 import Surplus from "@/pages/surplus";
+import Events from "@/pages/events";
 import NotFound from "@/pages/not-found";
 
 const queryClient = new QueryClient({
@@ -43,6 +44,7 @@ function Router() {
       <Route path="/master-list" component={MasterList} />
       <Route path="/listings" component={Listings} />
       <Route path="/surplus" component={Surplus} />
+      <Route path="/events" component={Events} />
       <Route component={NotFound} />
     </Switch>
   );
