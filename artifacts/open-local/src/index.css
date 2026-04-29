@@ -117,7 +117,7 @@
   --app-font-sans: 'DM Sans', sans-serif;
   --app-font-serif: 'Fraunces', serif;
   --app-font-mono: Menlo, monospace;
-  --radius: 0.3rem;
+  --radius: 0.65rem;
   
   --shadow-2xs: 0px 2px 0px 0px rgba(43,51,36,0.02);
   --shadow-xs: 0px 2px 0px 0px rgba(43,51,36,0.03);

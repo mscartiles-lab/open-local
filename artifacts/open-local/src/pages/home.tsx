@@ -22,29 +22,29 @@ export default function Home() {
         <HeroMap />
 
         {/* Stats */}
-        <section className="py-12 bg-background border-b border-border">
+        <section className="py-10 bg-background border-b border-border">
           <div className="container max-w-6xl mx-auto px-4">
             {statsLoading ? (
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-8">
-                {[...Array(4)].map((_, i) => <Skeleton key={i} className="h-20 w-full" />)}
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                {[...Array(4)].map((_, i) => <Skeleton key={i} className="h-28 w-full rounded-2xl" />)}
               </div>
             ) : stats ? (
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-8 divide-x divide-border">
-                <div className="flex flex-col items-center text-center">
-                  <span className="text-4xl font-serif font-bold text-foreground">{stats.vendorCount}</span>
-                  <span className="text-sm text-muted-foreground uppercase tracking-wider font-medium mt-2">Florida Vendors</span>
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                <div className="flex flex-col items-center text-center bg-card border border-border rounded-2xl py-6 px-4 shadow-sm">
+                  <span className="text-5xl font-serif font-bold text-primary">{stats.vendorCount}</span>
+                  <span className="text-sm text-muted-foreground font-semibold mt-2">Florida Vendors</span>
                 </div>
-                <div className="flex flex-col items-center text-center">
-                  <span className="text-4xl font-serif font-bold text-foreground">{stats.productCount}</span>
-                  <span className="text-sm text-muted-foreground uppercase tracking-wider font-medium mt-2">Unique Products</span>
+                <div className="flex flex-col items-center text-center bg-card border border-border rounded-2xl py-6 px-4 shadow-sm">
+                  <span className="text-5xl font-serif font-bold text-primary">{stats.productCount}</span>
+                  <span className="text-sm text-muted-foreground font-semibold mt-2">Unique Products</span>
                 </div>
-                <div className="flex flex-col items-center text-center">
-                  <span className="text-4xl font-serif font-bold text-foreground">{stats.locationCount}</span>
-                  <span className="text-sm text-muted-foreground uppercase tracking-wider font-medium mt-2">Local Regions</span>
+                <div className="flex flex-col items-center text-center bg-card border border-border rounded-2xl py-6 px-4 shadow-sm">
+                  <span className="text-5xl font-serif font-bold text-primary">{stats.locationCount}</span>
+                  <span className="text-sm text-muted-foreground font-semibold mt-2">Local Regions</span>
                 </div>
-                <div className="flex flex-col items-center text-center">
-                  <span className="text-4xl font-serif font-bold text-foreground">{stats.categoryCount}</span>
-                  <span className="text-sm text-muted-foreground uppercase tracking-wider font-medium mt-2">Craft Categories</span>
+                <div className="flex flex-col items-center text-center bg-card border border-border rounded-2xl py-6 px-4 shadow-sm">
+                  <span className="text-5xl font-serif font-bold text-primary">{stats.categoryCount}</span>
+                  <span className="text-sm text-muted-foreground font-semibold mt-2">Craft Categories</span>
                 </div>
               </div>
             ) : null}
@@ -52,11 +52,11 @@ export default function Home() {
         </section>
 
         {/* Local Near Me Now */}
-        <section className="py-24 bg-card border-b border-border">
+        <section className="py-16 bg-card border-b border-border">
           <div className="container max-w-6xl mx-auto px-4">
-            <div className="mb-12">
-              <h2 className="text-3xl font-serif font-bold text-foreground">Local Near Me Now</h2>
-              <p className="text-muted-foreground mt-2">Fresh drops, market surplus, and pre-orders.</p>
+            <div className="mb-10">
+              <h2 className="text-4xl font-serif font-bold text-foreground">Local Near Me Now</h2>
+              <p className="text-lg text-muted-foreground mt-2">Fresh drops, market surplus, and pre-orders.</p>
             </div>
 
             {localNowFeedLoading ? (
@@ -75,17 +75,17 @@ export default function Home() {
                 {/* Fresh Batches */}
                 <div>
                   <div className="flex items-center justify-between mb-6">
-                    <h3 className="text-xl font-bold flex items-center gap-2">
-                      <Flame className="w-5 h-5 text-amber-500" /> Fresh Batches Today
+                    <h3 className="text-2xl font-serif font-bold flex items-center gap-2">
+                      <Flame className="w-6 h-6 text-amber-500" /> Fresh Batches Today
                     </h3>
-                    <Link href="/products?listingType=batch_drop" className="text-sm text-primary hover:underline font-medium">View all</Link>
+                    <Link href="/products?listingType=batch_drop" className="flex items-center gap-1.5 text-sm font-semibold bg-secondary text-foreground hover:bg-primary hover:text-primary-foreground px-4 py-2 rounded-xl transition-all">View all <ArrowRight className="w-3.5 h-3.5" /></Link>
                   </div>
                   {localNowFeed.batchDrops.length > 0 ? (
                     <div className="flex overflow-x-auto gap-6 pb-4 snap-x snap-mandatory hide-scrollbar">
                       {localNowFeed.batchDrops.map(product => (
                         <div key={product.id} className="w-[280px] shrink-0 snap-start">
                           <Link href={`/products/${product.id}`} className="group block h-full">
-                            <Card className="h-full overflow-hidden border-border bg-background hover-elevate transition-all duration-300 rounded-none flex flex-col relative">
+                            <Card className="h-full overflow-hidden border-border bg-background hover-elevate transition-all duration-300 rounded-2xl flex flex-col relative">
                               <button 
                                 onClick={(e) => { e.preventDefault(); toggleProduct(product.id); }}
                                 className="absolute top-2 right-2 z-10 p-2 bg-background/80 backdrop-blur-sm rounded-full text-primary hover:scale-110 transition-transform"
@@ -126,17 +126,17 @@ export default function Home() {
                 {/* Market Surplus */}
                 <div>
                   <div className="flex items-center justify-between mb-6">
-                    <h3 className="text-xl font-bold flex items-center gap-2">
-                      <Percent className="w-5 h-5 text-green-600" /> Market Surplus — Save Before It's Gone
+                    <h3 className="text-2xl font-serif font-bold flex items-center gap-2">
+                      <Percent className="w-6 h-6 text-green-600" /> Market Surplus
                     </h3>
-                    <Link href="/products?listingType=surplus" className="text-sm text-primary hover:underline font-medium">View all</Link>
+                    <Link href="/products?listingType=surplus" className="flex items-center gap-1.5 text-sm font-semibold bg-secondary text-foreground hover:bg-primary hover:text-primary-foreground px-4 py-2 rounded-xl transition-all">View all <ArrowRight className="w-3.5 h-3.5" /></Link>
                   </div>
                   {localNowFeed.surplus.length > 0 ? (
                     <div className="flex overflow-x-auto gap-6 pb-4 snap-x snap-mandatory hide-scrollbar">
                       {localNowFeed.surplus.map(product => (
                         <div key={product.id} className="w-[280px] shrink-0 snap-start">
                           <Link href={`/products/${product.id}`} className="group block h-full">
-                            <Card className="h-full overflow-hidden border-border bg-background hover-elevate transition-all duration-300 rounded-none flex flex-col relative">
+                            <Card className="h-full overflow-hidden border-border bg-background hover-elevate transition-all duration-300 rounded-2xl flex flex-col relative">
                               <button 
                                 onClick={(e) => { e.preventDefault(); toggleProduct(product.id); }}
                                 className="absolute top-2 right-2 z-10 p-2 bg-background/80 backdrop-blur-sm rounded-full text-primary hover:scale-110 transition-transform"
@@ -187,17 +187,17 @@ export default function Home() {
                 {/* Pre Orders */}
                 <div>
                   <div className="flex items-center justify-between mb-6">
-                    <h3 className="text-xl font-bold flex items-center gap-2">
-                      <CalendarClock className="w-5 h-5 text-blue-600" /> Reserve for Market Pickup
+                    <h3 className="text-2xl font-serif font-bold flex items-center gap-2">
+                      <CalendarClock className="w-6 h-6 text-blue-600" /> Reserve for Pickup
                     </h3>
-                    <Link href="/products?listingType=pre_order" className="text-sm text-primary hover:underline font-medium">View all</Link>
+                    <Link href="/products?listingType=pre_order" className="flex items-center gap-1.5 text-sm font-semibold bg-secondary text-foreground hover:bg-primary hover:text-primary-foreground px-4 py-2 rounded-xl transition-all">View all <ArrowRight className="w-3.5 h-3.5" /></Link>
                   </div>
                   {localNowFeed.preOrders.length > 0 ? (
                     <div className="flex overflow-x-auto gap-6 pb-4 snap-x snap-mandatory hide-scrollbar">
                       {localNowFeed.preOrders.map(product => (
                         <div key={product.id} className="w-[280px] shrink-0 snap-start">
                           <Link href={`/products/${product.id}`} className="group block h-full">
-                            <Card className="h-full overflow-hidden border-border bg-background hover-elevate transition-all duration-300 rounded-none flex flex-col relative">
+                            <Card className="h-full overflow-hidden border-border bg-background hover-elevate transition-all duration-300 rounded-2xl flex flex-col relative">
                               <button 
                                 onClick={(e) => { e.preventDefault(); toggleProduct(product.id); }}
                                 className="absolute top-2 right-2 z-10 p-2 bg-background/80 backdrop-blur-sm rounded-full text-primary hover:scale-110 transition-transform"
@@ -245,15 +245,15 @@ export default function Home() {
         </section>
 
         {/* Featured Vendors */}
-        <section className="py-24 bg-background">
+        <section className="py-16 bg-background">
           <div className="container max-w-6xl mx-auto px-4">
-            <div className="flex justify-between items-end mb-12">
+            <div className="flex justify-between items-center mb-10">
               <div>
-                <h2 className="text-3xl font-serif font-bold text-foreground">Featured Producers</h2>
-                <p className="text-muted-foreground mt-2">The hands behind the goods.</p>
+                <h2 className="text-4xl font-serif font-bold text-foreground">Featured Producers</h2>
+                <p className="text-lg text-muted-foreground mt-2">The hands behind the goods.</p>
               </div>
-              <Link href="/vendors" className="hidden sm:inline-flex items-center gap-1 text-primary font-medium hover:underline">
-                View all vendors <ArrowRight className="w-4 h-4" />
+              <Link href="/vendors" className="hidden sm:flex items-center gap-1.5 text-sm font-semibold bg-secondary text-foreground hover:bg-primary hover:text-primary-foreground px-5 py-2.5 rounded-xl transition-all">
+                View all <ArrowRight className="w-4 h-4" />
               </Link>
             </div>
 
@@ -272,7 +272,7 @@ export default function Home() {
                     transition={{ delay: i * 0.1 }}
                   >
                     <Link href={`/vendors/${vendor.id}`} className="group block h-full">
-                      <Card className="h-full overflow-hidden border-border bg-card hover-elevate transition-all duration-300 rounded-none relative">
+                      <Card className="h-full overflow-hidden border-border bg-card hover-elevate transition-all duration-300 rounded-2xl relative">
                         <button 
                           onClick={(e) => { e.preventDefault(); toggleVendor(vendor.id); }}
                           className="absolute top-3 right-3 z-10 p-2 bg-background/80 backdrop-blur-sm rounded-full text-primary hover:scale-110 transition-transform"
@@ -308,15 +308,15 @@ export default function Home() {
         </section>
 
         {/* Featured Products */}
-        <section className="py-24 bg-card border-t border-border">
+        <section className="py-16 bg-card border-t border-border">
           <div className="container max-w-6xl mx-auto px-4">
-            <div className="flex justify-between items-end mb-12">
+            <div className="flex justify-between items-center mb-10">
               <div>
-                <h2 className="text-3xl font-serif font-bold text-foreground">Market Highlights</h2>
-                <p className="text-muted-foreground mt-2">Small-batch goods fresh from the source.</p>
+                <h2 className="text-4xl font-serif font-bold text-foreground">Market Highlights</h2>
+                <p className="text-lg text-muted-foreground mt-2">Small-batch goods fresh from the source.</p>
               </div>
-              <Link href="/products" className="hidden sm:inline-flex items-center gap-1 text-primary font-medium hover:underline">
-                Browse all goods <ArrowRight className="w-4 h-4" />
+              <Link href="/products" className="hidden sm:flex items-center gap-1.5 text-sm font-semibold bg-secondary text-foreground hover:bg-primary hover:text-primary-foreground px-5 py-2.5 rounded-xl transition-all">
+                Browse all <ArrowRight className="w-4 h-4" />
               </Link>
             </div>
 
@@ -335,7 +335,7 @@ export default function Home() {
                     transition={{ delay: i * 0.1 }}
                   >
                     <Link href={`/products/${product.id}`} className="group block h-full">
-                      <Card className="h-full overflow-hidden border-border bg-background hover-elevate transition-all duration-300 rounded-none flex flex-col relative">
+                      <Card className="h-full overflow-hidden border-border bg-background hover-elevate transition-all duration-300 rounded-2xl flex flex-col relative">
                         <button 
                           onClick={(e) => { e.preventDefault(); toggleProduct(product.id); }}
                           className="absolute top-2 right-2 z-10 p-2 bg-background/80 backdrop-blur-sm rounded-full text-primary hover:scale-110 transition-transform"

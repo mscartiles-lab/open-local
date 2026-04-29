@@ -32,8 +32,8 @@ export default function Vendors() {
     <Layout>
       <div className="bg-muted border-b border-border py-12">
         <div className="container max-w-6xl mx-auto px-4">
-          <h1 className="text-4xl font-serif font-bold text-foreground mb-4">Florida Producers</h1>
-          <p className="text-lg text-muted-foreground max-w-2xl font-sans">
+          <h1 className="text-5xl font-serif font-bold text-foreground mb-4">Florida Producers</h1>
+          <p className="text-xl text-muted-foreground max-w-2xl font-sans">
             Discover the independent makers, farmers, and artisans crafting small-batch goods in Florida.
           </p>
         </div>
@@ -63,7 +63,7 @@ export default function Vendors() {
                 <div className="flex flex-wrap gap-2">
                   <Badge 
                     variant={selectedCategory === null ? "default" : "outline"}
-                    className="cursor-pointer"
+                    className="cursor-pointer px-4 py-1.5 text-sm rounded-xl"
                     onClick={() => setSelectedCategory(null)}
                   >
                     All
@@ -72,7 +72,7 @@ export default function Vendors() {
                     <Badge 
                       key={c.name}
                       variant={selectedCategory === c.name ? "default" : "outline"}
-                      className="cursor-pointer"
+                      className="cursor-pointer px-4 py-1.5 text-sm rounded-xl"
                       onClick={() => setSelectedCategory(c.name)}
                     >
                       {c.name} ({c.count})
@@ -90,7 +90,7 @@ export default function Vendors() {
                 <div className="flex flex-wrap gap-2">
                   <Badge 
                     variant={selectedLocation === null ? "default" : "outline"}
-                    className="cursor-pointer"
+                    className="cursor-pointer px-4 py-1.5 text-sm rounded-xl"
                     onClick={() => setSelectedLocation(null)}
                   >
                     All
@@ -99,7 +99,7 @@ export default function Vendors() {
                     <Badge 
                       key={l.location}
                       variant={selectedLocation === l.location ? "default" : "outline"}
-                      className="cursor-pointer"
+                      className="cursor-pointer px-4 py-1.5 text-sm rounded-xl"
                       onClick={() => setSelectedLocation(l.location)}
                     >
                       {l.location} ({l.vendorCount})
@@ -126,7 +126,7 @@ export default function Vendors() {
                     transition={{ delay: i * 0.05 }}
                   >
                     <Link href={`/vendors/${vendor.id}`} className="group block h-full">
-                      <Card className="h-full overflow-hidden border-border bg-card hover-elevate transition-all duration-300 rounded-none relative">
+                      <Card className="h-full overflow-hidden border-border bg-card hover-elevate transition-all duration-300 rounded-2xl relative">
                         <button 
                           onClick={(e) => { e.preventDefault(); toggleVendor(vendor.id); }}
                           className="absolute top-3 right-3 z-10 p-2 bg-background/80 backdrop-blur-sm rounded-full text-primary hover:scale-110 transition-transform"

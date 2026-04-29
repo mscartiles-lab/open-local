@@ -164,7 +164,7 @@ export default function ProductDetail() {
                       transition={{ delay: i * 0.1 }}
                     >
                       <Link href={`/products/${p.id}`} className="group block h-full">
-                        <Card className="h-full overflow-hidden border-border bg-card hover-elevate transition-all duration-300 rounded-none flex flex-col relative">
+                        <Card className="h-full overflow-hidden border-border bg-card hover-elevate transition-all duration-300 rounded-2xl flex flex-col relative">
                           <button 
                             onClick={(e) => { e.preventDefault(); toggleProduct(p.id); }}
                             className="absolute top-2 right-2 z-10 p-2 bg-background/80 backdrop-blur-sm rounded-full text-primary hover:scale-110 transition-transform"

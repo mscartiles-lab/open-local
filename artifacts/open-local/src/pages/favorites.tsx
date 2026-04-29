@@ -48,7 +48,7 @@ export default function Favorites() {
                   transition={{ delay: i * 0.05 }}
                 >
                   <Link href={`/vendors/${vendor.id}`} className="group block h-full">
-                    <Card className="h-full overflow-hidden border-border bg-card hover-elevate transition-all duration-300 rounded-none relative">
+                    <Card className="h-full overflow-hidden border-border bg-card hover-elevate transition-all duration-300 rounded-2xl relative">
                       <button 
                         onClick={(e) => { e.preventDefault(); toggleVendor(vendor.id); }}
                         className="absolute top-3 right-3 z-10 p-2 bg-background/80 backdrop-blur-sm rounded-full text-primary hover:scale-110 transition-transform"
@@ -105,7 +105,7 @@ export default function Favorites() {
                   transition={{ delay: i * 0.05 }}
                 >
                   <Link href={`/products/${product.id}`} className="group block h-full">
-                    <Card className="h-full overflow-hidden border-border bg-card hover-elevate transition-all duration-300 rounded-none flex flex-col relative">
+                    <Card className="h-full overflow-hidden border-border bg-card hover-elevate transition-all duration-300 rounded-2xl flex flex-col relative">
                       <button 
                         onClick={(e) => { e.preventDefault(); toggleProduct(product.id); }}
                         className="absolute top-3 right-3 z-10 p-2 bg-background/80 backdrop-blur-sm rounded-full text-primary hover:scale-110 transition-transform"

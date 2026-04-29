@@ -49,8 +49,8 @@ export default function Products() {
     <Layout>
       <div className="bg-muted border-b border-border py-12">
         <div className="container max-w-6xl mx-auto px-4">
-          <h1 className="text-4xl font-serif font-bold text-foreground mb-4">Florida Goods</h1>
-          <p className="text-lg text-muted-foreground max-w-2xl font-sans">
+          <h1 className="text-5xl font-serif font-bold text-foreground mb-4">Florida Goods</h1>
+          <p className="text-xl text-muted-foreground max-w-2xl font-sans">
             Browse small-batch products straight from the source. Hand-crafted, locally grown, and carefully made across Florida.
           </p>
         </div>
@@ -79,7 +79,7 @@ export default function Products() {
               <div className="flex flex-wrap gap-2">
                 <Badge 
                   variant={listingType === "all" ? "default" : "outline"}
-                  className="cursor-pointer"
+                  className="cursor-pointer px-4 py-1.5 text-sm rounded-xl"
                   onClick={() => setListingType("all")}
                 >
                   All
@@ -119,7 +119,7 @@ export default function Products() {
                 <div className="flex flex-wrap gap-2">
                   <Badge 
                     variant={selectedCategory === null ? "default" : "outline"}
-                    className="cursor-pointer"
+                    className="cursor-pointer px-4 py-1.5 text-sm rounded-xl"
                     onClick={() => setSelectedCategory(null)}
                   >
                     All
@@ -128,7 +128,7 @@ export default function Products() {
                     <Badge 
                       key={c.name}
                       variant={selectedCategory === c.name ? "default" : "outline"}
-                      className="cursor-pointer"
+                      className="cursor-pointer px-4 py-1.5 text-sm rounded-xl"
                       onClick={() => setSelectedCategory(c.name)}
                     >
                       {c.name} ({c.count})
@@ -155,7 +155,7 @@ export default function Products() {
                     transition={{ delay: i * 0.05 }}
                   >
                     <Link href={`/products/${product.id}`} className="group block h-full">
-                      <Card className="h-full overflow-hidden border-border bg-card hover-elevate transition-all duration-300 rounded-none flex flex-col relative">
+                      <Card className="h-full overflow-hidden border-border bg-card hover-elevate transition-all duration-300 rounded-2xl flex flex-col relative">
                         <button 
                           onClick={(e) => { e.preventDefault(); toggleProduct(product.id); }}
                           className="absolute top-3 right-3 z-10 p-2 bg-background/80 backdrop-blur-sm rounded-full text-primary hover:scale-110 transition-transform"

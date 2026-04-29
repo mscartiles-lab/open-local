@@ -63,7 +63,7 @@ export default function VendorDetail() {
           </div>
 
           <div className="container max-w-4xl mx-auto px-4 -mt-16 relative z-10 mb-16">
-            <Card className="bg-background border-border shadow-xl rounded-none">
+            <Card className="bg-background border-border shadow-xl rounded-2xl">
               <CardContent className="p-8 md:p-12">
                 <div className="flex flex-col md:flex-row gap-8 justify-between items-start">
                   <div>
@@ -166,7 +166,7 @@ export default function VendorDetail() {
                     transition={{ delay: i * 0.1 }}
                   >
                     <Link href={`/products/${product.id}`} className="group block h-full">
-                      <Card className="h-full overflow-hidden border-border bg-card hover-elevate transition-all duration-300 rounded-none flex flex-col relative">
+                      <Card className="h-full overflow-hidden border-border bg-card hover-elevate transition-all duration-300 rounded-2xl flex flex-col relative">
                         <button 
                           onClick={(e) => { e.preventDefault(); toggleProduct(product.id); }}
                           className="absolute top-2 right-2 z-10 p-2 bg-background/80 backdrop-blur-sm rounded-full text-primary hover:scale-110 transition-transform"
