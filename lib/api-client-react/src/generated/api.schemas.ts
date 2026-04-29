@@ -373,6 +373,43 @@ export interface EventInput {
   organizerEmail: string;
 }
 
+export interface SearchLogInput {
+  query: string;
+  context: string;
+  /** @nullable */
+  resultsCount?: number | null;
+}
+
+export interface SearchQueryStat {
+  query: string;
+  count: number;
+  zeroResultCount: number;
+  contexts: string[];
+}
+
+export interface ContextStat {
+  context: string;
+  count: number;
+}
+
+export type SearchInsightsRecentQueriesItem = {
+  query: string;
+  context: string;
+  /** @nullable */
+  resultsCount?: number | null;
+  createdAt: string;
+};
+
+export interface SearchInsights {
+  totalSearches: number;
+  uniqueTerms: number;
+  zeroResultCount: number;
+  topQueries: SearchQueryStat[];
+  topOpportunities: SearchQueryStat[];
+  byContext: ContextStat[];
+  recentQueries: SearchInsightsRecentQueriesItem[];
+}
+
 export type ListVendorsParams = {
   search?: string;
   category?: string;

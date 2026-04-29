@@ -7,6 +7,7 @@ import emailVerificationRouter from "./email-verification";
 import establishmentsRouter from "./establishments";
 import listingsRouter from "./listings";
 import eventsRouter from "./events";
+import insightsRouter from "./insights";
 
 const router: IRouter = Router();
 
@@ -18,5 +19,6 @@ router.use(emailVerificationRouter);
 router.use(establishmentsRouter);
 router.use(listingsRouter);
 router.use(eventsRouter);
+router.use(insightsRouter);
 
 export default router;

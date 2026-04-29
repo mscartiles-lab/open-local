@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { useSearchLogger } from "@/hooks/use-search-logger";
 import { Link } from "wouter";
 import { motion } from "framer-motion";
 import { MapPin, Search, Store, Filter, Heart } from "lucide-react";
@@ -24,6 +25,8 @@ export default function Vendors() {
   const { data: categories } = useListCategories();
   const { data: locations } = useListLocations();
   const { isFavoriteVendor, toggleVendor } = useFavorites();
+
+  useSearchLogger(search, "vendors", vendors?.length);
 
   return (
     <Layout>

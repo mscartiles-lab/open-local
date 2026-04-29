@@ -40,6 +40,8 @@ import type {
   ProductUpdate,
   ProductWithVendor,
   ResendEmailVerificationRequest,
+  SearchInsights,
+  SearchLogInput,
   StartEmailVerificationRequest,
   StartEmailVerificationResponse,
   Vendor,
@@ -2167,6 +2169,167 @@ export const useUpdateEstablishment = <
 > => {
   return useMutation(getUpdateEstablishmentMutationOptions(options));
 };
+
+/**
+ * @summary Record a search query for demand analytics
+ */
+export const getLogSearchUrl = () => {
+  return `/api/search-logs`;
+};
+
+export const logSearch = async (
+  searchLogInput: SearchLogInput,
+  options?: RequestInit,
+): Promise<void> => {
+  return customFetch<void>(getLogSearchUrl(), {
+    ...options,
+    method: "POST",
+    headers: { "Content-Type": "application/json", ...options?.headers },
+    body: JSON.stringify(searchLogInput),
+  });
+};
+
+export const getLogSearchMutationOptions = <
+  TError = ErrorType<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof logSearch>>,
+    TError,
+    { data: BodyType<SearchLogInput> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof logSearch>>,
+  TError,
+  { data: BodyType<SearchLogInput> },
+  TContext
+> => {
+  const mutationKey = ["logSearch"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof logSearch>>,
+    { data: BodyType<SearchLogInput> }
+  > = (props) => {
+    const { data } = props ?? {};
+
+    return logSearch(data, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type LogSearchMutationResult = NonNullable<
+  Awaited<ReturnType<typeof logSearch>>
+>;
+export type LogSearchMutationBody = BodyType<SearchLogInput>;
+export type LogSearchMutationError = ErrorType<unknown>;
+
+/**
+ * @summary Record a search query for demand analytics
+ */
+export const useLogSearch = <
+  TError = ErrorType<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof logSearch>>,
+    TError,
+    { data: BodyType<SearchLogInput> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof logSearch>>,
+  TError,
+  { data: BodyType<SearchLogInput> },
+  TContext
+> => {
+  return useMutation(getLogSearchMutationOptions(options));
+};
+
+/**
+ * @summary Aggregated search demand data for vendor recruitment
+ */
+export const getGetSearchInsightsUrl = () => {
+  return `/api/search-insights`;
+};
+
+export const getSearchInsights = async (
+  options?: RequestInit,
+): Promise<SearchInsights> => {
+  return customFetch<SearchInsights>(getGetSearchInsightsUrl(), {
+    ...options,
+    method: "GET",
+  });
+};
+
+export const getGetSearchInsightsQueryKey = () => {
+  return [`/api/search-insights`] as const;
+};
+
+export const getGetSearchInsightsQueryOptions = <
+  TData = Awaited<ReturnType<typeof getSearchInsights>>,
+  TError = ErrorType<unknown>,
+>(options?: {
+  query?: UseQueryOptions<
+    Awaited<ReturnType<typeof getSearchInsights>>,
+    TError,
+    TData
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey = queryOptions?.queryKey ?? getGetSearchInsightsQueryKey();
+
+  const queryFn: QueryFunction<
+    Awaited<ReturnType<typeof getSearchInsights>>
+  > = ({ signal }) => getSearchInsights({ signal, ...requestOptions });
+
+  return { queryKey, queryFn, ...queryOptions } as UseQueryOptions<
+    Awaited<ReturnType<typeof getSearchInsights>>,
+    TError,
+    TData
+  > & { queryKey: QueryKey };
+};
+
+export type GetSearchInsightsQueryResult = NonNullable<
+  Awaited<ReturnType<typeof getSearchInsights>>
+>;
+export type GetSearchInsightsQueryError = ErrorType<unknown>;
+
+/**
+ * @summary Aggregated search demand data for vendor recruitment
+ */
+
+export function useGetSearchInsights<
+  TData = Awaited<ReturnType<typeof getSearchInsights>>,
+  TError = ErrorType<unknown>,
+>(options?: {
+  query?: UseQueryOptions<
+    Awaited<ReturnType<typeof getSearchInsights>>,
+    TError,
+    TData
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+  const queryOptions = getGetSearchInsightsQueryOptions(options);
+
+  const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
+    queryKey: QueryKey;
+  };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
 
 /**
  * @summary List community events

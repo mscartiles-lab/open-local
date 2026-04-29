@@ -8,6 +8,7 @@
 
 export * from "./categoryBreakdown";
 export * from "./categoryCount";
+export * from "./contextStat";
 export * from "./errorResponse";
 export * from "./establishment";
 export * from "./establishmentInput";
@@ -31,6 +32,10 @@ export * from "./productInput";
 export * from "./productUpdate";
 export * from "./productWithVendor";
 export * from "./resendEmailVerificationRequest";
+export * from "./searchInsights";
+export * from "./searchInsightsRecentQueriesItem";
+export * from "./searchLogInput";
+export * from "./searchQueryStat";
 export * from "./startEmailVerificationRequest";
 export * from "./startEmailVerificationResponse";
 export * from "./vendor";

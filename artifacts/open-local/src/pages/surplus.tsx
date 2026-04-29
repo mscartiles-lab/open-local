@@ -1,4 +1,5 @@
 import { useState, useMemo } from "react";
+import { useSearchLogger } from "@/hooks/use-search-logger";
 import { Link } from "wouter";
 import { motion } from "framer-motion";
 import { useListProducts } from "@workspace/api-client-react";
@@ -52,6 +53,8 @@ export default function Surplus() {
       .map((p) => p.category)
       .sort();
   }, [allProducts]);
+
+  useSearchLogger(search, "surplus", surplusProducts.length);
 
   const totalSavings = useMemo(() => {
     return surplusProducts.reduce((acc, p) => {

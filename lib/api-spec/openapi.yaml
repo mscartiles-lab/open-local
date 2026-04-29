@@ -26,6 +26,8 @@ tags:
     description: Community classifieds — wanted services and service offerings
   - name: events
     description: Community events — local gatherings, markets, pop-ups, and workshops
+  - name: insights
+    description: Search demand analytics and vendor recruitment signals
 
 paths:
   /healthz:
@@ -540,6 +542,34 @@ paths:
           content:
             application/json:
               schema: { $ref: "#/components/schemas/ErrorResponse" }
+
+  /search-logs:
+    post:
+      operationId: logSearch
+      tags: [insights]
+      summary: Record a search query for demand analytics
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/SearchLogInput"
+      responses:
+        "204":
+          description: Logged
+
+  /search-insights:
+    get:
+      operationId: getSearchInsights
+      tags: [insights]
+      summary: Aggregated search demand data for vendor recruitment
+      responses:
+        "200":
+          description: Search insights
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SearchInsights"
 
   /events:
     get:
@@ -1147,3 +1177,60 @@ components:
         - startsAt
         - organizerName
         - organizerEmail
+
+    SearchLogInput:
+      type: object
+      properties:
+        query: { type: string }
+        context: { type: string }
+        resultsCount: { type: ["integer", "null"] }
+      required:
+        - query
+        - context
+
+    SearchQueryStat:
+      type: object
+      properties:
+        query: { type: string }
+        count: { type: integer }
+        zeroResultCount: { type: integer }
+        contexts: { type: array, items: { type: string } }
+      required: [query, count, zeroResultCount, contexts]
+
+    ContextStat:
+      type: object
+      properties:
+        context: { type: string }
+        count: { type: integer }
+      required: [context, count]
+
+    SearchInsights:
+      type: object
+      properties:
+        totalSearches: { type: integer }
+        uniqueTerms: { type: integer }
+        zeroResultCount: { type: integer }
+        topQueries:
+          type: array
+          items:
+            $ref: "#/components/schemas/SearchQueryStat"
+        topOpportunities:
+          type: array
+          items:
+            $ref: "#/components/schemas/SearchQueryStat"
+        byContext:
+          type: array
+          items:
+            $ref: "#/components/schemas/ContextStat"
+        recentQueries:
+          type: array
+          items:
+            type: object
+            properties:
+              query: { type: string }
+              context: { type: string }
+              resultsCount: { type: ["integer", "null"] }
+              createdAt: { type: string, format: date-time }
+            required: [query, context, createdAt]
+      required:
+        [totalSearches, uniqueTerms, zeroResultCount, topQueries, topOpportunities, byContext, recentQueries]

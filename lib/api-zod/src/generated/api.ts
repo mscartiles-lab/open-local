@@ -699,6 +699,54 @@ export const UpdateEstablishmentResponse = zod.object({
 });
 
 /**
+ * @summary Record a search query for demand analytics
+ */
+export const LogSearchBody = zod.object({
+  query: zod.string(),
+  context: zod.string(),
+  resultsCount: zod.number().nullish(),
+});
+
+/**
+ * @summary Aggregated search demand data for vendor recruitment
+ */
+export const GetSearchInsightsResponse = zod.object({
+  totalSearches: zod.number(),
+  uniqueTerms: zod.number(),
+  zeroResultCount: zod.number(),
+  topQueries: zod.array(
+    zod.object({
+      query: zod.string(),
+      count: zod.number(),
+      zeroResultCount: zod.number(),
+      contexts: zod.array(zod.string()),
+    }),
+  ),
+  topOpportunities: zod.array(
+    zod.object({
+      query: zod.string(),
+      count: zod.number(),
+      zeroResultCount: zod.number(),
+      contexts: zod.array(zod.string()),
+    }),
+  ),
+  byContext: zod.array(
+    zod.object({
+      context: zod.string(),
+      count: zod.number(),
+    }),
+  ),
+  recentQueries: zod.array(
+    zod.object({
+      query: zod.string(),
+      context: zod.string(),
+      resultsCount: zod.number().nullish(),
+      createdAt: zod.coerce.date(),
+    }),
+  ),
+});
+
+/**
  * @summary List community events
  */
 export const ListEventsQueryParams = zod.object({

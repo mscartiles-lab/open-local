@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import { Link, useSearch, useLocation } from "wouter";
+import { useSearchLogger } from "@/hooks/use-search-logger";
 import { motion } from "framer-motion";
 import { Search, Tag, Filter, Heart } from "lucide-react";
 import Layout from "@/components/layout/Layout";
@@ -41,6 +42,8 @@ export default function Products() {
   } as any); // using any here because the generated type might not have listingType if it wasn't fully synced, but orval fetch passes generic keys
 
   const { data: categories } = useListCategories();
+
+  useSearchLogger(search, "products", products?.length);
 
   return (
     <Layout>

@@ -1,6 +1,7 @@
 import { useState, useMemo } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useListEvents, useCreateEvent, getListEventsQueryKey } from "@workspace/api-client-react";
+import { useSearchLogger } from "@/hooks/use-search-logger";
 import Layout from "@/components/layout/Layout";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -246,6 +247,8 @@ export default function Events() {
     category: categoryFilter !== "all" ? categoryFilter : undefined,
     search: search || undefined,
   });
+
+  useSearchLogger(search, "events", events?.length);
 
   const createEvent = useCreateEvent();
 

@@ -2,7 +2,7 @@ import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
-import { Store, Tag, Plus, Trash2, Edit, Loader2, Check, X } from "lucide-react";
+import { Store, Tag, Plus, Trash2, Edit, Loader2, Check, X, BarChart3 } from "lucide-react";
 import Layout from "@/components/layout/Layout";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -237,13 +237,22 @@ export default function Admin() {
                 Manage producers, products, and curation.
               </p>
             </div>
-            <a
-              href="/master-list"
-              className="inline-flex items-center gap-2 bg-primary text-primary-foreground px-4 py-2.5 rounded-md text-sm font-semibold hover:bg-primary/90 transition-colors mt-1 flex-shrink-0"
-            >
-              <Tag className="w-4 h-4" />
-              Master Product List
-            </a>
+            <div className="flex gap-2 flex-wrap">
+              <a
+                href="/search-insights"
+                className="inline-flex items-center gap-2 bg-amber-600 text-white px-4 py-2.5 rounded-md text-sm font-semibold hover:bg-amber-700 transition-colors mt-1 flex-shrink-0"
+              >
+                <BarChart3 className="w-4 h-4" />
+                Demand Signals
+              </a>
+              <a
+                href="/master-list"
+                className="inline-flex items-center gap-2 bg-primary text-primary-foreground px-4 py-2.5 rounded-md text-sm font-semibold hover:bg-primary/90 transition-colors mt-1 flex-shrink-0"
+              >
+                <Tag className="w-4 h-4" />
+                Master Product List
+              </a>
+            </div>
           </div>
         </div>
       </div>
