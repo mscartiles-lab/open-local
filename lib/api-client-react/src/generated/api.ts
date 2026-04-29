@@ -24,8 +24,11 @@ import type {
   EstablishmentUpdate,
   HealthStatus,
   ListEstablishmentsParams,
+  ListListingsParams,
   ListProductsParams,
   ListVendorsParams,
+  ListingInput,
+  ListingItem,
   LocalNowFeed,
   LocationCount,
   MarketplaceStats,
@@ -2160,4 +2163,184 @@ export const useUpdateEstablishment = <
   TContext
 > => {
   return useMutation(getUpdateEstablishmentMutationOptions(options));
+};
+
+/**
+ * @summary List community classifieds
+ */
+export const getListListingsUrl = (params?: ListListingsParams) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? "null" : value.toString());
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0
+    ? `/api/listings?${stringifiedParams}`
+    : `/api/listings`;
+};
+
+export const listListings = async (
+  params?: ListListingsParams,
+  options?: RequestInit,
+): Promise<ListingItem[]> => {
+  return customFetch<ListingItem[]>(getListListingsUrl(params), {
+    ...options,
+    method: "GET",
+  });
+};
+
+export const getListListingsQueryKey = (params?: ListListingsParams) => {
+  return [`/api/listings`, ...(params ? [params] : [])] as const;
+};
+
+export const getListListingsQueryOptions = <
+  TData = Awaited<ReturnType<typeof listListings>>,
+  TError = ErrorType<unknown>,
+>(
+  params?: ListListingsParams,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof listListings>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey = queryOptions?.queryKey ?? getListListingsQueryKey(params);
+
+  const queryFn: QueryFunction<Awaited<ReturnType<typeof listListings>>> = ({
+    signal,
+  }) => listListings(params, { signal, ...requestOptions });
+
+  return { queryKey, queryFn, ...queryOptions } as UseQueryOptions<
+    Awaited<ReturnType<typeof listListings>>,
+    TError,
+    TData
+  > & { queryKey: QueryKey };
+};
+
+export type ListListingsQueryResult = NonNullable<
+  Awaited<ReturnType<typeof listListings>>
+>;
+export type ListListingsQueryError = ErrorType<unknown>;
+
+/**
+ * @summary List community classifieds
+ */
+
+export function useListListings<
+  TData = Awaited<ReturnType<typeof listListings>>,
+  TError = ErrorType<unknown>,
+>(
+  params?: ListListingsParams,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof listListings>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+  const queryOptions = getListListingsQueryOptions(params, options);
+
+  const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
+    queryKey: QueryKey;
+  };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+/**
+ * @summary Post a new community listing
+ */
+export const getCreateListingUrl = () => {
+  return `/api/listings`;
+};
+
+export const createListing = async (
+  listingInput: ListingInput,
+  options?: RequestInit,
+): Promise<ListingItem> => {
+  return customFetch<ListingItem>(getCreateListingUrl(), {
+    ...options,
+    method: "POST",
+    headers: { "Content-Type": "application/json", ...options?.headers },
+    body: JSON.stringify(listingInput),
+  });
+};
+
+export const getCreateListingMutationOptions = <
+  TError = ErrorType<ErrorResponse>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof createListing>>,
+    TError,
+    { data: BodyType<ListingInput> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof createListing>>,
+  TError,
+  { data: BodyType<ListingInput> },
+  TContext
+> => {
+  const mutationKey = ["createListing"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof createListing>>,
+    { data: BodyType<ListingInput> }
+  > = (props) => {
+    const { data } = props ?? {};
+
+    return createListing(data, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type CreateListingMutationResult = NonNullable<
+  Awaited<ReturnType<typeof createListing>>
+>;
+export type CreateListingMutationBody = BodyType<ListingInput>;
+export type CreateListingMutationError = ErrorType<ErrorResponse>;
+
+/**
+ * @summary Post a new community listing
+ */
+export const useCreateListing = <
+  TError = ErrorType<ErrorResponse>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof createListing>>,
+    TError,
+    { data: BodyType<ListingInput> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof createListing>>,
+  TError,
+  { data: BodyType<ListingInput> },
+  TContext
+> => {
+  return useMutation(getCreateListingMutationOptions(options));
 };

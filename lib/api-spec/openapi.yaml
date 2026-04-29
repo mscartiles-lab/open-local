@@ -22,6 +22,8 @@ tags:
     description: Email verification for vendor onboarding
   - name: establishments
     description: Independently-owned local establishments pinned on the map
+  - name: listings
+    description: Community classifieds — wanted services and service offerings
 
 paths:
   /healthz:
@@ -537,6 +539,56 @@ paths:
             application/json:
               schema: { $ref: "#/components/schemas/ErrorResponse" }
 
+  /listings:
+    get:
+      operationId: listListings
+      tags: [listings]
+      summary: List community classifieds
+      parameters:
+        - in: query
+          name: type
+          schema: { type: string }
+        - in: query
+          name: category
+          schema: { type: string }
+        - in: query
+          name: city
+          schema: { type: string }
+        - in: query
+          name: search
+          schema: { type: string }
+      responses:
+        "200":
+          description: List of listings
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/ListingItem"
+    post:
+      operationId: createListing
+      tags: [listings]
+      summary: Post a new community listing
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ListingInput"
+      responses:
+        "201":
+          description: Created listing
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ListingItem"
+        "400":
+          description: Validation error
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ErrorResponse" }
+
 components:
   schemas:
     HealthStatus:
@@ -928,3 +980,50 @@ components:
         status: { type: string }
         latitude: { type: ["number", "null"] }
         longitude: { type: ["number", "null"] }
+
+    ListingItem:
+      type: object
+      properties:
+        id: { type: integer }
+        title: { type: string }
+        description: { type: string }
+        type: { type: string }
+        category: { type: string }
+        city: { type: string }
+        state: { type: string }
+        contactName: { type: string }
+        contactEmail: { type: string }
+        status: { type: string }
+        createdAt: { type: string, format: date-time }
+      required:
+        - id
+        - title
+        - description
+        - type
+        - category
+        - city
+        - state
+        - contactName
+        - contactEmail
+        - status
+        - createdAt
+
+    ListingInput:
+      type: object
+      properties:
+        title: { type: string }
+        description: { type: string }
+        type: { type: string }
+        category: { type: string }
+        city: { type: string }
+        state: { type: string }
+        contactName: { type: string }
+        contactEmail: { type: string }
+      required:
+        - title
+        - description
+        - type
+        - category
+        - city
+        - contactName
+        - contactEmail

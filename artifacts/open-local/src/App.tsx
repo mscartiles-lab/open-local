@@ -14,6 +14,8 @@ import Admin from "@/pages/admin";
 import Favorites from "@/pages/favorites";
 import PinYourBusiness from "@/pages/pin-your-business";
 import MasterList from "@/pages/master-list";
+import Listings from "@/pages/listings";
+import Surplus from "@/pages/surplus";
 import NotFound from "@/pages/not-found";
 
 const queryClient = new QueryClient({
@@ -39,6 +41,8 @@ function Router() {
       <Route path="/admin" component={Admin} />
       <Route path="/pin-your-business" component={PinYourBusiness} />
       <Route path="/master-list" component={MasterList} />
+      <Route path="/listings" component={Listings} />
+      <Route path="/surplus" component={Surplus} />
       <Route component={NotFound} />
     </Switch>
   );

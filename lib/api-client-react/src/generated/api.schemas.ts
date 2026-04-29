@@ -301,6 +301,31 @@ export interface EstablishmentUpdate {
   longitude?: number | null;
 }
 
+export interface ListingItem {
+  id: number;
+  title: string;
+  description: string;
+  type: string;
+  category: string;
+  city: string;
+  state: string;
+  contactName: string;
+  contactEmail: string;
+  status: string;
+  createdAt: string;
+}
+
+export interface ListingInput {
+  title: string;
+  description: string;
+  type: string;
+  category: string;
+  city: string;
+  state?: string;
+  contactName: string;
+  contactEmail: string;
+}
+
 export type ListVendorsParams = {
   search?: string;
   category?: string;
@@ -325,4 +350,11 @@ export type ListEstablishmentsParams = {
    * Filter by establishment type
    */
   type?: string;
+};
+
+export type ListListingsParams = {
+  type?: string;
+  category?: string;
+  city?: string;
+  search?: string;
 };

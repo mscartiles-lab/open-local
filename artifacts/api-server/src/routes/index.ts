@@ -5,6 +5,7 @@ import productsRouter from "./products";
 import discoveryRouter from "./discovery";
 import emailVerificationRouter from "./email-verification";
 import establishmentsRouter from "./establishments";
+import listingsRouter from "./listings";
 
 const router: IRouter = Router();
 
@@ -14,5 +15,6 @@ router.use(productsRouter);
 router.use(discoveryRouter);
 router.use(emailVerificationRouter);
 router.use(establishmentsRouter);
+router.use(listingsRouter);
 
 export default router;

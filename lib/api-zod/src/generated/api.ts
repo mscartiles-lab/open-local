@@ -697,3 +697,42 @@ export const UpdateEstablishmentResponse = zod.object({
   isTrial: zod.boolean(),
   createdAt: zod.coerce.date(),
 });
+
+/**
+ * @summary List community classifieds
+ */
+export const ListListingsQueryParams = zod.object({
+  type: zod.coerce.string().optional(),
+  category: zod.coerce.string().optional(),
+  city: zod.coerce.string().optional(),
+  search: zod.coerce.string().optional(),
+});
+
+export const ListListingsResponseItem = zod.object({
+  id: zod.number(),
+  title: zod.string(),
+  description: zod.string(),
+  type: zod.string(),
+  category: zod.string(),
+  city: zod.string(),
+  state: zod.string(),
+  contactName: zod.string(),
+  contactEmail: zod.string(),
+  status: zod.string(),
+  createdAt: zod.coerce.date(),
+});
+export const ListListingsResponse = zod.array(ListListingsResponseItem);
+
+/**
+ * @summary Post a new community listing
+ */
+export const CreateListingBody = zod.object({
+  title: zod.string(),
+  description: zod.string(),
+  type: zod.string(),
+  category: zod.string(),
+  city: zod.string(),
+  state: zod.string().optional(),
+  contactName: zod.string(),
+  contactEmail: zod.string(),
+});
