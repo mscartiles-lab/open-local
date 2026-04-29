@@ -1,5 +1,5 @@
 import Slider from "@react-native-community/slider";
-import { useListVendors } from "@workspace/api-client-react";
+import { useListVendors, useListEstablishments } from "@workspace/api-client-react";
 import * as Haptics from "expo-haptics";
 import * as Location from "expo-location";
 import { useRouter } from "expo-router";
@@ -23,7 +23,7 @@ import {
   latDeltaForMiles,
   milesToMeters,
 } from "@/utils/distance";
-import type { Vendor } from "@workspace/api-client-react";
+import type { Vendor, Establishment } from "@workspace/api-client-react";
 
 const MIN_MILES = 1;
 const MAX_MILES = 100;
@@ -48,11 +48,13 @@ export default function MapScreen() {
   const [radius, setRadius] = useState(DEFAULT_MILES);
   const [sliderValue, setSliderValue] = useState(DEFAULT_MILES);
   const [selected, setSelected] = useState<Vendor | null>(null);
+  const [selectedEstablishment, setSelectedEstablishment] = useState<Establishment | null>(null);
 
   const topPad = Platform.OS === "web" ? 67 : insets.top;
   const bottomPad = Platform.OS === "web" ? 34 : insets.bottom + 60;
 
   const { data: vendors } = useListVendors();
+  const { data: establishments } = useListEstablishments();
 
   const mappableVendors = (vendors ?? []).filter(
     (v) => v.latitude != null && v.longitude != null,
@@ -69,6 +71,22 @@ export default function MapScreen() {
           ) <= radius,
       )
     : mappableVendors;
+
+  const mappableEstablishments = (establishments ?? []).filter(
+    (e) => e.latitude != null && e.longitude != null,
+  );
+
+  const nearbyEstablishments = userLocation
+    ? mappableEstablishments.filter(
+        (e) =>
+          haversineDistanceMiles(
+            userLocation.latitude,
+            userLocation.longitude,
+            e.latitude!,
+            e.longitude!,
+          ) <= radius,
+      )
+    : mappableEstablishments;
 
   useEffect(() => {
     if (permission?.granted) {
@@ -134,6 +152,13 @@ export default function MapScreen() {
   const handleMarkerPress = (vendor: Vendor) => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     setSelected(vendor);
+    setSelectedEstablishment(null);
+  };
+
+  const handleEstablishmentPress = (est: Establishment) => {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    setSelectedEstablishment(est);
+    setSelected(null);
   };
 
   const s = styles(colors, topPad, bottomPad);
@@ -213,7 +238,7 @@ export default function MapScreen() {
         )}
         {nearbyVendors.map((vendor) => (
           <Marker
-            key={vendor.id}
+            key={`v-${vendor.id}`}
             coordinate={{
               latitude: vendor.latitude!,
               longitude: vendor.longitude!,
@@ -231,6 +256,30 @@ export default function MapScreen() {
                     ? colors.primaryForeground
                     : colors.primary
                 }
+              />
+            </View>
+          </Marker>
+        ))}
+
+        {nearbyEstablishments.map((est) => (
+          <Marker
+            key={`e-${est.id}`}
+            coordinate={{
+              latitude: est.latitude!,
+              longitude: est.longitude!,
+            }}
+            onPress={() => handleEstablishmentPress(est)}
+          >
+            <View
+              style={[
+                s.estPin,
+                selectedEstablishment?.id === est.id && s.estPinSelected,
+              ]}
+            >
+              <Feather
+                name="home"
+                size={12}
+                color="#fff"
               />
             </View>
           </Marker>
@@ -290,8 +339,8 @@ export default function MapScreen() {
 
         <View style={s.countBadge}>
           <Text style={s.countText}>
-            {nearbyVendors.length} vendor
-            {nearbyVendors.length !== 1 ? "s" : ""} within {radius} mi
+            {nearbyVendors.length + nearbyEstablishments.length} place
+            {nearbyVendors.length + nearbyEstablishments.length !== 1 ? "s" : ""} within {radius} mi
             {!userLocation ? " · Set your location" : ""}
           </Text>
         </View>
@@ -332,6 +381,49 @@ export default function MapScreen() {
               <Text style={s.viewBtnText}>View</Text>
               <Feather name="arrow-right" size={14} color={colors.primaryForeground} />
             </TouchableOpacity>
+          </View>
+        </View>
+      )}
+
+      {selectedEstablishment && (
+        <View style={[s.vendorPanel, { paddingBottom: bottomPad }]}>
+          <View style={s.panelHandle} />
+          <View style={s.panelRow}>
+            <View style={[s.panelAvatar, { backgroundColor: "#c0622f20" }]}>
+              <Feather name="home" size={20} color="#c0622f" />
+            </View>
+            <View style={s.panelInfo}>
+              <Text style={s.panelName} numberOfLines={1}>
+                {selectedEstablishment.name}
+              </Text>
+              <Text style={s.panelMeta} numberOfLines={1}>
+                {selectedEstablishment.type} · {selectedEstablishment.city}, {selectedEstablishment.state}
+              </Text>
+              {userLocation && (
+                <Text style={[s.panelDist, { color: "#c0622f" }]}>
+                  {haversineDistanceMiles(
+                    userLocation.latitude,
+                    userLocation.longitude,
+                    selectedEstablishment.latitude!,
+                    selectedEstablishment.longitude!,
+                  ).toFixed(1)}{" "}
+                  mi away
+                </Text>
+              )}
+            </View>
+            {selectedEstablishment.website ? (
+              <TouchableOpacity
+                style={[s.viewBtn, { backgroundColor: "#c0622f" }]}
+                onPress={() => router.push(selectedEstablishment.website as `${string}:${string}`)}
+              >
+                <Text style={s.viewBtnText}>Visit</Text>
+                <Feather name="external-link" size={14} color="#fff" />
+              </TouchableOpacity>
+            ) : (
+              <View style={[s.viewBtn, { backgroundColor: "#c0622f40" }]}>
+                <Text style={[s.viewBtnText, { color: "#c0622f" }]}>{selectedEstablishment.type}</Text>
+              </View>
+            )}
           </View>
         </View>
       )}
@@ -583,6 +675,25 @@ const styles = (
     },
     pinSelected: {
       backgroundColor: colors.primary,
+      transform: [{ scale: 1.25 }],
+    },
+    estPin: {
+      width: 28,
+      height: 28,
+      borderRadius: 7,
+      backgroundColor: "#c0622f",
+      borderWidth: 1.5,
+      borderColor: "#fff",
+      alignItems: "center",
+      justifyContent: "center",
+      shadowColor: "#000",
+      shadowOpacity: 0.15,
+      shadowRadius: 4,
+      shadowOffset: { width: 0, height: 2 },
+      elevation: 3,
+    },
+    estPinSelected: {
+      backgroundColor: "#a85228",
       transform: [{ scale: 1.25 }],
     },
 

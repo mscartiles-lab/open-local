@@ -1,4 +1,4 @@
-import { useListVendors } from "@workspace/api-client-react";
+import { useListVendors, useListEstablishments } from "@workspace/api-client-react";
 import "leaflet/dist/leaflet.css";
 import L from "leaflet";
 import { MapContainer, TileLayer, Marker, Popup } from "react-leaflet";
@@ -12,6 +12,7 @@ L.Icon.Default.mergeOptions({
   shadowUrl: "https://unpkg.com/leaflet@1.9.4/dist/images/marker-shadow.png",
 });
 
+// Vendor pin — olive green with bag icon
 const vendorIcon = L.divIcon({
   className: "",
   html: `<div style="
@@ -29,21 +30,43 @@ const vendorIcon = L.divIcon({
   popupAnchor: [0, -18],
 });
 
-// Florida center
-const FLORIDA = { lat: 27.6, lng: -82.5 } as const;
+// Establishment pin — warm terracotta with storefront icon
+const establishmentIcon = L.divIcon({
+  className: "",
+  html: `<div style="
+    width:32px;height:32px;border-radius:8px;
+    background:#c0622f;border:2.5px solid #fff;
+    box-shadow:0 2px 8px rgba(0,0,0,0.35);
+    display:flex;align-items:center;justify-content:center;
+  ">
+    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/>
+    </svg>
+  </div>`,
+  iconSize: [32, 32],
+  iconAnchor: [16, 16],
+  popupAnchor: [0, -20],
+});
+
+// US center — zooms out to show the whole country over time
+const MAP_CENTER = { lat: 27.6, lng: -82.5 } as const;
 
 export default function HeroMap() {
   const { data: vendors } = useListVendors();
+  const { data: establishments } = useListEstablishments();
 
-  const mapped = (vendors ?? []).filter(
+  const mappedVendors = (vendors ?? []).filter(
     (v) => v.latitude != null && v.longitude != null,
+  );
+  const mappedEstablishments = (establishments ?? []).filter(
+    (e) => e.latitude != null && e.longitude != null,
   );
 
   return (
     <section className="relative w-full h-[88vh] min-h-[520px] overflow-hidden">
       {/* Map fills full section */}
       <MapContainer
-        center={[FLORIDA.lat, FLORIDA.lng]}
+        center={[MAP_CENTER.lat, MAP_CENTER.lng]}
         zoom={7}
         scrollWheelZoom={false}
         zoomControl={false}
@@ -54,13 +77,16 @@ export default function HeroMap() {
           url="https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png"
           attribution='&copy; <a href="https://carto.com">CARTO</a>'
         />
-        {mapped.map((v) => (
+
+        {/* Vendor pins */}
+        {mappedVendors.map((v) => (
           <Marker
-            key={v.id}
+            key={`vendor-${v.id}`}
             position={[v.latitude!, v.longitude!]}
             icon={vendorIcon}
           >
             <Popup>
+              <div className="text-xs font-semibold uppercase tracking-wide text-[#3c4a26] mb-0.5">Vendor</div>
               <div className="text-sm font-medium">{v.name}</div>
               <div className="text-xs text-gray-500">{v.location}</div>
               <a
@@ -72,9 +98,34 @@ export default function HeroMap() {
             </Popup>
           </Marker>
         ))}
+
+        {/* Establishment pins */}
+        {mappedEstablishments.map((e) => (
+          <Marker
+            key={`est-${e.id}`}
+            position={[e.latitude!, e.longitude!]}
+            icon={establishmentIcon}
+          >
+            <Popup>
+              <div className="text-xs font-semibold uppercase tracking-wide text-[#c0622f] mb-0.5">{e.type}</div>
+              <div className="text-sm font-medium">{e.name}</div>
+              <div className="text-xs text-gray-500">{e.city}, {e.state}</div>
+              {e.website && (
+                <a
+                  href={e.website}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-xs text-[#c0622f] font-semibold mt-1 block hover:underline"
+                >
+                  Visit website →
+                </a>
+              )}
+            </Popup>
+          </Marker>
+        ))}
       </MapContainer>
 
-      {/* Gradient vignette to ground the text */}
+      {/* Gradient vignette */}
       <div
         className="absolute inset-0 pointer-events-none"
         style={{
@@ -96,7 +147,7 @@ export default function HeroMap() {
           The Locals
         </h1>
         <p className="text-base md:text-lg text-white/85 mb-8 max-w-lg font-sans leading-relaxed">
-          Florida's marketplace for small-batch makers — bakers, farmers, and independent producers across the state.
+          Discover independent makers, farms, and neighborhood establishments across the map.
         </p>
         <div className="flex flex-col sm:flex-row gap-3 justify-center">
           <Link
@@ -107,15 +158,31 @@ export default function HeroMap() {
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
           </Link>
           <Link
-            href="/vendors"
-            className="bg-white/15 backdrop-blur-sm border border-white/40 text-white px-7 py-3.5 rounded-md font-semibold text-base hover:bg-white/25 transition-colors"
+            href="/pin-your-business"
+            className="bg-[#c0622f]/90 backdrop-blur-sm border border-white/30 text-white px-7 py-3.5 rounded-md font-semibold text-base hover:bg-[#c0622f] transition-colors inline-flex items-center gap-2"
           >
-            Meet the Producers
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+            Pin Your Business
           </Link>
         </div>
       </div>
 
-      {/* Bottom fade into page background */}
+      {/* Legend */}
+      <div
+        className="absolute bottom-24 right-4 bg-white/90 backdrop-blur-sm rounded-lg px-3 py-2 shadow-md flex flex-col gap-1.5"
+        style={{ zIndex: 2 }}
+      >
+        <div className="flex items-center gap-2">
+          <div className="w-4 h-4 rounded-full bg-[#3c4a26] flex-shrink-0" />
+          <span className="text-xs text-gray-700 font-medium">Vendors</span>
+        </div>
+        <div className="flex items-center gap-2">
+          <div className="w-4 h-4 rounded-[4px] bg-[#c0622f] flex-shrink-0" />
+          <span className="text-xs text-gray-700 font-medium">Establishments</span>
+        </div>
+      </div>
+
+      {/* Bottom fade */}
       <div
         className="absolute bottom-0 left-0 right-0 h-20 pointer-events-none"
         style={{

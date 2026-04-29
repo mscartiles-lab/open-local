@@ -19,7 +19,11 @@ import type {
 import type {
   CategoryBreakdown,
   ErrorResponse,
+  Establishment,
+  EstablishmentInput,
+  EstablishmentUpdate,
   HealthStatus,
+  ListEstablishmentsParams,
   ListProductsParams,
   ListVendorsParams,
   LocalNowFeed,
@@ -1886,3 +1890,274 @@ export function useGetLocalNowFeed<
 
   return { ...query, queryKey: queryOptions.queryKey };
 }
+
+/**
+ * @summary List active pinned establishments
+ */
+export const getListEstablishmentsUrl = (params?: ListEstablishmentsParams) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? "null" : value.toString());
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0
+    ? `/api/establishments?${stringifiedParams}`
+    : `/api/establishments`;
+};
+
+export const listEstablishments = async (
+  params?: ListEstablishmentsParams,
+  options?: RequestInit,
+): Promise<Establishment[]> => {
+  return customFetch<Establishment[]>(getListEstablishmentsUrl(params), {
+    ...options,
+    method: "GET",
+  });
+};
+
+export const getListEstablishmentsQueryKey = (
+  params?: ListEstablishmentsParams,
+) => {
+  return [`/api/establishments`, ...(params ? [params] : [])] as const;
+};
+
+export const getListEstablishmentsQueryOptions = <
+  TData = Awaited<ReturnType<typeof listEstablishments>>,
+  TError = ErrorType<unknown>,
+>(
+  params?: ListEstablishmentsParams,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof listEstablishments>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey =
+    queryOptions?.queryKey ?? getListEstablishmentsQueryKey(params);
+
+  const queryFn: QueryFunction<
+    Awaited<ReturnType<typeof listEstablishments>>
+  > = ({ signal }) => listEstablishments(params, { signal, ...requestOptions });
+
+  return { queryKey, queryFn, ...queryOptions } as UseQueryOptions<
+    Awaited<ReturnType<typeof listEstablishments>>,
+    TError,
+    TData
+  > & { queryKey: QueryKey };
+};
+
+export type ListEstablishmentsQueryResult = NonNullable<
+  Awaited<ReturnType<typeof listEstablishments>>
+>;
+export type ListEstablishmentsQueryError = ErrorType<unknown>;
+
+/**
+ * @summary List active pinned establishments
+ */
+
+export function useListEstablishments<
+  TData = Awaited<ReturnType<typeof listEstablishments>>,
+  TError = ErrorType<unknown>,
+>(
+  params?: ListEstablishmentsParams,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof listEstablishments>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+  const queryOptions = getListEstablishmentsQueryOptions(params, options);
+
+  const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
+    queryKey: QueryKey;
+  };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+/**
+ * Creates a pending establishment record. Free during trial period.
+ * @summary Submit an establishment for map pinning
+ */
+export const getSubmitEstablishmentUrl = () => {
+  return `/api/establishments/submit`;
+};
+
+export const submitEstablishment = async (
+  establishmentInput: EstablishmentInput,
+  options?: RequestInit,
+): Promise<Establishment> => {
+  return customFetch<Establishment>(getSubmitEstablishmentUrl(), {
+    ...options,
+    method: "POST",
+    headers: { "Content-Type": "application/json", ...options?.headers },
+    body: JSON.stringify(establishmentInput),
+  });
+};
+
+export const getSubmitEstablishmentMutationOptions = <
+  TError = ErrorType<ErrorResponse>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof submitEstablishment>>,
+    TError,
+    { data: BodyType<EstablishmentInput> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof submitEstablishment>>,
+  TError,
+  { data: BodyType<EstablishmentInput> },
+  TContext
+> => {
+  const mutationKey = ["submitEstablishment"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof submitEstablishment>>,
+    { data: BodyType<EstablishmentInput> }
+  > = (props) => {
+    const { data } = props ?? {};
+
+    return submitEstablishment(data, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type SubmitEstablishmentMutationResult = NonNullable<
+  Awaited<ReturnType<typeof submitEstablishment>>
+>;
+export type SubmitEstablishmentMutationBody = BodyType<EstablishmentInput>;
+export type SubmitEstablishmentMutationError = ErrorType<ErrorResponse>;
+
+/**
+ * @summary Submit an establishment for map pinning
+ */
+export const useSubmitEstablishment = <
+  TError = ErrorType<ErrorResponse>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof submitEstablishment>>,
+    TError,
+    { data: BodyType<EstablishmentInput> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof submitEstablishment>>,
+  TError,
+  { data: BodyType<EstablishmentInput> },
+  TContext
+> => {
+  return useMutation(getSubmitEstablishmentMutationOptions(options));
+};
+
+/**
+ * @summary Admin — approve or reject an establishment
+ */
+export const getUpdateEstablishmentUrl = (id: number) => {
+  return `/api/establishments/${id}`;
+};
+
+export const updateEstablishment = async (
+  id: number,
+  establishmentUpdate: EstablishmentUpdate,
+  options?: RequestInit,
+): Promise<Establishment> => {
+  return customFetch<Establishment>(getUpdateEstablishmentUrl(id), {
+    ...options,
+    method: "PATCH",
+    headers: { "Content-Type": "application/json", ...options?.headers },
+    body: JSON.stringify(establishmentUpdate),
+  });
+};
+
+export const getUpdateEstablishmentMutationOptions = <
+  TError = ErrorType<ErrorResponse>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof updateEstablishment>>,
+    TError,
+    { id: number; data: BodyType<EstablishmentUpdate> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof updateEstablishment>>,
+  TError,
+  { id: number; data: BodyType<EstablishmentUpdate> },
+  TContext
+> => {
+  const mutationKey = ["updateEstablishment"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof updateEstablishment>>,
+    { id: number; data: BodyType<EstablishmentUpdate> }
+  > = (props) => {
+    const { id, data } = props ?? {};
+
+    return updateEstablishment(id, data, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type UpdateEstablishmentMutationResult = NonNullable<
+  Awaited<ReturnType<typeof updateEstablishment>>
+>;
+export type UpdateEstablishmentMutationBody = BodyType<EstablishmentUpdate>;
+export type UpdateEstablishmentMutationError = ErrorType<ErrorResponse>;
+
+/**
+ * @summary Admin — approve or reject an establishment
+ */
+export const useUpdateEstablishment = <
+  TError = ErrorType<ErrorResponse>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof updateEstablishment>>,
+    TError,
+    { id: number; data: BodyType<EstablishmentUpdate> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof updateEstablishment>>,
+  TError,
+  { id: number; data: BodyType<EstablishmentUpdate> },
+  TContext
+> => {
+  return useMutation(getUpdateEstablishmentMutationOptions(options));
+};

@@ -249,6 +249,58 @@ export interface CategoryBreakdown {
   productCategories: CategoryCount[];
 }
 
+export interface Establishment {
+  id: number;
+  name: string;
+  type: string;
+  description: string;
+  address: string;
+  city: string;
+  state: string;
+  /** @nullable */
+  latitude?: number | null;
+  /** @nullable */
+  longitude?: number | null;
+  /** @nullable */
+  phone?: string | null;
+  /** @nullable */
+  website?: string | null;
+  /** @nullable */
+  instagramHandle?: string | null;
+  contactEmail: string;
+  status: string;
+  isTrial: boolean;
+  createdAt: string;
+}
+
+export interface EstablishmentInput {
+  name: string;
+  type: string;
+  description: string;
+  address: string;
+  city: string;
+  state?: string;
+  /** @nullable */
+  latitude?: number | null;
+  /** @nullable */
+  longitude?: number | null;
+  /** @nullable */
+  phone?: string | null;
+  /** @nullable */
+  website?: string | null;
+  /** @nullable */
+  instagramHandle?: string | null;
+  contactEmail: string;
+}
+
+export interface EstablishmentUpdate {
+  status?: string;
+  /** @nullable */
+  latitude?: number | null;
+  /** @nullable */
+  longitude?: number | null;
+}
+
 export type ListVendorsParams = {
   search?: string;
   category?: string;
@@ -262,4 +314,15 @@ export type ListProductsParams = {
   vendorId?: number;
   featured?: boolean;
   inStock?: boolean;
+};
+
+export type ListEstablishmentsParams = {
+  /**
+   * Filter by US state code (e.g. FL)
+   */
+  state?: string;
+  /**
+   * Filter by establishment type
+   */
+  type?: string;
 };

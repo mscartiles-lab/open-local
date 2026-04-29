@@ -109,11 +109,11 @@ export default function Dashboard() {
     isLoading,
     error,
   } = useGetVendorBySlug(slug ?? "", {
-    query: { enabled: !!slug },
+    query: { enabled: !!slug, queryKey: ["vendor", slug] },
   });
 
   const { data: products = [] } = useListVendorProducts(vendor?.id ?? 0, {
-    query: { enabled: !!vendor },
+    query: { enabled: !!vendor, queryKey: ["vendor-products", vendor?.id] },
   });
 
   const updateProduct = useUpdateProduct();

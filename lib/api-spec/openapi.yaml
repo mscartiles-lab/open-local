@@ -20,6 +20,8 @@ tags:
     description: Real-time local feed (Local Near Me Now, batch drops, surplus, pre-orders)
   - name: auth
     description: Email verification for vendor onboarding
+  - name: establishments
+    description: Independently-owned local establishments pinned on the map
 
 paths:
   /healthz:
@@ -457,6 +459,84 @@ paths:
               schema:
                 $ref: "#/components/schemas/LocalNowFeed"
 
+  /establishments:
+    get:
+      operationId: listEstablishments
+      tags: [establishments]
+      summary: List active pinned establishments
+      parameters:
+        - in: query
+          name: state
+          schema: { type: string }
+          description: Filter by US state code (e.g. FL)
+        - in: query
+          name: type
+          schema: { type: string }
+          description: Filter by establishment type
+      responses:
+        "200":
+          description: List of active establishments
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Establishment"
+
+  /establishments/submit:
+    post:
+      operationId: submitEstablishment
+      tags: [establishments]
+      summary: Submit an establishment for map pinning
+      description: Creates a pending establishment record. Free during trial period.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/EstablishmentInput"
+      responses:
+        "201":
+          description: Submission received
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Establishment"
+        "400":
+          description: Validation error
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ErrorResponse" }
+
+  /establishments/{id}:
+    patch:
+      operationId: updateEstablishment
+      tags: [establishments]
+      summary: Admin — approve or reject an establishment
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema: { type: integer }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/EstablishmentUpdate"
+      responses:
+        "200":
+          description: Updated establishment
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Establishment"
+        "404":
+          description: Not found
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ErrorResponse" }
+
 components:
   schemas:
     HealthStatus:
@@ -786,3 +866,65 @@ components:
           items:
             $ref: "#/components/schemas/CategoryCount"
       required: [vendorCategories, productCategories]
+
+    Establishment:
+      type: object
+      properties:
+        id: { type: integer }
+        name: { type: string }
+        type: { type: string }
+        description: { type: string }
+        address: { type: string }
+        city: { type: string }
+        state: { type: string }
+        latitude: { type: ["number", "null"] }
+        longitude: { type: ["number", "null"] }
+        phone: { type: ["string", "null"] }
+        website: { type: ["string", "null"] }
+        instagramHandle: { type: ["string", "null"] }
+        contactEmail: { type: string }
+        status: { type: string }
+        isTrial: { type: boolean }
+        createdAt: { type: string, format: date-time }
+      required:
+        - id
+        - name
+        - type
+        - description
+        - address
+        - city
+        - state
+        - contactEmail
+        - status
+        - isTrial
+        - createdAt
+
+    EstablishmentInput:
+      type: object
+      properties:
+        name: { type: string }
+        type: { type: string }
+        description: { type: string }
+        address: { type: string }
+        city: { type: string }
+        state: { type: string }
+        latitude: { type: ["number", "null"] }
+        longitude: { type: ["number", "null"] }
+        phone: { type: ["string", "null"] }
+        website: { type: ["string", "null"] }
+        instagramHandle: { type: ["string", "null"] }
+        contactEmail: { type: string }
+      required:
+        - name
+        - type
+        - description
+        - address
+        - city
+        - contactEmail
+
+    EstablishmentUpdate:
+      type: object
+      properties:
+        status: { type: string }
+        latitude: { type: ["number", "null"] }
+        longitude: { type: ["number", "null"] }

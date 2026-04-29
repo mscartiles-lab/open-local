@@ -613,3 +613,87 @@ export const GetLocalNowFeedResponse = zod.object({
     }),
   ),
 });
+
+/**
+ * @summary List active pinned establishments
+ */
+export const ListEstablishmentsQueryParams = zod.object({
+  state: zod.coerce
+    .string()
+    .optional()
+    .describe("Filter by US state code (e.g. FL)"),
+  type: zod.coerce.string().optional().describe("Filter by establishment type"),
+});
+
+export const ListEstablishmentsResponseItem = zod.object({
+  id: zod.number(),
+  name: zod.string(),
+  type: zod.string(),
+  description: zod.string(),
+  address: zod.string(),
+  city: zod.string(),
+  state: zod.string(),
+  latitude: zod.number().nullish(),
+  longitude: zod.number().nullish(),
+  phone: zod.string().nullish(),
+  website: zod.string().nullish(),
+  instagramHandle: zod.string().nullish(),
+  contactEmail: zod.string(),
+  status: zod.string(),
+  isTrial: zod.boolean(),
+  createdAt: zod.coerce.date(),
+});
+export const ListEstablishmentsResponse = zod.array(
+  ListEstablishmentsResponseItem,
+);
+
+/**
+ * Creates a pending establishment record. Free during trial period.
+ * @summary Submit an establishment for map pinning
+ */
+export const SubmitEstablishmentBody = zod.object({
+  name: zod.string(),
+  type: zod.string(),
+  description: zod.string(),
+  address: zod.string(),
+  city: zod.string(),
+  state: zod.string().optional(),
+  latitude: zod.number().nullish(),
+  longitude: zod.number().nullish(),
+  phone: zod.string().nullish(),
+  website: zod.string().nullish(),
+  instagramHandle: zod.string().nullish(),
+  contactEmail: zod.string(),
+});
+
+/**
+ * @summary Admin — approve or reject an establishment
+ */
+export const UpdateEstablishmentParams = zod.object({
+  id: zod.coerce.number(),
+});
+
+export const UpdateEstablishmentBody = zod.object({
+  status: zod.string().optional(),
+  latitude: zod.number().nullish(),
+  longitude: zod.number().nullish(),
+});
+
+export const UpdateEstablishmentResponse = zod.object({
+  id: zod.number(),
+  name: zod.string(),
+  type: zod.string(),
+  description: zod.string(),
+  address: zod.string(),
+  city: zod.string(),
+  state: zod.string(),
+  latitude: zod.number().nullish(),
+  longitude: zod.number().nullish(),
+  phone: zod.string().nullish(),
+  website: zod.string().nullish(),
+  instagramHandle: zod.string().nullish(),
+  contactEmail: zod.string(),
+  status: zod.string(),
+  isTrial: zod.boolean(),
+  createdAt: zod.coerce.date(),
+});
