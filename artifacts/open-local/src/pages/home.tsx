@@ -28,7 +28,7 @@ export default function Home() {
             >
               <h2 className="text-sm md:text-base text-primary uppercase tracking-widest font-bold mb-6">Shop Local Wherever You Are</h2>
               <h1 className="text-5xl md:text-7xl font-serif font-bold text-foreground mb-6 leading-tight max-w-4xl">
-                The public square for Florida's <span className="italic text-primary">small-batch economy.</span>
+                The Locals
               </h1>
               <p className="text-xl text-muted-foreground mb-10 max-w-2xl mx-auto font-sans">
                 The marketplace for Florida producers — bakers in Miami, honey from the Everglades, mango from the Redland. A place where independent makers share the same shelf.
