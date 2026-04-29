@@ -230,10 +230,21 @@ export default function Admin() {
     <Layout>
       <div className="bg-muted border-b border-border py-12 mb-8">
         <div className="container max-w-6xl mx-auto px-4">
-          <h1 className="text-4xl font-serif font-bold text-foreground mb-2">Marketplace Admin</h1>
-          <p className="text-lg text-muted-foreground font-sans">
-            Manage producers, products, and curation.
-          </p>
+          <div className="flex items-start justify-between gap-4">
+            <div>
+              <h1 className="text-4xl font-serif font-bold text-foreground mb-2">Marketplace Admin</h1>
+              <p className="text-lg text-muted-foreground font-sans">
+                Manage producers, products, and curation.
+              </p>
+            </div>
+            <a
+              href="/master-list"
+              className="inline-flex items-center gap-2 bg-primary text-primary-foreground px-4 py-2.5 rounded-md text-sm font-semibold hover:bg-primary/90 transition-colors mt-1 flex-shrink-0"
+            >
+              <Tag className="w-4 h-4" />
+              Master Product List
+            </a>
+          </div>
         </div>
       </div>
 

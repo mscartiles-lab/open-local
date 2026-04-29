@@ -13,6 +13,7 @@ import Dashboard from "@/pages/dashboard";
 import Admin from "@/pages/admin";
 import Favorites from "@/pages/favorites";
 import PinYourBusiness from "@/pages/pin-your-business";
+import MasterList from "@/pages/master-list";
 import NotFound from "@/pages/not-found";
 
 const queryClient = new QueryClient({
@@ -37,6 +38,7 @@ function Router() {
       <Route path="/dashboard/:slug" component={Dashboard} />
       <Route path="/admin" component={Admin} />
       <Route path="/pin-your-business" component={PinYourBusiness} />
+      <Route path="/master-list" component={MasterList} />
       <Route component={NotFound} />
     </Switch>
   );
