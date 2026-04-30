@@ -94,7 +94,7 @@ export default function Products() {
                 </Badge>
                 <Badge 
                   variant={listingType === "surplus" ? "default" : "outline"}
-                  className="cursor-pointer bg-green-100 hover:bg-green-200 text-green-900 border-green-200"
+                  className="cursor-pointer bg-amber-100 hover:bg-amber-200 text-amber-900 border-amber-200"
                   style={listingType === "surplus" ? { backgroundColor: 'var(--color-primary)', color: 'white', borderColor: 'var(--color-primary)' } : {}}
                   onClick={() => setListingType("surplus")}
                 >

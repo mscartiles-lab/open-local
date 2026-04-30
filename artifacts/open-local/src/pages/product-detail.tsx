@@ -77,7 +77,7 @@ export default function ProductDetail() {
                   </div>
                 )}
                 {product.listingType === "surplus" && (
-                  <div className="absolute top-4 left-4 bg-green-100 text-green-900 text-sm px-3 py-1.5 uppercase tracking-wider font-bold border border-green-200">
+                  <div className="absolute top-4 left-4 bg-amber-100 text-amber-900 text-sm px-3 py-1.5 uppercase tracking-wider font-bold border border-amber-200">
                     Market Surplus
                   </div>
                 )}
@@ -185,7 +185,7 @@ export default function ProductDetail() {
                               </div>
                             )}
                             {p.listingType === "surplus" && (
-                              <div className="absolute top-2 left-2 bg-green-100 text-green-900 text-[10px] px-2 py-1 uppercase tracking-wider font-bold border border-green-200">
+                              <div className="absolute top-2 left-2 bg-amber-100 text-amber-900 text-[10px] px-2 py-1 uppercase tracking-wider font-bold border border-amber-200">
                                 Market Surplus
                               </div>
                             )}

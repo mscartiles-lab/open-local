@@ -23,8 +23,8 @@ L.Icon.Default.mergeOptions({
 
 const VENDOR_ICON = L.divIcon({
   className: "",
-  html: `<div style="width:28px;height:28px;border-radius:50%;background:#3c4a26;border:2.5px solid #fff;box-shadow:0 2px 8px rgba(0,0,0,0.3);display:flex;align-items:center;justify-content:center;">
-    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#f8f7f2" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+  html: `<div style="width:28px;height:28px;border-radius:50%;background:#c07218;border:2.5px solid #fff;box-shadow:0 2px 8px rgba(0,0,0,0.3);display:flex;align-items:center;justify-content:center;">
+    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
       <path d="M6 2L3 6v14a2 2 0 002 2h14a2 2 0 002-2V6l-3-4z"/><line x1="3" y1="6" x2="21" y2="6"/><path d="M16 10a4 4 0 01-8 0"/>
     </svg>
   </div>`,
@@ -61,7 +61,6 @@ function haversineMiles(lat1: number, lng1: number, lat2: number, lng2: number) 
   return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
 }
 
-// Child component — uses useMap() to fly to a location
 function MapFlyTo({ position, zoom }: { position: [number, number]; zoom: number }) {
   const map = useMap();
   useEffect(() => {
@@ -99,7 +98,6 @@ export default function HeroMap() {
     );
   }, []);
 
-  // Auto-request on mount
   useEffect(() => { locate(); }, []);
 
   const mappedVendors = (vendors ?? []).filter(
@@ -125,7 +123,6 @@ export default function HeroMap() {
 
   return (
     <section className="relative w-full" style={{ height: "calc(100vh - 57px)" }}>
-      {/* Map */}
       <MapContainer
         center={FLORIDA_CENTER}
         zoom={7}
@@ -139,24 +136,21 @@ export default function HeroMap() {
           attribution='&copy; CARTO'
         />
 
-        {/* Fly to user when location obtained */}
         {userPos && <MapFlyTo position={userPos} zoom={10} />}
 
-        {/* Radius circle */}
         {userPos && (
           <Circle
             center={userPos}
             radius={radius * MILES_TO_METERS}
             pathOptions={{
-              color: "#3c4a26",
+              color: "#c07218",
               weight: 1.5,
-              fillColor: "#3c4a26",
+              fillColor: "#c07218",
               fillOpacity: 0.07,
             }}
           />
         )}
 
-        {/* User location dot */}
         {userPos && (
           <CircleMarker
             center={userPos}
@@ -164,32 +158,30 @@ export default function HeroMap() {
             pathOptions={{
               color: "#fff",
               weight: 2.5,
-              fillColor: "#3c4a26",
+              fillColor: "#c07218",
               fillOpacity: 1,
             }}
           />
         )}
 
-        {/* Vendor pins */}
         {visibleVendors.map((v) => (
           <Marker key={`v-${v.id}`} position={[v.latitude!, v.longitude!]} icon={VENDOR_ICON}>
             <Popup>
-              <div className="text-xs font-semibold uppercase tracking-wide text-[#3c4a26] mb-0.5">Vendor</div>
+              <div className="text-xs font-semibold uppercase tracking-wide text-[#7a3f08] mb-0.5">Vendor</div>
               <div className="text-sm font-medium leading-snug">{v.name}</div>
               <div className="text-xs text-gray-500 mb-1">{v.location}</div>
               {userPos && (
-                <div className="text-xs text-[#3c4a26] font-medium mb-1">
+                <div className="text-xs text-[#7a3f08] font-medium mb-1">
                   {haversineMiles(userPos[0], userPos[1], v.latitude!, v.longitude!).toFixed(1)} mi away
                 </div>
               )}
-              <a href={`/vendors/${v.slug}`} className="text-xs text-[#3c4a26] font-semibold hover:underline">
+              <a href={`/vendors/${v.slug}`} className="text-xs text-[#c07218] font-semibold hover:underline">
                 View vendor →
               </a>
             </Popup>
           </Marker>
         ))}
 
-        {/* Establishment pins */}
         {visibleEstablishments.map((e) => (
           <Marker key={`e-${e.id}`} position={[e.latitude!, e.longitude!]} icon={EST_ICON}>
             <Popup>
@@ -211,27 +203,25 @@ export default function HeroMap() {
         ))}
       </MapContainer>
 
-      {/* ── Floating top bar ── */}
+      {/* Floating top bar */}
       <div
         className="absolute top-0 left-0 right-0 flex items-center justify-between px-4 py-3 pointer-events-none"
         style={{ zIndex: 10 }}
       >
-        {/* Brand pill */}
         <div className="bg-white/95 backdrop-blur-sm rounded-full px-4 py-2 shadow-md flex items-center gap-2 pointer-events-auto">
-          <span className="font-serif font-bold text-[#3c4a26] text-lg leading-none">The Locals</span>
+          <span className="font-serif font-bold text-[#7a3f08] text-lg leading-none">The Locals</span>
         </div>
 
-        {/* CTAs */}
         <div className="flex gap-2 pointer-events-auto">
           <Link
             href="/products"
-            className="bg-white/95 backdrop-blur-sm text-[#3c4a26] px-4 py-2 rounded-full text-sm font-semibold shadow-md hover:bg-white transition-colors"
+            className="bg-white/95 backdrop-blur-sm text-[#7a3f08] px-4 py-2 rounded-full text-sm font-semibold shadow-md hover:bg-white transition-colors"
           >
             Browse Goods
           </Link>
           <Link
             href="/pin-your-business"
-            className="bg-[#c0622f] text-white px-4 py-2 rounded-full text-sm font-semibold shadow-md hover:bg-[#a85228] transition-colors flex items-center gap-1.5"
+            className="bg-[#c07218] text-white px-4 py-2 rounded-full text-sm font-semibold shadow-md hover:bg-[#a85e10] transition-colors flex items-center gap-1.5"
           >
             <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
             Pin Your Business
@@ -239,16 +229,15 @@ export default function HeroMap() {
         </div>
       </div>
 
-      {/* ── Floating radius + locate controls (bottom-left) ── */}
+      {/* Floating radius + locate controls */}
       <div
         className="absolute bottom-6 left-4 flex flex-col gap-2 pointer-events-auto"
         style={{ zIndex: 10 }}
       >
-        {/* Radius quick-pick chips */}
         <div className="bg-white/95 backdrop-blur-sm rounded-2xl shadow-lg px-3 py-2.5 flex flex-col gap-2">
           <div className="flex items-center justify-between gap-3">
             <span className="text-xs font-semibold text-gray-500 uppercase tracking-wide">Radius</span>
-            <span className="text-sm font-bold text-[#3c4a26]">{radius} mi</span>
+            <span className="text-sm font-bold text-[#7a3f08]">{radius} mi</span>
           </div>
           <div className="flex gap-1.5">
             {QUICK_PICKS.map((r) => (
@@ -257,7 +246,7 @@ export default function HeroMap() {
                 onClick={() => setRadius(r)}
                 className={`flex-1 py-1.5 rounded-lg text-xs font-semibold transition-colors ${
                   radius === r
-                    ? "bg-[#3c4a26] text-white"
+                    ? "bg-[#c07218] text-white"
                     : "bg-gray-100 text-gray-600 hover:bg-gray-200"
                 }`}
               >
@@ -267,10 +256,9 @@ export default function HeroMap() {
           </div>
         </div>
 
-        {/* Count badge */}
         <div className="bg-white/95 backdrop-blur-sm rounded-xl shadow-md px-3 py-2 flex items-center gap-2">
           <div className="flex gap-1.5">
-            <span className="w-3 h-3 rounded-full bg-[#3c4a26] inline-block mt-0.5 flex-shrink-0" />
+            <span className="w-3 h-3 rounded-full bg-[#c07218] inline-block mt-0.5 flex-shrink-0" />
             <span className="w-3 h-3 rounded-[3px] bg-[#c0622f] inline-block mt-0.5 flex-shrink-0" />
           </div>
           <span className="text-xs text-gray-700">
@@ -280,7 +268,6 @@ export default function HeroMap() {
           </span>
         </div>
 
-        {/* Location error */}
         {locationError && (
           <div className="bg-amber-50 border border-amber-200 rounded-xl shadow-md px-3 py-2 max-w-[220px]">
             <p className="text-xs text-amber-700">{locationError}</p>
@@ -288,7 +275,7 @@ export default function HeroMap() {
         )}
       </div>
 
-      {/* ── Locate me button (bottom-right) ── */}
+      {/* Locate me button */}
       <button
         onClick={locate}
         disabled={locating}
@@ -297,12 +284,12 @@ export default function HeroMap() {
         style={{ zIndex: 10 }}
       >
         {locating ? (
-          <svg className="animate-spin w-5 h-5 text-[#3c4a26]" fill="none" viewBox="0 0 24 24">
+          <svg className="animate-spin w-5 h-5 text-[#c07218]" fill="none" viewBox="0 0 24 24">
             <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="3" />
             <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z" />
           </svg>
         ) : (
-          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#3c4a26" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#c07218" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
             <circle cx="12" cy="12" r="3"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3"/>
             <path d="M12 8a4 4 0 100 8 4 4 0 000-8z"/>
           </svg>
@@ -315,7 +302,7 @@ export default function HeroMap() {
         style={{ zIndex: 10 }}
       >
         <div className="flex items-center gap-2">
-          <div className="w-3.5 h-3.5 rounded-full bg-[#3c4a26] flex-shrink-0" />
+          <div className="w-3.5 h-3.5 rounded-full bg-[#c07218] flex-shrink-0" />
           <span className="text-xs text-gray-700 font-medium">Vendors</span>
         </div>
         <div className="flex items-center gap-2">

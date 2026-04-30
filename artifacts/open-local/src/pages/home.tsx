@@ -127,7 +127,7 @@ export default function Home() {
                 <div>
                   <div className="flex items-center justify-between mb-6">
                     <h3 className="text-2xl font-serif font-bold flex items-center gap-2">
-                      <Percent className="w-6 h-6 text-green-600" /> Market Surplus
+                      <Percent className="w-6 h-6 text-amber-600" /> Market Surplus
                     </h3>
                     <Link href="/products?listingType=surplus" className="flex items-center gap-1.5 text-sm font-semibold bg-secondary text-foreground hover:bg-primary hover:text-primary-foreground px-4 py-2 rounded-xl transition-all">View all <ArrowRight className="w-3.5 h-3.5" /></Link>
                   </div>
@@ -151,7 +151,7 @@ export default function Home() {
                                     <Tag className="w-12 h-12 opacity-20" />
                                   </div>
                                 )}
-                                <div className="absolute top-2 left-2 bg-green-100 text-green-900 text-[10px] px-2 py-1 uppercase tracking-wider font-bold border border-green-200">
+                                <div className="absolute top-2 left-2 bg-amber-100 text-amber-900 text-[10px] px-2 py-1 uppercase tracking-wider font-bold border border-amber-200">
                                   Market Surplus
                                 </div>
                               </div>
@@ -166,7 +166,7 @@ export default function Home() {
                                     )}
                                   </div>
                                   {product.originalPriceCents && (
-                                    <div className="text-[10px] text-green-600 font-bold mt-1">
+                                    <div className="text-[10px] text-amber-700 font-bold mt-1">
                                       {Math.round(((product.originalPriceCents - product.priceCents) / product.originalPriceCents) * 100)}% OFF
                                     </div>
                                   )}
@@ -356,7 +356,7 @@ export default function Home() {
                             </div>
                           )}
                           {product.listingType === "surplus" && (
-                            <div className="absolute top-2 left-2 bg-green-100 text-green-900 text-[10px] px-2 py-1 uppercase tracking-wider font-bold border border-green-200">
+                            <div className="absolute top-2 left-2 bg-amber-100 text-amber-900 text-[10px] px-2 py-1 uppercase tracking-wider font-bold border border-amber-200">
                               Market Surplus
                             </div>
                           )}
