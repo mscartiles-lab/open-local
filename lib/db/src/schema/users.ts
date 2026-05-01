@@ -12,7 +12,7 @@ export const usersTable = pgTable("users", {
   avatarSeed: text("avatar_seed").notNull(),
   avatarStyle: text("avatar_style").notNull().default("thumbs"),
   role: text("role").notNull(),
-  city: text("city"),
+  zip: text("zip"),
   state: text("state").notNull().default("FL"),
   createdAt: timestamp("created_at", { withTimezone: true })
     .notNull()

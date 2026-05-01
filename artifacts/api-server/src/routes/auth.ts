@@ -21,7 +21,7 @@ const SignupStartBody = z.object({
     .max(24)
     .regex(/^[a-zA-Z0-9_]+$/, "Only letters, numbers, and underscores"),
   role: z.enum(["vendor", "shopper"]),
-  city: z.string().min(1).optional(),
+  zip: z.string().min(1).optional(),
   state: z.string().default("FL"),
   avatarSeed: z.string().min(1),
   avatarStyle: z.enum(AVATAR_STYLES),
@@ -48,7 +48,7 @@ function userPublic(user: typeof usersTable.$inferSelect) {
     avatarSeed: user.avatarSeed,
     avatarStyle: user.avatarStyle,
     role: user.role,
-    city: user.city,
+    zip: user.zip,
     state: user.state,
     createdAt: user.createdAt,
   };
@@ -73,7 +73,7 @@ router.post("/auth/signup/start", async (req: Request, res: Response): Promise<v
     res.status(400).json({ error: parsed.error.flatten().fieldErrors });
     return;
   }
-  const { email, username, role, city, state, avatarSeed, avatarStyle } = parsed.data;
+  const { email, username, role, zip, state, avatarSeed, avatarStyle } = parsed.data;
 
   const normalizedEmail = email.toLowerCase();
   const normalizedUsername = username.toLowerCase();
@@ -99,7 +99,7 @@ router.post("/auth/signup/start", async (req: Request, res: Response): Promise<v
   const code = generateVerificationCode();
   const expiresAt = new Date(Date.now() + VERIFICATION_TTL_MS);
 
-  const payload = { email: normalizedEmail, username: normalizedUsername, role, city, state, avatarSeed, avatarStyle };
+  const payload = { email: normalizedEmail, username: normalizedUsername, role, zip, state, avatarSeed, avatarStyle };
 
   const [row] = await db
     .insert(signupVerificationsTable)
@@ -224,7 +224,7 @@ router.post("/auth/signup/verify", async (req: Request, res: Response): Promise<
     email: string;
     username: string;
     role: string;
-    city?: string;
+    zip?: string;
     state: string;
     avatarSeed: string;
     avatarStyle: string;
@@ -245,7 +245,7 @@ router.post("/auth/signup/verify", async (req: Request, res: Response): Promise<
       email: pl.email,
       username: pl.username,
       role: pl.role,
-      city: pl.city,
+      zip: pl.zip,
       state: pl.state,
       avatarSeed: pl.avatarSeed,
       avatarStyle: pl.avatarStyle,

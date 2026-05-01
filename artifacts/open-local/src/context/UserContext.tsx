@@ -17,7 +17,7 @@ export interface AppUser {
   avatarSeed: string;
   avatarStyle: AvatarStyle;
   role: UserRole;
-  city?: string | null;
+  zip?: string | null;
   state: string;
 }
 

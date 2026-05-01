@@ -41,7 +41,7 @@ export function Navbar() {
           <DropdownMenuContent align="end" className="w-52">
             <div className="px-3 py-2">
               <p className="font-semibold text-sm text-foreground">@{user.username}</p>
-              <p className="text-xs text-muted-foreground capitalize">{user.role}{user.city ? ` · ${user.city}` : ""}</p>
+              <p className="text-xs text-muted-foreground capitalize">{user.role}{user.zip ? ` · ${user.zip}` : ""}</p>
             </div>
             <DropdownMenuSeparator />
             <DropdownMenuItem className="gap-2 cursor-pointer text-red-600 focus:text-red-600" onClick={logout}>

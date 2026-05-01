@@ -24,7 +24,7 @@ type Step = "role" | "profile" | "avatar" | "email" | "verify" | "welcome";
 interface FormState {
   role: UserRole | null;
   username: string;
-  city: string;
+  zip: string;
   avatarStyle: AvatarStyle;
   email: string;
   verificationId: number | null;
@@ -44,7 +44,7 @@ export default function OnboardingModal() {
   const [form, setForm] = useState<FormState>({
     role: null,
     username: "",
-    city: "",
+    zip: "",
     avatarStyle: "thumbs",
     email: "",
     verificationId: null,
@@ -103,13 +103,13 @@ export default function OnboardingModal() {
           const r = await fetch(
             `https://api.bigdatacloud.net/data/reverse-geocode-client?latitude=${latitude}&longitude=${longitude}&localityLanguage=en`
           );
-          const data = await r.json() as { city?: string; locality?: string; principalSubdivision?: string };
-          const city = data.city || data.locality || "";
-          if (city) {
-            setForm((f) => ({ ...f, city }));
+          const data = await r.json() as { postcode?: string; city?: string; locality?: string };
+          const zip = data.postcode || "";
+          if (zip) {
+            setForm((f) => ({ ...f, zip }));
             setLocationError(null);
           } else {
-            setLocationError("Couldn't determine your city. Please type it in.");
+            setLocationError("Couldn't determine your zip code. Please type it in.");
           }
         } catch {
           setLocationError("Couldn't look up your location. Please type it in.");
@@ -120,9 +120,9 @@ export default function OnboardingModal() {
       (err) => {
         setLocationLoading(false);
         if (err.code === 1) {
-          setLocationError("Location access denied. Please type your city.");
+          setLocationError("Location access denied. Please type your zip code.");
         } else {
-          setLocationError("Couldn't get your location. Please type your city.");
+          setLocationError("Couldn't get your location. Please type your zip code.");
         }
       },
       { timeout: 8000, maximumAge: 60000 }
@@ -155,7 +155,7 @@ export default function OnboardingModal() {
           email: form.email,
           username: form.username,
           role: form.role,
-          city: form.city || undefined,
+          zip: form.zip || undefined,
           state: "FL",
           avatarSeed: form.username,
           avatarStyle: form.avatarStyle,
@@ -233,7 +233,7 @@ export default function OnboardingModal() {
       setError(null);
       setLocationError(null);
       setLocationLoading(false);
-      setForm({ role: null, username: "", city: "", avatarStyle: "thumbs", email: "", verificationId: null, devCode: null });
+      setForm({ role: null, username: "", zip: "", avatarStyle: "thumbs", email: "", verificationId: null, devCode: null });
     }
   }, [showOnboarding]);
 
@@ -340,8 +340,8 @@ export default function OnboardingModal() {
                     </div>
                     <div>
                       <div className="flex items-center justify-between mb-1.5">
-                        <Label htmlFor="city" className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-                          Your city <span className="font-normal normal-case">(optional)</span>
+                        <Label htmlFor="zip" className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+                          Zip code <span className="font-normal normal-case">(optional)</span>
                         </Label>
                         <button
                           type="button"
@@ -356,11 +356,12 @@ export default function OnboardingModal() {
                         </button>
                       </div>
                       <Input
-                        id="city"
-                        value={form.city}
-                        onChange={(e) => setForm((f) => ({ ...f, city: e.target.value }))}
-                        placeholder="e.g. Miami, Orlando, Tampa…"
-                        maxLength={60}
+                        id="zip"
+                        value={form.zip}
+                        onChange={(e) => setForm((f) => ({ ...f, zip: e.target.value }))}
+                        placeholder="e.g. 33101, 32801, 33602…"
+                        maxLength={10}
+                        inputMode="numeric"
                       />
                       {locationError && (
                         <p className="text-xs text-amber-600 mt-1">{locationError}</p>
@@ -427,7 +428,7 @@ export default function OnboardingModal() {
                     />
                     <div>
                       <p className="font-semibold text-foreground">@{form.username}</p>
-                      <p className="text-sm text-muted-foreground capitalize">{form.role}{form.city ? ` · ${form.city}` : ""}</p>
+                      <p className="text-sm text-muted-foreground capitalize">{form.role}{form.zip ? ` · ${form.zip}` : ""}</p>
                     </div>
                   </div>
                   <h2 className="font-serif font-bold text-xl text-foreground mb-1">Verify your email</h2>
@@ -526,7 +527,7 @@ export default function OnboardingModal() {
                     You're in, @{form.username}!
                   </h2>
                   <p className="text-muted-foreground text-sm mb-2">
-                    Welcome to Open Local{form.city ? `, ${form.city}` : ""}.<br />
+                    Welcome to Open Local{form.zip ? ` (${form.zip})` : ""}.<br />
                     <span className="capitalize">{form.role === "shopper" ? "Start discovering local vendors near you." : "Ready to list your products?"}</span>
                   </p>
                   <Button
