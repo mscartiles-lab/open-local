@@ -23,6 +23,8 @@ export const establishmentsTable = pgTable("establishments", {
   contactEmail: text("contact_email").notNull(),
   status: text("status").notNull().default("pending"),
   isTrial: boolean("is_trial").notNull().default(true),
+  stripeCustomerId: text("stripe_customer_id"),
+  stripeSubscriptionId: text("stripe_subscription_id"),
   createdAt: timestamp("created_at", { withTimezone: true })
     .notNull()
     .defaultNow(),

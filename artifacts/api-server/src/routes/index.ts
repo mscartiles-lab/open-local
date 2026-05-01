@@ -9,6 +9,7 @@ import listingsRouter from "./listings";
 import eventsRouter from "./events";
 import insightsRouter from "./insights";
 import authRouter from "./auth";
+import billingRouter from "./billing";
 
 const router: IRouter = Router();
 
@@ -22,5 +23,6 @@ router.use(listingsRouter);
 router.use(eventsRouter);
 router.use(insightsRouter);
 router.use(authRouter);
+router.use(billingRouter);
 
 export default router;
