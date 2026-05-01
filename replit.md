@@ -18,11 +18,12 @@ Shared workspace packages:
 
 ## Domain model
 
-Two public entities + one short-lived verification table. No persistent user auth yet.
-
 - **Vendors** — `id, name, slug (unique), tagline, description, category, location, region, contactEmail, websiteUrl, imageUrl, established, featured, phone?, instagramHandle?, facebookUrl?, marketsText?, latitude?, longitude?, createdAt`.
 - **Products** — `id, vendorId (FK cascade), name, description, priceCents, unit, category, imageUrl, inStock, featured, listingType, originalPriceCents?, availableUntil?, pickupNote?, createdAt`. Prices in cents.
-- **EmailVerifications** — `id, email, code, vendorPayload (jsonb), expiresAt, attempts, consumed, createdAt`. Holds the pending vendor data until the 6-digit code is verified (10-min TTL, 5-attempt cap).
+- **EmailVerifications** — `id, email, code, vendorPayload (jsonb), expiresAt, attempts, consumed, createdAt`. For vendor onboarding only.
+- **Users** — `id, email (unique), username (unique), avatarSeed, avatarStyle, role ('vendor'|'shopper'), city?, state, createdAt`. App user accounts.
+- **Sessions** — `id, userId (FK→users, cascade), token (unique UUID pair), expiresAt, createdAt`. 30-day rolling sessions. Token stored in `localStorage` as `ol_session`.
+- **SignupVerifications** — `id, email, code, payload (jsonb), expiresAt, attempts, consumed, createdAt`. Short-lived (10 min) email verification for user signup. Payload holds the full user profile until code is confirmed.
 
 `listingType` is one of: `regular`, `batch_drop` (small fresh release just out), `surplus` (market-leftover discount with `originalPriceCents`), `pre_order` (reserve for upcoming market pickup with `availableUntil` and `pickupNote`).
 
@@ -44,6 +45,14 @@ Two public entities + one short-lived verification table. No persistent user aut
 - `POST /api/auth/email/start` — body `{ email, vendorPayload }`. Generates a 6-digit code, sends via Resend if `RESEND_API_KEY` is set, otherwise returns `{ devFallback: true, devCode }` so the wizard can show it in a "demo mode" banner.
 - `POST /api/auth/email/resend` — `{ verificationId }` → new code + 10-min TTL.
 - `POST /api/auth/email/verify` — `{ verificationId, code }` → on success, creates the vendor from the stored payload and returns it.
+
+**User auth (signup/session):**
+- `GET /api/auth/check-username?username=` → `{ available: boolean }`.
+- `POST /api/auth/signup/start` — `{ email, username, role, city?, state, avatarSeed, avatarStyle }`. Creates a SignupVerification row and emails a 6-digit code (dev mode: returns `devCode`).
+- `POST /api/auth/signup/resend` — `{ verificationId }` → new code.
+- `POST /api/auth/signup/verify` — `{ verificationId, code }` → creates user + session; returns `{ user, sessionToken, sessionExpiresAt }`.
+- `GET /api/auth/me` — `Authorization: Bearer <token>` → `{ user }` or 401.
+- `POST /api/auth/logout` — `Authorization: Bearer <token>` → deletes session.
 
 ## Email
 
