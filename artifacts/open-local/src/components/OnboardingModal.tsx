@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Store, ShoppingBag, CheckCircle2, ArrowRight, RefreshCw, ChevronLeft } from "lucide-react";
+import { Store, ShoppingBag, CheckCircle2, ArrowRight, RefreshCw, ChevronLeft, LocateFixed, Loader2 } from "lucide-react";
 import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -54,6 +54,8 @@ export default function OnboardingModal() {
   const [otp, setOtp] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
+  const [locationLoading, setLocationLoading] = useState(false);
+  const [locationError, setLocationError] = useState<string | null>(null);
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const go = useCallback((next: Step, direction = 1) => {
@@ -86,6 +88,46 @@ export default function OnboardingModal() {
     setForm((f) => ({ ...f, username: clean }));
     checkUsername(clean);
   };
+
+  const detectLocation = useCallback(() => {
+    setLocationError(null);
+    if (!navigator.geolocation) {
+      setLocationError("Geolocation is not supported by your browser.");
+      return;
+    }
+    setLocationLoading(true);
+    navigator.geolocation.getCurrentPosition(
+      async (pos) => {
+        const { latitude, longitude } = pos.coords;
+        try {
+          const r = await fetch(
+            `https://api.bigdatacloud.net/data/reverse-geocode-client?latitude=${latitude}&longitude=${longitude}&localityLanguage=en`
+          );
+          const data = await r.json() as { city?: string; locality?: string; principalSubdivision?: string };
+          const city = data.city || data.locality || "";
+          if (city) {
+            setForm((f) => ({ ...f, city }));
+            setLocationError(null);
+          } else {
+            setLocationError("Couldn't determine your city. Please type it in.");
+          }
+        } catch {
+          setLocationError("Couldn't look up your location. Please type it in.");
+        } finally {
+          setLocationLoading(false);
+        }
+      },
+      (err) => {
+        setLocationLoading(false);
+        if (err.code === 1) {
+          setLocationError("Location access denied. Please type your city.");
+        } else {
+          setLocationError("Couldn't get your location. Please type your city.");
+        }
+      },
+      { timeout: 8000, maximumAge: 60000 }
+    );
+  }, []);
 
   const handleContinueToAvatar = () => {
     if (form.username.length < 3) { setError("Username must be at least 3 characters."); return; }
@@ -189,6 +231,8 @@ export default function OnboardingModal() {
       setStep("role");
       setOtp("");
       setError(null);
+      setLocationError(null);
+      setLocationLoading(false);
       setForm({ role: null, username: "", city: "", avatarStyle: "thumbs", email: "", verificationId: null, devCode: null });
     }
   }, [showOnboarding]);
@@ -295,15 +339,32 @@ export default function OnboardingModal() {
                       <p className="text-xs text-muted-foreground mt-1">Letters, numbers, underscores. 3–24 characters.</p>
                     </div>
                     <div>
-                      <Label htmlFor="city" className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Your city <span className="font-normal normal-case">(optional)</span></Label>
+                      <div className="flex items-center justify-between mb-1.5">
+                        <Label htmlFor="city" className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+                          Your city <span className="font-normal normal-case">(optional)</span>
+                        </Label>
+                        <button
+                          type="button"
+                          onClick={detectLocation}
+                          disabled={locationLoading}
+                          className="flex items-center gap-1 text-xs font-medium text-primary hover:text-primary/80 disabled:opacity-50 transition-colors"
+                        >
+                          {locationLoading
+                            ? <><Loader2 size={11} className="animate-spin" /> Detecting…</>
+                            : <><LocateFixed size={11} /> Use my location</>
+                          }
+                        </button>
+                      </div>
                       <Input
                         id="city"
                         value={form.city}
                         onChange={(e) => setForm((f) => ({ ...f, city: e.target.value }))}
                         placeholder="e.g. Miami, Orlando, Tampa…"
-                        className="mt-1.5"
                         maxLength={60}
                       />
+                      {locationError && (
+                        <p className="text-xs text-amber-600 mt-1">{locationError}</p>
+                      )}
                     </div>
                   </div>
                   {error && <p className="text-red-500 text-sm mt-3">{error}</p>}
