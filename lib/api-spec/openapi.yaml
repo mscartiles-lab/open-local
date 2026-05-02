@@ -1020,6 +1020,9 @@ components:
         status: { type: string }
         isTrial: { type: boolean }
         createdAt: { type: string, format: date-time }
+        billingToken:
+          type: string
+          description: Short-lived signed token (only present immediately after submit) used to authorize the matching business listing checkout.
       required:
         - id
         - name

@@ -1,5 +1,5 @@
 import { Link, useLocation } from "wouter";
-import { Store, ShoppingBag, PlusCircle, Settings, Menu, Heart, HandHelping, Percent, CalendarDays, LogOut, User } from "lucide-react";
+import { Store, ShoppingBag, PlusCircle, Settings, Menu, Heart, HandHelping, Percent, CalendarDays, LogOut, User, CreditCard } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 import {
@@ -44,6 +44,13 @@ export function Navbar() {
               <p className="text-xs text-muted-foreground capitalize">{user.role}{user.zip ? ` · ${user.zip}` : ""}</p>
             </div>
             <DropdownMenuSeparator />
+            {user.role === "vendor" && (
+              <DropdownMenuItem asChild className="gap-2 cursor-pointer">
+                <Link href="/billing">
+                  <CreditCard size={14} /> Billing
+                </Link>
+              </DropdownMenuItem>
+            )}
             <DropdownMenuItem className="gap-2 cursor-pointer text-red-600 focus:text-red-600" onClick={logout}>
               <LogOut size={14} /> Sign out
             </DropdownMenuItem>

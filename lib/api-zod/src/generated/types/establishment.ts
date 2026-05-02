@@ -28,4 +28,6 @@ export interface Establishment {
   status: string;
   isTrial: boolean;
   createdAt: Date;
+  /** Short-lived signed token (only present immediately after submit) used to authorize the matching business listing checkout. */
+  billingToken?: string;
 }

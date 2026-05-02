@@ -642,6 +642,12 @@ export const ListEstablishmentsResponseItem = zod.object({
   status: zod.string(),
   isTrial: zod.boolean(),
   createdAt: zod.coerce.date(),
+  billingToken: zod
+    .string()
+    .optional()
+    .describe(
+      "Short-lived signed token (only present immediately after submit) used to authorize the matching business listing checkout.",
+    ),
 });
 export const ListEstablishmentsResponse = zod.array(
   ListEstablishmentsResponseItem,
@@ -696,6 +702,12 @@ export const UpdateEstablishmentResponse = zod.object({
   status: zod.string(),
   isTrial: zod.boolean(),
   createdAt: zod.coerce.date(),
+  billingToken: zod
+    .string()
+    .optional()
+    .describe(
+      "Short-lived signed token (only present immediately after submit) used to authorize the matching business listing checkout.",
+    ),
 });
 
 /**

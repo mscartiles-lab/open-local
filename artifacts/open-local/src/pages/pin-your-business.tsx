@@ -1,10 +1,10 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { useSubmitEstablishment } from "@workspace/api-client-react";
 import Layout from "@/components/layout/Layout";
-import { MapPin, Store, CheckCircle, Clock, Star } from "lucide-react";
+import { MapPin, Store, CheckCircle, Clock, Star, Sparkles, CreditCard, Loader2 } from "lucide-react";
 
 const ESTABLISHMENT_TYPES = [
   "Café",
@@ -36,9 +36,33 @@ const schema = z.object({
 
 type FormData = z.infer<typeof schema>;
 
+interface BusinessPricing {
+  priceMonthly: number;
+  business: {
+    trialDays: number;
+    earlyBirdRemaining: number;
+    earlyBirdTotal: number;
+  };
+}
+
 export default function PinYourBusiness() {
   const [submitted, setSubmitted] = useState(false);
+  const [submittedData, setSubmittedData] = useState<{ token: string; name: string } | null>(null);
+  const [pricing, setPricing] = useState<BusinessPricing | null>(null);
+  const [pricingError, setPricingError] = useState(false);
+  const [checkoutLoading, setCheckoutLoading] = useState(false);
+  const [checkoutError, setCheckoutError] = useState<string | null>(null);
   const { mutateAsync, isPending } = useSubmitEstablishment();
+
+  useEffect(() => {
+    fetch("/api/billing/pricing")
+      .then((r) => {
+        if (!r.ok) throw new Error("pricing fetch failed");
+        return r.json();
+      })
+      .then(setPricing)
+      .catch(() => setPricingError(true));
+  }, []);
 
   const {
     register,
@@ -50,7 +74,7 @@ export default function PinYourBusiness() {
   });
 
   const onSubmit = async (data: FormData) => {
-    await mutateAsync({
+    const result = await mutateAsync({
       data: {
         ...data,
         website: data.website || null,
@@ -60,37 +84,138 @@ export default function PinYourBusiness() {
         longitude: null,
       },
     });
+    const token = (result as { billingToken?: string })?.billingToken;
+    if (!token) {
+      setCheckoutError("Submission saved, but we couldn't generate a billing link. Please contact support.");
+      setSubmitted(true);
+      return;
+    }
+    setSubmittedData({ token, name: data.name });
     setSubmitted(true);
   };
+
+  const startCheckout = async () => {
+    if (!submittedData) return;
+    setCheckoutLoading(true);
+    setCheckoutError(null);
+    try {
+      const r = await fetch("/api/billing/business/checkout", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ billingToken: submittedData.token }),
+      });
+      const result = await r.json();
+      if (r.ok && result.url) {
+        window.location.href = result.url;
+      } else {
+        setCheckoutError(result.error ?? "Couldn't start checkout.");
+        setCheckoutLoading(false);
+      }
+    } catch {
+      setCheckoutError("Couldn't reach the billing service. Please try again.");
+      setCheckoutLoading(false);
+    }
+  };
+
+  const trialDays = pricing?.business.trialDays ?? 0;
+  const earlyBirdLeft = pricing?.business.earlyBirdRemaining ?? 0;
+  const isEarlyBird = earlyBirdLeft > 0;
+  const trialMonths = Math.round(trialDays / 30);
 
   if (submitted) {
     return (
       <Layout>
-        <div className="min-h-[70vh] flex items-center justify-center px-4">
-          <div className="max-w-md w-full text-center">
-            <div className="w-16 h-16 rounded-full bg-primary/10 flex items-center justify-center mx-auto mb-6">
-              <CheckCircle className="w-8 h-8 text-primary" />
+        <div className="min-h-[70vh] flex items-center justify-center px-4 py-12">
+          <div className="max-w-xl w-full">
+            <div className="text-center mb-8">
+              <div className="w-16 h-16 rounded-full bg-primary/10 flex items-center justify-center mx-auto mb-6">
+                <CheckCircle className="w-8 h-8 text-primary" />
+              </div>
+              <h1 className="text-3xl font-serif font-bold text-foreground mb-3">
+                Submission received!
+              </h1>
+              <p className="text-muted-foreground leading-relaxed">
+                Our team reviews submissions within 24 hours. To go live the moment we approve you, set up your listing subscription now.
+              </p>
             </div>
-            <h1 className="text-3xl font-serif font-bold text-foreground mb-4">
-              You're on the map — almost!
-            </h1>
-            <p className="text-muted-foreground mb-6 leading-relaxed">
-              We received your submission and will review it shortly. Once approved, your business will appear as a pin on the map for local explorers to discover.
-            </p>
-            <div className="bg-muted rounded-lg p-4 text-sm text-muted-foreground text-left mb-8">
-              <p className="font-medium text-foreground mb-1">What happens next?</p>
-              <ul className="space-y-1 list-disc list-inside">
-                <li>Our team reviews your submission (usually within 24 hrs)</li>
-                <li>We'll email you when you go live</li>
-                <li>Your pin appears on the home map and the mobile app</li>
-              </ul>
+
+            {/* Checkout card */}
+            <div className="rounded-2xl border-2 border-primary/30 bg-amber-50/50 overflow-hidden">
+              <div className="bg-amber-100/60 border-b border-amber-200 px-6 py-4">
+                <div className="flex items-center gap-2 mb-1">
+                  <Sparkles className="w-4 h-4 text-primary" />
+                  <span className="text-xs font-bold uppercase tracking-wider text-primary">Open Local Business Listing</span>
+                </div>
+                <div className="flex items-baseline gap-2">
+                  <span className="text-4xl font-serif font-bold text-foreground">$10.98</span>
+                  <span className="text-muted-foreground">/ month</span>
+                </div>
+              </div>
+
+              <div className="p-6">
+                {isEarlyBird ? (
+                  <div className="bg-amber-100 border border-amber-300 rounded-xl p-4 mb-5">
+                    <div className="flex items-start gap-3">
+                      <Clock className="w-5 h-5 mt-0.5 text-amber-700" />
+                      <div>
+                        <p className="font-semibold text-amber-900 mb-0.5">
+                          {trialMonths} months free — early-bird offer
+                        </p>
+                        <p className="text-sm text-amber-800">
+                          Only {earlyBirdLeft} of {pricing?.business.earlyBirdTotal} free spots remaining. After that, businesses are billed immediately.
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                ) : (
+                  <p className="text-sm text-muted-foreground mb-5">
+                    Our launch promotion is fully claimed. Standard billing starts immediately.
+                  </p>
+                )}
+
+                <ul className="space-y-2.5 mb-6">
+                  {[
+                    "Pin on the Open Local map (web + mobile)",
+                    "Featured in your area's discovery feed",
+                    "Standard listing analytics",
+                    "Cancel anytime",
+                  ].map((feature) => (
+                    <li key={feature} className="flex items-center gap-3 text-sm text-foreground">
+                      <CheckCircle className="w-4 h-4 text-primary shrink-0" />
+                      {feature}
+                    </li>
+                  ))}
+                </ul>
+
+                {checkoutError && (
+                  <div className="rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700 mb-3">
+                    {checkoutError}
+                  </div>
+                )}
+
+                <button
+                  onClick={startCheckout}
+                  disabled={checkoutLoading}
+                  className="w-full bg-primary text-primary-foreground hover:bg-primary/90 transition-colors h-12 rounded-xl font-semibold inline-flex items-center justify-center gap-2 disabled:opacity-60"
+                >
+                  {checkoutLoading ? (
+                    <><Loader2 className="w-4 h-4 animate-spin" /> Starting checkout…</>
+                  ) : (
+                    <><CreditCard className="w-4 h-4" /> {isEarlyBird ? `Start ${trialMonths}-month free trial` : "Subscribe — $10.98/mo"}</>
+                  )}
+                </button>
+
+                <p className="text-xs text-muted-foreground text-center mt-3">
+                  {isEarlyBird ? "You won't be charged until your free period ends." : ""} Manage anything later from the Stripe portal.
+                </p>
+              </div>
             </div>
-            <a
-              href="/"
-              className="inline-flex items-center gap-2 bg-primary text-primary-foreground px-6 py-3 rounded-md font-medium hover:bg-primary/90 transition-colors"
-            >
-              Back to the map
-            </a>
+
+            <div className="text-center mt-6">
+              <a href="/" className="text-sm text-muted-foreground hover:text-primary underline underline-offset-4">
+                Skip for now — I'll set up billing later
+              </a>
+            </div>
           </div>
         </div>
       </Layout>
@@ -101,10 +226,10 @@ export default function PinYourBusiness() {
     <Layout>
       <div className="max-w-3xl mx-auto px-4 py-16">
         {/* Header */}
-        <div className="mb-12">
-          <div className="inline-flex items-center gap-2 bg-[#c0622f]/10 text-[#c0622f] px-3 py-1.5 rounded-full text-sm font-semibold mb-5">
-            <MapPin className="w-4 h-4" />
-            Free during our launch period
+        <div className="mb-10">
+          <div className="inline-flex items-center gap-2 bg-primary/10 text-primary px-3 py-1.5 rounded-full text-sm font-semibold mb-5">
+            <Sparkles className="w-4 h-4" />
+            {isEarlyBird ? `${earlyBirdLeft} free spots left — ${trialMonths} months on us` : "$10.98/month"}
           </div>
           <h1 className="text-5xl font-serif font-bold text-foreground mb-4 leading-tight">
             Pin your business<br />on the map
@@ -114,16 +239,42 @@ export default function PinYourBusiness() {
           </p>
         </div>
 
+        {/* Pricing Banner */}
+        <div className="mb-10 rounded-2xl border-2 border-primary/20 bg-gradient-to-br from-amber-50 to-orange-50 p-6">
+          <div className="flex flex-wrap items-center justify-between gap-4">
+            <div>
+              <div className="flex items-baseline gap-2 mb-1">
+                <span className="text-3xl font-serif font-bold text-foreground">$10.98</span>
+                <span className="text-muted-foreground">/ month</span>
+              </div>
+              {pricingError ? (
+                <p className="text-sm text-amber-900">Live pricing unavailable — billing details on the next step.</p>
+              ) : !pricing ? (
+                <p className="text-sm text-muted-foreground">Loading current offer…</p>
+              ) : isEarlyBird ? (
+                <p className="text-sm text-amber-900 font-semibold">
+                  First {pricing.business.earlyBirdTotal} businesses get {trialMonths} months free — {earlyBirdLeft} spots remain
+                </p>
+              ) : (
+                <p className="text-sm text-muted-foreground">No free trial — billed immediately upon signup</p>
+              )}
+            </div>
+            <div className="text-xs text-muted-foreground max-w-xs">
+              Submit the form below, then complete checkout to lock in your spot. Your pin goes live the moment we approve.
+            </div>
+          </div>
+        </div>
+
         {/* Perks */}
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-12">
           {[
-            { icon: Star, title: "Free to start", body: "No charge during our launch. We'll give you plenty of notice before any pricing kicks in." },
+            { icon: Star, title: isEarlyBird ? `${trialMonths} months free` : "Cancel anytime", body: isEarlyBird ? "Lock in our launch offer before all spots are claimed." : "No long-term commitment. Manage from the billing portal." },
             { icon: MapPin, title: "On every map", body: "Your pin shows on the home page and in the mobile app's Nearby tab." },
             { icon: Clock, title: "Live in 24 hrs", body: "Submit today, reviewed by our team, and live on the map within a day." },
           ].map(({ icon: Icon, title, body }) => (
             <div key={title} className="border border-border rounded-lg p-5">
-              <div className="w-9 h-9 rounded-full bg-[#c0622f]/10 flex items-center justify-center mb-3">
-                <Icon className="w-4 h-4 text-[#c0622f]" />
+              <div className="w-9 h-9 rounded-full bg-primary/10 flex items-center justify-center mb-3">
+                <Icon className="w-4 h-4 text-primary" />
               </div>
               <p className="font-semibold text-foreground text-sm mb-1">{title}</p>
               <p className="text-sm text-muted-foreground leading-relaxed">{body}</p>
@@ -135,7 +286,7 @@ export default function PinYourBusiness() {
         <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
           <div className="border border-border rounded-xl p-6 space-y-5">
             <h2 className="text-lg font-semibold text-foreground flex items-center gap-2">
-              <Store className="w-5 h-5 text-[#c0622f]" /> Business info
+              <Store className="w-5 h-5 text-primary" /> Business info
             </h2>
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -193,7 +344,7 @@ export default function PinYourBusiness() {
 
           <div className="border border-border rounded-xl p-6 space-y-5">
             <h2 className="text-lg font-semibold text-foreground flex items-center gap-2">
-              <MapPin className="w-5 h-5 text-[#c0622f]" /> Location
+              <MapPin className="w-5 h-5 text-primary" /> Location
             </h2>
 
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
@@ -279,14 +430,14 @@ export default function PinYourBusiness() {
 
           <div className="flex items-center justify-between pt-2">
             <p className="text-sm text-muted-foreground">
-              Free during our launch period. No payment info required.
+              {isEarlyBird ? `${trialMonths} months free — billing details after submit.` : "$10.98/month — billing details after submit."}
             </p>
             <button
               type="submit"
               disabled={isPending}
-              className="bg-[#c0622f] text-white px-8 py-3 rounded-md font-semibold hover:bg-[#a85228] transition-colors disabled:opacity-60 inline-flex items-center gap-2"
+              className="bg-primary text-primary-foreground px-8 py-3 rounded-md font-semibold hover:bg-primary/90 transition-colors disabled:opacity-60 inline-flex items-center gap-2"
             >
-              {isPending ? "Submitting…" : "Submit for review"}
+              {isPending ? "Submitting…" : "Submit & continue"}
             </button>
           </div>
         </form>

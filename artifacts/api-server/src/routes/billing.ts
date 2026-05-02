@@ -3,6 +3,7 @@ import { getUncachableStripeClient } from "../stripeClient";
 import { stripeStorage } from "../stripeStorage";
 import { logger } from "../lib/logger";
 import { requireAuth, type AuthRequest } from "../lib/requireAuth";
+import { verifyBusinessBillingToken } from "../lib/billingToken";
 
 const router: IRouter = Router();
 
@@ -73,7 +74,7 @@ router.post("/billing/vendor/checkout", requireAuth, async (req: Request, res: R
     }
 
     const vendorCount = await stripeStorage.countVendorUsers();
-    const trialDays = vendorCount <= VENDOR_EARLY_COHORT_SIZE
+    const trialDays = vendorCount < VENDOR_EARLY_COHORT_SIZE
       ? VENDOR_EARLY_TRIAL_DAYS
       : VENDOR_STANDARD_TRIAL_DAYS;
 
@@ -110,18 +111,26 @@ router.post("/billing/vendor/checkout", requireAuth, async (req: Request, res: R
 });
 
 router.post("/billing/business/checkout", async (req: Request, res: Response): Promise<void> => {
-  const { establishmentId, email, name } = req.body as {
-    establishmentId?: number;
-    email?: string;
-    name?: string;
-  };
+  const { billingToken } = req.body as { billingToken?: string };
 
-  if (!email || !name) {
-    res.status(400).json({ error: "email and name are required" });
+  if (!billingToken || typeof billingToken !== "string") {
+    res.status(400).json({ error: "billingToken is required" });
+    return;
+  }
+
+  const establishmentId = verifyBusinessBillingToken(billingToken);
+  if (!establishmentId) {
+    res.status(401).json({ error: "Invalid or expired billing token. Please resubmit your business." });
     return;
   }
 
   try {
+    const est = await stripeStorage.getEstablishmentById(establishmentId);
+    if (!est) {
+      res.status(404).json({ error: "Establishment not found" });
+      return;
+    }
+
     const businessCount = await stripeStorage.countEstablishments();
     const trialDays = businessCount < BUSINESS_EARLY_COHORT_SIZE
       ? BUSINESS_EARLY_TRIAL_DAYS
@@ -130,28 +139,15 @@ router.post("/billing/business/checkout", async (req: Request, res: Response): P
     const priceId = await getOrCreatePriceId(BUSINESS_PLAN_NAME);
     const stripe = await getUncachableStripeClient();
 
-    let customerId: string | undefined;
-
-    if (establishmentId) {
-      const est = await stripeStorage.getEstablishmentById(establishmentId);
-      if (est?.stripeCustomerId) customerId = est.stripeCustomerId;
-    }
-
-    if (!customerId) {
-      const existing = await stripeStorage.getCustomerByEmail(email);
-      customerId = existing ? (existing.id as string) : undefined;
-    }
-
+    let customerId = est.stripeCustomerId ?? undefined;
     if (!customerId) {
       const customer = await stripe.customers.create({
-        email,
-        name,
-        metadata: establishmentId ? { establishmentId: String(establishmentId) } : {},
+        email: est.contactEmail,
+        name: est.name,
+        metadata: { establishmentId: String(est.id) },
       });
       customerId = customer.id;
-      if (establishmentId) {
-        await stripeStorage.updateEstablishmentStripe(establishmentId, customerId);
-      }
+      await stripeStorage.updateEstablishmentStripe(est.id, customerId);
     }
 
     const baseUrl = getBaseUrl(req);

@@ -8,6 +8,7 @@ import {
   UpdateEstablishmentBody,
 } from "@workspace/api-zod";
 import { z } from "zod";
+import { issueBusinessBillingToken } from "../lib/billingToken";
 
 const router: IRouter = Router();
 
@@ -45,7 +46,8 @@ router.post("/establishments/submit", async (req, res): Promise<void> => {
     .returning();
 
   req.log.info({ establishmentId: row.id }, "establishment submitted");
-  res.status(201).json(row);
+  const billingToken = issueBusinessBillingToken(row.id);
+  res.status(201).json({ ...row, billingToken });
 });
 
 router.patch("/establishments/:id", async (req, res): Promise<void> => {

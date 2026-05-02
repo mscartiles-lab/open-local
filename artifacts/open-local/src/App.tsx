@@ -15,6 +15,7 @@ import Dashboard from "@/pages/dashboard";
 import Admin from "@/pages/admin";
 import Favorites from "@/pages/favorites";
 import PinYourBusiness from "@/pages/pin-your-business";
+import Billing from "@/pages/billing";
 import MasterList from "@/pages/master-list";
 import Listings from "@/pages/listings";
 import Surplus from "@/pages/surplus";
@@ -44,6 +45,7 @@ function Router() {
       <Route path="/dashboard/:slug" component={Dashboard} />
       <Route path="/admin" component={Admin} />
       <Route path="/pin-your-business" component={PinYourBusiness} />
+      <Route path="/billing" component={Billing} />
       <Route path="/master-list" component={MasterList} />
       <Route path="/listings" component={Listings} />
       <Route path="/surplus" component={Surplus} />
