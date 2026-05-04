@@ -1,5 +1,5 @@
 import { Router, type IRouter } from "express";
-import { eq, and } from "drizzle-orm";
+import { eq, and, asc, sql } from "drizzle-orm";
 import { db, establishmentsTable } from "@workspace/db";
 import {
   ListEstablishmentsQueryParams,
@@ -7,10 +7,21 @@ import {
   UpdateEstablishmentParams,
   UpdateEstablishmentBody,
 } from "@workspace/api-zod";
-import { z } from "zod";
 import { issueBusinessBillingToken } from "../lib/billingToken";
+import { isValidTier } from "../lib/tiers";
 
 const router: IRouter = Router();
+
+// Sort premium first, then middle, then basic — gives premium customers visibility priority.
+// NOTE: Only honor tier ranking when the establishment has a Stripe subscription on file.
+// Without this guard, a user could "select Premium" at submit time and get premium
+// ranking without actually completing payment in Stripe.
+const tierPrioritySql = sql`CASE
+  WHEN ${establishmentsTable.stripeSubscriptionId} IS NULL THEN 3
+  WHEN ${establishmentsTable.tier} = 'premium' THEN 0
+  WHEN ${establishmentsTable.tier} = 'middle' THEN 1
+  ELSE 2
+END`;
 
 router.get("/establishments", async (req, res): Promise<void> => {
   const parsed = ListEstablishmentsQueryParams.safeParse(req.query);
@@ -28,7 +39,7 @@ router.get("/establishments", async (req, res): Promise<void> => {
     .select()
     .from(establishmentsTable)
     .where(and(...conditions))
-    .orderBy(establishmentsTable.name);
+    .orderBy(tierPrioritySql, asc(establishmentsTable.name));
 
   res.json(rows);
 });
@@ -40,12 +51,15 @@ router.post("/establishments/submit", async (req, res): Promise<void> => {
     return;
   }
 
+  const { tier: requestedTier, ...rest } = parsed.data;
+  const tier = isValidTier(requestedTier) ? requestedTier : "middle";
+
   const [row] = await db
     .insert(establishmentsTable)
-    .values({ ...parsed.data, status: "pending", isTrial: true })
+    .values({ ...rest, tier, status: "pending", isTrial: true })
     .returning();
 
-  req.log.info({ establishmentId: row.id }, "establishment submitted");
+  req.log.info({ establishmentId: row.id, tier }, "establishment submitted");
   const billingToken = issueBusinessBillingToken(row.id);
   res.status(201).json({ ...row, billingToken });
 });

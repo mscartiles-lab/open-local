@@ -4,7 +4,9 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { useSubmitEstablishment } from "@workspace/api-client-react";
 import Layout from "@/components/layout/Layout";
-import { MapPin, Store, CheckCircle, Clock, Star, Sparkles, CreditCard, Loader2 } from "lucide-react";
+import { TierPicker } from "@/components/billing/TierPicker";
+import { TIERS, type TierId } from "@/lib/tiers";
+import { MapPin, Store, CheckCircle, Clock, Sparkles, CreditCard, Loader2, Image as ImageIcon, Video } from "lucide-react";
 
 const ESTABLISHMENT_TYPES = [
   "Café",
@@ -32,12 +34,16 @@ const schema = z.object({
   phone: z.string().optional(),
   website: z.string().url("Enter a valid URL (include https://)").optional().or(z.literal("")),
   instagramHandle: z.string().optional(),
+  facebookUrl: z.string().url("Enter a valid URL").optional().or(z.literal("")),
+  tiktokUrl: z.string().url("Enter a valid URL").optional().or(z.literal("")),
+  imageUrl: z.string().url("Enter a valid image URL").optional().or(z.literal("")),
+  photoUrlsRaw: z.string().optional(),
+  videoUrl: z.string().url("Enter a valid video URL").optional().or(z.literal("")),
 });
 
 type FormData = z.infer<typeof schema>;
 
 interface BusinessPricing {
-  priceMonthly: number;
   business: {
     trialDays: number;
     earlyBirdRemaining: number;
@@ -46,6 +52,7 @@ interface BusinessPricing {
 }
 
 export default function PinYourBusiness() {
+  const [tier, setTier] = useState<TierId>("middle");
   const [submitted, setSubmitted] = useState(false);
   const [submittedData, setSubmittedData] = useState<{ token: string; name: string } | null>(null);
   const [pricing, setPricing] = useState<BusinessPricing | null>(null);
@@ -74,16 +81,33 @@ export default function PinYourBusiness() {
   });
 
   const onSubmit = async (data: FormData) => {
-    const result = await mutateAsync({
-      data: {
-        ...data,
-        website: data.website || null,
-        phone: data.phone || null,
-        instagramHandle: data.instagramHandle || null,
-        latitude: null,
-        longitude: null,
-      },
-    });
+    const photoUrls = data.photoUrlsRaw
+      ? data.photoUrlsRaw.split(/\s*[\n,]\s*/).filter((u) => u.trim().length > 0).slice(0, 6)
+      : null;
+
+    // Tier-aware payload — strip fields the chosen tier doesn't include
+    const payload = {
+      name: data.name,
+      type: data.type,
+      description: data.description,
+      address: data.address,
+      city: data.city,
+      state: data.state,
+      contactEmail: data.contactEmail,
+      phone: data.phone || null,
+      website: data.website || null,
+      instagramHandle: data.instagramHandle || null,
+      facebookUrl: tier !== "basic" ? (data.facebookUrl || null) : null,
+      tiktokUrl: tier !== "basic" ? (data.tiktokUrl || null) : null,
+      imageUrl: data.imageUrl || null,
+      photoUrls: tier !== "basic" ? photoUrls : null,
+      videoUrl: tier === "premium" ? (data.videoUrl || null) : null,
+      latitude: null,
+      longitude: null,
+      tier,
+    };
+
+    const result = await mutateAsync({ data: payload });
     const token = (result as { billingToken?: string })?.billingToken;
     if (!token) {
       setCheckoutError("Submission saved, but we couldn't generate a billing link. Please contact support.");
@@ -102,7 +126,7 @@ export default function PinYourBusiness() {
       const r = await fetch("/api/billing/business/checkout", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ billingToken: submittedData.token }),
+        body: JSON.stringify({ billingToken: submittedData.token, tier }),
       });
       const result = await r.json();
       if (r.ok && result.url) {
@@ -121,6 +145,7 @@ export default function PinYourBusiness() {
   const earlyBirdLeft = pricing?.business.earlyBirdRemaining ?? 0;
   const isEarlyBird = earlyBirdLeft > 0;
   const trialMonths = Math.round(trialDays / 30);
+  const selectedTier = TIERS[tier];
 
   if (submitted) {
     return (
@@ -139,15 +164,18 @@ export default function PinYourBusiness() {
               </p>
             </div>
 
-            {/* Checkout card */}
             <div className="rounded-2xl border-2 border-primary/30 bg-amber-50/50 overflow-hidden">
               <div className="bg-amber-100/60 border-b border-amber-200 px-6 py-4">
                 <div className="flex items-center gap-2 mb-1">
                   <Sparkles className="w-4 h-4 text-primary" />
-                  <span className="text-xs font-bold uppercase tracking-wider text-primary">Open Local Business Listing</span>
+                  <span className="text-xs font-bold uppercase tracking-wider text-primary">
+                    Open Local Business Listing — {selectedTier.name}
+                  </span>
                 </div>
                 <div className="flex items-baseline gap-2">
-                  <span className="text-4xl font-serif font-bold text-foreground">$10.98</span>
+                  <span className="text-4xl font-serif font-bold text-foreground">
+                    ${selectedTier.priceMonthly.toFixed(2)}
+                  </span>
                   <span className="text-muted-foreground">/ month</span>
                 </div>
               </div>
@@ -162,24 +190,19 @@ export default function PinYourBusiness() {
                           {trialMonths} months free — early-bird offer
                         </p>
                         <p className="text-sm text-amber-800">
-                          Only {earlyBirdLeft} of {pricing?.business.earlyBirdTotal} free spots remaining. After that, businesses are billed immediately.
+                          Only {earlyBirdLeft} of {pricing?.business.earlyBirdTotal} free spots remaining.
                         </p>
                       </div>
                     </div>
                   </div>
                 ) : (
                   <p className="text-sm text-muted-foreground mb-5">
-                    Our launch promotion is fully claimed. Standard billing starts immediately.
+                    Standard billing starts immediately.
                   </p>
                 )}
 
                 <ul className="space-y-2.5 mb-6">
-                  {[
-                    "Pin on the Open Local map (web + mobile)",
-                    "Featured in your area's discovery feed",
-                    "Standard listing analytics",
-                    "Cancel anytime",
-                  ].map((feature) => (
+                  {selectedTier.features.map((feature) => (
                     <li key={feature} className="flex items-center gap-3 text-sm text-foreground">
                       <CheckCircle className="w-4 h-4 text-primary shrink-0" />
                       {feature}
@@ -201,12 +224,12 @@ export default function PinYourBusiness() {
                   {checkoutLoading ? (
                     <><Loader2 className="w-4 h-4 animate-spin" /> Starting checkout…</>
                   ) : (
-                    <><CreditCard className="w-4 h-4" /> {isEarlyBird ? `Start ${trialMonths}-month free trial` : "Subscribe — $10.98/mo"}</>
+                    <><CreditCard className="w-4 h-4" /> {isEarlyBird ? `Start ${trialMonths}-month free trial` : `Subscribe — $${selectedTier.priceMonthly.toFixed(2)}/mo`}</>
                   )}
                 </button>
 
                 <p className="text-xs text-muted-foreground text-center mt-3">
-                  {isEarlyBird ? "You won't be charged until your free period ends." : ""} Manage anything later from the Stripe portal.
+                  {isEarlyBird ? "You won't be charged until your free period ends. " : ""}Manage anything later from the Stripe portal.
                 </p>
               </div>
             </div>
@@ -225,11 +248,10 @@ export default function PinYourBusiness() {
   return (
     <Layout>
       <div className="max-w-3xl mx-auto px-4 py-16">
-        {/* Header */}
         <div className="mb-10">
           <div className="inline-flex items-center gap-2 bg-primary/10 text-primary px-3 py-1.5 rounded-full text-sm font-semibold mb-5">
             <Sparkles className="w-4 h-4" />
-            {isEarlyBird ? `${earlyBirdLeft} free spots left — ${trialMonths} months on us` : "$10.98/month"}
+            {isEarlyBird ? `${earlyBirdLeft} free spots left — ${trialMonths} months on us` : "Plans from $4.58/month"}
           </div>
           <h1 className="text-5xl font-serif font-bold text-foreground mb-4 leading-tight">
             Pin your business<br />on the map
@@ -239,47 +261,18 @@ export default function PinYourBusiness() {
           </p>
         </div>
 
-        {/* Pricing Banner */}
-        <div className="mb-10 rounded-2xl border-2 border-primary/20 bg-gradient-to-br from-amber-50 to-orange-50 p-6">
-          <div className="flex flex-wrap items-center justify-between gap-4">
-            <div>
-              <div className="flex items-baseline gap-2 mb-1">
-                <span className="text-3xl font-serif font-bold text-foreground">$10.98</span>
-                <span className="text-muted-foreground">/ month</span>
-              </div>
-              {pricingError ? (
-                <p className="text-sm text-amber-900">Live pricing unavailable — billing details on the next step.</p>
-              ) : !pricing ? (
-                <p className="text-sm text-muted-foreground">Loading current offer…</p>
-              ) : isEarlyBird ? (
-                <p className="text-sm text-amber-900 font-semibold">
-                  First {pricing.business.earlyBirdTotal} businesses get {trialMonths} months free — {earlyBirdLeft} spots remain
-                </p>
-              ) : (
-                <p className="text-sm text-muted-foreground">No free trial — billed immediately upon signup</p>
-              )}
-            </div>
-            <div className="text-xs text-muted-foreground max-w-xs">
-              Submit the form below, then complete checkout to lock in your spot. Your pin goes live the moment we approve.
-            </div>
-          </div>
-        </div>
-
-        {/* Perks */}
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-12">
-          {[
-            { icon: Star, title: isEarlyBird ? `${trialMonths} months free` : "Cancel anytime", body: isEarlyBird ? "Lock in our launch offer before all spots are claimed." : "No long-term commitment. Manage from the billing portal." },
-            { icon: MapPin, title: "On every map", body: "Your pin shows on the home page and in the mobile app's Nearby tab." },
-            { icon: Clock, title: "Live in 24 hrs", body: "Submit today, reviewed by our team, and live on the map within a day." },
-          ].map(({ icon: Icon, title, body }) => (
-            <div key={title} className="border border-border rounded-lg p-5">
-              <div className="w-9 h-9 rounded-full bg-primary/10 flex items-center justify-center mb-3">
-                <Icon className="w-4 h-4 text-primary" />
-              </div>
-              <p className="font-semibold text-foreground text-sm mb-1">{title}</p>
-              <p className="text-sm text-muted-foreground leading-relaxed">{body}</p>
-            </div>
-          ))}
+        {/* Tier Picker */}
+        <div className="mb-10">
+          <h2 className="text-lg font-semibold text-foreground mb-1">Choose your plan</h2>
+          <p className="text-sm text-muted-foreground mb-5">
+            All plans include a map pin. {pricingError ? "Live trial pricing unavailable — see Stripe for details." : isEarlyBird ? `Early-bird trial applies to all plans.` : "No active trial promotion."}
+          </p>
+          <TierPicker
+            selected={tier}
+            onSelect={setTier}
+            trialDays={trialDays}
+            isEarlyBird={isEarlyBird}
+          />
         </div>
 
         {/* Form */}
@@ -387,6 +380,48 @@ export default function PinYourBusiness() {
             </div>
           </div>
 
+          {/* Photos */}
+          <div className="border border-border rounded-xl p-6 space-y-5">
+            <h2 className="text-lg font-semibold text-foreground flex items-center gap-2">
+              <ImageIcon className="w-5 h-5 text-primary" /> Photos
+            </h2>
+
+            <div>
+              <label className="block text-sm font-medium text-foreground mb-1.5">
+                Primary photo URL
+              </label>
+              <input
+                {...register("imageUrl")}
+                placeholder="https://example.com/your-photo.jpg"
+                className="w-full border border-input rounded-md px-3 py-2.5 text-sm bg-background focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary"
+              />
+              <p className="text-xs text-muted-foreground mt-1">
+                Paste a hosted image URL. Direct uploads coming soon.
+              </p>
+              {errors.imageUrl && <p className="text-xs text-destructive mt-1">{errors.imageUrl.message}</p>}
+            </div>
+
+            {tier !== "basic" && (
+              <div>
+                <label className="block text-sm font-medium text-foreground mb-1.5">
+                  Additional photo URLs <span className="text-xs text-muted-foreground font-normal">(up to 6, one per line)</span>
+                </label>
+                <textarea
+                  {...register("photoUrlsRaw")}
+                  rows={3}
+                  placeholder={"https://example.com/photo-2.jpg\nhttps://example.com/photo-3.jpg"}
+                  className="w-full border border-input rounded-md px-3 py-2.5 text-sm bg-background focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary resize-none font-mono"
+                />
+              </div>
+            )}
+
+            {tier === "basic" && (
+              <p className="text-xs text-muted-foreground italic bg-muted/50 rounded-md px-3 py-2">
+                Multiple photos are included in the Standard plan.
+              </p>
+            )}
+          </div>
+
           <div className="border border-border rounded-xl p-6 space-y-5">
             <h2 className="text-lg font-semibold text-foreground">Contact & links</h2>
 
@@ -425,12 +460,65 @@ export default function PinYourBusiness() {
                   />
                 </div>
               </div>
+
+              {tier !== "basic" && (
+                <>
+                  <div>
+                    <label className="block text-sm font-medium text-foreground mb-1.5">Facebook URL</label>
+                    <input
+                      {...register("facebookUrl")}
+                      placeholder="https://facebook.com/yourbusiness"
+                      className="w-full border border-input rounded-md px-3 py-2.5 text-sm bg-background focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary"
+                    />
+                    {errors.facebookUrl && <p className="text-xs text-destructive mt-1">{errors.facebookUrl.message}</p>}
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-foreground mb-1.5">TikTok URL</label>
+                    <input
+                      {...register("tiktokUrl")}
+                      placeholder="https://tiktok.com/@yourbusiness"
+                      className="w-full border border-input rounded-md px-3 py-2.5 text-sm bg-background focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary"
+                    />
+                    {errors.tiktokUrl && <p className="text-xs text-destructive mt-1">{errors.tiktokUrl.message}</p>}
+                  </div>
+                </>
+              )}
             </div>
+
+            {tier === "basic" && (
+              <p className="text-xs text-muted-foreground italic bg-muted/50 rounded-md px-3 py-2">
+                Facebook & TikTok links are included starting at the Standard plan.
+              </p>
+            )}
           </div>
 
-          <div className="flex items-center justify-between pt-2">
+          {/* Premium-only video */}
+          {tier === "premium" && (
+            <div className="border-2 border-primary/30 bg-primary/5 rounded-xl p-6 space-y-5">
+              <h2 className="text-lg font-semibold text-foreground flex items-center gap-2">
+                <Video className="w-5 h-5 text-primary" /> Video clip
+                <span className="text-xs font-bold uppercase tracking-wider text-primary bg-primary/10 px-2 py-0.5 rounded-full">Premium</span>
+              </h2>
+
+              <div>
+                <label className="block text-sm font-medium text-foreground mb-1.5">
+                  Video URL <span className="text-xs text-muted-foreground font-normal">(YouTube, Vimeo, or direct .mp4)</span>
+                </label>
+                <input
+                  {...register("videoUrl")}
+                  placeholder="https://youtube.com/watch?v=…"
+                  className="w-full border border-input rounded-md px-3 py-2.5 text-sm bg-background focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary"
+                />
+                {errors.videoUrl && <p className="text-xs text-destructive mt-1">{errors.videoUrl.message}</p>}
+              </div>
+            </div>
+          )}
+
+          <div className="flex items-center justify-between pt-2 gap-4 flex-wrap">
             <p className="text-sm text-muted-foreground">
-              {isEarlyBird ? `${trialMonths} months free — billing details after submit.` : "$10.98/month — billing details after submit."}
+              {selectedTier.name} plan · ${selectedTier.priceMonthly.toFixed(2)}/mo
+              {isEarlyBird ? ` · ${trialMonths} months free` : ""}
             </p>
             <button
               type="submit"

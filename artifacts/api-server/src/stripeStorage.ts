@@ -43,6 +43,13 @@ export class StripeStorage {
       .where(eq(usersTable.id, userId));
   }
 
+  async updateUserTier(userId: number, tier: string) {
+    await db
+      .update(usersTable)
+      .set({ tier })
+      .where(eq(usersTable.id, userId));
+  }
+
   async getEstablishmentById(id: number) {
     const [est] = await db.select().from(establishmentsTable).where(eq(establishmentsTable.id, id));
     return est ?? null;
@@ -52,6 +59,13 @@ export class StripeStorage {
     await db
       .update(establishmentsTable)
       .set({ stripeCustomerId, stripeSubscriptionId })
+      .where(eq(establishmentsTable.id, estId));
+  }
+
+  async updateEstablishmentTier(estId: number, tier: string) {
+    await db
+      .update(establishmentsTable)
+      .set({ tier })
       .where(eq(establishmentsTable.id, estId));
   }
 

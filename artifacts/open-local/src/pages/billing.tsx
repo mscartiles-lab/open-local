@@ -4,9 +4,10 @@ import { useUser } from "@/context/UserContext";
 import { Button } from "@/components/ui/button";
 import { CreditCard, Sparkles, Clock, ExternalLink, Loader2, CheckCircle, Store } from "lucide-react";
 import { Link } from "wouter";
+import { TierPicker } from "@/components/billing/TierPicker";
+import { TIERS, type TierId } from "@/lib/tiers";
 
 interface PricingInfo {
-  priceMonthly: number;
   vendor: {
     trialDays: number;
     earlyBirdRemaining: number;
@@ -18,8 +19,6 @@ interface PricingInfo {
     trialDays: number;
     earlyBirdRemaining: number;
     earlyBirdTotal: number;
-    earlyBirdTrialDays: number;
-    standardTrialDays: number;
   };
 }
 
@@ -27,7 +26,8 @@ interface VendorStatus {
   status: string;
   trialDays?: number;
   trialEnd?: number | null;
-  priceMonthly: number;
+  tier?: TierId;
+  priceMonthly?: number;
 }
 
 const SESSION_KEY = "ol_session";
@@ -40,10 +40,10 @@ export default function Billing() {
   const { user, isLoading } = useUser();
   const [pricing, setPricing] = useState<PricingInfo | null>(null);
   const [status, setStatus] = useState<VendorStatus | null>(null);
+  const [tier, setTier] = useState<TierId>("middle");
   const [checkoutLoading, setCheckoutLoading] = useState(false);
   const [portalLoading, setPortalLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-
   const [pricingError, setPricingError] = useState(false);
 
   useEffect(() => {
@@ -66,7 +66,10 @@ export default function Billing() {
         if (!r.ok) throw new Error("status fetch failed");
         return r.json();
       })
-      .then(setStatus)
+      .then((data: VendorStatus) => {
+        setStatus(data);
+        if (data.tier) setTier(data.tier);
+      })
       .catch(() => {});
   }, [user]);
 
@@ -81,6 +84,7 @@ export default function Billing() {
           "Content-Type": "application/json",
           Authorization: `Bearer ${token}`,
         },
+        body: JSON.stringify({ tier }),
       });
       const data = await r.json();
       if (data.url) {
@@ -162,10 +166,11 @@ export default function Billing() {
   const trialDays = pricing?.vendor.trialDays ?? 30;
   const earlyBirdLeft = pricing?.vendor.earlyBirdRemaining ?? 0;
   const isEarlyBird = earlyBirdLeft > 0;
+  const selectedTier = TIERS[tier];
 
   return (
     <Layout>
-      <div className="max-w-3xl mx-auto px-4 py-12">
+      <div className="max-w-4xl mx-auto px-4 py-12">
         <div className="mb-10">
           <h1 className="text-4xl font-serif font-bold text-foreground mb-2">Vendor billing</h1>
           <p className="text-muted-foreground">Sell your handmade & local goods on Open Local.</p>
@@ -178,11 +183,10 @@ export default function Billing() {
         )}
         {pricingError && (
           <div className="mb-6 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900">
-            We couldn't load the current trial offer. Pricing shown is the standard $10.98/month plan.
+            We couldn't load the current trial offer. Plan prices below are still accurate.
           </div>
         )}
 
-        {/* Active subscription card */}
         {isActive ? (
           <div className="rounded-2xl border-2 border-primary/30 bg-primary/5 p-6 mb-6">
             <div className="flex items-start gap-4">
@@ -193,10 +197,13 @@ export default function Billing() {
                 <h2 className="font-serif text-2xl font-bold text-foreground mb-1">
                   {status?.status === "trialing" ? "Free trial active" : "Subscription active"}
                 </h2>
+                <p className="text-sm text-muted-foreground mb-1">
+                  Current plan: <strong className="text-foreground">{selectedTier.name}</strong> · ${selectedTier.priceMonthly.toFixed(2)}/mo
+                </p>
                 <p className="text-sm text-muted-foreground mb-4">
                   {status?.status === "trialing" && status?.trialEnd
-                    ? `Your trial ends on ${new Date(status.trialEnd * 1000).toLocaleDateString()}. After that you'll be billed $${status.priceMonthly}/month.`
-                    : `You're billed $${status?.priceMonthly}/month.`}
+                    ? `Your trial ends on ${new Date(status.trialEnd * 1000).toLocaleDateString()}.`
+                    : `Next charge: $${selectedTier.priceMonthly.toFixed(2)}.`}
                 </p>
                 <Button
                   onClick={openPortal}
@@ -211,68 +218,71 @@ export default function Billing() {
             </div>
           </div>
         ) : (
-          <div className="rounded-2xl border-2 border-border bg-card overflow-hidden mb-6">
-            {/* Plan header */}
-            <div className="bg-amber-50 border-b border-border px-6 py-5">
-              <div className="flex items-center gap-2 mb-2">
+          <>
+            <div className="mb-6 rounded-2xl border-2 border-border bg-card p-6">
+              <div className="flex items-center gap-2 mb-1">
                 <Sparkles className="w-4 h-4 text-primary" />
-                <span className="text-xs font-bold uppercase tracking-wider text-primary">Open Local Vendor Plan</span>
+                <span className="text-xs font-bold uppercase tracking-wider text-primary">Choose your plan</span>
               </div>
-              <div className="flex items-baseline gap-2">
-                <span className="text-5xl font-serif font-bold text-foreground">$10.98</span>
-                <span className="text-muted-foreground">/ month</span>
-              </div>
+              <p className="text-sm text-muted-foreground mb-5">
+                {isEarlyBird
+                  ? `Early-bird offer: ${trialDays}-day free trial — ${earlyBirdLeft} of ${pricing?.vendor.earlyBirdTotal} spots left.`
+                  : `Standard ${trialDays}-day free trial.`}
+              </p>
+              <TierPicker
+                selected={tier}
+                onSelect={setTier}
+                trialDays={trialDays}
+                isEarlyBird={isEarlyBird}
+              />
             </div>
 
-            {/* Trial info */}
-            <div className="p-6">
-              <div className={`rounded-xl p-4 mb-5 ${isEarlyBird ? "bg-amber-100/50 border border-amber-300" : "bg-secondary"}`}>
-                <div className="flex items-start gap-3">
-                  <Clock className={`w-5 h-5 mt-0.5 ${isEarlyBird ? "text-amber-700" : "text-muted-foreground"}`} />
-                  <div>
-                    <p className={`font-semibold mb-0.5 ${isEarlyBird ? "text-amber-900" : "text-foreground"}`}>
-                      {trialDays}-day free trial
-                    </p>
-                    <p className={`text-sm ${isEarlyBird ? "text-amber-800" : "text-muted-foreground"}`}>
-                      {isEarlyBird
-                        ? `Early-bird offer: only ${earlyBirdLeft} of ${pricing?.vendor.earlyBirdTotal} spots left for our 60-day trial.`
-                        : "Standard 30-day trial. No charge during the trial period."}
-                    </p>
+            <div className="rounded-2xl border-2 border-border bg-card overflow-hidden mb-6">
+              <div className="bg-amber-50 border-b border-border px-6 py-5 flex flex-wrap items-center justify-between gap-3">
+                <div>
+                  <p className="text-xs font-bold uppercase tracking-wider text-primary mb-1">
+                    Open Local Vendor Plan — {selectedTier.name}
+                  </p>
+                  <div className="flex items-baseline gap-2">
+                    <span className="text-4xl font-serif font-bold text-foreground">${selectedTier.priceMonthly.toFixed(2)}</span>
+                    <span className="text-muted-foreground">/ month</span>
                   </div>
                 </div>
+                {isEarlyBird && trialDays > 0 && (
+                  <div className="flex items-center gap-2 text-amber-800 bg-amber-100 px-3 py-1.5 rounded-full text-sm font-semibold">
+                    <Clock className="w-4 h-4" /> {trialDays}-day free trial
+                  </div>
+                )}
               </div>
 
-              <ul className="space-y-2.5 mb-6">
-                {[
-                  "Unlimited product listings",
-                  "Featured on the Open Local map & Goods feed",
-                  "Reach shoppers in our mobile app",
-                  "Cancel anytime",
-                ].map((feature) => (
-                  <li key={feature} className="flex items-center gap-3 text-sm text-foreground">
-                    <CheckCircle className="w-4 h-4 text-primary shrink-0" />
-                    {feature}
-                  </li>
-                ))}
-              </ul>
+              <div className="p-6">
+                <ul className="space-y-2.5 mb-6">
+                  {selectedTier.features.map((feature) => (
+                    <li key={feature} className="flex items-center gap-3 text-sm text-foreground">
+                      <CheckCircle className="w-4 h-4 text-primary shrink-0" />
+                      {feature}
+                    </li>
+                  ))}
+                </ul>
 
-              <Button
-                onClick={startCheckout}
-                disabled={checkoutLoading}
-                className="w-full bg-primary text-primary-foreground hover:bg-primary/90 h-12 text-base gap-2"
-              >
-                {checkoutLoading ? (
-                  <><Loader2 className="w-4 h-4 animate-spin" /> Starting checkout…</>
-                ) : (
-                  <><CreditCard className="w-4 h-4" /> Start {trialDays}-day free trial</>
-                )}
-              </Button>
+                <Button
+                  onClick={startCheckout}
+                  disabled={checkoutLoading}
+                  className="w-full bg-primary text-primary-foreground hover:bg-primary/90 h-12 text-base gap-2"
+                >
+                  {checkoutLoading ? (
+                    <><Loader2 className="w-4 h-4 animate-spin" /> Starting checkout…</>
+                  ) : (
+                    <><CreditCard className="w-4 h-4" /> {isEarlyBird ? `Start ${trialDays}-day free trial` : `Subscribe — $${selectedTier.priceMonthly.toFixed(2)}/mo`}</>
+                  )}
+                </Button>
 
-              <p className="text-xs text-muted-foreground text-center mt-3">
-                You won't be charged until your trial ends. Cancel anytime from the billing portal.
-              </p>
+                <p className="text-xs text-muted-foreground text-center mt-3">
+                  {isEarlyBird ? "You won't be charged until your trial ends. " : ""}Cancel anytime from the billing portal.
+                </p>
+              </div>
             </div>
-          </div>
+          </>
         )}
       </div>
     </Layout>

@@ -12,6 +12,8 @@ export * from "./contextStat";
 export * from "./errorResponse";
 export * from "./establishment";
 export * from "./establishmentInput";
+export * from "./establishmentInputTier";
+export * from "./establishmentTier";
 export * from "./establishmentUpdate";
 export * from "./eventInput";
 export * from "./eventItem";

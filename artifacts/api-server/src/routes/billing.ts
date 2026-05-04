@@ -4,12 +4,16 @@ import { stripeStorage } from "../stripeStorage";
 import { logger } from "../lib/logger";
 import { requireAuth, type AuthRequest } from "../lib/requireAuth";
 import { verifyBusinessBillingToken } from "../lib/billingToken";
+import {
+  TIERS,
+  TIER_IDS,
+  isValidTier,
+  vendorPlanName,
+  businessPlanName,
+  type TierId,
+} from "../lib/tiers";
 
 const router: IRouter = Router();
-
-const VENDOR_PLAN_NAME = "Open Local Vendor Plan";
-const BUSINESS_PLAN_NAME = "Open Local Business Listing";
-const MONTHLY_PRICE_CENTS = 1098;
 
 const VENDOR_EARLY_COHORT_SIZE = 150;
 const VENDOR_EARLY_TRIAL_DAYS = 60;
@@ -19,7 +23,7 @@ const BUSINESS_EARLY_COHORT_SIZE = 100;
 const BUSINESS_EARLY_TRIAL_DAYS = 90;
 const BUSINESS_STANDARD_TRIAL_DAYS = 0;
 
-async function getOrCreatePriceId(planName: string): Promise<string> {
+async function getOrCreatePriceId(planName: string, priceCents: number): Promise<string> {
   const stripe = await getUncachableStripeClient();
 
   const products = await stripe.products.search({
@@ -40,13 +44,12 @@ async function getOrCreatePriceId(planName: string): Promise<string> {
     recurring: { interval: "month" } as any,
   });
 
-  if (prices.data.length > 0) {
-    return prices.data[0].id;
-  }
+  const match = prices.data.find((p) => p.unit_amount === priceCents);
+  if (match) return match.id;
 
   const price = await stripe.prices.create({
     product: productId,
-    unit_amount: MONTHLY_PRICE_CENTS,
+    unit_amount: priceCents,
     currency: "usd",
     recurring: { interval: "month" },
   });
@@ -59,8 +62,13 @@ function getBaseUrl(req: Request): string {
   return `${req.protocol}://${req.get("host")}`;
 }
 
+function parseTier(value: unknown, fallback: TierId = "middle"): TierId {
+  return isValidTier(value) ? value : fallback;
+}
+
 router.post("/billing/vendor/checkout", requireAuth, async (req: Request, res: Response): Promise<void> => {
   const { userId } = req as AuthRequest;
+  const tier = parseTier((req.body as { tier?: string } | undefined)?.tier);
 
   try {
     const user = await stripeStorage.getUserById(userId);
@@ -78,7 +86,7 @@ router.post("/billing/vendor/checkout", requireAuth, async (req: Request, res: R
       ? VENDOR_EARLY_TRIAL_DAYS
       : VENDOR_STANDARD_TRIAL_DAYS;
 
-    const priceId = await getOrCreatePriceId(VENDOR_PLAN_NAME);
+    const priceId = await getOrCreatePriceId(vendorPlanName(tier), TIERS[tier].priceCents);
     const stripe = await getUncachableStripeClient();
 
     let customerId = user.stripeCustomerId ?? undefined;
@@ -98,12 +106,16 @@ router.post("/billing/vendor/checkout", requireAuth, async (req: Request, res: R
       payment_method_types: ["card"],
       line_items: [{ price: priceId, quantity: 1 }],
       mode: "subscription",
-      subscription_data: trialDays > 0 ? { trial_period_days: trialDays } : undefined,
+      subscription_data: {
+        ...(trialDays > 0 ? { trial_period_days: trialDays } : {}),
+        metadata: { tier, userId: String(user.id) },
+      },
       success_url: `${baseUrl}/?billing=success`,
       cancel_url: `${baseUrl}/?billing=cancel`,
+      metadata: { tier, userId: String(user.id) },
     });
 
-    res.json({ url: session.url, trialDays });
+    res.json({ url: session.url, trialDays, tier });
   } catch (err) {
     logger.error({ err }, "[billing] vendor checkout error");
     res.status(500).json({ error: "Failed to create checkout session" });
@@ -111,7 +123,9 @@ router.post("/billing/vendor/checkout", requireAuth, async (req: Request, res: R
 });
 
 router.post("/billing/business/checkout", async (req: Request, res: Response): Promise<void> => {
-  const { billingToken } = req.body as { billingToken?: string };
+  const body = req.body as { billingToken?: string; tier?: string };
+  const { billingToken } = body;
+  const tier = parseTier(body.tier);
 
   if (!billingToken || typeof billingToken !== "string") {
     res.status(400).json({ error: "billingToken is required" });
@@ -136,7 +150,7 @@ router.post("/billing/business/checkout", async (req: Request, res: Response): P
       ? BUSINESS_EARLY_TRIAL_DAYS
       : BUSINESS_STANDARD_TRIAL_DAYS;
 
-    const priceId = await getOrCreatePriceId(BUSINESS_PLAN_NAME);
+    const priceId = await getOrCreatePriceId(businessPlanName(tier), TIERS[tier].priceCents);
     const stripe = await getUncachableStripeClient();
 
     let customerId = est.stripeCustomerId ?? undefined;
@@ -156,12 +170,16 @@ router.post("/billing/business/checkout", async (req: Request, res: Response): P
       payment_method_types: ["card"],
       line_items: [{ price: priceId, quantity: 1 }],
       mode: "subscription",
-      subscription_data: trialDays > 0 ? { trial_period_days: trialDays } : undefined,
+      subscription_data: {
+        ...(trialDays > 0 ? { trial_period_days: trialDays } : {}),
+        metadata: { tier, establishmentId: String(est.id) },
+      },
       success_url: `${baseUrl}/?billing=success`,
       cancel_url: `${baseUrl}/?billing=cancel`,
+      metadata: { tier, establishmentId: String(est.id) },
     });
 
-    res.json({ url: session.url, trialDays });
+    res.json({ url: session.url, trialDays, tier });
   } catch (err) {
     logger.error({ err }, "[billing] business checkout error");
     res.status(500).json({ error: "Failed to create checkout session" });
@@ -178,15 +196,23 @@ router.get("/billing/vendor/status", requireAuth, async (req: Request, res: Resp
       const trialDays = vendorCount < VENDOR_EARLY_COHORT_SIZE
         ? VENDOR_EARLY_TRIAL_DAYS
         : VENDOR_STANDARD_TRIAL_DAYS;
-      res.json({ status: "none", trialDays, priceMonthly: MONTHLY_PRICE_CENTS / 100 });
+      res.json({ status: "none", trialDays, tier: null });
       return;
     }
 
-    const sub = await stripeStorage.getSubscription(user.stripeSubscriptionId);
+    // Derive tier from the synced Stripe subscription's metadata (source of truth).
+    // Falls back to null if Stripe hasn't synced yet or metadata is missing.
+    const sub = await stripeStorage.getSubscription(user.stripeSubscriptionId) as
+      | { status?: string; trial_end?: number; metadata?: Record<string, string> }
+      | null;
+    const subTier = sub?.metadata?.tier;
+    const effectiveTier: TierId | null = isValidTier(subTier) ? subTier : null;
+
     res.json({
       status: sub?.status ?? "unknown",
       trialEnd: sub?.trial_end ?? null,
-      priceMonthly: MONTHLY_PRICE_CENTS / 100,
+      tier: effectiveTier,
+      priceMonthly: effectiveTier ? TIERS[effectiveTier].priceCents / 100 : null,
     });
   } catch (err) {
     logger.error({ err }, "[billing] vendor status error");
@@ -230,8 +256,14 @@ router.get("/billing/pricing", async (_req: Request, res: Response): Promise<voi
       ? BUSINESS_EARLY_TRIAL_DAYS
       : BUSINESS_STANDARD_TRIAL_DAYS;
 
+    const tiers = TIER_IDS.map((id) => ({
+      id,
+      name: TIERS[id].name,
+      priceMonthly: TIERS[id].priceCents / 100,
+    }));
+
     res.json({
-      priceMonthly: MONTHLY_PRICE_CENTS / 100,
+      tiers,
       vendor: {
         trialDays: vendorTrialDays,
         earlyBirdRemaining: Math.max(0, VENDOR_EARLY_COHORT_SIZE - vendorCount),

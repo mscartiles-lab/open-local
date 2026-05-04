@@ -1016,8 +1016,18 @@ components:
         phone: { type: ["string", "null"] }
         website: { type: ["string", "null"] }
         instagramHandle: { type: ["string", "null"] }
+        facebookUrl: { type: ["string", "null"] }
+        tiktokUrl: { type: ["string", "null"] }
+        imageUrl: { type: ["string", "null"] }
+        photoUrls:
+          oneOf:
+            - type: array
+              items: { type: string }
+            - type: "null"
+        videoUrl: { type: ["string", "null"] }
         contactEmail: { type: string }
         status: { type: string }
+        tier: { type: string, enum: [basic, middle, premium] }
         isTrial: { type: boolean }
         createdAt: { type: string, format: date-time }
         billingToken:
@@ -1033,6 +1043,7 @@ components:
         - state
         - contactEmail
         - status
+        - tier
         - isTrial
         - createdAt
 
@@ -1050,7 +1061,20 @@ components:
         phone: { type: ["string", "null"] }
         website: { type: ["string", "null"] }
         instagramHandle: { type: ["string", "null"] }
+        facebookUrl: { type: ["string", "null"] }
+        tiktokUrl: { type: ["string", "null"] }
+        imageUrl: { type: ["string", "null"] }
+        photoUrls:
+          oneOf:
+            - type: array
+              items: { type: string }
+            - type: "null"
+        videoUrl: { type: ["string", "null"] }
         contactEmail: { type: string }
+        tier:
+          type: string
+          enum: [basic, middle, premium]
+          description: Subscription tier the listing is signing up for.
       required:
         - name
         - type

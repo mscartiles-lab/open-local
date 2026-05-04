@@ -638,8 +638,14 @@ export const ListEstablishmentsResponseItem = zod.object({
   phone: zod.string().nullish(),
   website: zod.string().nullish(),
   instagramHandle: zod.string().nullish(),
+  facebookUrl: zod.string().nullish(),
+  tiktokUrl: zod.string().nullish(),
+  imageUrl: zod.string().nullish(),
+  photoUrls: zod.union([zod.array(zod.string()), zod.null()]).optional(),
+  videoUrl: zod.string().nullish(),
   contactEmail: zod.string(),
   status: zod.string(),
+  tier: zod.enum(["basic", "middle", "premium"]),
   isTrial: zod.boolean(),
   createdAt: zod.coerce.date(),
   billingToken: zod
@@ -669,7 +675,16 @@ export const SubmitEstablishmentBody = zod.object({
   phone: zod.string().nullish(),
   website: zod.string().nullish(),
   instagramHandle: zod.string().nullish(),
+  facebookUrl: zod.string().nullish(),
+  tiktokUrl: zod.string().nullish(),
+  imageUrl: zod.string().nullish(),
+  photoUrls: zod.union([zod.array(zod.string()), zod.null()]).optional(),
+  videoUrl: zod.string().nullish(),
   contactEmail: zod.string(),
+  tier: zod
+    .enum(["basic", "middle", "premium"])
+    .optional()
+    .describe("Subscription tier the listing is signing up for."),
 });
 
 /**
@@ -698,8 +713,14 @@ export const UpdateEstablishmentResponse = zod.object({
   phone: zod.string().nullish(),
   website: zod.string().nullish(),
   instagramHandle: zod.string().nullish(),
+  facebookUrl: zod.string().nullish(),
+  tiktokUrl: zod.string().nullish(),
+  imageUrl: zod.string().nullish(),
+  photoUrls: zod.union([zod.array(zod.string()), zod.null()]).optional(),
+  videoUrl: zod.string().nullish(),
   contactEmail: zod.string(),
   status: zod.string(),
+  tier: zod.enum(["basic", "middle", "premium"]),
   isTrial: zod.boolean(),
   createdAt: zod.coerce.date(),
   billingToken: zod

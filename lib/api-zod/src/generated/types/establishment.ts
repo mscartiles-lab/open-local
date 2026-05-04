@@ -5,6 +5,7 @@
  * Open Local — Florida's local marketplace. Shop Local Wherever You Are.
  * OpenAPI spec version: 0.1.0
  */
+import type { EstablishmentTier } from "./establishmentTier";
 
 export interface Establishment {
   id: number;
@@ -24,8 +25,18 @@ export interface Establishment {
   website?: string | null;
   /** @nullable */
   instagramHandle?: string | null;
+  /** @nullable */
+  facebookUrl?: string | null;
+  /** @nullable */
+  tiktokUrl?: string | null;
+  /** @nullable */
+  imageUrl?: string | null;
+  photoUrls?: string[] | null;
+  /** @nullable */
+  videoUrl?: string | null;
   contactEmail: string;
   status: string;
+  tier: EstablishmentTier;
   isTrial: boolean;
   createdAt: Date;
   /** Short-lived signed token (only present immediately after submit) used to authorize the matching business listing checkout. */

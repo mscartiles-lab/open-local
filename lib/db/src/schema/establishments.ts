@@ -5,6 +5,7 @@ import {
   boolean,
   timestamp,
   doublePrecision,
+  jsonb,
 } from "drizzle-orm/pg-core";
 
 export const establishmentsTable = pgTable("establishments", {
@@ -20,8 +21,14 @@ export const establishmentsTable = pgTable("establishments", {
   phone: text("phone"),
   website: text("website"),
   instagramHandle: text("instagram_handle"),
+  facebookUrl: text("facebook_url"),
+  tiktokUrl: text("tiktok_url"),
+  imageUrl: text("image_url"),
+  photoUrls: jsonb("photo_urls").$type<string[]>(),
+  videoUrl: text("video_url"),
   contactEmail: text("contact_email").notNull(),
   status: text("status").notNull().default("pending"),
+  tier: text("tier").notNull().default("middle"),
   isTrial: boolean("is_trial").notNull().default(true),
   stripeCustomerId: text("stripe_customer_id"),
   stripeSubscriptionId: text("stripe_subscription_id"),

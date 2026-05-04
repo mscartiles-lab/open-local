@@ -14,6 +14,7 @@ export const usersTable = pgTable("users", {
   role: text("role").notNull(),
   zip: text("zip"),
   state: text("state").notNull().default("FL"),
+  tier: text("tier").notNull().default("middle"),
   stripeCustomerId: text("stripe_customer_id"),
   stripeSubscriptionId: text("stripe_subscription_id"),
   createdAt: timestamp("created_at", { withTimezone: true })

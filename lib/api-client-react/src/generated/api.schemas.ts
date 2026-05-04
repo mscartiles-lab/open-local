@@ -249,6 +249,15 @@ export interface CategoryBreakdown {
   productCategories: CategoryCount[];
 }
 
+export type EstablishmentTier =
+  (typeof EstablishmentTier)[keyof typeof EstablishmentTier];
+
+export const EstablishmentTier = {
+  basic: "basic",
+  middle: "middle",
+  premium: "premium",
+} as const;
+
 export interface Establishment {
   id: number;
   name: string;
@@ -267,13 +276,35 @@ export interface Establishment {
   website?: string | null;
   /** @nullable */
   instagramHandle?: string | null;
+  /** @nullable */
+  facebookUrl?: string | null;
+  /** @nullable */
+  tiktokUrl?: string | null;
+  /** @nullable */
+  imageUrl?: string | null;
+  photoUrls?: string[] | null;
+  /** @nullable */
+  videoUrl?: string | null;
   contactEmail: string;
   status: string;
+  tier: EstablishmentTier;
   isTrial: boolean;
   createdAt: string;
   /** Short-lived signed token (only present immediately after submit) used to authorize the matching business listing checkout. */
   billingToken?: string;
 }
+
+/**
+ * Subscription tier the listing is signing up for.
+ */
+export type EstablishmentInputTier =
+  (typeof EstablishmentInputTier)[keyof typeof EstablishmentInputTier];
+
+export const EstablishmentInputTier = {
+  basic: "basic",
+  middle: "middle",
+  premium: "premium",
+} as const;
 
 export interface EstablishmentInput {
   name: string;
@@ -292,7 +323,18 @@ export interface EstablishmentInput {
   website?: string | null;
   /** @nullable */
   instagramHandle?: string | null;
+  /** @nullable */
+  facebookUrl?: string | null;
+  /** @nullable */
+  tiktokUrl?: string | null;
+  /** @nullable */
+  imageUrl?: string | null;
+  photoUrls?: string[] | null;
+  /** @nullable */
+  videoUrl?: string | null;
   contactEmail: string;
+  /** Subscription tier the listing is signing up for. */
+  tier?: EstablishmentInputTier;
 }
 
 export interface EstablishmentUpdate {
