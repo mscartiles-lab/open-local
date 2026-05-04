@@ -9,6 +9,7 @@ import {
 } from "@workspace/api-zod";
 import { issueBusinessBillingToken } from "../lib/billingToken";
 import { isValidTier } from "../lib/tiers";
+import { requireAdmin } from "../lib/requireAdmin";
 
 const router: IRouter = Router();
 
@@ -64,7 +65,7 @@ router.post("/establishments/submit", async (req, res): Promise<void> => {
   res.status(201).json({ ...row, billingToken });
 });
 
-router.patch("/establishments/:id", async (req, res): Promise<void> => {
+router.patch("/establishments/:id", requireAdmin, async (req, res): Promise<void> => {
   const paramParsed = UpdateEstablishmentParams.safeParse(req.params);
   if (!paramParsed.success) {
     res.status(400).json({ error: paramParsed.error.message });
