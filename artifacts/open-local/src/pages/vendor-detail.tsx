@@ -8,6 +8,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { useGetVendor, useListVendorProducts, getGetVendorQueryKey, getListVendorProductsQueryKey } from "@workspace/api-client-react";
 import NotFound from "./not-found";
 import { useFavorites } from "@/hooks/use-favorites";
+import CheckInButton from "@/components/CheckInButton";
 
 export default function VendorDetail() {
   const params = useParams();
@@ -96,6 +97,14 @@ export default function VendorDetail() {
                       </div>
                     </div>
                   </div>
+                </div>
+
+                <div className="mt-6 flex flex-wrap gap-3">
+                  <CheckInButton
+                    vendorId={vendor.id}
+                    vendorName={vendor.name}
+                    hasLocation={vendor.latitude != null && vendor.longitude != null}
+                  />
                 </div>
 
                 <div className="mt-8 pt-8 border-t border-border prose prose-sm md:prose-base dark:prose-invert max-w-none text-foreground/80 font-sans leading-relaxed">

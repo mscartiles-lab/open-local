@@ -3,6 +3,7 @@ import {
   serial,
   text,
   timestamp,
+  jsonb,
 } from "drizzle-orm/pg-core";
 
 export const usersTable = pgTable("users", {
@@ -17,6 +18,7 @@ export const usersTable = pgTable("users", {
   tier: text("tier").notNull().default("middle"),
   stripeCustomerId: text("stripe_customer_id"),
   stripeSubscriptionId: text("stripe_subscription_id"),
+  equippedUnlocks: jsonb("equipped_unlocks").$type<string[]>().notNull().default([]),
   createdAt: timestamp("created_at", { withTimezone: true })
     .notNull()
     .defaultNow(),

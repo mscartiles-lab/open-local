@@ -19,10 +19,24 @@ export interface AppUser {
   role: UserRole;
   zip?: string | null;
   state: string;
+  equippedUnlocks?: string[];
 }
 
-export function avatarUrl(seed: string, style: AvatarStyle): string {
-  return `https://api.dicebear.com/9.x/${style}/svg?seed=${encodeURIComponent(seed)}&backgroundColor=fef3c7,fed7aa,fde68a,fdba74`;
+import { getUnlock } from "@/lib/unlockCatalog";
+
+export function avatarUrl(seed: string, style: AvatarStyle, equippedUnlocks?: string[]): string {
+  const params = new URLSearchParams({
+    seed,
+    backgroundColor: "fef3c7,fed7aa,fde68a,fdba74",
+  });
+  for (const key of equippedUnlocks ?? []) {
+    const def = getUnlock(key);
+    if (def?.diceBearParam) {
+      params.append(def.diceBearParam.name, def.diceBearParam.value);
+      params.append(`${def.diceBearParam.name}Probability`, "100");
+    }
+  }
+  return `https://api.dicebear.com/9.x/${style}/svg?${params.toString()}`;
 }
 
 const SESSION_KEY = "ol_session";

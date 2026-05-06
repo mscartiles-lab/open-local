@@ -11,6 +11,7 @@ import insightsRouter from "./insights";
 import authRouter from "./auth";
 import billingRouter from "./billing";
 import adminRouter from "./admin";
+import rewardsRouter from "./rewards";
 
 const router: IRouter = Router();
 
@@ -26,5 +27,6 @@ router.use(insightsRouter);
 router.use(authRouter);
 router.use(billingRouter);
 router.use(adminRouter);
+router.use(rewardsRouter);
 
 export default router;

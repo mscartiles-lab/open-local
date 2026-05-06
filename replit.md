@@ -2,6 +2,15 @@
 
 National marketplace for local producers — bakers, farms, apiaries, ceramicists, brewers, butchers, florists, makers. Tagline: **Shop Local Wherever You Are**. Launching in Florida markets first, with a roadmap to expand state by state across the US. Build decisions should avoid hardcoding Florida-specific logic; use region/state filtering instead so new markets can be added without code changes.
 
+## Rewards (GPS check-ins)
+
+Shoppers earn DiceBear avatar unlocks by checking in at vendor pins.
+
+- Tables: `vendor_visits` (userId, vendorId, lat/lng, distanceMiles, visitDate; unique on user+vendor+day) and `avatar_unlocks` (userId, unlockKey, unique). New `equipped_unlocks` jsonb column on `users`.
+- Catalog: `artifacts/api-server/src/lib/avatarCatalog.ts` (server) mirrored in `artifacts/open-local/src/lib/unlockCatalog.ts` (web). Thresholds: 1/2/3/5/8/12/20/35 unique vendors.
+- API: `GET /api/rewards/catalog`, `GET /api/rewards/me`, `POST /api/rewards/check-in` ({ vendorId, latitude, longitude } — haversine ≤ 0.25 mi from vendor pin), `PATCH /api/rewards/equipped`.
+- UI: `CheckInButton` on `/vendors/:id` (uses `navigator.geolocation`), `/rewards` page lists earned/locked unlocks with equip toggles. Avatar URL helper in `UserContext.avatarUrl(seed, style, equipped?)` appends DiceBear params from equipped items. Rewards link in user dropdown.
+
 ## Admin
 
 - Promote: `UPDATE users SET role='admin' WHERE email='…'` OR add to `ADMIN_EMAILS` env var (comma-separated). `mscartiles@gmail.com` is pre-listed.
