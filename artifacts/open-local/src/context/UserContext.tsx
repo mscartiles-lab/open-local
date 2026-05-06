@@ -49,10 +49,6 @@ export function UserProvider({ children }: { children: ReactNode }) {
     const token = localStorage.getItem(SESSION_KEY);
     if (!token) {
       setIsLoading(false);
-      const dismissed = localStorage.getItem(ONBOARDING_DISMISSED_KEY);
-      if (!dismissed) {
-        setShowOnboarding(true);
-      }
       return;
     }
 
@@ -65,8 +61,6 @@ export function UserProvider({ children }: { children: ReactNode }) {
           setUser(data.user as AppUser);
         } else {
           localStorage.removeItem(SESSION_KEY);
-          const dismissed = localStorage.getItem(ONBOARDING_DISMISSED_KEY);
-          if (!dismissed) setShowOnboarding(true);
         }
       })
       .catch(() => {
