@@ -43,6 +43,7 @@ import {
 } from "@workspace/api-client-react";
 import { useQueryClient } from "@tanstack/react-query";
 import { cn } from "@/lib/utils";
+import VisitRequestsPanel from "@/components/VisitRequestsPanel";
 
 type QuickType = "batch_drop" | "surplus" | "regular";
 
@@ -207,6 +208,7 @@ export default function Dashboard() {
       </div>
 
       <div className="container mx-auto max-w-6xl px-4 py-10">
+        <VisitRequestsPanel vendorId={vendor.id} />
         <div className="grid grid-cols-2 gap-3 md:grid-cols-4 md:gap-4">
           <StatCard
             icon={Package}

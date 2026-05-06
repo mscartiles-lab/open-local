@@ -2,38 +2,29 @@ import {
   pgTable,
   serial,
   integer,
-  doublePrecision,
+  text,
   timestamp,
-  uniqueIndex,
 } from "drizzle-orm/pg-core";
 import { usersTable } from "./users";
 import { vendorsTable } from "./vendors";
 
-export const vendorVisitsTable = pgTable(
-  "vendor_visits",
-  {
-    id: serial("id").primaryKey(),
-    userId: integer("user_id")
-      .notNull()
-      .references(() => usersTable.id, { onDelete: "cascade" }),
-    vendorId: integer("vendor_id")
-      .notNull()
-      .references(() => vendorsTable.id, { onDelete: "cascade" }),
-    latitude: doublePrecision("latitude").notNull(),
-    longitude: doublePrecision("longitude").notNull(),
-    distanceMiles: doublePrecision("distance_miles").notNull(),
-    visitDate: timestamp("visit_date", { withTimezone: true })
-      .notNull()
-      .defaultNow(),
-  },
-  (t) => ({
-    userVendorDayUnique: uniqueIndex("vendor_visits_user_vendor_day_uq").on(
-      t.userId,
-      t.vendorId,
-      t.visitDate,
-    ),
-  }),
-);
+// Visit credit requests. Shopper requests credit for visiting a vendor;
+// the vendor approves or rejects from their dashboard.
+//   status: 'pending' | 'approved' | 'rejected'
+export const vendorVisitsTable = pgTable("vendor_visits", {
+  id: serial("id").primaryKey(),
+  userId: integer("user_id")
+    .notNull()
+    .references(() => usersTable.id, { onDelete: "cascade" }),
+  vendorId: integer("vendor_id")
+    .notNull()
+    .references(() => vendorsTable.id, { onDelete: "cascade" }),
+  status: text("status").notNull().default("pending"),
+  requestedAt: timestamp("requested_at", { withTimezone: true })
+    .notNull()
+    .defaultNow(),
+  decidedAt: timestamp("decided_at", { withTimezone: true }),
+});
 
 export type VendorVisit = typeof vendorVisitsTable.$inferSelect;
 export type InsertVendorVisit = typeof vendorVisitsTable.$inferInsert;

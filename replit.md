@@ -2,14 +2,20 @@
 
 National marketplace for local producers — bakers, farms, apiaries, ceramicists, brewers, butchers, florists, makers. Tagline: **Shop Local Wherever You Are**. Launching in Florida markets first, with a roadmap to expand state by state across the US. Build decisions should avoid hardcoding Florida-specific logic; use region/state filtering instead so new markets can be added without code changes.
 
-## Rewards (GPS check-ins)
+## Rewards (vendor-confirmed visits)
 
-Shoppers earn DiceBear avatar unlocks by checking in at vendor pins.
+Shoppers earn DiceBear avatar unlocks by visiting vendors. The vendor confirms each visit from their dashboard.
 
-- Tables: `vendor_visits` (userId, vendorId, lat/lng, distanceMiles, visitDate; unique on user+vendor+day) and `avatar_unlocks` (userId, unlockKey, unique). New `equipped_unlocks` jsonb column on `users`.
-- Catalog: `artifacts/api-server/src/lib/avatarCatalog.ts` (server) mirrored in `artifacts/open-local/src/lib/unlockCatalog.ts` (web). Thresholds: 1/2/3/5/8/12/20/35 unique vendors.
-- API: `GET /api/rewards/catalog`, `GET /api/rewards/me`, `POST /api/rewards/check-in` ({ vendorId, latitude, longitude } — haversine ≤ 0.25 mi from vendor pin), `PATCH /api/rewards/equipped`.
-- UI: `CheckInButton` on `/vendors/:id` (uses `navigator.geolocation`), `/rewards` page lists earned/locked unlocks with equip toggles. Avatar URL helper in `UserContext.avatarUrl(seed, style, equipped?)` appends DiceBear params from equipped items. Rewards link in user dropdown.
+- Tables: `vendor_visits` (userId, vendorId, status: 'pending'|'approved'|'rejected', requestedAt, decidedAt) and `avatar_unlocks` (userId, unlockKey, unique). New `equipped_unlocks` jsonb column on `users`.
+- Catalog: `artifacts/api-server/src/lib/avatarCatalog.ts` (server) mirrored in `artifacts/open-local/src/lib/unlockCatalog.ts` (web). Thresholds: 1/2/3/5/8/12/20/35 unique approved vendors.
+- API:
+  - `GET /api/rewards/catalog`
+  - `GET /api/rewards/me` → `{ uniqueVendorCount, unlocks[], equipped[], pending[] }`
+  - `POST /api/rewards/request-visit` `{ vendorId }` — shopper requests credit (no GPS); rejects duplicate pending/approved
+  - `GET /api/rewards/vendor/:vendorId/pending` — vendor lists pending requests (auth: user.email matches vendor.contactEmail OR role=admin)
+  - `POST /api/rewards/visits/:id/decide` `{ action: 'approve'|'reject' }` — awards unlocks on approve
+  - `PATCH /api/rewards/equipped`
+- UI: `CheckInButton` ("Request visit credit") on `/vendors/:id`, `VisitRequestsPanel` at top of vendor `/dashboard/:slug`, `/rewards` page (link in user dropdown). Avatar URL helper in `UserContext.avatarUrl(seed, style, equipped?)` appends DiceBear params from equipped items.
 
 ## Admin
 
