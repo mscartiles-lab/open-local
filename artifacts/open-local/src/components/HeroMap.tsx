@@ -125,7 +125,7 @@ export default function HeroMap() {
     <section className="relative w-full" style={{ height: "calc(100vh - 57px)" }}>
       <MapContainer
         center={FLORIDA_CENTER}
-        zoom={7}
+        zoom={9}
         scrollWheelZoom
         zoomControl={false}
         attributionControl={false}
