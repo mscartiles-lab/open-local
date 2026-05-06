@@ -7,7 +7,9 @@ National marketplace for local producers — bakers, farms, apiaries, ceramicist
 Shoppers earn DiceBear avatar unlocks by visiting vendors. The vendor confirms each visit from their dashboard.
 
 - Tables: `vendor_visits` (userId, vendorId, status: 'pending'|'approved'|'rejected', requestedAt, decidedAt) and `avatar_unlocks` (userId, unlockKey, unique). New `equipped_unlocks` jsonb column on `users`.
-- Catalog: `artifacts/api-server/src/lib/avatarCatalog.ts` (server) mirrored in `artifacts/open-local/src/lib/unlockCatalog.ts` (web). Thresholds: 1/2/3/5/8/12/20/35 unique approved vendors.
+- Catalog: `artifacts/api-server/src/lib/avatarCatalog.ts` (server) mirrored in `artifacts/open-local/src/lib/unlockCatalog.ts` (web). 14 unlocks at thresholds 1/2/3/4/5/6/8/10/12/15/18/20/25/35 approved vendors.
+- Wardrobe art: transparent PNG overlays in `artifacts/open-local/public/wardrobe/` (sunglasses, tote, cool-cap, fresh-hair, coffee-cup, apron, bandana, floral-crown, tropical-shirt, cozy-scarf, galaxy-hair). The web `unlockCatalog` adds `asset` + `zone` ('head-top'|'hair'|'eyes'|'neck'|'corner-bl'|'corner-br') for each equippable item; badges (first-visit, explorer, patron) stay emoji-only.
+- `<Avatar seed style equipped size>` (`components/Avatar.tsx`) is the canonical avatar renderer everywhere — it draws the DiceBear base then absolutely-positions overlays per `zoneStyle()`. `avatarUrl()` in `UserContext` returns just the plain DiceBear URL.
 - API:
   - `GET /api/rewards/catalog`
   - `GET /api/rewards/me` → `{ uniqueVendorCount, unlocks[], equipped[], pending[] }`

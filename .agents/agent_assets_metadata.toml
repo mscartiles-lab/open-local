@@ -66,3 +66,69 @@ id = "Uu9p9reqU5ECT5xKMUonv"
 uri = "file://artifacts/open-local-mobile/assets/images/icon.png"
 type = "image"
 title = "open local app icon"
+
+[[generated]]
+id = "Gax4px9yNYdoBPIdpmmam"
+uri = "file://artifacts/open-local/public/wardrobe/sunglasses.png"
+type = "image"
+title = "generated_image"
+
+[[generated]]
+id = "kJ210IIqscBvzFHCPjcLH"
+uri = "file://artifacts/open-local/public/wardrobe/tote.png"
+type = "image"
+title = "generated_image"
+
+[[generated]]
+id = "GlNF5IqVO6Vw0Y4naAKca"
+uri = "file://artifacts/open-local/public/wardrobe/cool-cap.png"
+type = "image"
+title = "generated_image"
+
+[[generated]]
+id = "t9qrdWW8qsReO8E8WbwAN"
+uri = "file://artifacts/open-local/public/wardrobe/fresh-hair.png"
+type = "image"
+title = "generated_image"
+
+[[generated]]
+id = "l-Csug89j8PXWE7U-H_mZ"
+uri = "file://artifacts/open-local/public/wardrobe/coffee-cup.png"
+type = "image"
+title = "generated_image"
+
+[[generated]]
+id = "_jIvjJhjk5PHcmS2hrJj5"
+uri = "file://artifacts/open-local/public/wardrobe/apron.png"
+type = "image"
+title = "generated_image"
+
+[[generated]]
+id = "gLRBQVhAQv4V9FlQPV4uK"
+uri = "file://artifacts/open-local/public/wardrobe/bandana.png"
+type = "image"
+title = "generated_image"
+
+[[generated]]
+id = "0JkGV9Rq-iQ3FgpGSeGLY"
+uri = "file://artifacts/open-local/public/wardrobe/floral-crown.png"
+type = "image"
+title = "generated_image"
+
+[[generated]]
+id = "EVkU4mAh68X3SMfi3aC97"
+uri = "file://artifacts/open-local/public/wardrobe/tropical-shirt.png"
+type = "image"
+title = "generated_image"
+
+[[generated]]
+id = "6OK8crzC6HjznJLrpjSc5"
+uri = "file://artifacts/open-local/public/wardrobe/cozy-scarf.png"
+type = "image"
+title = "generated_image"
+
+[[generated]]
+id = "iibpWqQqS8EmfK9ZnQhFT"
+uri = "file://artifacts/open-local/public/wardrobe/galaxy-hair.png"
+type = "image"
+title = "generated_image"

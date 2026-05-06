@@ -10,6 +10,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { useUser, avatarUrl } from "@/context/UserContext";
+import Avatar from "@/components/Avatar";
 
 export function Navbar() {
   const [location] = useLocation();
@@ -31,10 +32,11 @@ export function Navbar() {
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
             <button className="flex items-center gap-2 rounded-full p-0.5 border-2 border-primary/30 hover:border-primary transition-all focus:outline-none">
-              <img
-                src={avatarUrl(user.avatarSeed, user.avatarStyle)}
-                alt={user.username}
-                className="w-8 h-8 rounded-full bg-amber-50"
+              <Avatar
+                seed={user.avatarSeed}
+                style={user.avatarStyle}
+                equipped={user.equippedUnlocks}
+                size={32}
               />
             </button>
           </DropdownMenuTrigger>
@@ -137,10 +139,12 @@ export function Navbar() {
             <SheetContent side="right" className="w-[300px] sm:w-[360px] p-6">
               {user && (
                 <div className="flex items-center gap-3 mb-6 p-3 bg-muted/40 rounded-xl">
-                  <img
-                    src={avatarUrl(user.avatarSeed, user.avatarStyle)}
-                    alt={user.username}
-                    className="w-10 h-10 rounded-full bg-amber-50 border-2 border-primary/30"
+                  <Avatar
+                    seed={user.avatarSeed}
+                    style={user.avatarStyle}
+                    equipped={user.equippedUnlocks}
+                    size={40}
+                    ringClassName="border-2 border-primary/30"
                   />
                   <div>
                     <p className="font-semibold text-sm text-foreground">@{user.username}</p>

@@ -4,7 +4,8 @@ import Layout from "@/components/layout/Layout";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
-import { useUser, avatarUrl } from "@/context/UserContext";
+import { useUser } from "@/context/UserContext";
+import Avatar from "@/components/Avatar";
 import { UNLOCK_CATALOG, type UnlockDef } from "@/lib/unlockCatalog";
 
 const SESSION_KEY = "ol_session";
@@ -87,10 +88,12 @@ export default function Rewards() {
     <Layout>
       <div className="bg-muted border-b border-border py-12">
         <div className="container max-w-5xl mx-auto px-4 flex items-center gap-6">
-          <img
-            src={avatarUrl(user.avatarSeed, user.avatarStyle, me?.equipped)}
-            alt={user.username}
-            className="w-24 h-24 rounded-full bg-amber-50 border-4 border-primary/30 shadow-lg"
+          <Avatar
+            seed={user.avatarSeed}
+            style={user.avatarStyle}
+            equipped={me?.equipped}
+            size={96}
+            ringClassName="border-4 border-primary/30 shadow-lg"
           />
           <div className="flex-1">
             <h1 className="text-3xl font-serif font-bold">@{user.username}'s Rewards</h1>
@@ -112,7 +115,7 @@ export default function Rewards() {
             {UNLOCK_CATALOG.map((u) => {
               const earned = me?.unlocks.includes(u.key) ?? false;
               const equipped = me?.equipped.includes(u.key) ?? false;
-              const canEquip = earned && !!u.diceBearParam;
+              const canEquip = earned && !!u.asset;
               return (
                 <RewardCard
                   key={u.key}
@@ -150,8 +153,16 @@ function RewardCard({
   return (
     <Card className={`transition-all ${earned ? "" : "opacity-60"} ${equipped ? "ring-2 ring-primary" : ""}`}>
       <CardContent className="p-4 text-center">
-        <div className="text-5xl mb-2 select-none">
-          {earned ? unlock.emoji : <Lock className="w-10 h-10 mx-auto text-muted-foreground" />}
+        <div className="h-20 mb-2 flex items-center justify-center select-none">
+          {earned ? (
+            unlock.asset ? (
+              <img src={unlock.asset} alt={unlock.label} className="max-h-20 max-w-full object-contain" draggable={false} />
+            ) : (
+              <span className="text-5xl">{unlock.emoji}</span>
+            )
+          ) : (
+            <Lock className="w-10 h-10 text-muted-foreground" />
+          )}
         </div>
         <div className="font-semibold text-sm mb-1">{unlock.label}</div>
         <div className="text-xs text-muted-foreground mb-3 min-h-[2.5em]">{unlock.description}</div>

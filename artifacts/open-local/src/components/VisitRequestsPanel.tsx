@@ -3,7 +3,8 @@ import { Loader2, Check, X, Inbox } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
-import { avatarUrl, type AvatarStyle } from "@/context/UserContext";
+import { type AvatarStyle } from "@/context/UserContext";
+import Avatar from "@/components/Avatar";
 
 const SESSION_KEY = "ol_session";
 
@@ -92,7 +93,7 @@ export default function VisitRequestsPanel({ vendorId }: { vendorId: number }) {
               const busy = busyIds.has(p.id);
               return (
                 <li key={p.id} className="py-3 flex items-center gap-3">
-                  <img src={avatarUrl(p.avatarSeed, p.avatarStyle)} alt={p.username} className="w-10 h-10 rounded-full bg-amber-50 border border-primary/20" />
+                  <Avatar seed={p.avatarSeed} style={p.avatarStyle} size={40} ringClassName="border border-primary/20" />
                   <div className="flex-1 min-w-0">
                     <p className="font-semibold text-sm truncate">@{p.username}</p>
                     <p className="text-xs text-muted-foreground">requested {new Date(p.requestedAt).toLocaleString()}</p>
