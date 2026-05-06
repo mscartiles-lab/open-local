@@ -2,6 +2,12 @@
 
 National marketplace for local producers — bakers, farms, apiaries, ceramicists, brewers, butchers, florists, makers. Tagline: **Shop Local Wherever You Are**. Launching in Florida markets first, with a roadmap to expand state by state across the US. Build decisions should avoid hardcoding Florida-specific logic; use region/state filtering instead so new markets can be added without code changes.
 
+## Admin
+
+- Promote: `UPDATE users SET role='admin' WHERE email='…'` OR add to `ADMIN_EMAILS` env var (comma-separated). `mscartiles@gmail.com` is pre-listed.
+- `/admin` page tabs: Producers · Products · **Businesses** (approve/reject/delete establishments) · **Users** (change role, delete).
+- Admin API: `GET/PATCH/DELETE /api/admin/users[/:id]`, `GET/DELETE /api/admin/establishments[/:id]`, plus existing `PATCH /api/establishments/:id`. All gated by `requireAdmin` (Bearer token from `ol_session`).
+
 ## Architecture
 
 Pnpm monorepo with three artifacts:

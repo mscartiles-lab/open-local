@@ -2,8 +2,10 @@ import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
-import { Store, Tag, Plus, Trash2, Edit, Loader2, Check, X, BarChart3 } from "lucide-react";
+import { Tag, Plus, Trash2, Loader2, BarChart3 } from "lucide-react";
 import Layout from "@/components/layout/Layout";
+import UsersAdminTab from "@/components/admin/UsersAdminTab";
+import EstablishmentsAdminTab from "@/components/admin/EstablishmentsAdminTab";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -259,10 +261,20 @@ export default function Admin() {
 
       <div className="container max-w-6xl mx-auto px-4 pb-24">
         <Tabs defaultValue="vendors" className="w-full">
-          <TabsList className="mb-8">
+          <TabsList className="mb-8 flex-wrap h-auto">
             <TabsTrigger value="vendors" className="text-lg px-8">Producers</TabsTrigger>
             <TabsTrigger value="products" className="text-lg px-8">Products</TabsTrigger>
+            <TabsTrigger value="establishments" className="text-lg px-8">Businesses</TabsTrigger>
+            <TabsTrigger value="users" className="text-lg px-8">Users</TabsTrigger>
           </TabsList>
+
+          <TabsContent value="establishments" className="space-y-6">
+            <EstablishmentsAdminTab />
+          </TabsContent>
+
+          <TabsContent value="users" className="space-y-6">
+            <UsersAdminTab />
+          </TabsContent>
 
           <TabsContent value="vendors" className="space-y-6">
             <Card>
