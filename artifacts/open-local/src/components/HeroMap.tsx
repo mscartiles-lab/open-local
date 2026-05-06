@@ -127,7 +127,11 @@ export default function HeroMap() {
         center={FLORIDA_CENTER}
         zoom={9}
         scrollWheelZoom
-        zoomControl={false}
+        zoomControl={true}
+        minZoom={3}
+        maxZoom={18}
+        doubleClickZoom
+        touchZoom
         attributionControl={false}
         style={{ position: "absolute", inset: 0, width: "100%", height: "100%", zIndex: 0 }}
       >
