@@ -48,11 +48,11 @@ export function getUnlock(key: string): UnlockDef | undefined {
 // relative to a square avatar container (percent-based so it scales).
 export function zoneStyle(zone: OverlayZone): React.CSSProperties {
   switch (zone) {
-    case "head-top":  return { top: "-8%",  left: "8%",  width: "84%" };
-    case "hair":      return { top: "-6%",  left: "6%",  width: "88%" };
-    case "eyes":      return { top: "30%",  left: "18%", width: "64%" };
-    case "neck":      return { top: "55%",  left: "10%", width: "80%" };
-    case "corner-bl": return { bottom: "-2%", left: "-6%", width: "42%" };
-    case "corner-br": return { bottom: "0%", right: "-4%", width: "36%" };
+    case "head-top":  return { top: "-14%", left: "8%",   width: "84%" };
+    case "hair":      return { top: "-10%", left: "4%",   width: "92%" };
+    case "eyes":      return { top: "30%",  left: "18%",  width: "64%" };
+    case "neck":      return { top: "68%",  left: "12%",  width: "76%" };
+    case "corner-bl": return { bottom: "-4%", left: "-8%", width: "36%" };
+    case "corner-br": return { bottom: "-2%", right: "-6%", width: "30%" };
   }
 }
