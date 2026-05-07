@@ -1,3 +1,4 @@
+import { useEffect } from "react";
 import { useListFeaturedVendors, useListFeaturedProducts, useGetMarketplaceStats, useListCategories, useListLocations, useGetLocalNowFeed } from "@workspace/api-client-react";
 import { Link } from "wouter";
 import { motion } from "framer-motion";
@@ -7,6 +8,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Card, CardContent } from "@/components/ui/card";
 import { useFavorites } from "@/hooks/use-favorites";
 import HeroMap from "@/components/HeroMap";
+import { useUser } from "@/context/UserContext";
 
 export default function Home() {
   const { data: stats, isLoading: statsLoading } = useGetMarketplaceStats();
@@ -14,6 +16,17 @@ export default function Home() {
   const { data: featuredProducts, isLoading: productsLoading } = useListFeaturedProducts();
   const { data: localNowFeed, isLoading: localNowFeedLoading } = useGetLocalNowFeed();
   const { isFavoriteVendor, isFavoriteProduct, toggleVendor, toggleProduct } = useFavorites();
+  const { user, isLoading: userLoading, openOnboarding } = useUser();
+
+  useEffect(() => {
+    if (userLoading || user) return;
+    if (sessionStorage.getItem("ol:onboardingShown") === "1") return;
+    const t = setTimeout(() => {
+      sessionStorage.setItem("ol:onboardingShown", "1");
+      openOnboarding();
+    }, 600);
+    return () => clearTimeout(t);
+  }, [user, userLoading, openOnboarding]);
 
   return (
     <Layout>
