@@ -11,7 +11,22 @@ const VERIFICATION_TTL_MS = 10 * 60 * 1000;
 const SESSION_TTL_MS = 30 * 24 * 60 * 60 * 1000;
 const MAX_ATTEMPTS = 5;
 
-const AVATAR_STYLES = ["thumbs", "adventurer", "fun-emoji", "pixel-art"] as const;
+const AVATAR_STYLES = [
+  "thumbs",
+  "adventurer",
+  "fun-emoji",
+  "pixel-art",
+  "avataaars",
+  "big-smile",
+  "bottts",
+  "lorelei",
+  "micah",
+  "miniavs",
+  "notionists",
+  "open-peeps",
+  "personas",
+  "croodles",
+] as const;
 
 const SignupStartBody = z.object({
   email: z.string().email(),

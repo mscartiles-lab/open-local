@@ -17,6 +17,16 @@ const AVATAR_STYLES: { style: AvatarStyle; label: string }[] = [
   { style: "adventurer", label: "Explorer" },
   { style: "fun-emoji", label: "Emoji" },
   { style: "pixel-art", label: "Pixel" },
+  { style: "avataaars", label: "Avataaar" },
+  { style: "big-smile", label: "Smile" },
+  { style: "bottts", label: "Bot" },
+  { style: "lorelei", label: "Lorelei" },
+  { style: "micah", label: "Micah" },
+  { style: "miniavs", label: "Mini" },
+  { style: "notionists", label: "Notion" },
+  { style: "open-peeps", label: "Peeps" },
+  { style: "personas", label: "Persona" },
+  { style: "croodles", label: "Doodle" },
 ];
 
 type Step = "role" | "profile" | "avatar" | "email" | "verify" | "welcome";
@@ -385,12 +395,12 @@ export default function OnboardingModal() {
                 <div className="px-8 pt-10 pb-8">
                   <h2 className="font-serif font-bold text-xl text-foreground mb-1">Choose your avatar</h2>
                   <p className="text-muted-foreground text-sm mb-6">Pick the look that fits you best, @{form.username}.</p>
-                  <div className="grid grid-cols-2 gap-4">
+                  <div className="grid grid-cols-3 sm:grid-cols-4 gap-3 max-h-[60vh] overflow-y-auto pr-1 -mr-1">
                     {AVATAR_STYLES.map(({ style, label }) => (
                       <button
                         key={style}
                         onClick={() => setForm((f) => ({ ...f, avatarStyle: style }))}
-                        className={`flex flex-col items-center gap-2 p-4 rounded-2xl border-2 transition-all ${
+                        className={`flex flex-col items-center gap-1.5 p-2.5 rounded-2xl border-2 transition-all ${
                           form.avatarStyle === style
                             ? "border-primary bg-primary/5 shadow-sm"
                             : "border-border hover:border-primary/40 hover:bg-muted/40"
@@ -399,9 +409,10 @@ export default function OnboardingModal() {
                         <img
                           src={avatarUrl(avatarSeed, style)}
                           alt={label}
-                          className="w-16 h-16 rounded-full bg-amber-50"
+                          loading="lazy"
+                          className="w-14 h-14 rounded-full bg-amber-50"
                         />
-                        <span className={`text-xs font-semibold ${form.avatarStyle === style ? "text-primary" : "text-muted-foreground"}`}>
+                        <span className={`text-[11px] font-semibold ${form.avatarStyle === style ? "text-primary" : "text-muted-foreground"}`}>
                           {label}
                         </span>
                       </button>

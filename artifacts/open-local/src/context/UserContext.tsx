@@ -8,7 +8,21 @@ import {
 } from "react";
 
 export type UserRole = "vendor" | "shopper";
-export type AvatarStyle = "thumbs" | "adventurer" | "fun-emoji" | "pixel-art";
+export type AvatarStyle =
+  | "thumbs"
+  | "adventurer"
+  | "fun-emoji"
+  | "pixel-art"
+  | "avataaars"
+  | "big-smile"
+  | "bottts"
+  | "lorelei"
+  | "micah"
+  | "miniavs"
+  | "notionists"
+  | "open-peeps"
+  | "personas"
+  | "croodles";
 
 export interface AppUser {
   id: number;
