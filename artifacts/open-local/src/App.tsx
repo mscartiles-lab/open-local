@@ -23,6 +23,7 @@ import Listings from "@/pages/listings";
 import Surplus from "@/pages/surplus";
 import Events from "@/pages/events";
 import SearchInsights from "@/pages/search-insights";
+import SearchPage from "@/pages/search";
 import Rewards from "@/pages/rewards";
 import NotFound from "@/pages/not-found";
 
@@ -56,6 +57,7 @@ function Router() {
       <Route path="/surplus" component={Surplus} />
       <Route path="/events" component={Events} />
       <Route path="/search-insights" component={SearchInsights} />
+      <Route path="/search" component={SearchPage} />
       <Route path="/rewards" component={Rewards} />
       <Route component={NotFound} />
     </Switch>

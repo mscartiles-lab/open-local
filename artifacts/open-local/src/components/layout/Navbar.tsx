@@ -1,5 +1,6 @@
+import { useState } from "react";
 import { Link, useLocation } from "wouter";
-import { Store, ShoppingBag, PlusCircle, Settings, Menu, Heart, HandHelping, Percent, CalendarDays, LogOut, User, CreditCard, Sparkles } from "lucide-react";
+import { Store, ShoppingBag, PlusCircle, Settings, Menu, Heart, HandHelping, Percent, CalendarDays, LogOut, User, CreditCard, Sparkles, Search as SearchIcon } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 import {
@@ -13,8 +14,17 @@ import { useUser, avatarUrl } from "@/context/UserContext";
 import Avatar from "@/components/Avatar";
 
 export function Navbar() {
-  const [location] = useLocation();
+  const [location, setLocation] = useLocation();
   const { user, isLoading, openOnboarding, logout } = useUser();
+  const [searchDraft, setSearchDraft] = useState("");
+
+  const submitSearch = (e: React.FormEvent) => {
+    e.preventDefault();
+    const q = searchDraft.trim();
+    if (!q) return;
+    setLocation(`/search?q=${encodeURIComponent(q)}`);
+    setSearchDraft("");
+  };
 
   const links = [
     { href: "/vendors", label: "Vendors", icon: Store },
@@ -114,6 +124,17 @@ export function Navbar() {
 
         {/* Right side */}
         <div className="hidden md:flex items-center gap-2 shrink-0">
+          <form onSubmit={submitSearch} className="relative">
+            <SearchIcon className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground pointer-events-none" />
+            <input
+              type="search"
+              value={searchDraft}
+              onChange={(e) => setSearchDraft(e.target.value)}
+              placeholder="Search vendors, goods…"
+              aria-label="Search"
+              className="h-10 w-56 lg:w-64 pl-9 pr-3 rounded-xl bg-secondary/40 border border-border text-sm placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/40 focus:bg-background transition-all"
+            />
+          </form>
           <Link
             href="/submit"
             className="flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-semibold bg-secondary text-foreground hover:bg-primary hover:text-primary-foreground transition-all duration-150"
@@ -158,6 +179,17 @@ export function Navbar() {
                 </div>
                 <span className="font-serif font-bold text-2xl text-foreground">Open Local</span>
               </div>
+              <form onSubmit={submitSearch} className="relative mb-4">
+                <SearchIcon className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground pointer-events-none" />
+                <input
+                  type="search"
+                  value={searchDraft}
+                  onChange={(e) => setSearchDraft(e.target.value)}
+                  placeholder="Search vendors, goods…"
+                  aria-label="Search"
+                  className="h-11 w-full pl-9 pr-3 rounded-xl bg-secondary/40 border border-border text-sm placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/40 focus:bg-background"
+                />
+              </form>
               <nav className="flex flex-col gap-2">
                 {links.map((link) => {
                   const Icon = link.icon;
