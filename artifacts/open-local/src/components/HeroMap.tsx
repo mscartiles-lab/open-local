@@ -71,9 +71,13 @@ function zoomForRadius(miles: number): number {
 
 function MapFlyTo({ position, zoom }: { position: [number, number]; zoom: number }) {
   const map = useMap();
+  // Only fly when the user's position itself changes (e.g., re-locate),
+  // not when zoom/radius changes — that would yank the user away from
+  // wherever they've panned to.
   useEffect(() => {
     map.flyTo(position, zoom, { duration: 1.2 });
-  }, [position[0], position[1], zoom]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [position[0], position[1]]);
   return null;
 }
 
@@ -98,11 +102,17 @@ export default function HeroMap() {
         setUserPos([pos.coords.latitude, pos.coords.longitude]);
         setLocating(false);
       },
-      () => {
-        setLocationError("Location access denied. Enable it in your browser settings.");
+      (err) => {
+        setLocationError(
+          err.code === err.PERMISSION_DENIED
+            ? "Location access denied. Enable it in your browser settings."
+            : "Couldn't pinpoint you. Try the locate button again.",
+        );
         setLocating(false);
       },
-      { timeout: 10000 },
+      // High accuracy = use real GPS where available instead of IP/wifi fallback.
+      // maximumAge: 0 forces a fresh fix instead of a stale cached one.
+      { enableHighAccuracy: true, timeout: 15000, maximumAge: 0 },
     );
   }, []);
 
