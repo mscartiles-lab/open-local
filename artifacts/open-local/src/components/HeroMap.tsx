@@ -61,6 +61,14 @@ function haversineMiles(lat1: number, lng1: number, lat2: number, lng2: number) 
   return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
 }
 
+function zoomForRadius(miles: number): number {
+  // Hyper-local at small radius, regional at large
+  if (miles <= 5) return 13;
+  if (miles <= 10) return 12;
+  if (miles <= 25) return 11;
+  return 10;
+}
+
 function MapFlyTo({ position, zoom }: { position: [number, number]; zoom: number }) {
   const map = useMap();
   useEffect(() => {
@@ -76,7 +84,7 @@ export default function HeroMap() {
   const [userPos, setUserPos] = useState<[number, number] | null>(null);
   const [locating, setLocating] = useState(false);
   const [locationError, setLocationError] = useState<string | null>(null);
-  const [radius, setRadius] = useState(25);
+  const [radius, setRadius] = useState(5);
 
   const locate = useCallback(() => {
     if (!navigator.geolocation) {
@@ -140,7 +148,7 @@ export default function HeroMap() {
           attribution='&copy; CARTO'
         />
 
-        {userPos && <MapFlyTo position={userPos} zoom={10} />}
+        {userPos && <MapFlyTo position={userPos} zoom={zoomForRadius(radius)} />}
 
         {userPos && (
           <Circle
