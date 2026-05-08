@@ -12,6 +12,10 @@ function getAdminEmails(): Set<string> {
   );
 }
 
+export function isAdminEmail(email: string): boolean {
+  return getAdminEmails().has(email.toLowerCase());
+}
+
 export async function requireAdmin(req: Request, res: Response, next: NextFunction): Promise<void> {
   const authHeader = req.headers.authorization;
   if (!authHeader?.startsWith("Bearer ")) {

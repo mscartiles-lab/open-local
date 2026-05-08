@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
-import { Loader2, Trash2, MapPin, ExternalLink } from "lucide-react";
+import { Link } from "wouter";
+import { Loader2, Trash2, MapPin, ExternalLink, BarChart3 } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
@@ -174,6 +175,11 @@ export default function EstablishmentsAdminTab() {
                     </TableCell>
                     <TableCell className="text-right">
                       <div className="flex items-center justify-end gap-1">
+                        <Link href={`/business-dashboard/${e.id}`}>
+                          <Button variant="ghost" size="icon" title="Analytics dashboard">
+                            <BarChart3 className="w-4 h-4" />
+                          </Button>
+                        </Link>
                         {e.website && (
                           <a href={e.website} target="_blank" rel="noopener noreferrer">
                             <Button variant="ghost" size="icon"><ExternalLink className="w-4 h-4" /></Button>

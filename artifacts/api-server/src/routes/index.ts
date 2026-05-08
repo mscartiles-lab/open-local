@@ -12,6 +12,7 @@ import authRouter from "./auth";
 import billingRouter from "./billing";
 import adminRouter from "./admin";
 import rewardsRouter from "./rewards";
+import analyticsRouter from "./analytics";
 
 const router: IRouter = Router();
 
@@ -28,5 +29,6 @@ router.use(authRouter);
 router.use(billingRouter);
 router.use(adminRouter);
 router.use(rewardsRouter);
+router.use(analyticsRouter);
 
 export default router;

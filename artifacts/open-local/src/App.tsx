@@ -12,6 +12,7 @@ import Products from "@/pages/products";
 import ProductDetail from "@/pages/product-detail";
 import Submit from "@/pages/submit";
 import Dashboard from "@/pages/dashboard";
+import BusinessDashboard from "@/pages/business-dashboard";
 import Admin from "@/pages/admin";
 import Favorites from "@/pages/favorites";
 import PinYourBusiness from "@/pages/pin-your-business";
@@ -47,6 +48,7 @@ function Router() {
       <Route path="/favorites" component={Favorites} />
       <Route path="/submit" component={Submit} />
       <Route path="/dashboard/:slug" component={Dashboard} />
+      <Route path="/business-dashboard/:id" component={BusinessDashboard} />
       <Route path="/admin" component={Admin} />
       <Route path="/pin-your-business" component={PinYourBusiness} />
       <Route path="/billing" component={Billing} />

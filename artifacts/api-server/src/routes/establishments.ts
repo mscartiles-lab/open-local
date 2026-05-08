@@ -45,6 +45,23 @@ router.get("/establishments", async (req, res): Promise<void> => {
   res.json(rows);
 });
 
+router.get("/establishments/:id", async (req, res): Promise<void> => {
+  const id = Number(req.params.id);
+  if (!Number.isFinite(id)) {
+    res.status(400).json({ error: "Invalid id" });
+    return;
+  }
+  const [row] = await db
+    .select()
+    .from(establishmentsTable)
+    .where(eq(establishmentsTable.id, id));
+  if (!row) {
+    res.status(404).json({ error: "Establishment not found" });
+    return;
+  }
+  res.json(row);
+});
+
 router.post("/establishments/submit", async (req, res): Promise<void> => {
   const parsed = SubmitEstablishmentBody.safeParse(req.body);
   if (!parsed.success) {

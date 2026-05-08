@@ -44,6 +44,7 @@ import {
 import { useQueryClient } from "@tanstack/react-query";
 import { cn } from "@/lib/utils";
 import VisitRequestsPanel from "@/components/VisitRequestsPanel";
+import AnalyticsPanel from "@/components/AnalyticsPanel";
 
 type QuickType = "batch_drop" | "surplus" | "regular";
 
@@ -207,7 +208,8 @@ export default function Dashboard() {
         </div>
       </div>
 
-      <div className="container mx-auto max-w-6xl px-4 py-10">
+      <div className="container mx-auto max-w-6xl px-4 py-10 space-y-8">
+        <AnalyticsPanel kind="vendor" id={vendor.id} />
         <VisitRequestsPanel vendorId={vendor.id} />
         <div className="grid grid-cols-2 gap-3 md:grid-cols-4 md:gap-4">
           <StatCard
