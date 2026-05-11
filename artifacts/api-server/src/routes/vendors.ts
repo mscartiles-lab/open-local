@@ -1,6 +1,7 @@
 import { Router, type IRouter } from "express";
 import { eq, and, ilike, or, sql } from "drizzle-orm";
 import { db, vendorsTable, productsTable } from "@workspace/db";
+import { emitEvent } from "../lib/webhooks";
 import {
   ListVendorsQueryParams,
   CreateVendorBody,
@@ -65,6 +66,15 @@ router.post("/vendors", async (req, res): Promise<void> => {
     return;
   }
   const [row] = await db.insert(vendorsTable).values(parsed.data).returning();
+  emitEvent("vendor.created", {
+    vendorId: row.id,
+    name: row.name,
+    slug: row.slug,
+    category: row.category,
+    location: row.location,
+    region: row.region,
+    contactEmail: row.contactEmail,
+  });
   res.status(201).json(GetVendorResponse.parse(row));
 });
 

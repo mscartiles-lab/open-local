@@ -13,6 +13,7 @@ import billingRouter from "./billing";
 import adminRouter from "./admin";
 import rewardsRouter from "./rewards";
 import analyticsRouter from "./analytics";
+import webhooksRouter from "./webhooks";
 
 const router: IRouter = Router();
 
@@ -30,5 +31,6 @@ router.use(billingRouter);
 router.use(adminRouter);
 router.use(rewardsRouter);
 router.use(analyticsRouter);
+router.use(webhooksRouter);
 
 export default router;

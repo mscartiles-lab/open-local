@@ -4,6 +4,7 @@ import { z } from "zod";
 import { db, usersTable, sessionsTable, signupVerificationsTable } from "@workspace/db";
 import { generateVerificationCode, sendVerificationEmail } from "../lib/email";
 import { logger } from "../lib/logger";
+import { emitEvent } from "../lib/webhooks";
 
 const router: IRouter = Router();
 
@@ -279,6 +280,14 @@ router.post("/auth/signup/verify", async (req: Request, res: Response): Promise<
     userId: user!.id,
     token,
     expiresAt: sessionExpiresAt,
+  });
+
+  emitEvent("user.signed_up", {
+    userId: user!.id,
+    email: user!.email,
+    username: user!.username,
+    role: user!.role,
+    state: user!.state,
   });
 
   res.status(201).json({

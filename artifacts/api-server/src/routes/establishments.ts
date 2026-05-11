@@ -10,6 +10,7 @@ import {
 import { issueBusinessBillingToken } from "../lib/billingToken";
 import { isValidTier } from "../lib/tiers";
 import { requireAdmin } from "../lib/requireAdmin";
+import { emitEvent } from "../lib/webhooks";
 
 const router: IRouter = Router();
 
@@ -78,6 +79,15 @@ router.post("/establishments/submit", async (req, res): Promise<void> => {
     .returning();
 
   req.log.info({ establishmentId: row.id, tier }, "establishment submitted");
+  emitEvent("business.submitted", {
+    establishmentId: row.id,
+    name: row.name,
+    type: row.type,
+    city: row.city,
+    state: row.state,
+    tier: row.tier,
+    contactEmail: row.contactEmail,
+  });
   const billingToken = issueBusinessBillingToken(row.id);
   res.status(201).json({ ...row, billingToken });
 });
@@ -95,6 +105,11 @@ router.patch("/establishments/:id", requireAdmin, async (req, res): Promise<void
     return;
   }
 
+  const [prev] = await db
+    .select({ status: establishmentsTable.status })
+    .from(establishmentsTable)
+    .where(eq(establishmentsTable.id, paramParsed.data.id));
+
   const [row] = await db
     .update(establishmentsTable)
     .set(bodyParsed.data)
@@ -104,6 +119,17 @@ router.patch("/establishments/:id", requireAdmin, async (req, res): Promise<void
   if (!row) {
     res.status(404).json({ error: "Establishment not found" });
     return;
+  }
+
+  if (prev && prev.status !== row.status) {
+    emitEvent("business.status_changed", {
+      establishmentId: row.id,
+      name: row.name,
+      previousStatus: prev.status,
+      status: row.status,
+      city: row.city,
+      contactEmail: row.contactEmail,
+    });
   }
 
   res.json(row);

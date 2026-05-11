@@ -19,6 +19,20 @@ Shoppers earn DiceBear avatar unlocks by visiting vendors. The vendor confirms e
   - `PATCH /api/rewards/equipped`
 - UI: `CheckInButton` ("Request visit credit") on `/vendors/:id`, `VisitRequestsPanel` at top of vendor `/dashboard/:slug`, `/rewards` page (link in user dropdown). Avatar URL helper in `UserContext.avatarUrl(seed, style, equipped?)` appends DiceBear params from equipped items.
 
+## Webhooks (outbound automation)
+
+Admin-managed outbound HTTP webhooks for Zapier/Make/n8n/custom endpoints. Tables `webhook_subscriptions` and `webhook_deliveries`. Signed POST with header `X-OpenLocal-Signature: sha256=<hmac>` over `${timestamp}.${rawBody}` using the per-subscription secret. One automatic retry after 1s on failure. Events emitted via `emitEvent()` from `artifacts/api-server/src/lib/webhooks.ts`:
+
+- `user.signed_up` — auth signup verify
+- `vendor.created` — vendor onboarding email verify + POST /api/vendors
+- `vendor.visit_requested|approved|rejected` — rewards flow
+- `business.submitted` — establishment submit
+- `business.status_changed` — admin status update (use `status: 'active'` to detect approvals)
+- `product.created` and `offer.created` (for non-regular listing types)
+- Reserved (no trigger yet): `purchase.completed`, `reminder.sent`, `recommendation.generated`
+
+Admin endpoints: `GET/POST/PATCH/DELETE /api/admin/webhooks`, `GET /api/admin/webhooks/events`, `GET /api/admin/webhooks/:id/deliveries`. Managed in the admin **Webhooks** tab with delivery audit log.
+
 ## Admin
 
 - Promote: `UPDATE users SET role='admin' WHERE email='…'` OR add to `ADMIN_EMAILS` env var (comma-separated). `mscartiles@gmail.com` is pre-listed.

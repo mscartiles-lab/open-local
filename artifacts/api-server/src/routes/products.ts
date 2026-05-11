@@ -1,6 +1,7 @@
 import { Router, type IRouter } from "express";
 import { eq, and, ilike, or, gt, isNull } from "drizzle-orm";
 import { db, productsTable, vendorsTable } from "@workspace/db";
+import { emitEvent } from "../lib/webhooks";
 import {
   ListProductsQueryParams,
   CreateProductBody,
@@ -102,6 +103,23 @@ router.post("/products", async (req, res): Promise<void> => {
       : null,
   };
   const [row] = await db.insert(productsTable).values(insertValues).returning();
+  const productPayload = {
+    productId: row!.id,
+    vendorId: row!.vendorId,
+    name: row!.name,
+    priceCents: row!.priceCents,
+    listingType: row!.listingType,
+    inStock: row!.inStock,
+  };
+  emitEvent("product.created", productPayload);
+  if (row!.listingType !== "regular") {
+    emitEvent("offer.created", {
+      ...productPayload,
+      offerType: row!.listingType,
+      originalPriceCents: row!.originalPriceCents ?? null,
+      availableUntil: row!.availableUntil ?? null,
+    });
+  }
   res.status(201).json({
     id: row!.id,
     vendorId: row!.vendorId,

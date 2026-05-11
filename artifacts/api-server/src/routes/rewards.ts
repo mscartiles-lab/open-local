@@ -10,6 +10,7 @@ import {
 } from "@workspace/db";
 import { requireAuth, type AuthRequest } from "../lib/requireAuth";
 import { UNLOCK_CATALOG, unlocksEarnedFor } from "../lib/avatarCatalog";
+import { emitEvent } from "../lib/webhooks";
 
 const router: IRouter = Router();
 
@@ -115,6 +116,13 @@ router.post("/rewards/request-visit", requireAuth, async (req, res): Promise<voi
     .values({ userId, vendorId, status: "pending" })
     .returning();
 
+  emitEvent("vendor.visit_requested", {
+    visitId: visit.id,
+    vendorId,
+    shopperUserId: userId,
+    vendorName: vendor.name,
+  });
+
   res.json({ ok: true, visit, vendorName: vendor.name });
 });
 
@@ -217,6 +225,15 @@ router.post("/rewards/visits/:id/decide", requireAuth, async (req, res): Promise
     .update(vendorVisitsTable)
     .set({ status: newStatus, decidedAt: new Date() })
     .where(eq(vendorVisitsTable.id, visitId));
+
+  emitEvent(
+    newStatus === "approved" ? "vendor.visit_approved" : "vendor.visit_rejected",
+    {
+      visitId,
+      vendorId: visit.vendorId,
+      shopperUserId: visit.userId,
+    },
+  );
 
   let newlyEarned: string[] = [];
   if (newStatus === "approved") {

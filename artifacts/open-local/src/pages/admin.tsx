@@ -6,6 +6,7 @@ import { Tag, Plus, Trash2, Loader2, BarChart3 } from "lucide-react";
 import Layout from "@/components/layout/Layout";
 import UsersAdminTab from "@/components/admin/UsersAdminTab";
 import EstablishmentsAdminTab from "@/components/admin/EstablishmentsAdminTab";
+import WebhooksAdminTab from "@/components/admin/WebhooksAdminTab";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -266,6 +267,7 @@ export default function Admin() {
             <TabsTrigger value="products" className="text-lg px-8">Products</TabsTrigger>
             <TabsTrigger value="establishments" className="text-lg px-8">Businesses</TabsTrigger>
             <TabsTrigger value="users" className="text-lg px-8">Users</TabsTrigger>
+            <TabsTrigger value="webhooks" className="text-lg px-8">Webhooks</TabsTrigger>
           </TabsList>
 
           <TabsContent value="establishments" className="space-y-6">
@@ -274,6 +276,10 @@ export default function Admin() {
 
           <TabsContent value="users" className="space-y-6">
             <UsersAdminTab />
+          </TabsContent>
+
+          <TabsContent value="webhooks" className="space-y-6">
+            <WebhooksAdminTab />
           </TabsContent>
 
           <TabsContent value="vendors" className="space-y-6">

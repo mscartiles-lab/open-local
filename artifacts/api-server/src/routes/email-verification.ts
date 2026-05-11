@@ -8,6 +8,7 @@ import {
 } from "@workspace/api-zod";
 import { sendVerificationEmail, generateVerificationCode } from "../lib/email";
 import { logger } from "../lib/logger";
+import { emitEvent } from "../lib/webhooks";
 
 const router: IRouter = Router();
 
@@ -187,6 +188,16 @@ router.post("/auth/email/verify", async (req, res): Promise<void> => {
     .update(emailVerificationsTable)
     .set({ consumed: true })
     .where(eq(emailVerificationsTable.id, existing.id));
+
+  emitEvent("vendor.created", {
+    vendorId: vendor.id,
+    name: vendor.name,
+    slug: vendor.slug,
+    category: vendor.category,
+    location: vendor.location,
+    region: vendor.region,
+    contactEmail: vendor.contactEmail,
+  });
 
   res.status(201).json(GetVendorResponse.parse(vendor));
 });
