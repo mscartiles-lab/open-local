@@ -16,6 +16,27 @@ export function isAdminEmail(email: string): boolean {
   return getAdminEmails().has(email.toLowerCase());
 }
 
+// Non-blocking admin check — returns true if the request carries a valid
+// session for an admin user. Used to gate dev-mode reveals (verification
+// codes) so only admins ever see them.
+export async function isAdminRequest(req: Request): Promise<boolean> {
+  const authHeader = req.headers.authorization;
+  if (!authHeader?.startsWith("Bearer ")) return false;
+  const token = authHeader.slice(7);
+  try {
+    const [session] = await db
+      .select()
+      .from(sessionsTable)
+      .where(and(eq(sessionsTable.token, token), gt(sessionsTable.expiresAt, new Date())));
+    if (!session) return false;
+    const [user] = await db.select().from(usersTable).where(eq(usersTable.id, session.userId));
+    if (!user) return false;
+    return user.role === "admin" || getAdminEmails().has(user.email.toLowerCase());
+  } catch {
+    return false;
+  }
+}
+
 export async function requireAdmin(req: Request, res: Response, next: NextFunction): Promise<void> {
   const authHeader = req.headers.authorization;
   if (!authHeader?.startsWith("Bearer ")) {

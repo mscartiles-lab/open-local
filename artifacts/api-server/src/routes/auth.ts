@@ -5,6 +5,7 @@ import { db, usersTable, sessionsTable, signupVerificationsTable } from "@worksp
 import { generateVerificationCode, sendVerificationEmail } from "../lib/email";
 import { logger } from "../lib/logger";
 import { emitEvent } from "../lib/webhooks";
+import { isAdminRequest } from "../lib/requireAdmin";
 
 const router: IRouter = Router();
 
@@ -136,12 +137,13 @@ router.post("/auth/signup/start", async (req: Request, res: Response): Promise<v
     return;
   }
 
+  const adminViewer = devFallback ? await isAdminRequest(req) : false;
   res.status(201).json({
     verificationId: row!.id,
     email: normalizedEmail,
     expiresAt: expiresAt.toISOString(),
     devFallback,
-    devCode: devFallback ? code : null,
+    devCode: devFallback && adminViewer ? code : null,
   });
 });
 
@@ -189,12 +191,13 @@ router.post("/auth/signup/resend", async (req: Request, res: Response): Promise<
     return;
   }
 
+  const adminViewer = devFallback ? await isAdminRequest(req) : false;
   res.json({
     verificationId: existing.id,
     email: existing.email,
     expiresAt: expiresAt.toISOString(),
     devFallback,
-    devCode: devFallback ? code : null,
+    devCode: devFallback && adminViewer ? code : null,
   });
 });
 

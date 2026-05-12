@@ -9,6 +9,7 @@ import {
 import { sendVerificationEmail, generateVerificationCode } from "../lib/email";
 import { logger } from "../lib/logger";
 import { emitEvent } from "../lib/webhooks";
+import { isAdminRequest } from "../lib/requireAdmin";
 
 const router: IRouter = Router();
 
@@ -73,12 +74,13 @@ router.post("/auth/email/start", async (req, res): Promise<void> => {
     return;
   }
 
+  const adminViewer = devFallback ? await isAdminRequest(req) : false;
   res.status(201).json({
     verificationId: row!.id,
     email,
     expiresAt: expiresAt.toISOString(),
     devFallback,
-    devCode: devFallback ? code : null,
+    devCode: devFallback && adminViewer ? code : null,
   });
 });
 
@@ -126,12 +128,13 @@ router.post("/auth/email/resend", async (req, res): Promise<void> => {
     return;
   }
 
+  const adminViewer = devFallback ? await isAdminRequest(req) : false;
   res.json({
     verificationId: existing.id,
     email: existing.email,
     expiresAt: expiresAt.toISOString(),
     devFallback,
-    devCode: devFallback ? code : null,
+    devCode: devFallback && adminViewer ? code : null,
   });
 });
 
