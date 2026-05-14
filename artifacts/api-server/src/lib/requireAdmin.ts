@@ -16,25 +16,16 @@ export function isAdminEmail(email: string): boolean {
   return getAdminEmails().has(email.toLowerCase());
 }
 
-// Non-blocking admin check — returns true if the request carries a valid
-// session for an admin user. Used to gate dev-mode reveals (verification
-// codes) so only admins ever see them.
-export async function isAdminRequest(req: Request): Promise<boolean> {
-  const authHeader = req.headers.authorization;
-  if (!authHeader?.startsWith("Bearer ")) return false;
-  const token = authHeader.slice(7);
-  try {
-    const [session] = await db
-      .select()
-      .from(sessionsTable)
-      .where(and(eq(sessionsTable.token, token), gt(sessionsTable.expiresAt, new Date())));
-    if (!session) return false;
-    const [user] = await db.select().from(usersTable).where(eq(usersTable.id, session.userId));
-    if (!user) return false;
-    return user.role === "admin" || getAdminEmails().has(user.email.toLowerCase());
-  } catch {
-    return false;
-  }
+// Returns true only when the request is hitting the Replit *workspace* dev
+// environment (the editor preview that only Replit collaborators on this Repl
+// can reach), not the published deployment. Used to gate dev-mode reveals
+// (verification codes) so they're only ever visible inside the Replit editor.
+//
+// `REPLIT_DEPLOYMENT` is set to "1" in published deployments and absent in the
+// workspace, so its absence is the marker for "we're in the dev sandbox the
+// Repl owner is looking at right now."
+export function isReplitWorkspaceRequest(_req: Request): boolean {
+  return process.env.REPLIT_DEPLOYMENT !== "1";
 }
 
 export async function requireAdmin(req: Request, res: Response, next: NextFunction): Promise<void> {

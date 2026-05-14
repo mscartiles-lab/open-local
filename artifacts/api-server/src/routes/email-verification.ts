@@ -9,7 +9,7 @@ import {
 import { sendVerificationEmail, generateVerificationCode } from "../lib/email";
 import { logger } from "../lib/logger";
 import { emitEvent } from "../lib/webhooks";
-import { isAdminRequest } from "../lib/requireAdmin";
+import { isReplitWorkspaceRequest } from "../lib/requireAdmin";
 
 const router: IRouter = Router();
 
@@ -74,7 +74,7 @@ router.post("/auth/email/start", async (req, res): Promise<void> => {
     return;
   }
 
-  const adminViewer = devFallback ? await isAdminRequest(req) : false;
+  const adminViewer = devFallback && isReplitWorkspaceRequest(req);
   res.status(201).json({
     verificationId: row!.id,
     email,
@@ -128,7 +128,7 @@ router.post("/auth/email/resend", async (req, res): Promise<void> => {
     return;
   }
 
-  const adminViewer = devFallback ? await isAdminRequest(req) : false;
+  const adminViewer = devFallback && isReplitWorkspaceRequest(req);
   res.json({
     verificationId: existing.id,
     email: existing.email,
