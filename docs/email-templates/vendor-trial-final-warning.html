@@ -1,0 +1,47 @@
+<!--
+  Subject: Last day! Your Open Local trial ends tomorrow
+  Webhook event: vendor.trial.final_warning  (fires T-1d, i.e. within the last 24 hours)
+  Payload fields used:
+    {{ username }}, {{ email }}, {{ trial_ends_at }}
+-->
+<!doctype html>
+<html>
+  <body style="margin:0;padding:0;background:#faf7f1;font-family:'DM Sans',-apple-system,BlinkMacSystemFont,sans-serif;color:#1a1f0f;">
+    <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="background:#faf7f1;padding:32px 16px;">
+      <tr>
+        <td align="center">
+          <table role="presentation" width="560" cellspacing="0" cellpadding="0" style="max-width:560px;background:#ffffff;border:1px solid #e7e2d4;border-radius:16px;overflow:hidden;">
+            <tr>
+              <td style="padding:32px 32px 16px;">
+                <div style="font-size:14px;letter-spacing:0.08em;text-transform:uppercase;color:#b45309;font-weight:600;">Last call</div>
+                <h1 style="margin:16px 0 0;font-size:26px;line-height:1.3;color:#1a1f0f;">Your Open Local trial ends tomorrow, {{ username }}.</h1>
+              </td>
+            </tr>
+            <tr>
+              <td style="padding:8px 32px 0;font-size:16px;line-height:1.6;color:#3a3a2b;">
+                <p>Your free trial ends on <strong>{{ trial_ends_at }}</strong>. If you don't add a payment method before then, your storefront will be automatically paused and hidden from shoppers tomorrow.</p>
+                <p>Don't worry — every product, photo, batch drop, and follower stays exactly where it is. Reactivating takes one click on your billing page.</p>
+              </td>
+            </tr>
+            <tr>
+              <td align="center" style="padding:24px 32px 8px;">
+                <a href="https://openlocal.app/billing" style="display:inline-block;background:#3c4a26;color:#ffffff;text-decoration:none;padding:14px 28px;border-radius:9999px;font-weight:600;font-size:16px;">Keep my storefront live</a>
+              </td>
+            </tr>
+            <tr>
+              <td style="padding:16px 32px 0;font-size:14px;line-height:1.6;color:#6b6e5a;">
+                <p>Not the right time? No hard feelings. Your data stays safe for whenever you're ready to come back.</p>
+              </td>
+            </tr>
+            <tr>
+              <td style="padding:24px 32px 32px;border-top:1px solid #f0ecdf;margin-top:24px;font-size:12px;color:#8a8a72;">
+                <p style="margin:16px 0 4px;">Open Local — Shop Local Wherever You Are</p>
+                <p style="margin:0;">Questions? Just reply to this email.</p>
+              </td>
+            </tr>
+          </table>
+        </td>
+      </tr>
+    </table>
+  </body>
+</html>
