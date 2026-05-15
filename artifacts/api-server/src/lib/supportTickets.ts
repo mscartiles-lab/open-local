@@ -7,6 +7,17 @@ import {
   type SupportTicket,
   type User,
 } from "@workspace/db";
+
+// Automation is vendor-scoped today: only tickets owned by users with
+// role='vendor' produce webhooks. Shoppers can still file tickets — admins
+// see them in the dashboard — but the email lifecycle is intentionally
+// gated server-side at every emit site (submit, stale, resolved) so a
+// non-vendor support ticket can never trigger n8n.
+const VENDOR_OWNS_TICKET = sql`EXISTS (
+  SELECT 1 FROM ${usersTable}
+  WHERE ${usersTable.id} = ${supportTicketsTable.userId}
+    AND ${usersTable.role} = 'vendor'
+)`;
 import { emitEvent, type WebhookEvent } from "./webhooks";
 import { logger } from "./logger";
 
@@ -145,13 +156,16 @@ export async function createSupportTicket(args: CreateTicketArgs): Promise<Suppo
   return ticket;
 }
 
-// Atomic state-transition + dedupe-marker + webhook emit. Mirrors the
-// onboarding and trial-reminder sweeps: every state change is a *single*
-// UPDATE guarded by `NOT (webhooks_sent ? type)`, so concurrent callers
-// can't double-fire the same event for the same ticket. The UPDATE's
-// RETURNING is the source of truth — only the caller whose UPDATE wrote
-// rows emits the webhook.
-async function recordAndEmit(
+// Atomic mark-and-emit for an event marker on a ticket. The dedupe marker
+// flips inside a single UPDATE guarded by `NOT (webhooks_sent ? type)` AND
+// by `VENDOR_OWNS_TICKET`, so:
+//   - concurrent callers can never double-fire the same event,
+//   - shopper-owned tickets never produce automation webhooks even on the
+//     stale/resolved paths.
+// For the stale event we re-check status/age inside the WHERE so a ticket
+// that got resolved between the candidate scan and the UPDATE can't be
+// flagged. `flagged_stale` flips in the same atomic UPDATE as the marker.
+async function emitMarkerOnceVendorOnly(
   ticketId: number,
   eventType: SupportTicketEventType,
   feedbackUrl?: string,
@@ -160,24 +174,16 @@ async function recordAndEmit(
   const setClause: Record<string, unknown> = {
     webhooksSent: sql`${sentJson} || ${JSON.stringify([eventType])}::jsonb`,
   };
-  // Status + side-effect columns flip in the SAME atomic UPDATE as the
-  // dedupe marker, so the lifecycle transition and the emit decision can
-  // never disagree.
   if (eventType === "unresolved_48h") {
     setClause.flaggedStale = true;
-  }
-  if (eventType === "resolved") {
-    setClause.status = "resolved";
-    setClause.resolvedAt = sql`NOW()`;
   }
 
   const whereParts = [
     eq(supportTicketsTable.id, ticketId),
     sql`NOT (${sentJson} ? ${eventType})`,
+    VENDOR_OWNS_TICKET,
   ];
   if (eventType === "unresolved_48h") {
-    // Re-check inside the UPDATE so a ticket that got resolved between the
-    // candidate scan and this statement can't be flagged stale.
     whereParts.push(ne(supportTicketsTable.status, "resolved"));
     whereParts.push(
       lte(supportTicketsTable.createdAt, sql`NOW() - INTERVAL '48 hours'`),
@@ -193,8 +199,10 @@ async function recordAndEmit(
   if (updated.length === 0) return false;
   const ticket = updated[0]!;
   const user = await loadOwner(ticket.userId);
-  if (!user) {
-    logger.error({ ticketId }, "support ticket emit: owner missing");
+  // VENDOR_OWNS_TICKET already filtered non-vendors out of the UPDATE; this
+  // is just a belt-and-braces check for the unlikely missing-owner case.
+  if (!user || user.role !== "vendor") {
+    logger.error({ ticketId }, "support ticket emit: owner missing or non-vendor after vendor-gated UPDATE");
     return true;
   }
   emitEvent(
@@ -204,15 +212,20 @@ async function recordAndEmit(
   return true;
 }
 
-// Resolution is a one-way transition driven by the same atomic mark-and-emit
-// UPDATE used by the onboarding/trial sweeps. Once the `resolved` marker is
-// recorded, subsequent calls return false (status already resolved, webhook
-// already fired) — exactly-once per ticket.
+// Resolution is a state transition admins can flip every time (e.g. reopen
+// → resolve again), so the status/resolvedAt update is unconditional. The
+// webhook side is the dedupe-guarded, vendor-gated atomic UPDATE — so the
+// `resolved` email fires at most once per ticket regardless of how many
+// times status toggles, and never for shopper tickets.
 export async function markSupportTicketResolved(
   ticketId: number,
   feedbackUrl?: string,
 ): Promise<boolean> {
-  return recordAndEmit(ticketId, "resolved", feedbackUrl);
+  await db
+    .update(supportTicketsTable)
+    .set({ status: "resolved", resolvedAt: sql`NOW()` })
+    .where(eq(supportTicketsTable.id, ticketId));
+  return emitMarkerOnceVendorOnly(ticketId, "resolved", feedbackUrl);
 }
 
 export interface SupportSweepResult {
@@ -245,7 +258,7 @@ export async function runSupportTicketSweep(): Promise<SupportSweepResult> {
   for (const c of candidates) {
     const sent = new Set<string>(c.webhooksSent ?? []);
     if (sent.has("unresolved_48h")) continue;
-    const ok = await recordAndEmit(c.id, "unresolved_48h");
+    const ok = await emitMarkerOnceVendorOnly(c.id, "unresolved_48h");
     if (ok) flagged++;
   }
 
