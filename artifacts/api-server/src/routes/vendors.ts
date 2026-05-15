@@ -1,6 +1,7 @@
 import { Router, type IRouter } from "express";
-import { eq, and, ilike, or, sql, notExists } from "drizzle-orm";
-import { db, vendorsTable, productsTable, usersTable } from "@workspace/db";
+import { eq, and, ilike, or, sql, notExists, gt } from "drizzle-orm";
+import { db, vendorsTable, productsTable, usersTable, sessionsTable } from "@workspace/db";
+import { isAdminEmail } from "../lib/requireAdmin";
 import { emitEvent } from "../lib/webhooks";
 import { fireWelcome } from "../lib/onboarding";
 import {
@@ -105,12 +106,45 @@ router.post("/vendors", async (req, res): Promise<void> => {
   res.status(201).json(GetVendorResponse.parse(fresh ?? row));
 });
 
+// Resolves the requesting user from a Bearer token without enforcing auth.
+// Used by /vendors/by-slug/:slug to bypass the paused-vendor filter when the
+// caller owns the vendor or is an admin (so a paused vendor's dashboard still
+// loads), while keeping anonymous discovery filtered.
+async function resolveOptionalUser(req: { headers: { authorization?: string } }): Promise<{ email: string; role: string } | null> {
+  const authHeader = req.headers.authorization;
+  if (!authHeader?.startsWith("Bearer ")) return null;
+  const token = authHeader.slice(7);
+  const [session] = await db
+    .select()
+    .from(sessionsTable)
+    .where(and(eq(sessionsTable.token, token), gt(sessionsTable.expiresAt, new Date())));
+  if (!session) return null;
+  const [user] = await db.select().from(usersTable).where(eq(usersTable.id, session.userId));
+  return user ? { email: user.email, role: user.role } : null;
+}
+
 router.get("/vendors/by-slug/:slug", async (req, res): Promise<void> => {
   const slug = String(req.params.slug);
-  const [vendor] = await db
+  // First do a paused-aware lookup (public discovery view).
+  let [vendor] = await db
     .select()
     .from(vendorsTable)
-    .where(eq(vendorsTable.slug, slug));
+    .where(and(eq(vendorsTable.slug, slug), notPausedVendorCondition()));
+  // If nothing matched, the vendor may exist but be paused — let the owner
+  // (matching contactEmail) or an admin fetch it anyway so the dashboard
+  // remains reachable and they can re-subscribe via /billing.
+  if (!vendor) {
+    const caller = await resolveOptionalUser(req);
+    if (caller) {
+      const [maybe] = await db
+        .select()
+        .from(vendorsTable)
+        .where(eq(vendorsTable.slug, slug));
+      const isOwner = maybe && maybe.contactEmail.toLowerCase() === caller.email.toLowerCase();
+      const isAdmin = caller.role === "admin" || isAdminEmail(caller.email);
+      if (maybe && (isOwner || isAdmin)) vendor = maybe;
+    }
+  }
   if (!vendor) {
     res.status(404).json({ error: "Vendor not found" });
     return;

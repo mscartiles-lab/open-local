@@ -20,6 +20,17 @@ export async function handleAppWebhookEvent(event: Stripe.Event): Promise<void> 
       await onCheckoutCompleted(session);
       break;
     }
+    case "customer.subscription.created":
+    case "customer.subscription.updated": {
+      // Fallback path for trial-start capture: the checkout.session.completed
+      // handler can miss trial_end if the stripe.subscriptions mirror isn't
+      // synced yet. The subscription event itself carries trial_end directly,
+      // so we use it to retroactively record the trial. fireTrialStart() is
+      // idempotent (only writes if trial_started_at is null).
+      const sub = event.data.object as Stripe.Subscription;
+      await onSubscriptionCreatedOrUpdated(sub);
+      break;
+    }
     case "customer.subscription.deleted": {
       const sub = event.data.object as Stripe.Subscription;
       await onSubscriptionDeleted(sub);
@@ -109,6 +120,21 @@ async function readTrialEnd(subscriptionId: string): Promise<number | null> {
     logger.warn({ err, subscriptionId }, "[webhook] readTrialEnd failed");
     return null;
   }
+}
+
+async function onSubscriptionCreatedOrUpdated(sub: Stripe.Subscription): Promise<void> {
+  if (!sub.trial_end) return;
+  // Find the user already linked to this subscription. Linking happens on
+  // checkout.session.completed, which usually fires before this event, so we
+  // can find them by stripeSubscriptionId.
+  const [user] = await db
+    .select({ id: usersTable.id, trialStartedAt: usersTable.trialStartedAt })
+    .from(usersTable)
+    .where(eq(usersTable.stripeSubscriptionId, sub.id));
+  if (!user) return;
+  if (user.trialStartedAt) return; // already captured
+  await fireTrialStart(user.id, sub.trial_end);
+  logger.info({ userId: user.id, subscriptionId: sub.id, trialEnd: sub.trial_end }, "[webhook] trial start captured from subscription event");
 }
 
 async function onSubscriptionDeleted(sub: Stripe.Subscription): Promise<void> {
