@@ -15,6 +15,7 @@ import rewardsRouter from "./rewards";
 import analyticsRouter from "./analytics";
 import webhooksRouter from "./webhooks";
 import onboardingRouter from "./onboarding";
+import supportRouter from "./support";
 
 const router: IRouter = Router();
 
@@ -34,5 +35,6 @@ router.use(rewardsRouter);
 router.use(analyticsRouter);
 router.use(webhooksRouter);
 router.use(onboardingRouter);
+router.use(supportRouter);
 
 export default router;

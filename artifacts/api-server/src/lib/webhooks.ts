@@ -32,6 +32,12 @@ export const WEBHOOK_EVENTS = [
   "vendor.trial.payment_prompt",
   "vendor.trial.final_warning",
   "vendor.trial.expired_paused",
+  // Support-ticket lifecycle — payload owned by buildSupportTicketPayload()
+  // in src/lib/supportTickets.ts. Reference numbers are generated server-side
+  // and are unique at the DB level.
+  "support.ticket.submitted",
+  "support.ticket.unresolved_48h",
+  "support.ticket.resolved",
   // Reserved for future flows that don't have triggers yet:
   "purchase.completed",
   "reminder.sent",

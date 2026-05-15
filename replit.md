@@ -36,6 +36,25 @@ Replit owns the trial-lifecycle automation for vendor accounts (User rows with `
 - Reactivation: the `/billing` page shows an amber "Your free trial has ended" banner when either `?reactivate=1` is in the URL or `/api/auth/me` reports `paused: true`. The Stripe `checkout.session.completed` handler atomically sets `users.paused = false` alongside `stripe_subscription_id` so a successful re-subscribe immediately restores storefront visibility.
 - Three new n8n subscriptions (rows #16–#18 in `webhook_subscriptions`) point at `…/webhook/vendor-trial-payment-prompt`, `…/vendor-trial-final-warning`, `…/vendor-trial-expired-paused`. Reproducible provisioning lives in `pnpm --filter @workspace/scripts run seed-webhook-subscriptions`, which idempotently upserts the full set of n8n subscriptions (including these three) — safe to re-run on any environment.
 
+## Support ticket automations
+
+Replit owns the ticket lifecycle (creation, unique reference, 48h staleness sweep, resolution); n8n owns the email send via three outbound webhook events.
+
+- Table `support_tickets` (`id, reference (unique), userId FK→users cascade, subject, body, status, webhooksSent jsonb, flaggedStale bool, createdAt, resolvedAt`). Status one of `open | in_progress | resolved`. `webhooksSent` values: `submitted | unresolved_48h | resolved`.
+- Reference numbers: `SUP-XXXXXX` over a Crockford-base32-ish alphabet (`23456789ABCDEFGHJKMNPQRSTVWXYZ` — no I, L, O, U). DB-level unique index; `createSupportTicket()` retries on collision.
+- Exactly-once per ticket per event: every state transition is a single atomic `UPDATE … SET webhooks_sent = sent || '["<type>"]'::jsonb … WHERE NOT (sent ? '<type>')` returning the row, then `emitEvent()`. Same pattern as the onboarding and trial sweeps. The `submitted` marker is written inside the INSERT, so a ticket can never exist without it.
+- 48h staleness sweep `runSupportTicketSweep()` is invoked from the existing `POST /api/admin/onboarding/run-daily` endpoint alongside onboarding + trial sweeps (one Scheduled Deployment covers all three). The sweep's UPDATE also re-checks `status != 'resolved' AND created_at <= NOW() - 48h` so a ticket resolved between the candidate scan and the UPDATE can't be flagged.
+- Resolution: setting status to `resolved` via `PATCH /api/admin/support/tickets/:id` flips status + `resolvedAt` + the `resolved` marker in the same UPDATE, then emits the webhook. Flipping back to open and re-resolving won't re-fire because the marker survives.
+- Outbound payload: `{ ticket_id, reference, status, user_id, email, username, role, subject, body, created_at, resolved_at, hours_open, event_type }`. `submitted` adds `response_time_hours: 24`; `resolved` adds `feedback_url` pointing at `https://{REPLIT_DOMAINS[0]}/support/{reference}/feedback`.
+- API:
+  - `POST /api/support/tickets` (requireAuth) `{ subject, body }` → creates ticket, fires `submitted`.
+  - `GET /api/support/tickets/:reference` — public, non-sensitive fields only (reference/subject/status/timestamps).
+  - `GET /api/admin/support/tickets` and `PATCH /api/admin/support/tickets/:id { status }` (requireAdmin).
+- UI:
+  - Vendor dashboard `/dashboard/:slug` has a "Get support" form (`components/SupportRequestForm.tsx`) that shows the generated reference + "we'll get back to you within 24 hours" on success.
+  - Admin **Support** tab (`components/admin/SupportAdminTab.tsx`) lists tickets with status dropdown, stale badge, expandable body, and a "Mark resolved" shortcut.
+- Three new n8n subscriptions (rows #19–#21 in `webhook_subscriptions`) point at `…/webhook/support-ticket-submitted`, `…/support-ticket-unresolved-48h`, `…/support-ticket-resolved`. Provisioned by re-running `pnpm --filter @workspace/scripts run seed-webhook-subscriptions`.
+
 ## Webhooks (outbound automation)
 
 Admin-managed outbound HTTP webhooks for Zapier/Make/n8n/custom endpoints. Tables `webhook_subscriptions` and `webhook_deliveries`. Signed POST with header `X-OpenLocal-Signature: sha256=<hmac>` over `${timestamp}.${rawBody}` using the per-subscription secret. One automatic retry after 1s on failure. Events emitted via `emitEvent()` from `artifacts/api-server/src/lib/webhooks.ts`:
@@ -49,6 +68,7 @@ Admin-managed outbound HTTP webhooks for Zapier/Make/n8n/custom endpoints. Table
 - `vendor.onboarding.day7_inactive` — 7+ days old, zero products; also sets `flagged_for_followup` on the vendor row
 - `vendor.visit_requested|approved|rejected` — rewards flow
 - `vendor.trial.payment_prompt|final_warning|expired_paused` — trial-reminder lifecycle (see "Vendor trial reminders + auto-pause" above)
+- `support.ticket.submitted|unresolved_48h|resolved` — vendor/shopper support tickets (see "Support ticket automations" above)
 - `business.submitted` — establishment submit
 - `business.status_changed` — admin status update (use `status: 'active'` to detect approvals)
 - `product.created` and `offer.created` (for non-regular listing types)

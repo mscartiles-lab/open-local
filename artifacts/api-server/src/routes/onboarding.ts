@@ -2,6 +2,7 @@ import { Router, type IRouter, type Request } from "express";
 import { requireAdmin } from "../lib/requireAdmin";
 import { runOnboardingSweep } from "../lib/onboarding";
 import { runTrialReminderSweep } from "../lib/trialReminders";
+import { runSupportTicketSweep } from "../lib/supportTickets";
 
 const router: IRouter = Router();
 
@@ -18,6 +19,7 @@ function reactivationUrlFor(req: Request): string {
 router.post("/admin/onboarding/run-daily", requireAdmin, async (req, res): Promise<void> => {
   const onboarding = await runOnboardingSweep();
   const trial = await runTrialReminderSweep({ reactivationUrl: reactivationUrlFor(req) });
+  const support = await runSupportTicketSweep();
   res.json({
     // Backwards-compatible top-level shape (onboarding fields preserved)…
     scanned: onboarding.scanned,
@@ -27,6 +29,7 @@ router.post("/admin/onboarding/run-daily", requireAdmin, async (req, res): Promi
     // …plus a per-sweep breakdown for newer callers.
     onboarding,
     trial,
+    support,
   });
 });
 

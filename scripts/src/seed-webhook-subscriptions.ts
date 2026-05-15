@@ -29,6 +29,10 @@ const SEEDS: SubSeed[] = [
   { label: "Vendor trial — payment prompt (T-8d)", url: `${N8N_BASE}/vendor-trial-payment-prompt`, events: ["vendor.trial.payment_prompt"] },
   { label: "Vendor trial — final warning (T-1d)", url: `${N8N_BASE}/vendor-trial-final-warning`, events: ["vendor.trial.final_warning"] },
   { label: "Vendor trial — expired + paused (T+1d)", url: `${N8N_BASE}/vendor-trial-expired-paused`, events: ["vendor.trial.expired_paused"] },
+  // Support-ticket lifecycle (Task #6).
+  { label: "Support ticket — submitted", url: `${N8N_BASE}/support-ticket-submitted`, events: ["support.ticket.submitted"] },
+  { label: "Support ticket — unresolved at 48h", url: `${N8N_BASE}/support-ticket-unresolved-48h`, events: ["support.ticket.unresolved_48h"] },
+  { label: "Support ticket — resolved", url: `${N8N_BASE}/support-ticket-resolved`, events: ["support.ticket.resolved"] },
 ];
 
 async function main(): Promise<void> {

@@ -7,6 +7,7 @@ import Layout from "@/components/layout/Layout";
 import UsersAdminTab from "@/components/admin/UsersAdminTab";
 import EstablishmentsAdminTab from "@/components/admin/EstablishmentsAdminTab";
 import WebhooksAdminTab from "@/components/admin/WebhooksAdminTab";
+import SupportAdminTab from "@/components/admin/SupportAdminTab";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -268,6 +269,7 @@ export default function Admin() {
             <TabsTrigger value="establishments" className="text-lg px-8">Businesses</TabsTrigger>
             <TabsTrigger value="users" className="text-lg px-8">Users</TabsTrigger>
             <TabsTrigger value="webhooks" className="text-lg px-8">Webhooks</TabsTrigger>
+            <TabsTrigger value="support" className="text-lg px-8">Support</TabsTrigger>
           </TabsList>
 
           <TabsContent value="establishments" className="space-y-6">
@@ -276,6 +278,10 @@ export default function Admin() {
 
           <TabsContent value="users" className="space-y-6">
             <UsersAdminTab />
+          </TabsContent>
+
+          <TabsContent value="support" className="space-y-6">
+            <SupportAdminTab />
           </TabsContent>
 
           <TabsContent value="webhooks" className="space-y-6">
