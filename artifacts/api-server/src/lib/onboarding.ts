@@ -140,16 +140,30 @@ export async function runOnboardingSweep(now: Date = new Date()): Promise<SweepR
     // this onboarding sequence. Vendors created before this feature shipped
     // (or any vendor whose welcome never fired) are skipped — we don't want
     // to backfill legacy producers with day3/5/7 nudges.
-    if (!sent.has("welcome")) continue;
+    if (!sent.has("welcome")) {
+      logger.debug({ vendorId: v.id, reason: "no_welcome_marker" }, "sweep skip");
+      continue;
+    }
     const days = daysSince(v.createdAt, now);
-    if (days < 2) continue;
+    if (days < 2) {
+      logger.debug({ vendorId: v.id, days, reason: "too_new" }, "sweep skip");
+      continue;
+    }
     const productCount = await getProductCount(v.id);
     const profileComplete = isProfileComplete(v);
+    const decisionCtx = {
+      vendorId: v.id,
+      days,
+      productCount,
+      profileComplete,
+      alreadySent: Array.from(sent),
+    };
 
     // Day 7 supersedes earlier no-products nudges. Once a vendor is past day
     // 7 with zero products, we don't backfill day3/day5 even on later sweeps
     // — day7 is the final nudge for that path. Day2 (profile-incomplete) is
     // an independent track and can still fire.
+    let action: string = "none";
     if (days >= 7 && productCount === 0) {
       if (!sent.has("day7_inactive")) {
         const ok = await recordAndEmit(v, "day7_inactive", productCount, {
@@ -158,23 +172,36 @@ export async function runOnboardingSweep(now: Date = new Date()): Promise<SweepR
         if (ok) {
           counts.day7_inactive++;
           flagged++;
+          action = "day7_inactive";
         }
       }
       // Fall through to day2 check below; skip day3/day5.
     } else if (days >= 5 && productCount === 0 && !sent.has("day5_no_products_howto")) {
       const ok = await recordAndEmit(v, "day5_no_products_howto", productCount);
-      if (ok) counts.day5_no_products_howto++;
+      if (ok) {
+        counts.day5_no_products_howto++;
+        action = "day5_no_products_howto";
+      }
+      logger.info({ ...decisionCtx, action }, "sweep decision");
       continue;
     } else if (days >= 3 && productCount === 0 && !sent.has("day3_no_products")) {
       const ok = await recordAndEmit(v, "day3_no_products", productCount);
-      if (ok) counts.day3_no_products++;
+      if (ok) {
+        counts.day3_no_products++;
+        action = "day3_no_products";
+      }
+      logger.info({ ...decisionCtx, action }, "sweep decision");
       continue;
     }
 
     if (days >= 2 && !profileComplete && !sent.has("day2_profile_incomplete")) {
       const ok = await recordAndEmit(v, "day2_profile_incomplete", productCount);
-      if (ok) counts.day2_profile_incomplete++;
+      if (ok) {
+        counts.day2_profile_incomplete++;
+        action = action === "none" ? "day2_profile_incomplete" : `${action}+day2_profile_incomplete`;
+      }
     }
+    logger.info({ ...decisionCtx, action }, "sweep decision");
   }
 
   const result: SweepResult = { scanned: vendors.length, sent: counts, flagged };
