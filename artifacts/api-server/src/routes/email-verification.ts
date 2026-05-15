@@ -204,7 +204,13 @@ router.post("/auth/email/verify", async (req, res): Promise<void> => {
   });
   await fireWelcome(vendor);
 
-  res.status(201).json(GetVendorResponse.parse(vendor));
+  // Re-read so the response reflects the welcome marker appended by
+  // fireWelcome to onboarding_emails_sent.
+  const [fresh] = await db
+    .select()
+    .from(vendorsTable)
+    .where(eq(vendorsTable.id, vendor.id));
+  res.status(201).json(GetVendorResponse.parse(fresh ?? vendor));
 });
 
 export default router;

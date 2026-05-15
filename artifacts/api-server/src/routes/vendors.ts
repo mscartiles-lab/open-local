@@ -77,7 +77,13 @@ router.post("/vendors", async (req, res): Promise<void> => {
     contactEmail: row.contactEmail,
   });
   await fireWelcome(row);
-  res.status(201).json(GetVendorResponse.parse(row));
+  // Re-read so the response reflects the welcome marker that fireWelcome
+  // just appended to onboarding_emails_sent.
+  const [fresh] = await db
+    .select()
+    .from(vendorsTable)
+    .where(eq(vendorsTable.id, row.id));
+  res.status(201).json(GetVendorResponse.parse(fresh ?? row));
 });
 
 router.get("/vendors/by-slug/:slug", async (req, res): Promise<void> => {
