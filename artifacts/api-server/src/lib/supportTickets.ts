@@ -128,27 +128,30 @@ export async function createSupportTicket(args: CreateTicketArgs): Promise<Suppo
   }
 
   const user = await loadOwner(userId);
-  if (user) {
-    emitEvent(
-      EVENT_BY_TYPE.submitted,
-      buildSupportTicketPayload({ ticket, user, eventType: "submitted" }),
-    );
-  } else {
+  if (!user) {
     logger.error({ ticketId: ticket.id }, "support ticket created but owner missing");
+    return ticket;
   }
+  // Automation is vendor-only. Shoppers can still file tickets (admins see
+  // them in the dashboard), but n8n's email workflows are scoped to vendor
+  // support today, so non-vendor roles don't trigger the webhook lifecycle.
+  if (user.role !== "vendor") {
+    return ticket;
+  }
+  emitEvent(
+    EVENT_BY_TYPE.submitted,
+    buildSupportTicketPayload({ ticket, user, eventType: "submitted" }),
+  );
   return ticket;
 }
 
-// Atomic mark-and-emit: flips the webhook dedupe marker and (for the stale
-// sweep) the flagged_stale bit in a single UPDATE. Returns the updated row
-// only when this run won the race — that's our exactly-once-per-event
-// guarantee even under concurrent sweeps.
-//
-// Important: status changes are NOT coupled to the dedupe guard here, so
-// callers that want to flip status unconditionally (e.g. reopen → resolve
-// again) should do that UPDATE separately and then call this only to drive
-// the at-most-once webhook emission.
-async function emitOnceIfUnsent(
+// Atomic state-transition + dedupe-marker + webhook emit. Mirrors the
+// onboarding and trial-reminder sweeps: every state change is a *single*
+// UPDATE guarded by `NOT (webhooks_sent ? type)`, so concurrent callers
+// can't double-fire the same event for the same ticket. The UPDATE's
+// RETURNING is the source of truth — only the caller whose UPDATE wrote
+// rows emits the webhook.
+async function recordAndEmit(
   ticketId: number,
   eventType: SupportTicketEventType,
   feedbackUrl?: string,
@@ -157,8 +160,15 @@ async function emitOnceIfUnsent(
   const setClause: Record<string, unknown> = {
     webhooksSent: sql`${sentJson} || ${JSON.stringify([eventType])}::jsonb`,
   };
+  // Status + side-effect columns flip in the SAME atomic UPDATE as the
+  // dedupe marker, so the lifecycle transition and the emit decision can
+  // never disagree.
   if (eventType === "unresolved_48h") {
     setClause.flaggedStale = true;
+  }
+  if (eventType === "resolved") {
+    setClause.status = "resolved";
+    setClause.resolvedAt = sql`NOW()`;
   }
 
   const whereParts = [
@@ -194,18 +204,15 @@ async function emitOnceIfUnsent(
   return true;
 }
 
-// Always flips status → resolved + stamps resolvedAt (so reopening and
-// re-resolving works), then attempts the at-most-once `resolved` webhook.
-// Returns whether the webhook fired this call.
+// Resolution is a one-way transition driven by the same atomic mark-and-emit
+// UPDATE used by the onboarding/trial sweeps. Once the `resolved` marker is
+// recorded, subsequent calls return false (status already resolved, webhook
+// already fired) — exactly-once per ticket.
 export async function markSupportTicketResolved(
   ticketId: number,
   feedbackUrl?: string,
 ): Promise<boolean> {
-  await db
-    .update(supportTicketsTable)
-    .set({ status: "resolved", resolvedAt: sql`NOW()` })
-    .where(eq(supportTicketsTable.id, ticketId));
-  return emitOnceIfUnsent(ticketId, "resolved", feedbackUrl);
+  return recordAndEmit(ticketId, "resolved", feedbackUrl);
 }
 
 export interface SupportSweepResult {
@@ -238,7 +245,7 @@ export async function runSupportTicketSweep(): Promise<SupportSweepResult> {
   for (const c of candidates) {
     const sent = new Set<string>(c.webhooksSent ?? []);
     if (sent.has("unresolved_48h")) continue;
-    const ok = await emitOnceIfUnsent(c.id, "unresolved_48h");
+    const ok = await recordAndEmit(c.id, "unresolved_48h");
     if (ok) flagged++;
   }
 
