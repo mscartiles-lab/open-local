@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { Link, useLocation } from "wouter";
-import { Store, ShoppingBag, PlusCircle, Settings, Menu, Heart, HandHelping, Percent, CalendarDays, LogOut, User, CreditCard, Sparkles, Search as SearchIcon } from "lucide-react";
+import { Store, ShoppingBag, PlusCircle, Settings, Menu, Heart, HandHelping, Percent, CalendarDays, LogOut, User, CreditCard, Sparkles, Search as SearchIcon, LifeBuoy } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 import {
@@ -68,6 +68,12 @@ export function Navbar() {
                 </Link>
               </DropdownMenuItem>
             )}
+            <DropdownMenuItem asChild className="gap-2 cursor-pointer">
+              <Link href="/support">
+                <LifeBuoy size={14} /> Contact support
+              </Link>
+            </DropdownMenuItem>
+            <DropdownMenuSeparator />
             <DropdownMenuItem className="gap-2 cursor-pointer text-red-600 focus:text-red-600" onClick={logout}>
               <LogOut size={14} /> Sign out
             </DropdownMenuItem>
@@ -217,6 +223,10 @@ export function Navbar() {
                   List your business
                 </Link>
                 <div className="w-full h-px bg-border my-2" />
+                <Link href="/support" className="flex items-center gap-4 px-4 py-3.5 rounded-xl text-base font-semibold text-foreground hover:bg-secondary transition-all">
+                  <LifeBuoy className="w-5 h-5 shrink-0" />
+                  Contact support
+                </Link>
                 <Link href="/admin" className="flex items-center gap-4 px-4 py-3.5 rounded-xl text-base font-semibold text-muted-foreground hover:bg-secondary hover:text-foreground transition-all">
                   <Settings className="w-5 h-5 shrink-0" />
                   Admin
