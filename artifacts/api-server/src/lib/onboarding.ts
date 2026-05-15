@@ -11,6 +11,11 @@ export const ONBOARDING_EMAIL_TYPES = [
   "day3_no_products",
   "day5_no_products_howto",
   "day7_inactive",
+  // Profile-completeness nudges (parallel track to the no-products chain).
+  // Each fires at-most-once per vendor — see runOnboardingSweep().
+  "no_photo_day3",
+  "no_bio_day3",
+  "products_no_storefront",
 ] as const;
 
 export type OnboardingEmailType = (typeof ONBOARDING_EMAIL_TYPES)[number];
@@ -21,7 +26,22 @@ const EVENT_BY_TYPE: Record<OnboardingEmailType, WebhookEvent> = {
   day3_no_products: "vendor.onboarding.day3_no_products",
   day5_no_products_howto: "vendor.onboarding.day5_no_products_howto",
   day7_inactive: "vendor.onboarding.day7_inactive",
+  no_photo_day3: "vendor.onboarding.no_photo_day3",
+  no_bio_day3: "vendor.onboarding.no_bio_day3",
+  products_no_storefront: "vendor.onboarding.products_no_storefront",
 };
+
+// Granular field checks used by the new profile-completeness nudges.
+// `hasRealPhoto` mirrors the imageUrl logic in isProfileComplete() — the
+// wizard fills a category-themed Unsplash default cover when the vendor
+// uploads nothing, so we treat that marker as "no real photo yet".
+export function hasRealPhoto(v: Vendor): boolean {
+  return !!v.imageUrl && v.imageUrl.length > 0 && !v.imageUrl.includes(DEFAULT_COVER_MARKER);
+}
+
+export function hasBio(v: Vendor): boolean {
+  return (v.description ?? "").trim().length > 0;
+}
 
 // `imageUrl` is required on insert, so it's never empty — but the wizard fills
 // a category-themed default cover when the vendor doesn't upload one. We treat
@@ -124,6 +144,9 @@ function emptyCounts(): Record<OnboardingEmailType, number> {
     day3_no_products: 0,
     day5_no_products_howto: 0,
     day7_inactive: 0,
+    no_photo_day3: 0,
+    no_bio_day3: 0,
+    products_no_storefront: 0,
   };
 }
 
@@ -214,6 +237,28 @@ export async function runOnboardingSweep(now: Date = new Date()): Promise<SweepR
       }
     }
     logger.info({ ...decisionCtx, action }, "sweep decision");
+
+    // Profile-completeness track — runs INDEPENDENTLY of the no-products
+    // chain above. Each event below fires at-most-once per vendor (atomic
+    // marker in onboardingEmailsSent) and multiple can fire in the same
+    // sweep — e.g. a day-3 vendor with no photo AND no bio AND a product
+    // listed gets all three nudges queued.
+    if (days >= 3 && !hasRealPhoto(v) && !sent.has("no_photo_day3")) {
+      const ok = await recordAndEmit(v, "no_photo_day3", productCount);
+      if (ok) counts.no_photo_day3++;
+    }
+    if (days >= 3 && !hasBio(v) && !sent.has("no_bio_day3")) {
+      const ok = await recordAndEmit(v, "no_bio_day3", productCount);
+      if (ok) counts.no_bio_day3++;
+    }
+    if (
+      productCount > 0 &&
+      !hasRealPhoto(v) &&
+      !sent.has("products_no_storefront")
+    ) {
+      const ok = await recordAndEmit(v, "products_no_storefront", productCount);
+      if (ok) counts.products_no_storefront++;
+    }
   }
 
   const result: SweepResult = { scanned: vendors.length, sent: counts, flagged };

@@ -29,6 +29,10 @@ const SEEDS: SubSeed[] = [
   { label: "Vendor trial — payment prompt (T-8d)", url: `${N8N_BASE}/vendor-trial-payment-prompt`, events: ["vendor.trial.payment_prompt"] },
   { label: "Vendor trial — final warning (T-1d)", url: `${N8N_BASE}/vendor-trial-final-warning`, events: ["vendor.trial.final_warning"] },
   { label: "Vendor trial — expired + paused (T+1d)", url: `${N8N_BASE}/vendor-trial-expired-paused`, events: ["vendor.trial.expired_paused"] },
+  // Profile-completeness nudges (Task #7).
+  { label: "Vendor onboarding — no photo (day 3)", url: `${N8N_BASE}/vendor-onboarding-no-photo-day3`, events: ["vendor.onboarding.no_photo_day3"] },
+  { label: "Vendor onboarding — no bio (day 3)", url: `${N8N_BASE}/vendor-onboarding-no-bio-day3`, events: ["vendor.onboarding.no_bio_day3"] },
+  { label: "Vendor onboarding — products without storefront image", url: `${N8N_BASE}/vendor-onboarding-products-no-storefront`, events: ["vendor.onboarding.products_no_storefront"] },
   // Support-ticket lifecycle (Task #6).
   { label: "Support ticket — submitted", url: `${N8N_BASE}/support-ticket-submitted`, events: ["support.ticket.submitted"] },
   { label: "Support ticket — unresolved at 48h", url: `${N8N_BASE}/support-ticket-unresolved-48h`, events: ["support.ticket.unresolved_48h"] },

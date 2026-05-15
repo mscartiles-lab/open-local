@@ -26,6 +26,12 @@ export const WEBHOOK_EVENTS = [
   "vendor.onboarding.day3_no_products",
   "vendor.onboarding.day5_no_products_howto",
   "vendor.onboarding.day7_inactive",
+  // Profile-completeness nudges. Independent of the no-products track —
+  // these fire alongside it (not in priority competition) so a vendor can
+  // receive e.g. a day3_no_products AND a no_bio_day3 in the same sweep.
+  "vendor.onboarding.no_photo_day3",
+  "vendor.onboarding.no_bio_day3",
+  "vendor.onboarding.products_no_storefront",
   // Trial-reminder lifecycle — payload owned by buildTrialReminderPayload()
   // in src/lib/trialReminders.ts. Anchored on users.trial_ends_at so both
   // 30-day and 60-day vendor trials share the same automation.

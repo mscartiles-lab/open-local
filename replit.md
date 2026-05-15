@@ -66,6 +66,9 @@ Admin-managed outbound HTTP webhooks for Zapier/Make/n8n/custom endpoints. Table
 - `vendor.onboarding.day3_no_products` — 3+ days old, zero products
 - `vendor.onboarding.day5_no_products_howto` — 5+ days old, zero products (`include_howto_tip: true`)
 - `vendor.onboarding.day7_inactive` — 7+ days old, zero products; also sets `flagged_for_followup` on the vendor row
+- `vendor.onboarding.no_photo_day3` — 3+ days old, vendor still has no real cover photo (default Unsplash marker doesn't count)
+- `vendor.onboarding.no_bio_day3` — 3+ days old, `description` still empty
+- `vendor.onboarding.products_no_storefront` — at least one product listed but the cover photo is still the default placeholder; fires whenever the daily sweep first detects this, regardless of vendor age
 - `vendor.visit_requested|approved|rejected` — rewards flow
 - `vendor.trial.payment_prompt|final_warning|expired_paused` — trial-reminder lifecycle (see "Vendor trial reminders + auto-pause" above)
 - `support.ticket.submitted|unresolved_48h|resolved` — vendor/shopper support tickets (see "Support ticket automations" above)
@@ -85,6 +88,7 @@ Replit owns timing + duplicate-protection + payload. n8n (or any subscriber) own
 - Profile-complete check: description non-empty, `imageUrl` is not the auto-picked Unsplash default cover, and `location` is set.
 - Rollout gate: only vendors that received the `welcome` event (after this feature shipped) are eligible for day2/3/5/7 nudges. Legacy vendors aren't backfilled.
 - Outbound payload shape: `{ vendor_id, email, name, days_since_signup, email_type, product_count, profile_complete }`; day5 adds `include_howto_tip: true`, day7 adds `flag_for_followup: true`.
+- Profile-completeness nudges (`no_photo_day3`, `no_bio_day3`, `products_no_storefront`) run as an INDEPENDENT track in the same sweep — they don't compete with the no-products strict-priority chain, so e.g. a day-3 vendor with no photo, no bio, and one listed product gets all three events queued in one pass. Each is still at-most-once per vendor (same atomic `onboardingEmailsSent` marker as the rest of the chain). Granular checks live in `hasRealPhoto()` and `hasBio()` in `lib/onboarding.ts`.
 - Admin UI: "Run onboarding sweep" button in the Webhooks tab triggers the runner on demand; flagged vendors show a "Needs follow-up" badge in the Producers tab.
 
 ## Admin
