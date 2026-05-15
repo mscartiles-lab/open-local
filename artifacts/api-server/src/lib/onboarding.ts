@@ -163,42 +163,54 @@ export async function runOnboardingSweep(now: Date = new Date()): Promise<SweepR
     // 7 with zero products, we don't backfill day3/day5 even on later sweeps
     // — day7 is the final nudge for that path. Day2 (profile-incomplete) is
     // an independent track and can still fire.
+    // Strict priority selector: at most one onboarding email per vendor per
+    // sweep. Order is day7 > day5 > day3 > day2. Monotonic lifecycle — if a
+    // later nudge in the no-products track has already been sent, earlier
+    // ones in that track are skipped to avoid out-of-order comms.
     let action: string = "none";
-    if (days >= 7 && productCount === 0) {
-      if (!sent.has("day7_inactive")) {
-        const ok = await recordAndEmit(v, "day7_inactive", productCount, {
-          flaggedForFollowup: true,
-        });
-        if (ok) {
-          counts.day7_inactive++;
-          flagged++;
-          action = "day7_inactive";
-        }
+    const noProductsAlreadyLater =
+      sent.has("day7_inactive") || sent.has("day5_no_products_howto");
+
+    if (days >= 7 && productCount === 0 && !sent.has("day7_inactive")) {
+      const ok = await recordAndEmit(v, "day7_inactive", productCount, {
+        flaggedForFollowup: true,
+      });
+      if (ok) {
+        counts.day7_inactive++;
+        flagged++;
+        action = "day7_inactive";
       }
-      // Fall through to day2 check below; skip day3/day5.
-    } else if (days >= 5 && productCount === 0 && !sent.has("day5_no_products_howto")) {
+    } else if (
+      days >= 5 &&
+      productCount === 0 &&
+      !sent.has("day5_no_products_howto") &&
+      !sent.has("day7_inactive")
+    ) {
       const ok = await recordAndEmit(v, "day5_no_products_howto", productCount);
       if (ok) {
         counts.day5_no_products_howto++;
         action = "day5_no_products_howto";
       }
-      logger.info({ ...decisionCtx, action }, "sweep decision");
-      continue;
-    } else if (days >= 3 && productCount === 0 && !sent.has("day3_no_products")) {
+    } else if (
+      days >= 3 &&
+      productCount === 0 &&
+      !sent.has("day3_no_products") &&
+      !noProductsAlreadyLater
+    ) {
       const ok = await recordAndEmit(v, "day3_no_products", productCount);
       if (ok) {
         counts.day3_no_products++;
         action = "day3_no_products";
       }
-      logger.info({ ...decisionCtx, action }, "sweep decision");
-      continue;
-    }
-
-    if (days >= 2 && !profileComplete && !sent.has("day2_profile_incomplete")) {
+    } else if (
+      days >= 2 &&
+      !profileComplete &&
+      !sent.has("day2_profile_incomplete")
+    ) {
       const ok = await recordAndEmit(v, "day2_profile_incomplete", productCount);
       if (ok) {
         counts.day2_profile_incomplete++;
-        action = action === "none" ? "day2_profile_incomplete" : `${action}+day2_profile_incomplete`;
+        action = "day2_profile_incomplete";
       }
     }
     logger.info({ ...decisionCtx, action }, "sweep decision");
