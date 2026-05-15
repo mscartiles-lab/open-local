@@ -1,3 +1,4 @@
+import nodemailer, { type Transporter } from "nodemailer";
 import { logger } from "./logger";
 
 interface SendVerificationOptions {
@@ -50,42 +51,65 @@ function escapeHtml(s: string): string {
     .replace(/'/g, "&#39;");
 }
 
+// Lazy-initialized transporter. SMTP_HOST/PORT/USER/PASS are the canonical
+// generic SMTP env vars and work for any provider. For Gmail, set:
+//   SMTP_HOST=smtp.gmail.com
+//   SMTP_PORT=465
+//   SMTP_USER=<your gmail address>
+//   SMTP_PASS=<16-char app password from https://myaccount.google.com/apppasswords>
+//   MAIL_FROM=Open Local <hello@openlocalapp.com>   (defaults to SMTP_USER)
+let transporter: Transporter | null = null;
+
+function getTransporter(): Transporter | null {
+  if (transporter) return transporter;
+  const host = process.env.SMTP_HOST;
+  const user = process.env.SMTP_USER;
+  const pass = process.env.SMTP_PASS;
+  if (!host || !user || !pass) return null;
+  const port = Number(process.env.SMTP_PORT ?? 465);
+  transporter = nodemailer.createTransport({
+    host,
+    port,
+    // 465 → TLS from the start (Gmail), 587 → STARTTLS upgrade.
+    secure: port === 465,
+    auth: { user, pass },
+  });
+  return transporter;
+}
+
+function fromAddress(): string {
+  return (
+    process.env.MAIL_FROM ||
+    (process.env.SMTP_USER ? `Open Local <${process.env.SMTP_USER}>` : "Open Local <onboarding@resend.dev>")
+  );
+}
+
 export async function sendVerificationEmail(
   opts: SendVerificationOptions,
 ): Promise<SendVerificationResult> {
-  const apiKey = process.env.RESEND_API_KEY;
-  const from = process.env.MAIL_FROM || "Open Local <onboarding@resend.dev>";
-
-  if (!apiKey) {
+  const tx = getTransporter();
+  if (!tx) {
     logger.warn(
       { to: opts.to, code: opts.code },
-      "[email] RESEND_API_KEY not set — verification code shown in dev fallback only",
+      "[email] SMTP not configured — verification code shown in dev fallback only",
     );
     return { sent: false, devFallback: true };
   }
 
-  const res = await fetch("https://api.resend.com/emails", {
-    method: "POST",
-    headers: {
-      Authorization: `Bearer ${apiKey}`,
-      "Content-Type": "application/json",
-    },
-    body: JSON.stringify({
-      from,
+  try {
+    const info = await tx.sendMail({
+      from: fromAddress(),
       to: opts.to,
       subject: VERIFICATION_SUBJECT,
       html: renderHtml(opts),
       text: renderText(opts),
-    }),
-  });
-
-  if (!res.ok) {
-    const body = await res.text();
-    logger.error({ status: res.status, body }, "[email] Resend send failed");
-    throw new Error(`Email provider returned ${res.status}`);
+    });
+    logger.info({ to: opts.to, messageId: info.messageId }, "[email] sent");
+    return { sent: true, devFallback: false };
+  } catch (err) {
+    logger.error({ err, to: opts.to }, "[email] SMTP send failed");
+    throw new Error(`Email send failed: ${(err as Error).message}`);
   }
-
-  return { sent: true, devFallback: false };
 }
 
 export function generateVerificationCode(): string {
