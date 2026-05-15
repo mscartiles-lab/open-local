@@ -34,4 +34,6 @@ export interface Vendor {
   /** @nullable */
   longitude: number | null;
   createdAt: Date;
+  onboardingEmailsSent: string[];
+  flaggedForFollowup: boolean;
 }

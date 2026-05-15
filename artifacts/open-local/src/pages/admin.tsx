@@ -305,7 +305,19 @@ export default function Admin() {
                       <TableBody>
                         {vendors.map((vendor) => (
                           <TableRow key={vendor.id}>
-                            <TableCell className="font-medium">{vendor.name}</TableCell>
+                            <TableCell className="font-medium">
+                              <div className="flex items-center gap-2">
+                                <span>{vendor.name}</span>
+                                {vendor.flaggedForFollowup && (
+                                  <span
+                                    className="text-[10px] font-semibold uppercase tracking-wide px-2 py-0.5 rounded bg-amber-100 text-amber-800"
+                                    title="No products 7 days after signup"
+                                  >
+                                    Needs follow-up
+                                  </span>
+                                )}
+                              </div>
+                            </TableCell>
                             <TableCell>{vendor.category}</TableCell>
                             <TableCell>{vendor.location}, {vendor.region}</TableCell>
                             <TableCell>

@@ -45,6 +45,8 @@ export const ListVendorsResponseItem = zod.object({
   latitude: zod.number().nullable(),
   longitude: zod.number().nullable(),
   createdAt: zod.coerce.date(),
+  onboardingEmailsSent: zod.array(zod.string()),
+  flaggedForFollowup: zod.boolean(),
 });
 export const ListVendorsResponse = zod.array(ListVendorsResponseItem);
 
@@ -96,6 +98,8 @@ export const ListFeaturedVendorsResponseItem = zod.object({
   latitude: zod.number().nullable(),
   longitude: zod.number().nullable(),
   createdAt: zod.coerce.date(),
+  onboardingEmailsSent: zod.array(zod.string()),
+  flaggedForFollowup: zod.boolean(),
 });
 export const ListFeaturedVendorsResponse = zod.array(
   ListFeaturedVendorsResponseItem,
@@ -129,6 +133,8 @@ export const GetVendorResponse = zod.object({
   latitude: zod.number().nullable(),
   longitude: zod.number().nullable(),
   createdAt: zod.coerce.date(),
+  onboardingEmailsSent: zod.array(zod.string()),
+  flaggedForFollowup: zod.boolean(),
 });
 
 /**
@@ -180,6 +186,8 @@ export const UpdateVendorResponse = zod.object({
   latitude: zod.number().nullable(),
   longitude: zod.number().nullable(),
   createdAt: zod.coerce.date(),
+  onboardingEmailsSent: zod.array(zod.string()),
+  flaggedForFollowup: zod.boolean(),
 });
 
 /**
@@ -472,6 +480,8 @@ export const GetVendorBySlugResponse = zod.object({
   latitude: zod.number().nullable(),
   longitude: zod.number().nullable(),
   createdAt: zod.coerce.date(),
+  onboardingEmailsSent: zod.array(zod.string()),
+  flaggedForFollowup: zod.boolean(),
 });
 
 /**

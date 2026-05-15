@@ -25,6 +25,11 @@ Admin-managed outbound HTTP webhooks for Zapier/Make/n8n/custom endpoints. Table
 
 - `user.signed_up` — auth signup verify
 - `vendor.created` — vendor onboarding email verify + POST /api/vendors
+- `vendor.onboarding.welcome` — fired immediately on vendor creation
+- `vendor.onboarding.day2_profile_incomplete` — 2+ days old, profile missing bio/photo/location
+- `vendor.onboarding.day3_no_products` — 3+ days old, zero products
+- `vendor.onboarding.day5_no_products_howto` — 5+ days old, zero products (`include_howto_tip: true`)
+- `vendor.onboarding.day7_inactive` — 7+ days old, zero products; also sets `flagged_for_followup` on the vendor row
 - `vendor.visit_requested|approved|rejected` — rewards flow
 - `business.submitted` — establishment submit
 - `business.status_changed` — admin status update (use `status: 'active'` to detect approvals)
@@ -32,6 +37,16 @@ Admin-managed outbound HTTP webhooks for Zapier/Make/n8n/custom endpoints. Table
 - Reserved (no trigger yet): `purchase.completed`, `reminder.sent`, `recommendation.generated`
 
 Admin endpoints: `GET/POST/PATCH/DELETE /api/admin/webhooks`, `GET /api/admin/webhooks/events`, `GET /api/admin/webhooks/:id/deliveries`. Managed in the admin **Webhooks** tab with delivery audit log.
+
+## Vendor onboarding emails
+
+Replit owns timing + duplicate-protection + payload. n8n (or any subscriber) owns the actual email send via the `vendor.onboarding.*` webhook events above.
+
+- Vendor row has `onboardingEmailsSent` (jsonb string[]) and `flaggedForFollowup` (bool). The `welcome` send is fired right after vendor creation by `fireWelcome()` in `artifacts/api-server/src/lib/onboarding.ts`.
+- Daily runner: `POST /api/admin/onboarding/run-daily` (requires admin bearer token). Wire a Replit Scheduled Deployment to it, or run `pnpm --filter @workspace/scripts run onboarding-cron` locally with `API_BASE_URL` + `ONBOARDING_CRON_TOKEN` env vars set. The runner is idempotent: every record-and-emit is a single atomic `UPDATE … WHERE NOT (sent ? type)`, so two concurrent sweeps still send at most one email per vendor per type.
+- Profile-complete check: description ≥ 20 chars, `imageUrl` is not the auto-picked Unsplash default cover, and `location` is set.
+- Outbound payload shape: `{ vendor_id, email, name, days_since_signup, email_type, product_count, profile_complete }`; day5 adds `include_howto_tip: true`, day7 adds `flag_for_followup: true`.
+- Admin UI: "Run onboarding sweep" button in the Webhooks tab triggers the runner on demand; flagged vendors show a "Needs follow-up" badge in the Producers tab.
 
 ## Admin
 

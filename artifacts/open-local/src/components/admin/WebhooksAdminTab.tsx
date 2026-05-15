@@ -51,6 +51,7 @@ export default function WebhooksAdminTab() {
   const [events, setEvents] = useState<string[]>([]);
   const [loading, setLoading] = useState(true);
   const [creating, setCreating] = useState(false);
+  const [sweeping, setSweeping] = useState(false);
   const [openCreate, setOpenCreate] = useState(false);
   const [openDeliveries, setOpenDeliveries] = useState<Subscription | null>(null);
   const [deliveries, setDeliveries] = useState<Delivery[] | null>(null);
@@ -144,6 +145,30 @@ export default function WebhooksAdminTab() {
     if (r.ok) { const d = await r.json(); setDeliveries(d.deliveries); }
   };
 
+  const runSweep = async () => {
+    setSweeping(true);
+    try {
+      const r = await fetch("/api/admin/onboarding/run-daily", {
+        method: "POST",
+        headers: authHeaders(),
+      });
+      if (!r.ok) throw new Error(`HTTP ${r.status}`);
+      const data = await r.json();
+      const totals = Object.values(data.sent as Record<string, number>).reduce(
+        (a, b) => a + b,
+        0,
+      );
+      toast({
+        title: "Onboarding sweep complete",
+        description: `Scanned ${data.scanned} vendors, sent ${totals} emails, flagged ${data.flagged}.`,
+      });
+    } catch (e) {
+      toast({ variant: "destructive", title: "Sweep failed", description: (e as Error).message });
+    } finally {
+      setSweeping(false);
+    }
+  };
+
   const copyFreshSecret = () => {
     if (!freshSecret) return;
     navigator.clipboard.writeText(freshSecret.secret);
@@ -163,6 +188,11 @@ export default function WebhooksAdminTab() {
               header (HMAC‑SHA256 of <code className="mx-1 px-1.5 py-0.5 rounded bg-muted text-xs">{`{timestamp}.{rawBody}`}</code> using your secret).
             </p>
           </div>
+          <div className="flex items-center gap-2">
+            <Button variant="outline" onClick={runSweep} disabled={sweeping} className="gap-2">
+              {sweeping ? <Loader2 className="w-4 h-4 animate-spin" /> : <RefreshCw className="w-4 h-4" />}
+              Run onboarding sweep
+            </Button>
           <Dialog open={openCreate} onOpenChange={setOpenCreate}>
             <DialogTrigger asChild>
               <Button className="gap-2"><Plus className="w-4 h-4" />Add webhook</Button>
@@ -198,6 +228,7 @@ export default function WebhooksAdminTab() {
               </DialogFooter>
             </DialogContent>
           </Dialog>
+          </div>
         </div>
 
         {loading ? (

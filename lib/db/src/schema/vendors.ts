@@ -6,6 +6,7 @@ import {
   boolean,
   timestamp,
   doublePrecision,
+  jsonb,
 } from "drizzle-orm/pg-core";
 
 export const vendorsTable = pgTable("vendors", {
@@ -31,6 +32,11 @@ export const vendorsTable = pgTable("vendors", {
   createdAt: timestamp("created_at", { withTimezone: true })
     .notNull()
     .defaultNow(),
+  onboardingEmailsSent: jsonb("onboarding_emails_sent")
+    .$type<string[]>()
+    .notNull()
+    .default([]),
+  flaggedForFollowup: boolean("flagged_for_followup").notNull().default(false),
 });
 
 export type Vendor = typeof vendorsTable.$inferSelect;

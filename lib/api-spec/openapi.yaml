@@ -708,6 +708,10 @@ components:
         latitude: { type: ["number", "null"] }
         longitude: { type: ["number", "null"] }
         createdAt: { type: string, format: date-time }
+        onboardingEmailsSent:
+          type: array
+          items: { type: string }
+        flaggedForFollowup: { type: boolean }
       required:
         - id
         - name
@@ -729,6 +733,8 @@ components:
         - latitude
         - longitude
         - createdAt
+        - onboardingEmailsSent
+        - flaggedForFollowup
 
     VendorInput:
       type: object

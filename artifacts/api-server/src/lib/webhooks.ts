@@ -19,6 +19,13 @@ export const WEBHOOK_EVENTS = [
   "business.status_changed",
   "product.created",
   "offer.created",
+  // Onboarding lifecycle — payload owned by buildOnboardingPayload() in
+  // src/lib/onboarding.ts. n8n subscribes to these to send the actual emails.
+  "vendor.onboarding.welcome",
+  "vendor.onboarding.day2_profile_incomplete",
+  "vendor.onboarding.day3_no_products",
+  "vendor.onboarding.day5_no_products_howto",
+  "vendor.onboarding.day7_inactive",
   // Reserved for future flows that don't have triggers yet:
   "purchase.completed",
   "reminder.sent",

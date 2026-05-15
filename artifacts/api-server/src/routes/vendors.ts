@@ -2,6 +2,7 @@ import { Router, type IRouter } from "express";
 import { eq, and, ilike, or, sql } from "drizzle-orm";
 import { db, vendorsTable, productsTable } from "@workspace/db";
 import { emitEvent } from "../lib/webhooks";
+import { fireWelcome } from "../lib/onboarding";
 import {
   ListVendorsQueryParams,
   CreateVendorBody,
@@ -75,6 +76,7 @@ router.post("/vendors", async (req, res): Promise<void> => {
     region: row.region,
     contactEmail: row.contactEmail,
   });
+  void fireWelcome(row);
   res.status(201).json(GetVendorResponse.parse(row));
 });
 
