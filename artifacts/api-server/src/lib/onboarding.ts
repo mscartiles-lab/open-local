@@ -29,7 +29,7 @@ const EVENT_BY_TYPE: Record<OnboardingEmailType, WebhookEvent> = {
 const DEFAULT_COVER_MARKER = "unsplash.com";
 
 export function isProfileComplete(v: Vendor): boolean {
-  const hasBio = (v.description ?? "").trim().length >= 20;
+  const hasBio = (v.description ?? "").trim().length > 0;
   const hasPhoto =
     !!v.imageUrl && v.imageUrl.length > 0 && !v.imageUrl.includes(DEFAULT_COVER_MARKER);
   const hasLocation = (v.location ?? "").trim().length > 0;
@@ -135,9 +135,14 @@ export async function runOnboardingSweep(now: Date = new Date()): Promise<SweepR
   let flagged = 0;
 
   for (const v of vendors) {
+    const sent = new Set<string>(v.onboardingEmailsSent ?? []);
+    // Rollout gate: only vendors that received the welcome event are part of
+    // this onboarding sequence. Vendors created before this feature shipped
+    // (or any vendor whose welcome never fired) are skipped — we don't want
+    // to backfill legacy producers with day3/5/7 nudges.
+    if (!sent.has("welcome")) continue;
     const days = daysSince(v.createdAt, now);
     if (days < 2) continue;
-    const sent = new Set<string>(v.onboardingEmailsSent ?? []);
     const productCount = await getProductCount(v.id);
     const profileComplete = isProfileComplete(v);
 

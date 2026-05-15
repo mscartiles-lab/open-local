@@ -202,7 +202,7 @@ router.post("/auth/email/verify", async (req, res): Promise<void> => {
     region: vendor.region,
     contactEmail: vendor.contactEmail,
   });
-  void fireWelcome(vendor);
+  await fireWelcome(vendor);
 
   res.status(201).json(GetVendorResponse.parse(vendor));
 });

@@ -76,7 +76,7 @@ router.post("/vendors", async (req, res): Promise<void> => {
     region: row.region,
     contactEmail: row.contactEmail,
   });
-  void fireWelcome(row);
+  await fireWelcome(row);
   res.status(201).json(GetVendorResponse.parse(row));
 });
 

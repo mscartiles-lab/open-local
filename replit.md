@@ -44,7 +44,8 @@ Replit owns timing + duplicate-protection + payload. n8n (or any subscriber) own
 
 - Vendor row has `onboardingEmailsSent` (jsonb string[]) and `flaggedForFollowup` (bool). The `welcome` send is fired right after vendor creation by `fireWelcome()` in `artifacts/api-server/src/lib/onboarding.ts`.
 - Daily runner: `POST /api/admin/onboarding/run-daily` (requires admin bearer token). Wire a Replit Scheduled Deployment to it, or run `pnpm --filter @workspace/scripts run onboarding-cron` locally with `API_BASE_URL` + `ONBOARDING_CRON_TOKEN` env vars set. The runner is idempotent: every record-and-emit is a single atomic `UPDATE … WHERE NOT (sent ? type)`, so two concurrent sweeps still send at most one email per vendor per type.
-- Profile-complete check: description ≥ 20 chars, `imageUrl` is not the auto-picked Unsplash default cover, and `location` is set.
+- Profile-complete check: description non-empty, `imageUrl` is not the auto-picked Unsplash default cover, and `location` is set.
+- Rollout gate: only vendors that received the `welcome` event (after this feature shipped) are eligible for day2/3/5/7 nudges. Legacy vendors aren't backfilled.
 - Outbound payload shape: `{ vendor_id, email, name, days_since_signup, email_type, product_count, profile_complete }`; day5 adds `include_howto_tip: true`, day7 adds `flag_for_followup: true`.
 - Admin UI: "Run onboarding sweep" button in the Webhooks tab triggers the runner on demand; flagged vendors show a "Needs follow-up" badge in the Producers tab.
 

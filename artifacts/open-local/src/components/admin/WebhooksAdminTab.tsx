@@ -154,13 +154,15 @@ export default function WebhooksAdminTab() {
       });
       if (!r.ok) throw new Error(`HTTP ${r.status}`);
       const data = await r.json();
-      const totals = Object.values(data.sent as Record<string, number>).reduce(
-        (a, b) => a + b,
-        0,
-      );
+      const sent = data.sent as Record<string, number>;
+      const totals = Object.values(sent).reduce((a, b) => a + b, 0);
+      const breakdown = Object.entries(sent)
+        .filter(([, n]) => n > 0)
+        .map(([k, n]) => `${k}: ${n}`)
+        .join(", ");
       toast({
         title: "Onboarding sweep complete",
-        description: `Scanned ${data.scanned} vendors, sent ${totals} emails, flagged ${data.flagged}.`,
+        description: `Scanned ${data.scanned} vendors. Sent ${totals} email${totals === 1 ? "" : "s"}${breakdown ? ` (${breakdown})` : ""}. Flagged ${data.flagged} for follow-up.`,
       });
     } catch (e) {
       toast({ variant: "destructive", title: "Sweep failed", description: (e as Error).message });
