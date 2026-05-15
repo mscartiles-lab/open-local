@@ -1,6 +1,6 @@
 import { Router, type IRouter } from "express";
-import { eq, and, ilike, or, sql } from "drizzle-orm";
-import { db, vendorsTable, productsTable } from "@workspace/db";
+import { eq, and, ilike, or, sql, notExists } from "drizzle-orm";
+import { db, vendorsTable, productsTable, usersTable } from "@workspace/db";
 import { emitEvent } from "../lib/webhooks";
 import { fireWelcome } from "../lib/onboarding";
 import {
@@ -20,6 +20,25 @@ import {
 
 const router: IRouter = Router();
 
+// Hides any vendor whose contactEmail matches a user row that's paused
+// (i.e. their trial expired with no live subscription). The vendor's own
+// dashboard route doesn't apply this filter — they can still log in and
+// re-subscribe through /billing.
+function notPausedVendorCondition() {
+  return notExists(
+    db
+      .select({ one: sql`1` })
+      .from(usersTable)
+      .where(
+        and(
+          eq(usersTable.email, vendorsTable.contactEmail),
+          eq(usersTable.paused, true),
+        ),
+      ),
+  );
+}
+export { notPausedVendorCondition };
+
 router.get("/vendors", async (req, res): Promise<void> => {
   const parsed = ListVendorsQueryParams.safeParse(req.query);
   if (!parsed.success) {
@@ -28,7 +47,7 @@ router.get("/vendors", async (req, res): Promise<void> => {
   }
 
   const { search, category, location, featured } = parsed.data;
-  const conditions = [];
+  const conditions: ReturnType<typeof and>[] = [notPausedVendorCondition()];
   if (search) {
     conditions.push(
       or(
@@ -55,7 +74,7 @@ router.get("/vendors/featured", async (_req, res): Promise<void> => {
   const rows = await db
     .select()
     .from(vendorsTable)
-    .where(eq(vendorsTable.featured, true))
+    .where(and(eq(vendorsTable.featured, true), notPausedVendorCondition()))
     .orderBy(vendorsTable.name);
   res.json(ListFeaturedVendorsResponse.parse(rows));
 });
@@ -108,7 +127,7 @@ router.get("/vendors/:id", async (req, res): Promise<void> => {
   const [row] = await db
     .select()
     .from(vendorsTable)
-    .where(eq(vendorsTable.id, params.data.id));
+    .where(and(eq(vendorsTable.id, params.data.id), notPausedVendorCondition()));
   if (!row) {
     res.status(404).json({ error: "Vendor not found" });
     return;

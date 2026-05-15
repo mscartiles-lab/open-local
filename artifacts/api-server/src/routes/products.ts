@@ -2,6 +2,7 @@ import { Router, type IRouter } from "express";
 import { eq, and, ilike, or, gt, isNull } from "drizzle-orm";
 import { db, productsTable, vendorsTable } from "@workspace/db";
 import { emitEvent } from "../lib/webhooks";
+import { notPausedVendorCondition } from "./vendors";
 import {
   ListProductsQueryParams,
   CreateProductBody,
@@ -61,12 +62,13 @@ router.get("/products", async (req, res): Promise<void> => {
   if (featured !== undefined) conditions.push(eq(productsTable.featured, featured));
   if (inStock !== undefined) conditions.push(eq(productsTable.inStock, inStock));
   if (listingType) conditions.push(eq(productsTable.listingType, listingType));
+  conditions.push(notPausedVendorCondition());
 
   const rows = await db
     .select(productWithVendorSelect)
     .from(productsTable)
     .innerJoin(vendorsTable, eq(productsTable.vendorId, vendorsTable.id))
-    .where(conditions.length ? and(...conditions) : undefined)
+    .where(and(...conditions))
     .orderBy(productsTable.name);
 
   res.json(ListProductsResponse.parse(rows));
@@ -77,7 +79,7 @@ router.get("/products/featured", async (_req, res): Promise<void> => {
     .select(productWithVendorSelect)
     .from(productsTable)
     .innerJoin(vendorsTable, eq(productsTable.vendorId, vendorsTable.id))
-    .where(eq(productsTable.featured, true))
+    .where(and(eq(productsTable.featured, true), notPausedVendorCondition()))
     .orderBy(productsTable.name);
   res.json(ListFeaturedProductsResponse.parse(rows));
 });
@@ -149,7 +151,7 @@ router.get("/products/:id", async (req, res): Promise<void> => {
     .select(productWithVendorSelect)
     .from(productsTable)
     .innerJoin(vendorsTable, eq(productsTable.vendorId, vendorsTable.id))
-    .where(eq(productsTable.id, params.data.id));
+    .where(and(eq(productsTable.id, params.data.id), notPausedVendorCondition()));
   if (!row) {
     res.status(404).json({ error: "Product not found" });
     return;
@@ -215,7 +217,14 @@ router.get("/feed/local-now", async (_req, res): Promise<void> => {
       .select(productWithVendorSelect)
       .from(productsTable)
       .innerJoin(vendorsTable, eq(productsTable.vendorId, vendorsTable.id))
-      .where(and(eq(productsTable.listingType, type), eq(productsTable.inStock, true), stillAvailable))
+      .where(
+        and(
+          eq(productsTable.listingType, type),
+          eq(productsTable.inStock, true),
+          stillAvailable,
+          notPausedVendorCondition(),
+        ),
+      )
       .orderBy(productsTable.createdAt);
 
   const [batchDrops, surplus, preOrders] = await Promise.all([

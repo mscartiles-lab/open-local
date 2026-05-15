@@ -2,8 +2,8 @@ import { useEffect, useState } from "react";
 import Layout from "@/components/layout/Layout";
 import { useUser } from "@/context/UserContext";
 import { Button } from "@/components/ui/button";
-import { CreditCard, Sparkles, Clock, ExternalLink, Loader2, CheckCircle, Store } from "lucide-react";
-import { Link } from "wouter";
+import { CreditCard, Sparkles, Clock, ExternalLink, Loader2, CheckCircle, Store, AlertCircle } from "lucide-react";
+import { Link, useSearch } from "wouter";
 import { TierPicker } from "@/components/billing/TierPicker";
 import { TIERS, type TierId } from "@/lib/tiers";
 
@@ -38,6 +38,9 @@ function getToken(): string | null {
 
 export default function Billing() {
   const { user, isLoading } = useUser();
+  const search = useSearch();
+  const isReactivating = new URLSearchParams(search).get("reactivate") === "1";
+  const showReactivationBanner = isReactivating || user?.paused === true;
   const [pricing, setPricing] = useState<PricingInfo | null>(null);
   const [status, setStatus] = useState<VendorStatus | null>(null);
   const [tier, setTier] = useState<TierId>("middle");
@@ -179,6 +182,15 @@ export default function Billing() {
         {error && (
           <div className="mb-6 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
             {error}
+          </div>
+        )}
+        {showReactivationBanner && (
+          <div className="mb-6 rounded-xl border-2 border-amber-300 bg-amber-50 px-5 py-4 flex items-start gap-3">
+            <AlertCircle className="w-5 h-5 text-amber-700 shrink-0 mt-0.5" />
+            <div className="text-sm text-amber-900">
+              <p className="font-semibold mb-0.5">Your free trial has ended.</p>
+              <p>Your storefront is paused. Pick a plan below to reactivate it — shoppers will see your listings again as soon as your subscription is active.</p>
+            </div>
           </div>
         )}
         {pricingError && (

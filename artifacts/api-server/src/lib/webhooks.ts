@@ -26,6 +26,12 @@ export const WEBHOOK_EVENTS = [
   "vendor.onboarding.day3_no_products",
   "vendor.onboarding.day5_no_products_howto",
   "vendor.onboarding.day7_inactive",
+  // Trial-reminder lifecycle — payload owned by buildTrialReminderPayload()
+  // in src/lib/trialReminders.ts. Anchored on users.trial_ends_at so both
+  // 30-day and 60-day vendor trials share the same automation.
+  "vendor.trial.payment_prompt",
+  "vendor.trial.final_warning",
+  "vendor.trial.expired_paused",
   // Reserved for future flows that don't have triggers yet:
   "purchase.completed",
   "reminder.sent",

@@ -160,9 +160,12 @@ export default function WebhooksAdminTab() {
         .filter(([, n]) => n > 0)
         .map(([k, n]) => `${k}: ${n}`)
         .join(", ");
+      const pausedBit = typeof data.paused === "number" && data.paused > 0
+        ? ` Paused ${data.paused} expired-trial vendor${data.paused === 1 ? "" : "s"}.`
+        : "";
       toast({
         title: "Onboarding sweep complete",
-        description: `Scanned ${data.scanned} vendors. Sent ${totals} email${totals === 1 ? "" : "s"}${breakdown ? ` (${breakdown})` : ""}. Flagged ${data.flagged} for follow-up.`,
+        description: `Scanned ${data.scanned} vendors. Sent ${totals} email${totals === 1 ? "" : "s"}${breakdown ? ` (${breakdown})` : ""}. Flagged ${data.flagged} for follow-up.${pausedBit}`,
       });
     } catch (e) {
       toast({ variant: "destructive", title: "Sweep failed", description: (e as Error).message });

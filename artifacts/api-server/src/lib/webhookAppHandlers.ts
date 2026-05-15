@@ -2,6 +2,7 @@ import type Stripe from "stripe";
 import { eq } from "drizzle-orm";
 import { db, usersTable, establishmentsTable } from "@workspace/db";
 import { logger } from "./logger";
+import { fireTrialStart } from "./trialReminders";
 
 /**
  * App-level Stripe webhook handler.
@@ -58,9 +59,20 @@ async function onCheckoutCompleted(session: Stripe.Checkout.Session): Promise<vo
         stripeSubscriptionId: subscriptionId,
         ...(customerId ? { stripeCustomerId: customerId } : {}),
         ...(tier ? { tier } : {}),
+        // Reactivation: any successful checkout for a user-mode subscription
+        // clears the auto-pause flag so a previously expired-trial vendor's
+        // storefront comes back online immediately.
+        paused: false,
       })
       .where(eq(usersTable.id, userId));
-    logger.info({ userId, subscriptionId, tier }, "[webhook] linked subscription to user");
+
+    // Record trial start so the daily trial-reminder sweep can pick the user
+    // up. We read trial_end off the Stripe subscription that was just
+    // linked. No-op when there's no trial period.
+    const trialEnd = await readTrialEnd(subscriptionId);
+    if (trialEnd) await fireTrialStart(userId, trialEnd);
+
+    logger.info({ userId, subscriptionId, tier, trialEnd }, "[webhook] linked subscription to user");
     return;
   }
 
@@ -79,6 +91,24 @@ async function onCheckoutCompleted(session: Stripe.Checkout.Session): Promise<vo
   }
 
   logger.warn({ sessionId: session.id, meta }, "[webhook] checkout completed without recognised metadata");
+}
+
+// Stripe sometimes hasn't synced the subscription mirror by the time
+// checkout.session.completed fires. The session itself doesn't always carry
+// trial_end on its `subscription` expansion, so we read the mirror table
+// (populated by stripe-replit-sync) directly. Returns Unix seconds or null.
+async function readTrialEnd(subscriptionId: string): Promise<number | null> {
+  try {
+    const { sql } = await import("drizzle-orm");
+    const result = await db.execute(
+      sql`SELECT trial_end FROM stripe.subscriptions WHERE id = ${subscriptionId}`,
+    );
+    const row = result.rows[0] as { trial_end?: number | null } | undefined;
+    return row?.trial_end ?? null;
+  } catch (err) {
+    logger.warn({ err, subscriptionId }, "[webhook] readTrialEnd failed");
+    return null;
+  }
 }
 
 async function onSubscriptionDeleted(sub: Stripe.Subscription): Promise<void> {

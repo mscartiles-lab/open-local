@@ -19,6 +19,23 @@ Shoppers earn DiceBear avatar unlocks by visiting vendors. The vendor confirms e
   - `PATCH /api/rewards/equipped`
 - UI: `CheckInButton` ("Request visit credit") on `/vendors/:id`, `VisitRequestsPanel` at top of vendor `/dashboard/:slug`, `/rewards` page (link in user dropdown). Avatar URL helper in `UserContext.avatarUrl(seed, style, equipped?)` appends DiceBear params from equipped items.
 
+## Vendor trial reminders + auto-pause
+
+Replit owns the trial-lifecycle automation for vendor accounts (User rows with `role='vendor'` that opened a Stripe subscription with a trial). Reminders are anchored to `users.trial_ends_at`, so the existing 60-day (early cohort) and 30-day (standard) trials share the same code without any constant tweaks.
+
+- New columns on `users`: `trial_started_at`, `trial_ends_at`, `trial_reminders_sent` (jsonb string[]), `paused` (bool).
+- Trial start is recorded on Stripe `checkout.session.completed` via `fireTrialStart()` in `artifacts/api-server/src/lib/trialReminders.ts`. It reads `trial_end` from the `stripe.subscriptions` mirror table (populated by stripe-replit-sync).
+- Daily sweep `runTrialReminderSweep()` is invoked from the same `POST /api/admin/onboarding/run-daily` endpoint as the vendor-onboarding sweep — one Scheduled Deployment covers both.
+- Strict priority per user per sweep: `expired_paused > final_warning > payment_prompt`.
+  - **T-8 days** → `vendor.trial.payment_prompt` (fires when 7 < days_remaining ≤ 8)
+  - **T-1 day** → `vendor.trial.final_warning` (fires in the last 24h)
+  - **T+1 day** → `vendor.trial.expired_paused` (fires ≥24h after `trial_ends_at` when there's no active paid Stripe subscription). Same atomic UPDATE that records the dedupe marker also sets `paused = true`, so the pause and webhook are linked.
+- Rollout gate: only users with `trial_started_at IS NOT NULL` are eligible. Legacy vendors aren't backfilled. Paying vendors (active Stripe sub) are never auto-paused — the day-of-expiry branch reads the stripe.subscriptions mirror first and skips them.
+- Payload: `{ user_id, email, username, role, trial_started_at, trial_ends_at, days_remaining, email_type, has_payment_method, stripe_customer_id, stripe_subscription_id }`; `expired_paused` adds `reactivation_url` pointing at `/billing?reactivate=1`.
+- Storefront visibility: `notPausedVendorCondition()` (exported from `routes/vendors.ts`) is applied via `NOT EXISTS` correlated subquery on `users.email = vendors.contact_email AND users.paused = true` across the public discovery + detail endpoints: `/api/vendors` (list), `/api/vendors/featured`, `/api/vendors/:id` (public profile by id), `/api/products` (list), `/api/products/featured`, `/api/products/:id`, and `/api/feed/local-now`. The single-record `by-slug` lookup (`/api/vendors/by-slug/:slug`) and the vendor-scoped products subroute (`/api/vendors/:id/products`) are intentionally **not** filtered so the vendor's own `/dashboard/:slug` view stays usable while they're paused.
+- Reactivation: the `/billing` page shows an amber "Your free trial has ended" banner when either `?reactivate=1` is in the URL or `/api/auth/me` reports `paused: true`. The Stripe `checkout.session.completed` handler atomically sets `users.paused = false` alongside `stripe_subscription_id` so a successful re-subscribe immediately restores storefront visibility.
+- Three new n8n subscriptions (rows #16–#18 in `webhook_subscriptions`) point at `…/webhook/vendor-trial-payment-prompt`, `…/vendor-trial-final-warning`, `…/vendor-trial-expired-paused`.
+
 ## Webhooks (outbound automation)
 
 Admin-managed outbound HTTP webhooks for Zapier/Make/n8n/custom endpoints. Tables `webhook_subscriptions` and `webhook_deliveries`. Signed POST with header `X-OpenLocal-Signature: sha256=<hmac>` over `${timestamp}.${rawBody}` using the per-subscription secret. One automatic retry after 1s on failure. Events emitted via `emitEvent()` from `artifacts/api-server/src/lib/webhooks.ts`:
@@ -31,6 +48,7 @@ Admin-managed outbound HTTP webhooks for Zapier/Make/n8n/custom endpoints. Table
 - `vendor.onboarding.day5_no_products_howto` — 5+ days old, zero products (`include_howto_tip: true`)
 - `vendor.onboarding.day7_inactive` — 7+ days old, zero products; also sets `flagged_for_followup` on the vendor row
 - `vendor.visit_requested|approved|rejected` — rewards flow
+- `vendor.trial.payment_prompt|final_warning|expired_paused` — trial-reminder lifecycle (see "Vendor trial reminders + auto-pause" above)
 - `business.submitted` — establishment submit
 - `business.status_changed` — admin status update (use `status: 'active'` to detect approvals)
 - `product.created` and `offer.created` (for non-regular listing types)
@@ -74,7 +92,7 @@ Shared workspace packages:
 - **Vendors** — `id, name, slug (unique), tagline, description, category, location, region, contactEmail, websiteUrl, imageUrl, established, featured, phone?, instagramHandle?, facebookUrl?, marketsText?, latitude?, longitude?, createdAt`.
 - **Products** — `id, vendorId (FK cascade), name, description, priceCents, unit, category, imageUrl, inStock, featured, listingType, originalPriceCents?, availableUntil?, pickupNote?, createdAt`. Prices in cents.
 - **EmailVerifications** — `id, email, code, vendorPayload (jsonb), expiresAt, attempts, consumed, createdAt`. For vendor onboarding only.
-- **Users** — `id, email (unique), username (unique), avatarSeed, avatarStyle, role ('vendor'|'shopper'), city?, state, createdAt`. App user accounts.
+- **Users** — `id, email (unique), username (unique), avatarSeed, avatarStyle, role ('vendor'|'shopper'), city?, state, tier, stripeCustomerId?, stripeSubscriptionId?, trialStartedAt?, trialEndsAt?, trialRemindersSent (jsonb string[]), paused (bool), equippedUnlocks (jsonb string[]), createdAt`. App user accounts.
 - **Sessions** — `id, userId (FK→users, cascade), token (unique UUID pair), expiresAt, createdAt`. 30-day rolling sessions. Token stored in `localStorage` as `ol_session`.
 - **SignupVerifications** — `id, email, code, payload (jsonb), expiresAt, attempts, consumed, createdAt`. Short-lived (10 min) email verification for user signup. Payload holds the full user profile until code is confirmed.
 

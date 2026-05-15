@@ -34,6 +34,8 @@ export interface AppUser {
   zip?: string | null;
   state: string;
   equippedUnlocks?: string[];
+  paused?: boolean;
+  trialEndsAt?: string | null;
 }
 
 // Plain DiceBear URL for the base avatar. Equipped wardrobe items are now
