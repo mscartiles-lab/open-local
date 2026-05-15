@@ -1,0 +1,24 @@
+I'm building a vendor onboarding email automation system for my local marketplace platform (openlocalapp.com). I need you to plan and build the backend logic in this Replit project that will fire webhooks to n8n, which will handle all the actual email sending.
+Here's how the system works:
+
+Replit handles all the data, timing logic, and decides WHEN to send emails
+n8n receives webhooks from Replit and handles the actual email sending
+No email sending happens inside Replit — only webhook calls go out
+
+The 5 automations I need covered:
+
+Welcome email — fires immediately when a vendor signs up
+Day 2 — fires if vendor profile is still incomplete (no bio, photo, or location) 2 days after signup
+Day 3 — fires if vendor still has 0 products listed, 3 days after signup
+Day 5 — fires if vendor still has 0 products, 5 days after signup, include a how-to tip flag in the payload
+Day 7 — fires if vendor is still completely inactive 7 days after signup, plus flag the account internally as "needs manual follow-up"
+
+What I need you to build:
+
+The vendor data model — fields needed: vendor_id, email, name, created_at, has_bio, has_photo, has_location, product_count, onboarding_emails_sent (array to track which ones already went out), flagged_for_followup (bool)
+A signup handler — when a vendor account is created, immediately POST to the n8n webhook for the welcome email and record "welcome" in onboarding_emails_sent
+A daily cron job — runs every day at 9am, loops through all vendors, calculates days_since_signup, checks their current state, and fires the right webhook to n8n only if that email hasn't been sent yet
+The webhook payload structure — each POST to n8n should include: vendor_id, email, name, days_since_signup, email_type (e.g. "day3_product_prompt"), product_count, profile_complete, and any extra flags like include_howto_tip or flag_for_followup
+Duplicate send protection — before firing any webhook, check onboarding_emails_sent to make sure that email type hasn't already gone out for that vendor
+
+Do not build the email sending logic — that lives in n8n. Just build the Replit side: data model, signup trigger, daily cron, webhook calls, and duplicate protection.
