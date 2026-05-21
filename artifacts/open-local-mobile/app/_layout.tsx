@@ -17,7 +17,9 @@ import { KeyboardProvider } from "react-native-keyboard-controller";
 import { SafeAreaProvider } from "react-native-safe-area-context";
 
 import { ErrorBoundary } from "@/components/ErrorBoundary";
+import { OnboardingGate } from "@/components/OnboardingModal";
 import colors from "@/constants/colors";
+import { AuthProvider } from "@/context/AuthContext";
 
 setBaseUrl(`https://${process.env.EXPO_PUBLIC_DOMAIN}`);
 
@@ -32,6 +34,10 @@ function RootLayoutNav() {
       <Stack.Screen
         name="vendor/[slug]"
         options={{ headerShown: false, presentation: "card" }}
+      />
+      <Stack.Screen
+        name="(auth)"
+        options={{ headerShown: false, presentation: "modal" }}
       />
     </Stack>
   );
@@ -67,7 +73,10 @@ export default function RootLayout() {
         <QueryClientProvider client={queryClient}>
           <GestureHandlerRootView style={{ flex: 1 }}>
             <KeyboardProvider>
-              <RootLayoutNav />
+              <AuthProvider>
+                <RootLayoutNav />
+                <OnboardingGate />
+              </AuthProvider>
             </KeyboardProvider>
           </GestureHandlerRootView>
         </QueryClientProvider>

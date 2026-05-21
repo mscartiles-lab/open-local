@@ -17,8 +17,10 @@ import {
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
+import Avatar from "@/components/Avatar";
 import { MiniMap, type MapPin } from "@/components/MiniMap";
 import { VendorCard } from "@/components/VendorCard";
+import { useAuth } from "@/context/AuthContext";
 import { useColors } from "@/hooks/useColors";
 import type {
   Establishment,
@@ -37,6 +39,7 @@ export default function TheLocalsScreen() {
   const colors = useColors();
   const insets = useSafeAreaInsets();
   const router = useRouter();
+  const { user, logout } = useAuth();
   const [segment, setSegment] = useState<Segment>("all");
   const [refreshing, setRefreshing] = useState(false);
 
@@ -134,10 +137,34 @@ export default function TheLocalsScreen() {
         ListHeaderComponent={
           <View>
             <View style={s.header}>
-              <Text style={s.wordmark}>The Locals</Text>
-              <Text style={s.tagline}>
-                Producers, makers, and small businesses near you
-              </Text>
+              <View style={{ flex: 1 }}>
+                <Text style={s.wordmark}>The Locals</Text>
+                <Text style={s.tagline}>
+                  Producers, makers, and small businesses near you
+                </Text>
+              </View>
+              {user ? (
+                <TouchableOpacity
+                  onLongPress={logout}
+                  onPress={() => {
+                    if (user.role === "vendor") router.push("/(auth)/tiers");
+                  }}
+                  accessibilityLabel="Your profile"
+                >
+                  <Avatar
+                    seed={user.avatarSeed}
+                    style={user.avatarStyle}
+                    size={44}
+                  />
+                </TouchableOpacity>
+              ) : (
+                <TouchableOpacity
+                  onPress={() => router.push("/(auth)/signup")}
+                  style={s.signInBtn}
+                >
+                  <Text style={s.signInText}>Sign in</Text>
+                </TouchableOpacity>
+              )}
             </View>
 
             <View style={s.mapWrap}>
@@ -298,7 +325,24 @@ const styles = (
       paddingHorizontal: 16,
       gap: 10,
     },
-    header: { marginBottom: 14, paddingHorizontal: 4 },
+    header: {
+      marginBottom: 14,
+      paddingHorizontal: 4,
+      flexDirection: "row",
+      alignItems: "center",
+      gap: 12,
+    },
+    signInBtn: {
+      paddingHorizontal: 14,
+      paddingVertical: 10,
+      borderRadius: 999,
+      backgroundColor: colors.primary,
+    },
+    signInText: {
+      color: "#fff",
+      fontFamily: "DMSans_700Bold",
+      fontSize: 13,
+    },
     wordmark: {
       fontFamily: "DMSans_700Bold",
       fontSize: 26,
