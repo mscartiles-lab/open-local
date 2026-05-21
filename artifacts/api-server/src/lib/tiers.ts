@@ -19,3 +19,17 @@ export function vendorPlanName(tier: TierId): string {
 export function businessPlanName(tier: TierId): string {
   return `Open Local Business Listing — ${TIERS[tier].name}`;
 }
+
+// Tier entitlements
+export function tierAllowsPreOrder(tier: TierId | null | undefined): boolean {
+  return tier === "middle" || tier === "premium";
+}
+
+export function tierIncludedFeaturedCount(tier: TierId | null | undefined): number {
+  return tier === "premium" ? 2 : 0;
+}
+
+// À-la-carte feature boost (any vendor, any tier — purchased one-off)
+export const FEATURE_BOOST_PRICE_CENTS = 500;
+export const FEATURE_BOOST_DURATION_DAYS = 14;
+export const FEATURE_BOOST_PLAN_NAME = "Open Local Listing Boost (2 weeks)";

@@ -10,8 +10,13 @@ import {
   isValidTier,
   vendorPlanName,
   businessPlanName,
+  FEATURE_BOOST_PRICE_CENTS,
+  FEATURE_BOOST_DURATION_DAYS,
+  FEATURE_BOOST_PLAN_NAME,
   type TierId,
 } from "../lib/tiers";
+import { db, productsTable, vendorsTable, usersTable } from "@workspace/db";
+import { eq } from "drizzle-orm";
 
 const router: IRouter = Router();
 
@@ -217,6 +222,109 @@ router.get("/billing/vendor/status", requireAuth, async (req: Request, res: Resp
   } catch (err) {
     logger.error({ err }, "[billing] vendor status error");
     res.status(500).json({ error: "Failed to fetch subscription status" });
+  }
+});
+
+// One-time $5 boost to feature a single product listing for 14 days. Open to
+// any authenticated vendor regardless of tier — the highest tier just gets 2
+// free included slots; everyone else (and Premium vendors who want more) can
+// always pay. Success flow: Stripe webhook (handleAppWebhookEvent) sets
+// productsTable.featuredUntil = NOW() + FEATURE_BOOST_DURATION_DAYS.
+async function getOrCreateBoostPriceId(): Promise<string> {
+  const stripe = await getUncachableStripeClient();
+  const products = await stripe.products.search({
+    query: `name:'${FEATURE_BOOST_PLAN_NAME}' AND active:'true'`,
+  });
+  const productId = products.data[0]?.id ?? (await stripe.products.create({ name: FEATURE_BOOST_PLAN_NAME })).id;
+
+  const prices = await stripe.prices.list({ product: productId, active: true });
+  const match = prices.data.find((p) => p.unit_amount === FEATURE_BOOST_PRICE_CENTS && !p.recurring);
+  if (match) return match.id;
+  const price = await stripe.prices.create({
+    product: productId,
+    unit_amount: FEATURE_BOOST_PRICE_CENTS,
+    currency: "usd",
+  });
+  return price.id;
+}
+
+router.post("/billing/feature-boost/checkout", requireAuth, async (req: Request, res: Response): Promise<void> => {
+  const { userId } = req as AuthRequest;
+  const productId = Number((req.body as { productId?: unknown } | undefined)?.productId);
+  if (!Number.isInteger(productId) || productId <= 0) {
+    res.status(400).json({ error: "productId is required" });
+    return;
+  }
+
+  try {
+    const user = await stripeStorage.getUserById(userId);
+    if (!user) {
+      res.status(404).json({ error: "User not found" });
+      return;
+    }
+
+    // Verify the caller owns the vendor that owns this product (or is admin).
+    const [row] = await db
+      .select({
+        productId: productsTable.id,
+        productName: productsTable.name,
+        vendorId: vendorsTable.id,
+        vendorSlug: vendorsTable.slug,
+        contactEmail: vendorsTable.contactEmail,
+      })
+      .from(productsTable)
+      .innerJoin(vendorsTable, eq(productsTable.vendorId, vendorsTable.id))
+      .where(eq(productsTable.id, productId));
+    if (!row) {
+      res.status(404).json({ error: "Listing not found" });
+      return;
+    }
+    const isOwner = row.contactEmail.toLowerCase() === user.email.toLowerCase();
+    const isAdmin = user.role === "admin";
+    if (!isOwner && !isAdmin) {
+      res.status(403).json({ error: "You don't own this listing" });
+      return;
+    }
+
+    const priceId = await getOrCreateBoostPriceId();
+    const stripe = await getUncachableStripeClient();
+
+    let customerId = user.stripeCustomerId ?? undefined;
+    if (!customerId) {
+      const customer = await stripe.customers.create({
+        email: user.email,
+        name: user.username,
+        metadata: { userId: String(user.id) },
+      });
+      customerId = customer.id;
+      await stripeStorage.updateUserStripe(user.id, customerId);
+    }
+
+    const baseUrl = getBaseUrl(req);
+    const session = await stripe.checkout.sessions.create({
+      customer: customerId,
+      payment_method_types: ["card"],
+      line_items: [{ price: priceId, quantity: 1 }],
+      mode: "payment",
+      success_url: `${baseUrl}/dashboard/${row.vendorSlug}?boost=success&product=${productId}`,
+      cancel_url: `${baseUrl}/dashboard/${row.vendorSlug}?boost=cancel`,
+      metadata: {
+        kind: "feature_boost",
+        productId: String(productId),
+        userId: String(user.id),
+        vendorId: String(row.vendorId),
+        durationDays: String(FEATURE_BOOST_DURATION_DAYS),
+      },
+    });
+
+    res.json({
+      url: session.url,
+      priceCents: FEATURE_BOOST_PRICE_CENTS,
+      durationDays: FEATURE_BOOST_DURATION_DAYS,
+    });
+  } catch (err) {
+    logger.error({ err }, "[billing] feature boost checkout error");
+    res.status(500).json({ error: "Failed to create checkout session" });
   }
 });
 

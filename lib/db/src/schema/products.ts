@@ -25,6 +25,7 @@ export const productsTable = pgTable("products", {
   originalPriceCents: integer("original_price_cents"),
   availableUntil: timestamp("available_until", { withTimezone: true }),
   pickupNote: text("pickup_note"),
+  featuredUntil: timestamp("featured_until", { withTimezone: true }),
   createdAt: timestamp("created_at", { withTimezone: true })
     .notNull()
     .defaultNow(),

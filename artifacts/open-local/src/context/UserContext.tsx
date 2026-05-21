@@ -33,6 +33,7 @@ export interface AppUser {
   role: UserRole;
   zip?: string | null;
   state: string;
+  tier?: "basic" | "middle" | "premium" | null;
   equippedUnlocks?: string[];
   paused?: boolean;
   trialEndsAt?: string | null;

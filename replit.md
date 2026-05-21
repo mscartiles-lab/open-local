@@ -19,6 +19,24 @@ Shoppers earn DiceBear avatar unlocks by visiting vendors. The vendor confirms e
   - `PATCH /api/rewards/equipped`
 - UI: `CheckInButton` ("Request visit credit") on `/vendors/:id`, `VisitRequestsPanel` at top of vendor `/dashboard/:slug`, `/rewards` page (link in user dropdown). Avatar URL helper in `UserContext.avatarUrl(seed, style, equipped?)` appends DiceBear params from equipped items.
 
+## Tier entitlements & listing boosts
+
+Vendor monthly subscriptions are billed via Stripe Checkout in `subscription` mode with `recurring: { interval: "month" }` (artifacts/api-server/src/routes/billing.ts → `getOrCreatePriceId`), so all three plans auto-renew monthly until the vendor cancels via the Stripe portal (`POST /api/billing/portal`).
+
+Per-tier feature gating lives in `artifacts/api-server/src/lib/tiers.ts`:
+
+- `tierAllowsPreOrder(tier)` → `middle`/`premium` only. Enforced in `POST /api/products` — Basic vendors trying to create a `listingType=pre_order` row get `403 { code: "tier_required", requiredTier: "middle" }`. Other listing types (`regular`, `batch_drop`, `surplus`) stay open to all tiers.
+- `tierIncludedFeaturedCount(tier)` → `premium`: 2, else 0. Premium vendors can self-feature up to 2 of their own listings without paying extra via `POST /api/products/:id/feature` (auth: owner via `vendors.contact_email = users.email`, or admin). Setting it writes `products.featured_until = '9999-12-31'` (sentinel for "tier-included indefinite"). `DELETE /api/products/:id/feature` clears the sentinel but refuses if a paid boost is still ticking.
+- Boost constants: `FEATURE_BOOST_PRICE_CENTS = 500`, `FEATURE_BOOST_DURATION_DAYS = 14`.
+
+À-la-carte listing boost (open to any tier):
+
+- `POST /api/billing/feature-boost/checkout { productId }` (auth required) creates a Stripe one-time checkout (`mode: "payment"`, $5) with metadata `{ kind: "feature_boost", productId, vendorId, userId, durationDays: 14 }`. Returns `{ url, priceCents, durationDays }`.
+- Webhook handler in `artifacts/api-server/src/lib/webhookAppHandlers.ts` watches `checkout.session.completed` with `mode === "payment"` and `metadata.kind === "feature_boost"`, then sets `products.featured_until = NOW() + 14 days`.
+- Featured queries (`GET /api/products?featured=true`, `/api/products/featured`, and the per-row `featured` field in product list/detail/feed responses) use the computed expression `(products.featured = true OR (featured_until IS NOT NULL AND featured_until > NOW()))`, so admin-set, tier-included, and paid boosts all surface uniformly.
+
+Dashboard UI (`artifacts/open-local/src/pages/dashboard.tsx`): each listing row gets a `<ListingPromoActions>` button group — "Feature" (Premium tier only, calls the self-feature endpoint) and "Boost $5" (any tier, opens Stripe checkout). Featured listings show an amber "Featured" pill. Tier card copy in `artifacts/open-local/src/lib/tiers.ts` and `artifacts/open-local-mobile/lib/tiers.ts` reflects the new entitlements (pre-orders on Standard+, 2 featured posts on Premium).
+
 ## Vendor trial reminders + auto-pause
 
 Replit owns the trial-lifecycle automation for vendor accounts (User rows with `role='vendor'` that opened a Stripe subscription with a trial). Reminders are anchored to `users.trial_ends_at`, so the existing 60-day (early cohort) and 30-day (standard) trials share the same code without any constant tweaks.

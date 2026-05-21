@@ -67,6 +67,7 @@ function userPublic(user: typeof usersTable.$inferSelect) {
     role: user.role,
     zip: user.zip,
     state: user.state,
+    tier: user.tier ?? null,
     paused: user.paused,
     trialEndsAt: user.trialEndsAt ? user.trialEndsAt.toISOString() : null,
     createdAt: user.createdAt,

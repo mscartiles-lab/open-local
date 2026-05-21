@@ -1,8 +1,9 @@
 import type Stripe from "stripe";
 import { eq } from "drizzle-orm";
-import { db, usersTable, establishmentsTable } from "@workspace/db";
+import { db, usersTable, establishmentsTable, productsTable } from "@workspace/db";
 import { logger } from "./logger";
 import { fireTrialStart } from "./trialReminders";
+import { FEATURE_BOOST_DURATION_DAYS } from "./tiers";
 
 /**
  * App-level Stripe webhook handler.
@@ -44,6 +45,24 @@ export async function handleAppWebhookEvent(event: Stripe.Event): Promise<void> 
 }
 
 async function onCheckoutCompleted(session: Stripe.Checkout.Session): Promise<void> {
+  // One-time $5 listing-boost checkout. Sets featured_until = NOW() + 14d so
+  // the featuredExpr in routes/products.ts surfaces it in featured queries.
+  if (session.mode === "payment" && session.metadata?.kind === "feature_boost") {
+    const productId = Number(session.metadata.productId);
+    const days = Number(session.metadata.durationDays ?? FEATURE_BOOST_DURATION_DAYS);
+    if (!Number.isInteger(productId) || productId <= 0) {
+      logger.warn({ sessionId: session.id, meta: session.metadata }, "[webhook] feature_boost without productId");
+      return;
+    }
+    const until = new Date(Date.now() + days * 24 * 60 * 60 * 1000);
+    await db
+      .update(productsTable)
+      .set({ featuredUntil: until })
+      .where(eq(productsTable.id, productId));
+    logger.info({ sessionId: session.id, productId, until }, "[webhook] applied feature boost");
+    return;
+  }
+
   if (session.mode !== "subscription") return;
 
   const subscriptionId = typeof session.subscription === "string"

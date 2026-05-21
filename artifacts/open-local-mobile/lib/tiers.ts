@@ -33,6 +33,7 @@ export const TIERS: Record<TierId, TierDef> = {
       "Social links (Instagram, Facebook, TikTok)",
       "Customer reviews on your page",
       "Featured in your area's discovery feed",
+      "Pre-order listings (reserve for market pickup)",
     ],
   },
   premium: {
@@ -42,6 +43,7 @@ export const TIERS: Record<TierId, TierDef> = {
     tagline: "Maximum visibility and promotional power.",
     features: [
       "Everything in Standard",
+      "2 featured posts — feature any of your listings, anywhere",
       "Featured on the homepage",
       "Featured in your category",
       "Promotional offers & discounts",
@@ -52,3 +54,6 @@ export const TIERS: Record<TierId, TierDef> = {
 };
 
 export const TIER_ORDER: TierId[] = ["basic", "middle", "premium"];
+
+export const FEATURE_BOOST_PRICE = 5;
+export const FEATURE_BOOST_DURATION_DAYS = 14;

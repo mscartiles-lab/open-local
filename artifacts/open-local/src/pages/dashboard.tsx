@@ -16,7 +16,11 @@ import {
   Flame,
   TrendingDown,
   Plus,
+  Zap,
+  Star,
 } from "lucide-react";
+import { useUser } from "@/context/UserContext";
+import { FEATURE_BOOST_PRICE, FEATURE_BOOST_DURATION_DAYS } from "@/lib/tiers";
 import Layout from "@/components/layout/Layout";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -346,6 +350,7 @@ export default function Dashboard() {
                     />
                     <span className="hidden md:inline">In stock</span>
                   </label>
+                  <ListingPromoActions productId={p.id} featured={p.featured} />
                   <Button
                     variant="ghost"
                     size="icon"
@@ -414,6 +419,119 @@ function StatCard({
       <p className="text-xs uppercase tracking-wider text-muted-foreground">
         {label}
       </p>
+    </div>
+  );
+}
+
+function ListingPromoActions({
+  productId,
+  featured,
+}: {
+  productId: number;
+  featured: boolean;
+}) {
+  const { user } = useUser();
+  const { toast } = useToast();
+  const [busy, setBusy] = useState<"boost" | "feature" | null>(null);
+
+  const sessionToken =
+    typeof window !== "undefined"
+      ? window.localStorage.getItem("ol_session")
+      : null;
+
+  const handleBoost = async () => {
+    if (!sessionToken) {
+      toast({ title: "Sign in to boost listings" });
+      return;
+    }
+    setBusy("boost");
+    try {
+      const r = await fetch("/api/billing/feature-boost/checkout", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${sessionToken}`,
+        },
+        body: JSON.stringify({ productId }),
+      });
+      const data = (await r.json()) as { url?: string; error?: string };
+      if (!r.ok || !data.url) {
+        toast({
+          title: "Couldn't start checkout",
+          description: data.error ?? "Try again in a moment.",
+          variant: "destructive",
+        });
+        return;
+      }
+      window.location.href = data.url;
+    } finally {
+      setBusy(null);
+    }
+  };
+
+  const handleFeature = async () => {
+    if (!sessionToken) return;
+    setBusy("feature");
+    try {
+      const r = await fetch(`/api/products/${productId}/feature`, {
+        method: "POST",
+        headers: { Authorization: `Bearer ${sessionToken}` },
+      });
+      const data = (await r.json().catch(() => ({}))) as {
+        error?: string;
+        currentlyActive?: number;
+        allowance?: number;
+      };
+      if (!r.ok) {
+        toast({
+          title: "Couldn't feature listing",
+          description: data.error ?? "Try again.",
+          variant: "destructive",
+        });
+        return;
+      }
+      toast({
+        title: "Listing featured",
+        description: `Using ${data.currentlyActive}/${data.allowance} included slots.`,
+      });
+    } finally {
+      setBusy(null);
+    }
+  };
+
+  if (featured) {
+    return (
+      <span className="inline-flex items-center gap-1 rounded-full bg-amber-100 px-2.5 py-1 text-xs font-semibold text-amber-800">
+        <Star className="h-3 w-3" /> Featured
+      </span>
+    );
+  }
+
+  const isPremium = user?.role === "vendor" && user?.tier === "premium";
+
+  return (
+    <div className="flex items-center gap-1">
+      {isPremium && (
+        <Button
+          variant="ghost"
+          size="sm"
+          disabled={busy !== null}
+          onClick={handleFeature}
+          title="Use one of your 2 Premium featured slots"
+        >
+          <Star className="mr-1 h-3.5 w-3.5" /> Feature
+        </Button>
+      )}
+      <Button
+        variant="outline"
+        size="sm"
+        disabled={busy !== null}
+        onClick={handleBoost}
+        title={`$${FEATURE_BOOST_PRICE} · features this listing for ${FEATURE_BOOST_DURATION_DAYS} days`}
+      >
+        <Zap className="mr-1 h-3.5 w-3.5" />
+        {busy === "boost" ? "Opening…" : `Boost $${FEATURE_BOOST_PRICE}`}
+      </Button>
     </div>
   );
 }
