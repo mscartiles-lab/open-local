@@ -12,7 +12,7 @@ export function Footer() {
               </div>
               <span className="font-serif font-bold text-lg text-foreground">Open Local</span>
             </div>
-            <p className="text-sm font-medium text-primary uppercase tracking-wider mb-4">Shop Local Wherever You Are</p>
+            <p className="text-sm font-medium text-primary uppercase tracking-wider mb-4">Local Sourcing and Experiences</p>
             <p className="text-muted-foreground max-w-sm">
               The public square for Florida's small-batch economy. Discover local vendors,
               makers, farms, and artisans. Real people, real goods.

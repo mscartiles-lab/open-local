@@ -102,7 +102,7 @@ export function Navbar() {
           </div>
           <div className="flex flex-col">
             <span className="font-serif font-bold text-2xl tracking-tight text-foreground leading-tight">Open Local</span>
-            <span className="text-[11px] text-muted-foreground uppercase tracking-wider font-semibold leading-none hidden sm:block">Shop Local Wherever You Are</span>
+            <span className="text-[11px] text-muted-foreground uppercase tracking-wider font-semibold leading-none hidden sm:block">Local Sourcing and Experiences</span>
           </div>
         </Link>
 

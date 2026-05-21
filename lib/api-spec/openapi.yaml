@@ -3,7 +3,7 @@ info:
   # Do not change the title, if the title changes, the import paths will be broken
   title: Api
   version: 0.1.0
-  description: Open Local — Florida's local marketplace. Shop Local Wherever You Are.
+  description: Open Local — Florida's local marketplace. Local Sourcing and Experiences.
 servers:
   - url: /api
     description: Base API path

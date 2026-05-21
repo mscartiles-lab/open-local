@@ -292,7 +292,7 @@ export default function OnboardingModal() {
                   <div className="text-center mb-8">
                     <span className="inline-block font-serif text-4xl mb-3">🌿</span>
                     <h2 className="font-serif font-bold text-2xl text-foreground mb-1">Welcome to Open Local</h2>
-                    <p className="text-muted-foreground text-sm">Shop local wherever you are.</p>
+                    <p className="text-muted-foreground text-sm">Local sourcing and experiences.</p>
                   </div>
                   <p className="text-center font-semibold text-sm text-foreground/70 mb-4 uppercase tracking-wide">I am a…</p>
                   <div className="grid grid-cols-2 gap-4">
