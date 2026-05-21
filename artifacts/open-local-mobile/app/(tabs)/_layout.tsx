@@ -15,15 +15,15 @@ function NativeTabLayout() {
     <NativeTabs>
       <NativeTabs.Trigger name="index">
         <Icon sf={{ default: "leaf", selected: "leaf.fill" }} />
-        <Label>Feed</Label>
+        <Label>The Locals</Label>
       </NativeTabs.Trigger>
       <NativeTabs.Trigger name="browse">
         <Icon sf={{ default: "storefront", selected: "storefront.fill" }} />
         <Label>Browse</Label>
       </NativeTabs.Trigger>
-      <NativeTabs.Trigger name="map">
-        <Icon sf={{ default: "map", selected: "map.fill" }} />
-        <Label>Nearby</Label>
+      <NativeTabs.Trigger name="events">
+        <Icon sf={{ default: "calendar", selected: "calendar" }} />
+        <Label>Events</Label>
       </NativeTabs.Trigger>
       <NativeTabs.Trigger name="favorites">
         <Icon sf={{ default: "heart", selected: "heart.fill" }} />
@@ -76,12 +76,12 @@ function ClassicTabLayout() {
       <Tabs.Screen
         name="index"
         options={{
-          title: "Feed",
+          title: "The Locals",
           tabBarIcon: ({ color }) =>
             isIOS ? (
               <SymbolView name="leaf" tintColor={color} size={22} />
             ) : (
-              <Feather name="activity" size={22} color={color} />
+              <Feather name="users" size={22} color={color} />
             ),
         }}
       />
@@ -98,14 +98,14 @@ function ClassicTabLayout() {
         }}
       />
       <Tabs.Screen
-        name="map"
+        name="events"
         options={{
-          title: "Nearby",
+          title: "Events",
           tabBarIcon: ({ color }) =>
             isIOS ? (
-              <SymbolView name="map" tintColor={color} size={22} />
+              <SymbolView name="calendar" tintColor={color} size={22} />
             ) : (
-              <Feather name="map" size={22} color={color} />
+              <Feather name="calendar" size={22} color={color} />
             ),
         }}
       />

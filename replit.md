@@ -157,14 +157,16 @@ Shared workspace packages:
 
 `artifacts/open-local-mobile` — Expo/React Native app using the shared API.
 
-- **Four tabs:** Feed (Local Near Me Now — batch drops, surplus, pre-orders via `/feed/local-now`), Browse (vendor search/list), Nearby (map with geofence), Saved (AsyncStorage-backed favorites).
+- **Four tabs:** The Locals (vendors + establishments with embedded mini-map and All/Vendors/Businesses segmented filter), Browse (vendor search/list), Events (upcoming events from `/api/events` with embedded mini-map), Saved (AsyncStorage-backed favorites, with mini-map of saved vendor locations).
+- **Embedded map header:** `components/MiniMap.tsx` is split into `MiniMap.native.tsx` (real `react-native-maps` MapView with location permission prompt, geofence circle, custom pins) and `MiniMap.web.tsx` (placeholder card — `react-native-maps` can't bundle on web). Metro picks the right one per platform via the `.native` / `.web` extension. Used at the top of The Locals, Events, and Saved.
 - **Vendor detail screen:** `/vendor/[slug]` — shows vendor info, products list, links; tap heart to save/unsave.
 - **Design:** DM Sans font, Open Local brand palette (olive green primary #3c4a26), dark mode supported.
 - **API:** Uses `@workspace/api-client-react` generated hooks. `setBaseUrl` from `EXPO_PUBLIC_DOMAIN` env var.
 - **Fonts:** `@expo-google-fonts/dm-sans` — loaded as `DMSans_400Regular`, `DMSans_500Medium`, `DMSans_600SemiBold`, `DMSans_700Bold`.
 - **NativeTabs:** Liquid glass on iOS 26+, classic BlurView tabs on older iOS/Android.
 - **Favorites:** `AsyncStorage` key `open_local_favorites`, utils in `app/(tabs)/favorites.tsx`.
-- **Nearby/Map tab:** `app/(tabs)/map.tsx` — `expo-location` foreground permission → `react-native-maps` MapView with `showsUserLocation`, `Circle` geofence overlay (olive green, 18% opacity fill), vendor `Marker` pins filtered by radius. Radius chips: 5/10/25/50 mi. Tap a pin → bottom panel with distance + "View" button. Haversine distance in `utils/distance.ts`. Web fallback shows sorted vendor list.
+- **Events tab:** `app/(tabs)/events.tsx` — `useListEvents({ upcoming: true })` rendered as date-block cards (month/day chip + venue/city/category badges). Tap an event card with a `ticketUrl` opens the link via `Linking.openURL`. The header MiniMap shows nearby vendor pins as context since the `events` table doesn't currently store lat/lng.
+- **The Locals tab:** `app/(tabs)/index.tsx` — pulls `useListVendors()` + `useListEstablishments()` together. Segmented control toggles All / Vendors / Businesses, and the MiniMap above re-renders pins to match (olive shopping-bag pins for vendors, orange home pins for establishments). Tapping a vendor card routes to `/vendor/[slug]`; tapping an establishment opens its `website` if set.
 
 ## Workflows
 
