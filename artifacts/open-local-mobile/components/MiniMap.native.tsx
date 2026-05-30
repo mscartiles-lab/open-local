@@ -72,7 +72,7 @@ export function MiniMap({
     }
   }
 
-  // Web: skip the heavy native MapView; show a compact "enable in app" card.
+  // Web: skip the heavy native MapView; show a compact placeholder card.
   if (Platform.OS === "web") {
     return (
       <View
@@ -101,47 +101,7 @@ export function MiniMap({
   const MapView = Maps.default;
   const { Circle, Marker } = Maps;
 
-  if (!permission) {
-    return (
-      <View
-        style={[
-          styles.permCard,
-          { height, backgroundColor: colors.muted, borderColor: colors.border },
-          fullBleed && styles.flush,
-        ]}
-      >
-        <ActivityIndicator color={colors.primary} />
-      </View>
-    );
-  }
-
-  if (!permission.granted) {
-    return (
-      <View
-        style={[
-          styles.permCard,
-          { height, backgroundColor: colors.muted, borderColor: colors.border },
-          fullBleed && styles.flush,
-        ]}
-      >
-        <Feather name="map-pin" size={22} color={colors.primary} />
-        <Text style={[styles.permTitle, { color: colors.foreground }]}>
-          See what's near you
-        </Text>
-        <TouchableOpacity
-          style={[styles.permBtn, { backgroundColor: colors.primary }]}
-          onPress={requestPermission}
-        >
-          <Text
-            style={[styles.permBtnText, { color: colors.primaryForeground }]}
-          >
-            Enable location
-          </Text>
-        </TouchableOpacity>
-      </View>
-    );
-  }
-
+  const locationGranted = permission?.granted === true;
   const center = userLocation ?? FLORIDA_CENTER;
   const delta = latDeltaForMiles(radiusMiles);
 
@@ -161,14 +121,14 @@ export function MiniMap({
           latitudeDelta: delta,
           longitudeDelta: delta,
         }}
-        showsUserLocation
+        showsUserLocation={locationGranted}
         showsMyLocationButton={false}
         showsCompass={false}
         toolbarEnabled={false}
         pitchEnabled={false}
         rotateEnabled={false}
       >
-        {userLocation && (
+        {locationGranted && userLocation && (
           <Circle
             center={userLocation}
             radius={milesToMeters(radiusMiles)}
@@ -204,21 +164,37 @@ export function MiniMap({
         ))}
       </MapView>
 
-      <TouchableOpacity
-        style={[
-          styles.recenterBtn,
-          fullBleed && styles.recenterBtnFull,
-          { backgroundColor: colors.card },
-        ]}
-        onPress={locateUser}
-        disabled={locating}
-      >
-        {locating ? (
-          <ActivityIndicator size="small" color={colors.primary} />
-        ) : (
-          <Feather name="crosshair" size={15} color={colors.primary} />
-        )}
-      </TouchableOpacity>
+      {/* Recenter button — only if we have location */}
+      {locationGranted && (
+        <TouchableOpacity
+          style={[
+            styles.recenterBtn,
+            fullBleed && styles.recenterBtnFull,
+            { backgroundColor: colors.card },
+          ]}
+          onPress={locateUser}
+          disabled={locating}
+        >
+          {locating ? (
+            <ActivityIndicator size="small" color={colors.primary} />
+          ) : (
+            <Feather name="crosshair" size={15} color={colors.primary} />
+          )}
+        </TouchableOpacity>
+      )}
+
+      {/* "Enable location" pill — only if permission not yet granted */}
+      {!locationGranted && (
+        <TouchableOpacity
+          style={[styles.locationPill, { backgroundColor: colors.card }]}
+          onPress={requestPermission}
+        >
+          <Feather name="map-pin" size={12} color={colors.primary} />
+          <Text style={[styles.locationPillText, { color: colors.foreground }]}>
+            Enable location
+          </Text>
+        </TouchableOpacity>
+      )}
 
       {pins.length === 0 && emptyHint ? (
         <View style={[styles.emptyChip, { backgroundColor: colors.card }]}>
@@ -260,28 +236,6 @@ const styles = StyleSheet.create({
     fontSize: 12,
     textAlign: "center",
   },
-  permCard: {
-    borderRadius: 16,
-    borderWidth: 1,
-    alignItems: "center",
-    justifyContent: "center",
-    gap: 8,
-    paddingHorizontal: 16,
-  },
-  permTitle: {
-    fontFamily: "DMSans_600SemiBold",
-    fontSize: 14,
-  },
-  permBtn: {
-    paddingVertical: 8,
-    paddingHorizontal: 16,
-    borderRadius: 18,
-    marginTop: 4,
-  },
-  permBtnText: {
-    fontFamily: "DMSans_600SemiBold",
-    fontSize: 13,
-  },
   pin: {
     width: 22,
     height: 22,
@@ -314,6 +268,26 @@ const styles = StyleSheet.create({
     bottom: undefined,
     top: 150,
     right: 16,
+  },
+  locationPill: {
+    position: "absolute",
+    bottom: 10,
+    left: 10,
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 5,
+    paddingVertical: 6,
+    paddingHorizontal: 12,
+    borderRadius: 16,
+    shadowColor: "#000",
+    shadowOpacity: 0.12,
+    shadowRadius: 4,
+    shadowOffset: { width: 0, height: 2 },
+    elevation: 3,
+  },
+  locationPillText: {
+    fontFamily: "DMSans_600SemiBold",
+    fontSize: 12,
   },
   emptyChip: {
     position: "absolute",

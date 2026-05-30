@@ -40,3 +40,17 @@ stays interactive.
 
 **RN API note:** use `style={{ pointerEvents: ... }}` (in the StyleSheet object or inline),
 not the deprecated `pointerEvents` prop.
+
+# MiniMap: always render the map, never gate on location permission
+
+The map must render even if location permission is not yet granted (or denied). Show
+Florida as the initial region, hide the user dot/circle when no permission, and render a
+small "Enable location" pill overlay instead. Gating the MapView behind `permission.granted`
+caused the map to appear blank on iOS for users who hadn't approved location yet.
+
+# Light-mode-first theme with user toggle
+
+`ThemeContext` (context/ThemeContext.tsx) reads/writes `ol_theme_pref` in AsyncStorage and
+defaults to `"light"`. `useColors` pulls from ThemeContext, not `useColorScheme()`. The
+settings modal at `app/settings.tsx` is the user-facing toggle. A gear icon in the Vendors
+tab floating header opens it as an Expo Router modal (`presentation: "modal"`).

@@ -133,24 +133,33 @@ export default function TheLocalsScreen() {
           <Text style={s.wordmark}>Vendors</Text>
           <Text style={s.tagline}>Local producers & makers near you</Text>
         </View>
-        {user ? (
+        <View style={s.headerActions}>
           <TouchableOpacity
-            onLongPress={logout}
-            onPress={() => {
-              if (user.role === "vendor") router.push("/(auth)/tiers");
-            }}
-            accessibilityLabel="Your profile"
+            style={s.gearBtn}
+            onPress={() => router.push("/settings")}
+            accessibilityLabel="Settings"
           >
-            <Avatar seed={user.avatarSeed} style={user.avatarStyle} size={44} />
+            <Feather name="settings" size={18} color={colors.foreground} />
           </TouchableOpacity>
-        ) : (
-          <TouchableOpacity
-            onPress={() => router.push("/(auth)/signup")}
-            style={s.signInBtn}
-          >
-            <Text style={s.signInText}>Sign in</Text>
-          </TouchableOpacity>
-        )}
+          {user ? (
+            <TouchableOpacity
+              onLongPress={logout}
+              onPress={() => {
+                if (user.role === "vendor") router.push("/(auth)/tiers");
+              }}
+              accessibilityLabel="Your profile"
+            >
+              <Avatar seed={user.avatarSeed} style={user.avatarStyle} size={44} />
+            </TouchableOpacity>
+          ) : (
+            <TouchableOpacity
+              onPress={() => router.push("/(auth)/signup")}
+              style={s.signInBtn}
+            >
+              <Text style={s.signInText}>Sign in</Text>
+            </TouchableOpacity>
+          )}
+        </View>
       </View>
 
       {/* Floating, scrollable list panel above the map */}
@@ -392,6 +401,24 @@ const styles = (
       paddingTop: 28,
       paddingBottom: 60,
       gap: 8,
+    },
+    headerActions: {
+      flexDirection: "row",
+      alignItems: "center",
+      gap: 8,
+    },
+    gearBtn: {
+      width: 36,
+      height: 36,
+      borderRadius: 18,
+      backgroundColor: colors.card,
+      alignItems: "center",
+      justifyContent: "center",
+      shadowColor: "#000",
+      shadowOpacity: 0.1,
+      shadowRadius: 4,
+      shadowOffset: { width: 0, height: 2 },
+      elevation: 2,
     },
     signInBtn: {
       paddingHorizontal: 14,

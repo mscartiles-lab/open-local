@@ -11,7 +11,6 @@ import { Stack } from "expo-router";
 import * as SplashScreen from "expo-splash-screen";
 import * as SystemUI from "expo-system-ui";
 import React, { useEffect } from "react";
-import { useColorScheme } from "react-native";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
 import { KeyboardProvider } from "react-native-keyboard-controller";
 import { SafeAreaProvider } from "react-native-safe-area-context";
@@ -20,6 +19,7 @@ import { ErrorBoundary } from "@/components/ErrorBoundary";
 import { OnboardingGate } from "@/components/OnboardingModal";
 import colors from "@/constants/colors";
 import { AuthProvider } from "@/context/AuthContext";
+import { ThemeProvider, useTheme } from "@/context/ThemeContext";
 
 setBaseUrl(`https://${process.env.EXPO_PUBLIC_DOMAIN}`);
 
@@ -39,33 +39,29 @@ function RootLayoutNav() {
         name="(auth)"
         options={{ headerShown: false, presentation: "modal" }}
       />
+      <Stack.Screen
+        name="settings"
+        options={{ headerShown: false, presentation: "modal" }}
+      />
     </Stack>
   );
 }
 
-export default function RootLayout() {
-  const colorScheme = useColorScheme();
-
-  const [fontsLoaded, fontError] = useFonts({
-    DMSans_400Regular,
-    DMSans_500Medium,
-    DMSans_600SemiBold,
-    DMSans_700Bold,
-  });
+function AppWithTheme({ fontsReady }: { fontsReady: boolean }) {
+  const { theme } = useTheme();
 
   useEffect(() => {
-    const bg =
-      colorScheme === "dark" ? colors.dark.background : colors.light.background;
+    const bg = theme === "dark" ? colors.dark.background : colors.light.background;
     SystemUI.setBackgroundColorAsync(bg);
-  }, [colorScheme]);
+  }, [theme]);
 
   useEffect(() => {
-    if (fontsLoaded || fontError) {
+    if (fontsReady) {
       SplashScreen.hideAsync();
     }
-  }, [fontsLoaded, fontError]);
+  }, [fontsReady]);
 
-  if (!fontsLoaded && !fontError) return null;
+  if (!fontsReady) return null;
 
   return (
     <SafeAreaProvider>
@@ -82,5 +78,20 @@ export default function RootLayout() {
         </QueryClientProvider>
       </ErrorBoundary>
     </SafeAreaProvider>
+  );
+}
+
+export default function RootLayout() {
+  const [fontsLoaded, fontError] = useFonts({
+    DMSans_400Regular,
+    DMSans_500Medium,
+    DMSans_600SemiBold,
+    DMSans_700Bold,
+  });
+
+  return (
+    <ThemeProvider>
+      <AppWithTheme fontsReady={fontsLoaded || !!fontError} />
+    </ThemeProvider>
   );
 }
