@@ -3,6 +3,7 @@ import { Feather } from "@expo/vector-icons";
 import React, { useMemo, useState } from "react";
 import {
   ActivityIndicator,
+  Dimensions,
   FlatList,
   Linking,
   Platform,
@@ -37,6 +38,8 @@ export default function EventsScreen() {
 
   const topPad = Platform.OS === "web" ? 67 : insets.top;
   const bottomPad = Platform.OS === "web" ? 34 : insets.bottom + 60;
+  const screenH = Dimensions.get("window").height;
+  const mapPeek = Math.round(screenH * 0.6);
 
   const pins: MapPin[] = useMemo(
     () =>
@@ -62,51 +65,65 @@ export default function EventsScreen() {
 
   return (
     <View style={s.container}>
+      {/* Full-screen map background */}
+      <View style={s.mapLayer}>
+        <MiniMap
+          pins={pins}
+          radiusMiles={25}
+          height={screenH}
+          emptyHint="No locations mapped"
+          fullBleed
+        />
+      </View>
+
+      {/* Floating title over the map */}
+      <View style={[s.floatHeader, { top: topPad + 8 }]}>
+        <View style={s.brandPill}>
+          <Text style={s.wordmark}>Events</Text>
+          <Text style={s.tagline}>Markets & pop-ups near you</Text>
+        </View>
+      </View>
+
+      {/* Floating, scrollable list panel above the map */}
       <FlatList
         data={isLoading || isError ? [] : (events ?? [])}
         keyExtractor={(item: EventItem) => String(item.id)}
+        style={s.list}
         renderItem={({ item }: { item: EventItem }) => (
-          <EventCard event={item} colors={colors} />
+          <View style={s.itemWrap}>
+            <EventCard event={item} colors={colors} />
+          </View>
         )}
         contentContainerStyle={s.listContent}
         showsVerticalScrollIndicator={false}
         ListHeaderComponent={
           <View>
-            <View style={s.header}>
-              <Text style={s.wordmark}>Events</Text>
-              <Text style={s.tagline}>
-                Markets, pop-ups, and gatherings near you
-              </Text>
+            {/* Transparent spacer keeps the map visible & tappable */}
+            <View style={{ height: mapPeek, pointerEvents: "none" }} />
+            <View style={s.panelHead}>
+              <View style={s.grabber} />
+              <Text style={s.panelTitle}>Upcoming events</Text>
+
+              {isLoading && (
+                <View style={s.inline}>
+                  <ActivityIndicator color={colors.primary} />
+                </View>
+              )}
+
+              {isError && (
+                <View style={s.inline}>
+                  <Text style={s.emptyTitle}>Could not load events</Text>
+                  <TouchableOpacity style={s.retryBtn} onPress={onRefresh}>
+                    <Text style={s.retryText}>Retry</Text>
+                  </TouchableOpacity>
+                </View>
+              )}
             </View>
-
-            <View style={s.mapWrap}>
-              <MiniMap
-                pins={pins}
-                radiusMiles={25}
-                height={200}
-                emptyHint="No locations mapped"
-              />
-            </View>
-
-            {isLoading && (
-              <View style={s.inline}>
-                <ActivityIndicator color={colors.primary} />
-              </View>
-            )}
-
-            {isError && (
-              <View style={s.inline}>
-                <Text style={s.emptyTitle}>Could not load events</Text>
-                <TouchableOpacity style={s.retryBtn} onPress={onRefresh}>
-                  <Text style={s.retryText}>Retry</Text>
-                </TouchableOpacity>
-              </View>
-            )}
           </View>
         }
         ListEmptyComponent={
           !isLoading && !isError ? (
-            <View style={s.empty}>
+            <View style={s.emptyPanel}>
               <Feather
                 name="calendar"
                 size={36}
@@ -119,11 +136,13 @@ export default function EventsScreen() {
             </View>
           ) : null
         }
+        ListFooterComponent={<View style={s.panelFooter} />}
         refreshControl={
           <RefreshControl
             refreshing={refreshing}
             onRefresh={onRefresh}
             tintColor={colors.primary}
+            progressViewOffset={mapPeek}
           />
         }
       />
@@ -293,28 +312,89 @@ const styles = (
 ) =>
   StyleSheet.create({
     container: { flex: 1, backgroundColor: colors.background },
+    mapLayer: { ...StyleSheet.absoluteFillObject, pointerEvents: "box-none" },
+    list: { flex: 1, backgroundColor: "transparent" },
     listContent: {
-      paddingTop: topPad + 12,
       paddingBottom: bottomPad,
-      paddingHorizontal: 16,
-      gap: 10,
     },
-    header: { marginBottom: 14, paddingHorizontal: 4 },
+    floatHeader: {
+      position: "absolute",
+      left: 16,
+      right: 16,
+      zIndex: 10,
+      flexDirection: "row",
+      alignItems: "center",
+      gap: 12,
+      pointerEvents: "box-none",
+    },
+    brandPill: {
+      flex: 1,
+      alignSelf: "flex-start",
+      backgroundColor: colors.background,
+      borderRadius: 16,
+      paddingHorizontal: 14,
+      paddingVertical: 10,
+      shadowColor: "#000",
+      shadowOpacity: 0.12,
+      shadowRadius: 8,
+      shadowOffset: { width: 0, height: 2 },
+      elevation: 3,
+    },
+    panelHead: {
+      backgroundColor: colors.background,
+      borderTopLeftRadius: 22,
+      borderTopRightRadius: 22,
+      paddingTop: 8,
+      paddingHorizontal: 16,
+      shadowColor: "#000",
+      shadowOpacity: 0.12,
+      shadowRadius: 10,
+      shadowOffset: { width: 0, height: -3 },
+      elevation: 8,
+    },
+    grabber: {
+      alignSelf: "center",
+      width: 40,
+      height: 5,
+      borderRadius: 3,
+      backgroundColor: colors.border,
+      marginBottom: 12,
+    },
+    panelTitle: {
+      fontFamily: "DMSans_700Bold",
+      fontSize: 17,
+      color: colors.foreground,
+      marginBottom: 12,
+    },
+    itemWrap: {
+      backgroundColor: colors.background,
+      paddingHorizontal: 16,
+      paddingBottom: 10,
+    },
+    panelFooter: {
+      backgroundColor: colors.background,
+      minHeight: bottomPad + 40,
+    },
+    emptyPanel: {
+      backgroundColor: colors.background,
+      alignItems: "center",
+      paddingTop: 28,
+      paddingBottom: 60,
+      gap: 8,
+    },
     wordmark: {
       fontFamily: "DMSans_700Bold",
-      fontSize: 26,
+      fontSize: 22,
       color: colors.foreground,
       letterSpacing: -0.5,
     },
     tagline: {
       fontFamily: "DMSans_400Regular",
-      fontSize: 13,
+      fontSize: 12,
       color: colors.mutedForeground,
       marginTop: 2,
     },
-    mapWrap: { marginBottom: 14 },
     inline: { paddingVertical: 24, alignItems: "center", gap: 10 },
-    empty: { alignItems: "center", paddingTop: 40, gap: 8 },
     emptyTitle: {
       fontFamily: "DMSans_600SemiBold",
       fontSize: 16,

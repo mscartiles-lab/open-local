@@ -26,6 +26,8 @@ interface MiniMapProps {
   radiusMiles?: number;
   height?: number;
   emptyHint?: string;
+  /** Drop the rounded corners + border so the map can fill the whole screen. */
+  fullBleed?: boolean;
 }
 
 const FLORIDA_CENTER = { latitude: 27.9944024, longitude: -81.7602544 };
@@ -35,6 +37,7 @@ export function MiniMap({
   radiusMiles = 25,
   height = 200,
   emptyHint,
+  fullBleed = false,
 }: MiniMapProps) {
   const colors = useColors();
   const [permission, requestPermission] = Location.useForegroundPermissions();
@@ -76,6 +79,7 @@ export function MiniMap({
         style={[
           styles.webCard,
           { height, backgroundColor: colors.muted, borderColor: colors.border },
+          fullBleed && styles.flush,
         ]}
       >
         <Feather name="map" size={28} color={colors.mutedForeground} />
@@ -103,6 +107,7 @@ export function MiniMap({
         style={[
           styles.permCard,
           { height, backgroundColor: colors.muted, borderColor: colors.border },
+          fullBleed && styles.flush,
         ]}
       >
         <ActivityIndicator color={colors.primary} />
@@ -116,6 +121,7 @@ export function MiniMap({
         style={[
           styles.permCard,
           { height, backgroundColor: colors.muted, borderColor: colors.border },
+          fullBleed && styles.flush,
         ]}
       >
         <Feather name="map-pin" size={22} color={colors.primary} />
@@ -140,7 +146,13 @@ export function MiniMap({
   const delta = latDeltaForMiles(radiusMiles);
 
   return (
-    <View style={[styles.mapWrap, { height, borderColor: colors.border }]}>
+    <View
+      style={[
+        styles.mapWrap,
+        { height, borderColor: colors.border },
+        fullBleed && styles.flush,
+      ]}
+    >
       <MapView
         ref={mapRef as never}
         style={StyleSheet.absoluteFill}
@@ -193,7 +205,11 @@ export function MiniMap({
       </MapView>
 
       <TouchableOpacity
-        style={[styles.recenterBtn, { backgroundColor: colors.card }]}
+        style={[
+          styles.recenterBtn,
+          fullBleed && styles.recenterBtnFull,
+          { backgroundColor: colors.card },
+        ]}
         onPress={locateUser}
         disabled={locating}
       >
@@ -221,6 +237,10 @@ const styles = StyleSheet.create({
     overflow: "hidden",
     borderWidth: 1,
     position: "relative",
+  },
+  flush: {
+    borderRadius: 0,
+    borderWidth: 0,
   },
   webCard: {
     borderRadius: 16,
@@ -289,6 +309,11 @@ const styles = StyleSheet.create({
     shadowRadius: 4,
     shadowOffset: { width: 0, height: 2 },
     elevation: 3,
+  },
+  recenterBtnFull: {
+    bottom: undefined,
+    top: 150,
+    right: 16,
   },
   emptyChip: {
     position: "absolute",

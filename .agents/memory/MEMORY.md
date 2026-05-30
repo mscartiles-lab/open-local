@@ -1,0 +1,1 @@
+- [Expo platform files + map-behind-list](expo-platform-files.md) — MiniMap .native/.web/.tsx shim is for TS only (Metro picks .native at runtime, don't "fix" it); full-screen-map-behind-FlatList gesture tradeoff.

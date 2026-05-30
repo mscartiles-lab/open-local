@@ -17,9 +17,14 @@ interface MiniMapProps {
   radiusMiles?: number;
   height?: number;
   emptyHint?: string;
+  fullBleed?: boolean;
 }
 
-export function MiniMap({ pins = [], height = 200 }: MiniMapProps) {
+export function MiniMap({
+  pins = [],
+  height = 200,
+  fullBleed = false,
+}: MiniMapProps) {
   const colors = useColors();
 
   return (
@@ -27,6 +32,7 @@ export function MiniMap({ pins = [], height = 200 }: MiniMapProps) {
       style={[
         styles.webCard,
         { height, backgroundColor: colors.muted, borderColor: colors.border },
+        fullBleed && styles.flush,
       ]}
     >
       <Feather name="map" size={28} color={colors.mutedForeground} />
@@ -50,6 +56,10 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     gap: 6,
     paddingHorizontal: 16,
+  },
+  flush: {
+    borderRadius: 0,
+    borderWidth: 0,
   },
   webText: {
     fontFamily: "DMSans_500Medium",
