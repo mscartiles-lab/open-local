@@ -72,7 +72,7 @@ export default function TheLocalsScreen() {
         latitude: v.latitude!,
         longitude: v.longitude!,
         iconName: "shopping-bag" as const,
-        color: "#3c4a26",
+        color: "#e8520a",
       }));
     const estPins = (establishments ?? [])
       .filter((e) => e.latitude != null && e.longitude != null)
@@ -130,8 +130,8 @@ export default function TheLocalsScreen() {
       {/* Floating brand + profile bar over the map */}
       <View style={[s.floatHeader, { top: topPad + 8 }]}>
         <View style={s.brandPill}>
-          <Text style={s.wordmark}>The Locals</Text>
-          <Text style={s.tagline}>Producers & makers near you</Text>
+          <Text style={s.wordmark}>Vendors</Text>
+          <Text style={s.tagline}>Local producers & makers near you</Text>
         </View>
         {user ? (
           <TouchableOpacity

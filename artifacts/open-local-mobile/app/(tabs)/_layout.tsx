@@ -14,24 +14,28 @@ function NativeTabLayout() {
   return (
     <NativeTabs>
       <NativeTabs.Trigger name="index">
-        <Icon sf={{ default: "leaf", selected: "leaf.fill" }} />
-        <Label>The Locals</Label>
-      </NativeTabs.Trigger>
-      <NativeTabs.Trigger name="browse">
         <Icon sf={{ default: "storefront", selected: "storefront.fill" }} />
-        <Label>Browse</Label>
+        <Label>Vendors</Label>
+      </NativeTabs.Trigger>
+      <NativeTabs.Trigger name="goods">
+        <Icon sf={{ default: "basket", selected: "basket.fill" }} />
+        <Label>Goods</Label>
+      </NativeTabs.Trigger>
+      <NativeTabs.Trigger name="listings">
+        <Icon sf={{ default: "list.bullet", selected: "list.bullet" }} />
+        <Label>Listings</Label>
+      </NativeTabs.Trigger>
+      <NativeTabs.Trigger name="sale">
+        <Icon sf={{ default: "tag", selected: "tag.fill" }} />
+        <Label>Sale</Label>
       </NativeTabs.Trigger>
       <NativeTabs.Trigger name="events">
         <Icon sf={{ default: "calendar", selected: "calendar" }} />
         <Label>Events</Label>
       </NativeTabs.Trigger>
-      <NativeTabs.Trigger name="final-sale">
-        <Icon sf={{ default: "tag", selected: "tag.fill" }} />
-        <Label>Final Sale</Label>
-      </NativeTabs.Trigger>
       <NativeTabs.Trigger name="favorites">
         <Icon sf={{ default: "heart", selected: "heart.fill" }} />
-        <Label>Saved</Label>
+        <Label>Favorites</Label>
       </NativeTabs.Trigger>
     </NativeTabs>
   );
@@ -80,24 +84,48 @@ function ClassicTabLayout() {
       <Tabs.Screen
         name="index"
         options={{
-          title: "The Locals",
+          title: "Vendors",
           tabBarIcon: ({ color }) =>
             isIOS ? (
-              <SymbolView name="leaf" tintColor={color} size={22} />
+              <SymbolView name="storefront" tintColor={color} size={22} />
             ) : (
               <Feather name="users" size={22} color={color} />
             ),
         }}
       />
       <Tabs.Screen
-        name="browse"
+        name="goods"
         options={{
-          title: "Browse",
+          title: "Goods",
           tabBarIcon: ({ color }) =>
             isIOS ? (
-              <SymbolView name="storefront" tintColor={color} size={22} />
+              <SymbolView name="basket" tintColor={color} size={22} />
             ) : (
-              <Feather name="grid" size={22} color={color} />
+              <Feather name="shopping-bag" size={22} color={color} />
+            ),
+        }}
+      />
+      <Tabs.Screen
+        name="listings"
+        options={{
+          title: "Listings",
+          tabBarIcon: ({ color }) =>
+            isIOS ? (
+              <SymbolView name="list.bullet" tintColor={color} size={22} />
+            ) : (
+              <Feather name="list" size={22} color={color} />
+            ),
+        }}
+      />
+      <Tabs.Screen
+        name="sale"
+        options={{
+          title: "Sale",
+          tabBarIcon: ({ color }) =>
+            isIOS ? (
+              <SymbolView name="tag" tintColor={color} size={22} />
+            ) : (
+              <Feather name="tag" size={22} color={color} />
             ),
         }}
       />
@@ -114,21 +142,9 @@ function ClassicTabLayout() {
         }}
       />
       <Tabs.Screen
-        name="final-sale"
-        options={{
-          title: "Final Sale",
-          tabBarIcon: ({ color }) =>
-            isIOS ? (
-              <SymbolView name="tag" tintColor={color} size={22} />
-            ) : (
-              <Feather name="tag" size={22} color={color} />
-            ),
-        }}
-      />
-      <Tabs.Screen
         name="favorites"
         options={{
-          title: "Saved",
+          title: "Favorites",
           tabBarIcon: ({ color }) =>
             isIOS ? (
               <SymbolView name="heart" tintColor={color} size={22} />
@@ -137,6 +153,8 @@ function ClassicTabLayout() {
             ),
         }}
       />
+      <Tabs.Screen name="browse" options={{ href: null }} />
+      <Tabs.Screen name="final-sale" options={{ href: null }} />
     </Tabs>
   );
 }
