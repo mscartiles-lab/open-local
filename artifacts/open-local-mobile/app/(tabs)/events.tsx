@@ -39,7 +39,7 @@ export default function EventsScreen() {
   const topPad = Platform.OS === "web" ? 67 : insets.top;
   const bottomPad = Platform.OS === "web" ? 34 : insets.bottom + 60;
   const screenH = Dimensions.get("window").height;
-  const mapPeek = Math.round(screenH * 0.6);
+  const mapPeek = Math.round(screenH * 0.4);
 
   const pins: MapPin[] = useMemo(
     () =>

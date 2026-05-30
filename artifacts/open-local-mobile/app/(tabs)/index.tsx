@@ -62,7 +62,7 @@ export default function TheLocalsScreen() {
   const screenH = Dimensions.get("window").height;
   // How much of the map stays visible before the floating list panel begins.
   // Set so the panel head peeks at the bottom and a micro-scroll reveals the list.
-  const mapPeek = Math.round(screenH * 0.6);
+  const mapPeek = Math.round(screenH * 0.4);
 
   const pins: MapPin[] = useMemo(() => {
     const vendorPins = (vendors ?? [])

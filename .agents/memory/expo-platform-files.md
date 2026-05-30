@@ -22,9 +22,11 @@ from `./MiniMap.web`. Screens import `@/components/MiniMap`.
 
 The Locals (`app/(tabs)/index.tsx`) and Events (`app/(tabs)/events.tsx`) render a
 full-bleed `MiniMap` (height = screen) absolutely behind a transparent `FlatList`.
-The list's `ListHeaderComponent` starts with a transparent spacer (~0.6×screen height,
+The list's `ListHeaderComponent` starts with a transparent spacer (`mapPeek`,
 `pointerEvents: "none"`) then an opaque rounded panel; each row is wrapped opaque so the
-panel background is seamless.
+panel background is seamless. `mapPeek` controls how much empty map shows before the panel —
+set to ~0.4×screen so the map is visible first but the list peeks in without a big scroll
+(user disliked the original 0.6 because the list felt "gone").
 
 **Gesture tradeoff (intentional):** the full-screen FlatList's scroll responder captures
 vertical drags everywhere, so dragging anywhere — including over the visible map — scrolls
