@@ -68,11 +68,14 @@ export default function TheLocalsScreen() {
     const vendorPins = (vendors ?? [])
       .filter((v) => v.latitude != null && v.longitude != null)
       .map((v) => ({
-        key: `v-${v.id}`,
+        key: `v-${v.slug}`,
         latitude: v.latitude!,
         longitude: v.longitude!,
         iconName: "shopping-bag" as const,
         color: "#e8520a",
+        shape: "circle" as const,
+        label: v.name,
+        sublabel: v.location ?? undefined,
       }));
     const estPins = (establishments ?? [])
       .filter((e) => e.latitude != null && e.longitude != null)
@@ -82,6 +85,9 @@ export default function TheLocalsScreen() {
         longitude: e.longitude!,
         iconName: "home" as const,
         color: ESTABLISHMENT_COLOR,
+        shape: "square" as const,
+        label: e.name,
+        sublabel: [e.city, e.state].filter(Boolean).join(", ") || undefined,
       }));
     if (segment === "vendors") return vendorPins;
     if (segment === "businesses") return estPins;
@@ -124,6 +130,12 @@ export default function TheLocalsScreen() {
           height={screenH}
           emptyHint="No mapped locations yet"
           fullBleed
+          showControls
+          onPinPress={(key) => {
+            if (key.startsWith("v-")) {
+              router.push(`/vendor/${key.slice(2)}`);
+            }
+          }}
         />
       </View>
 

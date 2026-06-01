@@ -10,6 +10,9 @@ export type MapPin = {
   longitude: number;
   color?: string;
   iconName?: keyof typeof Feather.glyphMap;
+  label?: string;
+  sublabel?: string;
+  shape?: "circle" | "square";
 };
 
 interface MiniMapProps {
@@ -18,6 +21,8 @@ interface MiniMapProps {
   height?: number;
   emptyHint?: string;
   fullBleed?: boolean;
+  showControls?: boolean;
+  onPinPress?: (key: string) => void;
 }
 
 export function MiniMap({

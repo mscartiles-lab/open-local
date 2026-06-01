@@ -46,11 +46,14 @@ export default function EventsScreen() {
       (vendors ?? [])
         .filter((v) => v.latitude != null && v.longitude != null)
         .map((v) => ({
-          key: `v-${v.id}`,
+          key: `v-${v.slug}`,
           latitude: v.latitude!,
           longitude: v.longitude!,
           iconName: "shopping-bag" as const,
           color: "#3c4a26",
+          shape: "circle" as const,
+          label: v.name,
+          sublabel: v.location ?? undefined,
         })),
     [vendors],
   );
