@@ -23,6 +23,8 @@ interface MiniMapProps {
   fullBleed?: boolean;
   showControls?: boolean;
   onPinPress?: (key: string) => void;
+  onUserLocationChange?: (loc: { latitude: number; longitude: number } | null) => void;
+  onRadiusChange?: (miles: number) => void;
 }
 
 export function MiniMap({

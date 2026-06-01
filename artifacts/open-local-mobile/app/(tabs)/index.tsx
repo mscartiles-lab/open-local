@@ -5,6 +5,7 @@ import {
 import { useRouter } from "expo-router";
 import { Feather } from "@expo/vector-icons";
 import React, { useMemo, useState } from "react";
+import { haversineDistanceMiles } from "@/utils/distance";
 import {
   ActivityIndicator,
   Dimensions,
@@ -43,6 +44,11 @@ export default function TheLocalsScreen() {
   const { user, logout } = useAuth();
   const [segment, setSegment] = useState<Segment>("all");
   const [refreshing, setRefreshing] = useState(false);
+  const [userLocation, setUserLocation] = useState<{
+    latitude: number;
+    longitude: number;
+  } | null>(null);
+  const [mapRadius, setMapRadius] = useState(25);
 
   const {
     data: vendors,
@@ -105,9 +111,23 @@ export default function TheLocalsScreen() {
     }));
     if (segment === "vendors") return vendorItems;
     if (segment === "businesses") return estItems;
-    // Interleave a bit so it doesn't feel split
     return [...vendorItems, ...estItems];
   }, [vendors, establishments, segment]);
+
+  // Split into in-radius and beyond when location is known
+  const { inRadiusItems, beyondItems } = useMemo(() => {
+    if (!userLocation) return { inRadiusItems: items, beyondItems: [] as LocalItem[] };
+    const inR: LocalItem[] = [];
+    const out: LocalItem[] = [];
+    for (const item of items) {
+      const lat = item.kind === "vendor" ? item.data.latitude : item.data.latitude;
+      const lng = item.kind === "vendor" ? item.data.longitude : item.data.longitude;
+      if (!lat || !lng) { out.push(item); continue; }
+      const dist = haversineDistanceMiles(userLocation.latitude, userLocation.longitude, lat, lng);
+      (dist <= mapRadius ? inR : out).push(item);
+    }
+    return { inRadiusItems: inR, beyondItems: out };
+  }, [items, userLocation, mapRadius]);
 
   const isLoading = vendorsLoading || estLoading;
   const isError = vendorsError && estError;
@@ -126,16 +146,16 @@ export default function TheLocalsScreen() {
       <View style={s.mapLayer}>
         <MiniMap
           pins={pins}
-          radiusMiles={25}
+          radiusMiles={mapRadius}
           height={screenH}
           emptyHint="No mapped locations yet"
           fullBleed
           showControls
           onPinPress={(key) => {
-            if (key.startsWith("v-")) {
-              router.push(`/vendor/${key.slice(2)}`);
-            }
+            if (key.startsWith("v-")) router.push(`/vendor/${key.slice(2)}`);
           }}
+          onUserLocationChange={setUserLocation}
+          onRadiusChange={setMapRadius}
         />
       </View>
 
@@ -176,7 +196,7 @@ export default function TheLocalsScreen() {
 
       {/* Floating, scrollable list panel above the map */}
       <FlatList
-        data={isLoading || isError ? [] : items}
+        data={isLoading || isError ? [] : inRadiusItems}
         keyExtractor={(item) => `${item.kind}-${item.data.id}`}
         style={s.list}
         renderItem={({ item }) => (
@@ -260,7 +280,40 @@ export default function TheLocalsScreen() {
             </View>
           ) : null
         }
-        ListFooterComponent={<View style={s.panelFooter} />}
+        ListFooterComponent={
+          <View style={{ backgroundColor: colors.background }}>
+            {beyondItems.length > 0 && userLocation ? (
+              <>
+                <BeyondDivider
+                  radius={mapRadius}
+                  count={beyondItems.length}
+                  colors={colors}
+                />
+                {beyondItems.map((item) => (
+                  <View key={`beyond-${item.kind}-${item.data.id}`} style={s.itemWrap}>
+                    {item.kind === "vendor" ? (
+                      <VendorCard
+                        vendor={item.data}
+                        onPress={() => router.push(`/vendor/${item.data.slug}`)}
+                      />
+                    ) : (
+                      <EstablishmentCard
+                        establishment={item.data}
+                        colors={colors}
+                        onPress={() => {
+                          if (item.data.website) {
+                            router.push(item.data.website as `${string}:${string}`);
+                          }
+                        }}
+                      />
+                    )}
+                  </View>
+                ))}
+              </>
+            ) : null}
+            <View style={s.panelFooter} />
+          </View>
+        }
         refreshControl={
           <RefreshControl
             refreshing={refreshing}
@@ -314,6 +367,51 @@ function EstablishmentCard({
     </TouchableOpacity>
   );
 }
+
+function BeyondDivider({
+  radius,
+  count,
+  colors,
+}: {
+  radius: number;
+  count: number;
+  colors: ReturnType<typeof useColors>;
+}) {
+  return (
+    <View style={bdStyles.wrap}>
+      <View style={[bdStyles.line, { backgroundColor: colors.border }]} />
+      <View style={bdStyles.center}>
+        <Text style={[bdStyles.label, { color: colors.mutedForeground }]}>
+          Beyond {radius} mi
+        </Text>
+        <Text style={[bdStyles.count, { color: colors.mutedForeground }]}>
+          {count} more
+        </Text>
+      </View>
+      <View style={[bdStyles.line, { backgroundColor: colors.border }]} />
+    </View>
+  );
+}
+
+const bdStyles = StyleSheet.create({
+  wrap: {
+    flexDirection: "row",
+    alignItems: "center",
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    gap: 10,
+    backgroundColor: "transparent",
+  },
+  line: { flex: 1, height: 1 },
+  center: { alignItems: "center", gap: 1 },
+  label: {
+    fontFamily: "DMSans_600SemiBold",
+    fontSize: 12,
+    textTransform: "uppercase",
+    letterSpacing: 0.4,
+  },
+  count: { fontFamily: "DMSans_400Regular", fontSize: 11 },
+});
 
 const estStyles = StyleSheet.create({
   card: {

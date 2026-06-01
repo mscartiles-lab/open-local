@@ -36,6 +36,8 @@ interface MiniMapProps {
   fullBleed?: boolean;
   showControls?: boolean;
   onPinPress?: (key: string) => void;
+  onUserLocationChange?: (loc: { latitude: number; longitude: number } | null) => void;
+  onRadiusChange?: (miles: number) => void;
 }
 
 const FLORIDA_CENTER = { latitude: 27.9944024, longitude: -81.7602544 };
@@ -53,6 +55,8 @@ export function MiniMap({
   fullBleed = false,
   showControls = false,
   onPinPress,
+  onUserLocationChange,
+  onRadiusChange,
 }: MiniMapProps) {
   const colors = useColors();
   const [permission, requestPermission] = Location.useForegroundPermissions();
@@ -109,10 +113,12 @@ export function MiniMap({
       const loc = await Location.getCurrentPositionAsync({
         accuracy: Location.Accuracy.Balanced,
       });
-      setUserLocation({
+      const next = {
         latitude: loc.coords.latitude,
         longitude: loc.coords.longitude,
-      });
+      };
+      setUserLocation(next);
+      onUserLocationChange?.(next);
     } catch {
       // ignore — user stays on Florida center
     } finally {
@@ -359,7 +365,7 @@ export function MiniMap({
                       ? { backgroundColor: colors.primary }
                       : { backgroundColor: colors.muted },
                   ]}
-                  onPress={() => setRadius(r)}
+                  onPress={() => { setRadius(r); onRadiusChange?.(r); }}
                   activeOpacity={0.75}
                 >
                   <Text

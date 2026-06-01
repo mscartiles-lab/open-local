@@ -76,6 +76,7 @@ export default function EventsScreen() {
           height={screenH}
           emptyHint="No locations mapped"
           fullBleed
+          showControls
         />
       </View>
 
