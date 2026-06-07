@@ -14,7 +14,12 @@
       "backgroundColor": "#f8f7f2"
     },
     "ios": {
-      "supportsTablet": false
+      "supportsTablet": false,
+      "bundleIdentifier": "com.rentacoder2026.openlocalmobile",
+      "buildNumber": "1",
+      "infoPlist": {
+        "NSLocationWhenInUseUsageDescription": "Open Local uses your location to show nearby vendors and events."
+      }
     },
     "android": {},
     "web": {
@@ -24,7 +29,7 @@
       [
         "expo-router",
         {
-          "origin": "https://replit.com/"
+          "origin": "https://mvp-upload.replit.app"
         }
       ],
       "expo-font",
