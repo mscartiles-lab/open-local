@@ -1,0 +1,157 @@
+# Rebuild the Project as a Production-Ready Mobile Application
+
+The current implementation appears to work mostly as an Expo Go demo, but several core features are not fully functional, including icons, notifications, alarm behavior, location triggers, and native integrations.
+
+I want you to rebuild and refactor the entire project as a production-ready application.
+
+## Requirements
+
+Do NOT optimize for Expo Go compatibility.
+
+Instead, optimize for:
+
+* Expo Development Build
+* EAS Build
+* Android Production APK/AAB
+* iOS Production Build
+
+## Native Features Must Work
+
+The following features must be fully implemented and configured:
+
+### Notifications
+
+* Local notifications
+* Scheduled notifications
+* Repeating notifications
+* Daily reminders
+* Weekly reminders
+* Monthly reminders
+* Specific date reminders
+
+### Alarm Mode
+
+The reminder system should behave as closely as possible to a real alarm:
+
+* Full-screen alarm UI
+* Alarm sound
+* Snooze action
+* Stop action
+* Persistent reminder experience
+
+If Expo limitations prevent a feature, explain exactly why and provide the closest production-ready implementation.
+
+### Voice Reminders
+
+Implement Text-to-Speech properly using native-supported APIs.
+
+Requirements:
+
+* Read task title aloud
+* Repeat speech configurable number of times
+* Adjustable speech rate
+* Adjustable speech volume
+
+### Location-Based Reminders
+
+Implement:
+
+* Geofencing
+* Arrival triggers
+* Exit triggers
+* Delayed reminders after arrival
+
+Do not leave placeholders or TODO comments.
+
+### Biometrics
+
+Implement:
+
+* Fingerprint
+* Face ID
+* Device authentication
+
+### Camera and Event Scanner
+
+Implement:
+
+* Camera capture
+* Gallery image picker
+* OCR integration
+* Event extraction workflow
+
+### SQLite
+
+Use SQLite as the primary database.
+
+Requirements:
+
+* Complete schema
+* Migrations
+* CRUD operations
+* Repository layer
+
+### Icons
+
+Fix all icon rendering issues.
+
+Verify every icon package is installed and imported correctly.
+
+### Permissions
+
+Configure all required permissions:
+
+* Notifications
+* Camera
+* Microphone (if needed)
+* Media Library
+* Location
+* Background Location
+* Biometrics
+
+## Configuration
+
+Generate complete and valid:
+
+* package.json
+* app.json / app.config.ts
+* eas.json
+* Metro configuration
+* TypeScript configuration
+
+## Code Quality
+
+Do NOT generate:
+
+* TODO comments
+* Placeholder code
+* Mock implementations
+* Fake services
+* Empty screens
+* Incomplete functions
+
+Generate working code only.
+
+## Validation
+
+Before presenting the project:
+
+1. Verify all imports resolve correctly.
+2. Verify all packages are installed.
+3. Verify TypeScript has no errors.
+4. Verify Expo Doctor passes.
+5. Verify the app builds successfully with EAS Build.
+6. Verify all screens are connected and navigable.
+
+## Deliverables
+
+Provide:
+
+* Updated project structure
+* Complete source code
+* Working configuration files
+* Installation commands
+* Build commands
+* Testing instructions
+
+The final result should be a production-ready application, not an Expo Go prototype.
