@@ -21,7 +21,14 @@
         "NSLocationWhenInUseUsageDescription": "Open Local uses your location to show nearby vendors and events."
       }
     },
-    "android": {},
+    "android": {
+      "package": "com.rentacoder2026.openlocalmobile",
+      "versionCode": 1,
+      "permissions": [
+        "ACCESS_COARSE_LOCATION",
+        "ACCESS_FINE_LOCATION"
+      ]
+    },
     "web": {
       "favicon": "./assets/images/icon.png"
     },
