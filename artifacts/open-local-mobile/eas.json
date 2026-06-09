@@ -1,6 +1,7 @@
 {
   "cli": {
-    "version": ">= 12.0.0"
+    "version": ">= 12.0.0",
+    "appVersionSource": "remote"
   },
   "build": {
     "development": {
@@ -18,7 +19,14 @@
     },
     "production": {
       "autoIncrement": true,
-      "node": "20.0.0"
+      "resourceClass": "medium",
+      "node": "20.19.4",
+      "ios": {
+        "image": "latest"
+      },
+      "env": {
+        "EXPO_PUBLIC_DOMAIN": "mvp-upload.replit.app"
+      }
     }
   },
   "submit": {
