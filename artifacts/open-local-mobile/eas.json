@@ -14,11 +14,17 @@
       },
       "ios": {
         "simulator": false
+      },
+      "env": {
+        "EXPO_PUBLIC_DOMAIN": "mvp-upload.replit.app"
       }
     },
     "production": {
       "autoIncrement": true,
-      "node": "20.0.0"
+      "node": "20.0.0",
+      "env": {
+        "EXPO_PUBLIC_DOMAIN": "mvp-upload.replit.app"
+      }
     }
   },
   "submit": {
