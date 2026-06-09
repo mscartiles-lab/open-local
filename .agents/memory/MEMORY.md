@@ -1,1 +1,1 @@
-- [Expo platform files + map-behind-list](expo-platform-files.md) — MiniMap .native/.web/.tsx shim is for TS only (Metro picks .native at runtime, don't "fix" it); full-screen-map-behind-FlatList gesture tradeoff.
+- [EAS monorepo yarn build](eas-yarn-build.md) — pnpm monorepo + EAS build requires vendoring @workspace/* deps and several config fixes
