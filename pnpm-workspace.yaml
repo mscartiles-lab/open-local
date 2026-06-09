@@ -1,6 +1,5 @@
 packages:
   - artifacts/*
-  - '!artifacts/open-local-mobile'
   - lib/*
   - lib/integrations/*
   - scripts
