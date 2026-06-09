@@ -3,7 +3,7 @@ import { StyleSheet, Text, View } from "react-native";
 import { Image } from "expo-image";
 
 import { useColors } from "@/hooks/useColors";
-import type { Product } from "@workspace/api-client-react";
+import type { Product } from "@/lib/api-client";
 
 function formatPrice(cents: number): string {
   return `$${(cents / 100).toFixed(2)}`;

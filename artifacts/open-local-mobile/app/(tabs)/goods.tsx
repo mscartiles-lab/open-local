@@ -1,7 +1,7 @@
 import {
   useListProducts,
   useListVendors,
-} from "@workspace/api-client-react";
+} from "@/lib/api-client";
 import { Feather } from "@expo/vector-icons";
 import { Image } from "expo-image";
 import { useRouter } from "expo-router";
@@ -23,7 +23,7 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { MiniMap, type MapPin } from "@/components/MiniMap";
 import { useColors } from "@/hooks/useColors";
 import { haversineDistanceMiles } from "@/utils/distance";
-import type { Product, Vendor } from "@workspace/api-client-react";
+import type { Product, Vendor } from "@/lib/api-client";
 
 const LISTING_LABELS: Record<string, string> = {
   batch_drop: "Just Dropped",

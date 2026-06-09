@@ -1,4 +1,4 @@
-import { useListVendors } from "@workspace/api-client-react";
+import { useListVendors } from "@/lib/api-client";
 import { useRouter } from "expo-router";
 import React, { useState } from "react";
 import {
@@ -17,7 +17,7 @@ import { Feather } from "@expo/vector-icons";
 
 import { useColors } from "@/hooks/useColors";
 import { VendorCard } from "@/components/VendorCard";
-import type { Vendor } from "@workspace/api-client-react";
+import type { Vendor } from "@/lib/api-client";
 
 export default function BrowseScreen() {
   const colors = useColors();

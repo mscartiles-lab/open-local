@@ -8,7 +8,7 @@ import {
 import { Feather } from "@expo/vector-icons";
 
 import { useColors } from "@/hooks/useColors";
-import type { Vendor } from "@workspace/api-client-react";
+import type { Vendor } from "@/lib/api-client";
 
 interface Props {
   vendor: Vendor;

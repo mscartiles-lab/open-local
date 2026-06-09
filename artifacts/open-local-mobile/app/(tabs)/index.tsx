@@ -1,7 +1,7 @@
 import {
   useListVendors,
   useListEstablishments,
-} from "@workspace/api-client-react";
+} from "@/lib/api-client";
 import { useRouter } from "expo-router";
 import { Feather } from "@expo/vector-icons";
 import React, { useMemo, useState } from "react";
@@ -27,7 +27,7 @@ import { useColors } from "@/hooks/useColors";
 import type {
   Establishment,
   Vendor,
-} from "@workspace/api-client-react";
+} from "@/lib/api-client";
 
 type LocalItem =
   | { kind: "vendor"; data: Vendor }

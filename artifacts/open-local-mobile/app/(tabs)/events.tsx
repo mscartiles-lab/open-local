@@ -1,4 +1,4 @@
-import { useListEvents, useListVendors } from "@workspace/api-client-react";
+import { useListEvents, useListVendors } from "@/lib/api-client";
 import { Feather } from "@expo/vector-icons";
 import React, { useMemo, useState } from "react";
 import {
@@ -17,7 +17,7 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import { MiniMap, type MapPin } from "@/components/MiniMap";
 import { useColors } from "@/hooks/useColors";
-import type { EventItem } from "@workspace/api-client-react";
+import type { EventItem } from "@/lib/api-client";
 
 const EVENT_COLOR = "#1a4a6e";
 

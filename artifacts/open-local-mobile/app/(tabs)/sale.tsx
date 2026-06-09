@@ -1,7 +1,7 @@
 import {
   useGetLocalNowFeed,
   useListVendors,
-} from "@workspace/api-client-react";
+} from "@/lib/api-client";
 import { Feather } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
 import React, { useMemo, useState } from "react";
@@ -21,7 +21,7 @@ import { FeedProductCard } from "@/components/FeedProductCard";
 import { MiniMap, type MapPin } from "@/components/MiniMap";
 import { useColors } from "@/hooks/useColors";
 import { haversineDistanceMiles } from "@/utils/distance";
-import type { ProductWithVendor, Vendor } from "@workspace/api-client-react";
+import type { ProductWithVendor, Vendor } from "@/lib/api-client";
 
 export default function SaleScreen() {
   const colors = useColors();

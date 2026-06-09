@@ -1,4 +1,4 @@
-import { useListProducts } from "@workspace/api-client-react";
+import { useListProducts } from "@/lib/api-client";
 import { useRouter } from "expo-router";
 import { Feather } from "@expo/vector-icons";
 import React, { useState } from "react";
@@ -16,7 +16,7 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Image } from "expo-image";
 
 import { useColors } from "@/hooks/useColors";
-import type { Product } from "@workspace/api-client-react";
+import type { Product } from "@/lib/api-client";
 
 function formatPrice(cents: number) {
   return `$${(cents / 100).toFixed(2)}`;

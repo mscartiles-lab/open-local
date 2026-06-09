@@ -16,7 +16,7 @@ import { useFocusEffect } from "expo-router";
 import { useColors } from "@/hooks/useColors";
 import { MiniMap, type MapPin } from "@/components/MiniMap";
 import { VendorCard } from "@/components/VendorCard";
-import type { Vendor } from "@workspace/api-client-react";
+import type { Vendor } from "@/lib/api-client";
 
 export const FAVORITES_KEY = "open_local_favorites";
 

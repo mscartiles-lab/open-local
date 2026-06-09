@@ -8,7 +8,7 @@ import {
 import { Image } from "expo-image";
 
 import { useColors } from "@/hooks/useColors";
-import type { ProductWithVendor } from "@workspace/api-client-react";
+import type { ProductWithVendor } from "@/lib/api-client";
 
 function formatPrice(cents: number): string {
   return `$${(cents / 100).toFixed(2)}`;

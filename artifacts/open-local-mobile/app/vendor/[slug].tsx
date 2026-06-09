@@ -1,4 +1,4 @@
-import { useGetVendorBySlug, useListVendorProducts } from "@workspace/api-client-react";
+import { useGetVendorBySlug, useListVendorProducts } from "@/lib/api-client";
 import * as Haptics from "expo-haptics";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { Feather } from "@expo/vector-icons";
