@@ -62,15 +62,19 @@ let transporter: Transporter | null = null;
 
 function getTransporter(): Transporter | null {
   if (transporter) return transporter;
-  const host = process.env.SMTP_HOST;
-  const user = process.env.SMTP_USER;
-  const pass = process.env.SMTP_PASS;
+
+  // Resend SMTP relay — use when RESEND_API_KEY is set and no custom SMTP_HOST is configured
+  const resendKey = process.env.RESEND_API_KEY;
+  const host = process.env.SMTP_HOST ?? (resendKey ? "smtp.resend.com" : undefined);
+  const user = process.env.SMTP_USER ?? (resendKey ? "resend" : undefined);
+  const pass = process.env.SMTP_PASS ?? resendKey;
+
   if (!host || !user || !pass) return null;
   const port = Number(process.env.SMTP_PORT ?? 465);
   transporter = nodemailer.createTransport({
     host,
     port,
-    // 465 → TLS from the start (Gmail), 587 → STARTTLS upgrade.
+    // 465 → TLS from the start (Resend/Gmail), 587 → STARTTLS upgrade.
     secure: port === 465,
     auth: { user, pass },
   });
