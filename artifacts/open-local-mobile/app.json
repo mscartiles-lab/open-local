@@ -45,6 +45,14 @@
     "experiments": {
       "typedRoutes": true,
       "reactCompiler": true
+    },
+    "extra": {
+      "router": {
+        "origin": "https://mvp-upload.replit.app"
+      },
+      "eas": {
+        "projectId": "01ce32a2-7226-4ae0-94e7-0fdfa18bd013"
+      }
     }
   }
 }
