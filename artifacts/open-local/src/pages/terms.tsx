@@ -77,7 +77,7 @@ export default function Terms() {
               video uploads, product listings, and linked social media accounts.
             </li>
             <li>
-              <strong>Premium — $19.99/month.</strong> Everything in Standard, plus up to three listings,
+              <strong>Premium — $24.20/month.</strong> Everything in Standard, plus up to three listings,
               products, batch drops, or pre-orders featured at the top of the discovery feed.
             </li>
           </ul>
