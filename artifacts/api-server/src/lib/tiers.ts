@@ -30,6 +30,6 @@ export function tierIncludedFeaturedCount(tier: TierId | null | undefined): numb
 }
 
 // À-la-carte feature boost (any vendor, any tier — purchased one-off)
-export const FEATURE_BOOST_PRICE_CENTS = 500;
+export const FEATURE_BOOST_PRICE_CENTS = 599;
 export const FEATURE_BOOST_DURATION_DAYS = 14;
 export const FEATURE_BOOST_PLAN_NAME = "Open Local Listing Boost (2 weeks)";
