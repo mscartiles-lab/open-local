@@ -52,3 +52,6 @@ channel = "stable-25_05"
 [userenv.shared]
 ADMIN_EMAILS = "mscartiles@gmail.com"
 MAIL_FROM = "Open Local <onboarding@resend.dev>"
+EMAILJS_SERVICE_ID = "service_h2ipm46"
+EMAILJS_TEMPLATE_ID = "u4nd86q"
+EMAILJS_PUBLIC_KEY = "bXLUPvpo7S-IxJwMT"

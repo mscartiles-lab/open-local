@@ -39,7 +39,8 @@ export async function sendVerificationEmail(
     template_params: {
       to_email: opts.to,
       to_name: opts.businessName,
-      code: opts.code,
+      passcode: opts.code,
+      time: "10 minutes",
     },
   };
 
