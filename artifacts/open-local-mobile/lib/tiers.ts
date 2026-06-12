@@ -12,11 +12,12 @@ export const TIERS: Record<TierId, TierDef> = {
   basic: {
     id: "basic",
     name: "Basic",
-    priceMonthly: 4.58,
-    tagline: "A simple presence on the map.",
+    priceMonthly: 4.99,
+    tagline: "Get discovered on the map.",
     features: [
-      "Map pin with name & address",
-      "1 photo",
+      "Pin on the map",
+      "Profile photo",
+      "Business description",
       "Public listing page",
       "Cancel anytime",
     ],
@@ -28,32 +29,31 @@ export const TIERS: Record<TierId, TierDef> = {
     tagline: "Everything most local businesses need.",
     features: [
       "Everything in Basic",
-      "Multiple photos (up to 6)",
-      "Phone, hours & full contact info",
-      "Social links (Instagram, Facebook, TikTok)",
-      "Customer reviews on your page",
-      "Featured in your area's discovery feed",
+      "Multiple photo uploads",
+      "Video uploads",
+      "Product listings",
+      "Linked social media accounts (Instagram, Facebook, TikTok)",
+      "Phone & full contact info",
       "Pre-order listings (reserve for market pickup)",
     ],
   },
   premium: {
     id: "premium",
     name: "Premium",
-    priceMonthly: 24.56,
+    priceMonthly: 24.20,
     tagline: "Maximum visibility and promotional power.",
     features: [
       "Everything in Standard",
-      "2 featured posts — feature any of your listings, anywhere",
+      "3 listings, products, batch drops, or pre-orders featured at the top of the feed",
       "Featured on the homepage",
       "Featured in your category",
-      "Promotional offers & discounts",
-      "Video clip on your listing",
       "Priority placement in search results",
+      "Promotional offers & discounts",
     ],
   },
 };
 
 export const TIER_ORDER: TierId[] = ["basic", "middle", "premium"];
 
-export const FEATURE_BOOST_PRICE = 5;
+export const FEATURE_BOOST_PRICE = 5.99;
 export const FEATURE_BOOST_DURATION_DAYS = 14;

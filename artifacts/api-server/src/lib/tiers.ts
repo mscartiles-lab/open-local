@@ -3,9 +3,9 @@ export type TierId = "basic" | "middle" | "premium";
 export const TIER_IDS: TierId[] = ["basic", "middle", "premium"];
 
 export const TIERS: Record<TierId, { id: TierId; name: string; priceCents: number }> = {
-  basic: { id: "basic", name: "Basic", priceCents: 458 },
+  basic: { id: "basic", name: "Basic", priceCents: 499 },
   middle: { id: "middle", name: "Standard", priceCents: 1098 },
-  premium: { id: "premium", name: "Premium", priceCents: 2456 },
+  premium: { id: "premium", name: "Premium", priceCents: 2420 },
 };
 
 export function isValidTier(value: unknown): value is TierId {
@@ -26,7 +26,7 @@ export function tierAllowsPreOrder(tier: TierId | null | undefined): boolean {
 }
 
 export function tierIncludedFeaturedCount(tier: TierId | null | undefined): number {
-  return tier === "premium" ? 2 : 0;
+  return tier === "premium" ? 3 : 0;
 }
 
 // À-la-carte feature boost (any vendor, any tier — purchased one-off)
