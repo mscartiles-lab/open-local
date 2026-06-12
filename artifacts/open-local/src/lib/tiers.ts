@@ -12,7 +12,7 @@ export const TIERS: Record<TierId, TierDef> = {
   basic: {
     id: "basic",
     name: "Basic",
-    priceMonthly: 4.99,
+    priceMonthly: 4.58,
     tagline: "Get discovered on the map.",
     features: [
       "Pin on the map",
@@ -40,7 +40,7 @@ export const TIERS: Record<TierId, TierDef> = {
   premium: {
     id: "premium",
     name: "Premium",
-    priceMonthly: 24.20,
+    priceMonthly: 24.56,
     tagline: "Maximum visibility and promotional power.",
     features: [
       "Everything in Standard",
@@ -56,5 +56,5 @@ export const TIERS: Record<TierId, TierDef> = {
 export const TIER_ORDER: TierId[] = ["basic", "middle", "premium"];
 
 // À-la-carte boost: anyone can pay to feature a single listing for 2 weeks.
-export const FEATURE_BOOST_PRICE = 5.99;
+export const FEATURE_BOOST_PRICE = 5;
 export const FEATURE_BOOST_DURATION_DAYS = 14;
