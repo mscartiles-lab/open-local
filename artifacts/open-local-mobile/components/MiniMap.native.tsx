@@ -68,6 +68,12 @@ export function MiniMap({
   const [radius, setRadius] = useState(initialRadius);
   const [autoLocated, setAutoLocated] = useState(false);
   const mapRef = useRef<unknown>(null);
+  const currentRegionRef = useRef<{
+    latitude: number;
+    longitude: number;
+    latitudeDelta: number;
+    longitudeDelta: number;
+  } | null>(null);
 
   // Auto-request permission and locate on mount once permission state is known
   useEffect(() => {
@@ -124,6 +130,34 @@ export function MiniMap({
     } finally {
       setLocating(false);
     }
+  }
+
+  function zoomIn() {
+    if (!mapRef.current) return;
+    const region = currentRegionRef.current ?? {
+      ...center,
+      latitudeDelta: delta,
+      longitudeDelta: delta,
+    };
+    const newDelta = Math.max(region.latitudeDelta / 2, 0.002);
+    (mapRef.current as { animateToRegion: (r: object, d: number) => void }).animateToRegion(
+      { ...region, latitudeDelta: newDelta, longitudeDelta: newDelta },
+      250,
+    );
+  }
+
+  function zoomOut() {
+    if (!mapRef.current) return;
+    const region = currentRegionRef.current ?? {
+      ...center,
+      latitudeDelta: delta,
+      longitudeDelta: delta,
+    };
+    const newDelta = Math.min(region.latitudeDelta * 2, 60);
+    (mapRef.current as { animateToRegion: (r: object, d: number) => void }).animateToRegion(
+      { ...region, latitudeDelta: newDelta, longitudeDelta: newDelta },
+      250,
+    );
   }
 
   // Web fallback — Metro replaces this file with MiniMap.web.tsx on web builds,
@@ -201,6 +235,9 @@ export function MiniMap({
         rotateEnabled={false}
         zoomEnabled
         scrollEnabled
+        onRegionChangeComplete={(region) => {
+          currentRegionRef.current = region;
+        }}
       >
         {/* Radius circle around user */}
         {locationGranted && userLocation && (
@@ -385,6 +422,23 @@ export function MiniMap({
           </View>
         </View>
       )}
+
+      {/* Zoom +/- buttons — right side above recenter */}
+      <View
+        style={[
+          styles.zoomBtns,
+          fullBleed && styles.zoomBtnsFull,
+          { backgroundColor: colors.card },
+        ]}
+      >
+        <TouchableOpacity style={styles.zoomBtn} onPress={zoomIn} activeOpacity={0.7}>
+          <Feather name="plus" size={17} color={colors.foreground} />
+        </TouchableOpacity>
+        <View style={[styles.zoomDivider, { backgroundColor: colors.border }]} />
+        <TouchableOpacity style={styles.zoomBtn} onPress={zoomOut} activeOpacity={0.7}>
+          <Feather name="minus" size={17} color={colors.foreground} />
+        </TouchableOpacity>
+      </View>
 
       {/* Locate-me / recenter — bottom-right */}
       <TouchableOpacity
@@ -618,6 +672,34 @@ const styles = StyleSheet.create({
   radiusBtnText: {
     fontFamily: "DMSans_600SemiBold",
     fontSize: 11,
+  },
+  // Zoom +/- buttons
+  zoomBtns: {
+    position: "absolute",
+    bottom: 56,
+    right: 10,
+    borderRadius: 10,
+    overflow: "hidden",
+    shadowColor: "#000",
+    shadowOpacity: 0.15,
+    shadowRadius: 4,
+    shadowOffset: { width: 0, height: 2 },
+    elevation: 3,
+  },
+  zoomBtnsFull: {
+    bottom: undefined,
+    top: 200,
+    right: 16,
+  },
+  zoomBtn: {
+    width: 36,
+    height: 36,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  zoomDivider: {
+    height: 1,
+    marginHorizontal: 6,
   },
   // Recenter button
   recenterBtn: {
