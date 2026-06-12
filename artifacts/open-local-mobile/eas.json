@@ -16,14 +16,14 @@
         "simulator": false
       },
       "env": {
-        "EXPO_PUBLIC_DOMAIN": "mvp-upload.replit.app"
+        "EXPO_PUBLIC_DOMAIN": "openlocalapp.com"
       }
     },
     "production": {
       "autoIncrement": true,
       "node": "20.0.0",
       "env": {
-        "EXPO_PUBLIC_DOMAIN": "mvp-upload.replit.app"
+        "EXPO_PUBLIC_DOMAIN": "openlocalapp.com"
       }
     }
   },
