@@ -51,4 +51,4 @@ channel = "stable-25_05"
 
 [userenv.shared]
 ADMIN_EMAILS = "mscartiles@gmail.com"
-MAIL_FROM = "Open Local <support@openlocalapp.com>"
+MAIL_FROM = "Open Local <onboarding@resend.dev>"

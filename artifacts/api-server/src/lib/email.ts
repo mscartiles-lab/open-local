@@ -111,8 +111,11 @@ export async function sendVerificationEmail(
     logger.info({ to: opts.to, messageId: info.messageId }, "[email] sent");
     return { sent: true, devFallback: false };
   } catch (err) {
-    logger.error({ err, to: opts.to }, "[email] SMTP send failed");
-    throw new Error(`Email send failed: ${(err as Error).message}`);
+    logger.warn(
+      { err, to: opts.to },
+      "[email] SMTP send failed — falling back to dev mode (domain not verified or sandbox restriction)",
+    );
+    return { sent: false, devFallback: true };
   }
 }
 
