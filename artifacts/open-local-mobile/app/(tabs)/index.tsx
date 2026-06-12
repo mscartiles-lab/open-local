@@ -4,12 +4,15 @@ import {
 } from "@/lib/api-client";
 import { useRouter } from "expo-router";
 import { Feather } from "@expo/vector-icons";
-import React, { useMemo, useState } from "react";
+import React, { useEffect, useMemo, useRef, useState } from "react";
 import { haversineDistanceMiles } from "@/utils/distance";
 import {
   ActivityIndicator,
+  Animated,
   Dimensions,
   FlatList,
+  NativeScrollEvent,
+  NativeSyntheticEvent,
   Platform,
   RefreshControl,
   StyleSheet,
@@ -21,6 +24,7 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import Avatar from "@/components/Avatar";
 import { MiniMap, type MapPin } from "@/components/MiniMap";
+import { OnboardingGate } from "@/components/OnboardingModal";
 import { VendorCard } from "@/components/VendorCard";
 import { useAuth } from "@/context/AuthContext";
 import { useColors } from "@/hooks/useColors";
@@ -68,6 +72,40 @@ export default function TheLocalsScreen() {
   const screenH = Dimensions.get("window").height;
   // Map takes the top 50% of the screen; list scrolls in the bottom half.
   const mapHeight = Math.max(Math.round(screenH * 0.50), 280);
+
+  // Map expansion — double-overscroll-up from list top toggles fullscreen map
+  const [mapExpanded, setMapExpanded] = useState(false);
+  const mapHeightAnim = useRef(new Animated.Value(mapHeight)).current;
+  const upScrollCountRef = useRef(0);
+  const lastUpScrollRef = useRef(0);
+
+  useEffect(() => {
+    Animated.spring(mapHeightAnim, {
+      toValue: mapExpanded ? screenH : mapHeight,
+      useNativeDriver: false,
+      speed: 16,
+      bounciness: 0,
+    }).start();
+  }, [mapExpanded, mapHeightAnim, mapHeight, screenH]);
+
+  function handleScrollBeginDrag(e: NativeSyntheticEvent<NativeScrollEvent>) {
+    const y = e.nativeEvent.contentOffset.y;
+    if (y <= 5) {
+      const now = Date.now();
+      if (now - lastUpScrollRef.current < 800) {
+        upScrollCountRef.current += 1;
+        if (upScrollCountRef.current >= 2) {
+          upScrollCountRef.current = 0;
+          setMapExpanded((prev) => !prev);
+        }
+      } else {
+        upScrollCountRef.current = 1;
+      }
+      lastUpScrollRef.current = now;
+    } else {
+      upScrollCountRef.current = 0;
+    }
+  }
 
   const pins: MapPin[] = useMemo(() => {
     const vendorPins = (vendors ?? [])
@@ -141,14 +179,13 @@ export default function TheLocalsScreen() {
 
   return (
     <View style={s.container}>
-      {/* Map — fixed height, fully interactive */}
-      <View style={{ height: mapHeight }}>
+      {/* Map — animates between 50% and full-screen height */}
+      <Animated.View style={{ height: mapHeightAnim }}>
         <MiniMap
           pins={pins}
           radiusMiles={mapRadius}
           height={mapHeight}
           emptyHint="No mapped locations yet"
-          fullBleed
           showControls
           onPinPress={(key) => {
             if (key.startsWith("v-")) router.push(`/vendor/${key.slice(2)}`);
@@ -190,7 +227,20 @@ export default function TheLocalsScreen() {
             )}
           </View>
         </View>
-      </View>
+        {/* Collapse pill — visible only when map is fullscreen */}
+        {mapExpanded && (
+          <TouchableOpacity
+            style={[s.collapsePill, { bottom: bottomPad + 16 }]}
+            onPress={() => setMapExpanded(false)}
+            accessibilityLabel="Collapse map"
+          >
+            <Feather name="chevron-down" size={16} color={colors.foreground} />
+            <Text style={[s.collapsePillText, { color: colors.foreground }]}>
+              Show list
+            </Text>
+          </TouchableOpacity>
+        )}
+      </Animated.View>
 
       {/* List panel — scrolls below the map, no overlap */}
       <FlatList
@@ -318,7 +368,12 @@ export default function TheLocalsScreen() {
             progressViewOffset={mapHeight}
           />
         }
+        onScrollBeginDrag={handleScrollBeginDrag}
+        bounces
       />
+
+      {/* Welcome popup — shown once to new users */}
+      <OnboardingGate />
     </View>
   );
 }
@@ -445,6 +500,29 @@ const styles = (
   StyleSheet.create({
     container: { flex: 1, backgroundColor: colors.background },
     list: { flex: 1, backgroundColor: colors.background },
+    collapsePill: {
+      position: "absolute",
+      alignSelf: "center",
+      left: undefined,
+      right: undefined,
+      flexDirection: "row",
+      alignItems: "center",
+      gap: 6,
+      paddingVertical: 10,
+      paddingHorizontal: 20,
+      backgroundColor: colors.background,
+      borderRadius: 24,
+      shadowColor: "#000",
+      shadowOpacity: 0.15,
+      shadowRadius: 8,
+      shadowOffset: { width: 0, height: 2 },
+      elevation: 4,
+      zIndex: 20,
+    },
+    collapsePillText: {
+      fontFamily: "DMSans_600SemiBold",
+      fontSize: 14,
+    },
     listContent: {
       paddingBottom: bottomPad,
     },
