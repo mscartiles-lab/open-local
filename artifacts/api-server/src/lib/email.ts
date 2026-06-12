@@ -1,4 +1,3 @@
-import nodemailer, { type Transporter } from "nodemailer";
 import { logger } from "./logger";
 
 interface SendVerificationOptions {
@@ -12,108 +11,64 @@ export interface SendVerificationResult {
   devFallback: boolean;
 }
 
-const VERIFICATION_SUBJECT = "Your Open Local verification code";
+const EMAILJS_API = "https://api.emailjs.com/api/v1.0/email/send";
 
-function renderHtml(opts: SendVerificationOptions): string {
-  return `<!doctype html>
-<html>
-  <body style="margin:0;padding:0;background:#f3f1ea;font-family:Georgia,'Times New Roman',serif;color:#1d1d1b;">
-    <div style="max-width:520px;margin:0 auto;padding:32px 24px;">
-      <div style="background:#ffffff;border:1px solid #e5e2d6;padding:32px 28px;">
-        <p style="margin:0 0 4px;font-family:Helvetica,Arial,sans-serif;font-size:11px;letter-spacing:2px;text-transform:uppercase;color:#5b6a3f;font-weight:600;">Open Local</p>
-        <h1 style="margin:0 0 16px;font-size:24px;font-weight:700;color:#1d1d1b;">Verify your email</h1>
-        <p style="margin:0 0 24px;font-size:15px;line-height:1.55;color:#3a3a36;">Use this code to publish <strong>${escapeHtml(opts.businessName)}</strong> on Open Local. It expires in 10 minutes.</p>
-        <div style="background:#f3f1ea;border:1px solid #e5e2d6;padding:18px 0;text-align:center;font-family:'SFMono-Regular',Menlo,Consolas,monospace;font-size:34px;letter-spacing:10px;font-weight:700;color:#3d4a26;">${opts.code}</div>
-        <p style="margin:24px 0 0;font-size:13px;line-height:1.5;color:#7a7a72;">If you didn't request this, you can ignore this email — your address won't be added.</p>
-      </div>
-      <p style="margin:18px 0 0;font-family:Helvetica,Arial,sans-serif;font-size:11px;letter-spacing:1px;text-transform:uppercase;color:#7a7a72;text-align:center;">Open Local · Florida's local marketplace</p>
-    </div>
-  </body>
-</html>`;
-}
-
-function renderText(opts: SendVerificationOptions): string {
-  return `Open Local — Verify your email
-
-Use this code to publish ${opts.businessName} on Open Local: ${opts.code}
-
-This code expires in 10 minutes.
-
-If you didn't request this, you can ignore this email.`;
-}
-
-function escapeHtml(s: string): string {
-  return s
-    .replace(/&/g, "&amp;")
-    .replace(/</g, "&lt;")
-    .replace(/>/g, "&gt;")
-    .replace(/"/g, "&quot;")
-    .replace(/'/g, "&#39;");
-}
-
-// Lazy-initialized transporter. SMTP_HOST/PORT/USER/PASS are the canonical
-// generic SMTP env vars and work for any provider. For Gmail, set:
-//   SMTP_HOST=smtp.gmail.com
-//   SMTP_PORT=465
-//   SMTP_USER=<your gmail address>
-//   SMTP_PASS=<16-char app password from https://myaccount.google.com/apppasswords>
-//   MAIL_FROM=Open Local <hello@openlocalapp.com>   (defaults to SMTP_USER)
-let transporter: Transporter | null = null;
-
-function getTransporter(): Transporter | null {
-  if (transporter) return transporter;
-
-  // Resend SMTP relay — use when RESEND_API_KEY is set and no custom SMTP_HOST is configured
-  const resendKey = process.env.RESEND_API_KEY;
-  const host = process.env.SMTP_HOST ?? (resendKey ? "smtp.resend.com" : undefined);
-  const user = process.env.SMTP_USER ?? (resendKey ? "resend" : undefined);
-  const pass = process.env.SMTP_PASS ?? resendKey;
-
-  if (!host || !user || !pass) return null;
-  const port = Number(process.env.SMTP_PORT ?? 465);
-  transporter = nodemailer.createTransport({
-    host,
-    port,
-    // 465 → TLS from the start (Resend/Gmail), 587 → STARTTLS upgrade.
-    secure: port === 465,
-    auth: { user, pass },
-  });
-  return transporter;
-}
-
-function fromAddress(): string {
-  return (
-    process.env.MAIL_FROM ||
-    (process.env.SMTP_USER ? `Open Local <${process.env.SMTP_USER}>` : "Open Local <onboarding@resend.dev>")
+function emailJsConfigured(): boolean {
+  return !!(
+    process.env.EMAILJS_SERVICE_ID &&
+    process.env.EMAILJS_TEMPLATE_ID &&
+    process.env.EMAILJS_PUBLIC_KEY
   );
 }
 
 export async function sendVerificationEmail(
   opts: SendVerificationOptions,
 ): Promise<SendVerificationResult> {
-  const tx = getTransporter();
-  if (!tx) {
+  if (!emailJsConfigured()) {
     logger.warn(
-      { to: opts.to, code: opts.code },
-      "[email] SMTP not configured — verification code shown in dev fallback only",
+      { to: opts.to },
+      "[email] EmailJS not configured — verification code shown in dev fallback only",
     );
     return { sent: false, devFallback: true };
   }
 
+  const payload: Record<string, unknown> = {
+    service_id: process.env.EMAILJS_SERVICE_ID,
+    template_id: process.env.EMAILJS_TEMPLATE_ID,
+    user_id: process.env.EMAILJS_PUBLIC_KEY,
+    template_params: {
+      to_email: opts.to,
+      to_name: opts.businessName,
+      code: opts.code,
+    },
+  };
+
+  if (process.env.EMAILJS_PRIVATE_KEY) {
+    payload.accessToken = process.env.EMAILJS_PRIVATE_KEY;
+  }
+
   try {
-    const info = await tx.sendMail({
-      from: fromAddress(),
-      to: opts.to,
-      subject: VERIFICATION_SUBJECT,
-      html: renderHtml(opts),
-      text: renderText(opts),
+    const resp = await fetch(EMAILJS_API, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(payload),
     });
-    logger.info({ to: opts.to, messageId: info.messageId }, "[email] sent");
+
+    if (!resp.ok) {
+      const body = await resp.text().catch(() => "");
+      logger.warn(
+        { to: opts.to, status: resp.status, body },
+        "[email] EmailJS send failed — falling back to dev mode",
+      );
+      return { sent: false, devFallback: true };
+    }
+
+    logger.info({ to: opts.to }, "[email] sent via EmailJS");
     return { sent: true, devFallback: false };
   } catch (err) {
     logger.warn(
       { err, to: opts.to },
-      "[email] SMTP send failed — falling back to dev mode (domain not verified or sandbox restriction)",
+      "[email] EmailJS request failed — falling back to dev mode",
     );
     return { sent: false, devFallback: true };
   }
