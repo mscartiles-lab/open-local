@@ -66,9 +66,8 @@ export default function TheLocalsScreen() {
   const topPad = Platform.OS === "web" ? 67 : insets.top;
   const bottomPad = Platform.OS === "web" ? 34 : insets.bottom + 60;
   const screenH = Dimensions.get("window").height;
-  // How much of the map stays visible before the floating list panel begins.
-  // 58% keeps the full map interactive above the fold; user scrolls down for the list.
-  const mapPeek = Math.round(screenH * 0.58);
+  // Map takes the top 50% of the screen; list scrolls in the bottom half.
+  const mapHeight = Math.max(Math.round(screenH * 0.50), 280);
 
   const pins: MapPin[] = useMemo(() => {
     const vendorPins = (vendors ?? [])
@@ -142,12 +141,12 @@ export default function TheLocalsScreen() {
 
   return (
     <View style={s.container}>
-      {/* Full-screen map background */}
-      <View style={s.mapLayer}>
+      {/* Map — fixed height, fully interactive */}
+      <View style={{ height: mapHeight }}>
         <MiniMap
           pins={pins}
           radiusMiles={mapRadius}
-          height={screenH}
+          height={mapHeight}
           emptyHint="No mapped locations yet"
           fullBleed
           showControls
@@ -157,44 +156,43 @@ export default function TheLocalsScreen() {
           onUserLocationChange={setUserLocation}
           onRadiusChange={setMapRadius}
         />
+        {/* Brand + profile bar floating over the map */}
+        <View style={[s.floatHeader, { top: topPad + 8 }]}>
+          <View style={s.brandPill}>
+            <Text style={s.wordmark}>Vendors</Text>
+            <Text style={s.tagline}>Local producers & makers near you</Text>
+          </View>
+          <View style={s.headerActions}>
+            <TouchableOpacity
+              style={s.gearBtn}
+              onPress={() => router.push("/settings")}
+              accessibilityLabel="Settings"
+            >
+              <Feather name="settings" size={18} color={colors.foreground} />
+            </TouchableOpacity>
+            {user ? (
+              <TouchableOpacity
+                onLongPress={logout}
+                onPress={() => {
+                  if (user.role === "vendor") router.push("/(auth)/tiers");
+                }}
+                accessibilityLabel="Your profile"
+              >
+                <Avatar seed={user.avatarSeed} style={user.avatarStyle} size={44} />
+              </TouchableOpacity>
+            ) : (
+              <TouchableOpacity
+                onPress={() => router.push("/(auth)/signup")}
+                style={s.signInBtn}
+              >
+                <Text style={s.signInText}>Sign in</Text>
+              </TouchableOpacity>
+            )}
+          </View>
+        </View>
       </View>
 
-      {/* Floating brand + profile bar over the map */}
-      <View style={[s.floatHeader, { top: topPad + 8 }]}>
-        <View style={s.brandPill}>
-          <Text style={s.wordmark}>Vendors</Text>
-          <Text style={s.tagline}>Local producers & makers near you</Text>
-        </View>
-        <View style={s.headerActions}>
-          <TouchableOpacity
-            style={s.gearBtn}
-            onPress={() => router.push("/settings")}
-            accessibilityLabel="Settings"
-          >
-            <Feather name="settings" size={18} color={colors.foreground} />
-          </TouchableOpacity>
-          {user ? (
-            <TouchableOpacity
-              onLongPress={logout}
-              onPress={() => {
-                if (user.role === "vendor") router.push("/(auth)/tiers");
-              }}
-              accessibilityLabel="Your profile"
-            >
-              <Avatar seed={user.avatarSeed} style={user.avatarStyle} size={44} />
-            </TouchableOpacity>
-          ) : (
-            <TouchableOpacity
-              onPress={() => router.push("/(auth)/signup")}
-              style={s.signInBtn}
-            >
-              <Text style={s.signInText}>Sign in</Text>
-            </TouchableOpacity>
-          )}
-        </View>
-      </View>
-
-      {/* Floating, scrollable list panel above the map */}
+      {/* List panel — scrolls below the map, no overlap */}
       <FlatList
         data={isLoading || isError ? [] : inRadiusItems}
         keyExtractor={(item) => `${item.kind}-${item.data.id}`}
@@ -223,8 +221,6 @@ export default function TheLocalsScreen() {
         showsVerticalScrollIndicator={false}
         ListHeaderComponent={
           <View>
-            {/* Transparent spacer keeps the map visible & tappable */}
-            <View style={{ height: mapPeek, pointerEvents: "none" }} />
             <View style={s.panelHead}>
               <View style={s.grabber} />
               <View style={s.segmentRow}>
@@ -319,7 +315,7 @@ export default function TheLocalsScreen() {
             refreshing={refreshing}
             onRefresh={onRefresh}
             tintColor={colors.primary}
-            progressViewOffset={mapPeek}
+            progressViewOffset={mapHeight}
           />
         }
       />
@@ -448,8 +444,7 @@ const styles = (
 ) =>
   StyleSheet.create({
     container: { flex: 1, backgroundColor: colors.background },
-    mapLayer: { ...StyleSheet.absoluteFillObject, pointerEvents: "box-none" },
-    list: { flex: 1, backgroundColor: "transparent" },
+    list: { flex: 1, backgroundColor: colors.background },
     listContent: {
       paddingBottom: bottomPad,
     },
