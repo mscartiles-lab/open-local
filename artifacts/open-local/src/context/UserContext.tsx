@@ -7,7 +7,7 @@ import {
   type ReactNode,
 } from "react";
 
-export type UserRole = "vendor" | "shopper";
+export type UserRole = "vendor" | "shopper" | "admin";
 export type AvatarStyle =
   | "thumbs"
   | "adventurer"

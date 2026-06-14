@@ -14,6 +14,7 @@ import Submit from "@/pages/submit";
 import Dashboard from "@/pages/dashboard";
 import BusinessDashboard from "@/pages/business-dashboard";
 import Admin from "@/pages/admin";
+import RequireAdmin from "@/components/RequireAdmin";
 import Favorites from "@/pages/favorites";
 import PinYourBusiness from "@/pages/pin-your-business";
 import Billing from "@/pages/billing";
@@ -50,7 +51,7 @@ function Router() {
       <Route path="/submit" component={Submit} />
       <Route path="/dashboard/:slug" component={Dashboard} />
       <Route path="/business-dashboard/:id" component={BusinessDashboard} />
-      <Route path="/admin" component={Admin} />
+      <Route path="/admin" component={() => <RequireAdmin><Admin /></RequireAdmin>} />
       <Route path="/pin-your-business" component={PinYourBusiness} />
       <Route path="/billing" component={Billing} />
       <Route path="/terms" component={Terms} />
