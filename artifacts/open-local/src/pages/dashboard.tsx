@@ -50,6 +50,7 @@ import { cn } from "@/lib/utils";
 import VisitRequestsPanel from "@/components/VisitRequestsPanel";
 import AnalyticsPanel from "@/components/AnalyticsPanel";
 import SupportRequestForm from "@/components/SupportRequestForm";
+import AdditionalLocationsPanel from "@/components/AdditionalLocationsPanel";
 
 type QuickType = "batch_drop" | "surplus" | "regular";
 
@@ -216,6 +217,12 @@ export default function Dashboard() {
       <div className="container mx-auto max-w-6xl px-4 py-10 space-y-8">
         <AnalyticsPanel kind="vendor" id={vendor.id} />
         <VisitRequestsPanel vendorId={vendor.id} />
+        <AdditionalLocationsPanel
+          vendor={vendor}
+          onUpdated={() =>
+            queryClient.invalidateQueries({ queryKey: ["vendor", slug] })
+          }
+        />
         <section className="mt-10 rounded-xl border border-border bg-card p-6">
           <SupportRequestForm />
         </section>
