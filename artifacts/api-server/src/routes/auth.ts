@@ -2,7 +2,7 @@ import { Router, type IRouter, type Request, type Response } from "express";
 import { eq, and, gt } from "drizzle-orm";
 import { z } from "zod";
 import { db, usersTable, sessionsTable, signupVerificationsTable } from "@workspace/db";
-import { generateVerificationCode, sendVerificationEmail } from "../lib/email";
+import { generateVerificationCode, sendVerificationEmail, sendDirectEmail } from "../lib/email";
 import { logger } from "../lib/logger";
 import { emitEvent } from "../lib/webhooks";
 import { isReplitWorkspaceRequest } from "../lib/requireAdmin";
@@ -295,6 +295,19 @@ router.post("/auth/signup/verify", async (req: Request, res: Response): Promise<
     role: user!.role,
     state: user!.state,
   });
+
+  // Send shopper welcome email directly via EmailJS. Vendors get their welcome
+  // via fireWelcome() after the vendor profile is created (not at user signup).
+  if (user!.role === "shopper") {
+    const domain = process.env.REPLIT_DOMAINS?.split(",")[0];
+    const appUrl = domain ? `https://${domain}` : "https://openlocalapp.com";
+    void sendDirectEmail({
+      to: user!.email,
+      toName: user!.username,
+      subject: "Welcome to Open Local!",
+      message: `Hi ${user!.username},\n\nWelcome to Open Local — the marketplace connecting neighbors with local producers, farms, bakeries, and makers.\n\nHere's what you can do:\n• Browse local vendors near you\n• Save your favorite producers\n• Grab fresh batch drops and market surplus before they sell out\n• Pre-order for upcoming market pickups\n\nExplore the marketplace:\n${appUrl}\n\nWe're so glad you're here.\n\nThe Open Local team`,
+    }).catch((err) => logger.error({ err }, "shopper welcome email failed"));
+  }
 
   res.status(201).json({
     user: userPublic(user!),
