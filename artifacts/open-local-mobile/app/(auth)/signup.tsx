@@ -169,9 +169,10 @@ export default function SignupScreen() {
         body: JSON.stringify({ verificationId, code: code.trim() }),
       });
       await setSession(res.sessionToken, res.user);
-      router.replace("/");
       if (res.user.role === "vendor") {
-        setTimeout(() => router.push("/(auth)/tiers"), 300);
+        router.replace("/(auth)/tiers");
+      } else {
+        router.replace("/");
       }
     } catch (e) {
       setError(e instanceof Error ? e.message : "Invalid code");
