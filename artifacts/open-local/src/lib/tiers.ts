@@ -44,6 +44,7 @@ export const TIERS: Record<TierId, TierDef> = {
     tagline: "Maximum visibility and promotional power.",
     features: [
       "Everything in Standard",
+      "Up to 5 map pins across multiple locations",
       "3 listings, products, batch drops, or pre-orders featured at the top of the feed",
       "Featured on the homepage",
       "Featured in your category",

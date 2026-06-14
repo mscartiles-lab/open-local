@@ -6,9 +6,9 @@
  * OpenAPI spec version: 0.1.0
  */
 
-export type ListEventsParams = {
-  category?: string;
-  city?: string;
-  search?: string;
-  upcoming?: boolean;
+export type VendorInputAdditionalLocationsItem = {
+  lat: number;
+  lng: number;
+  /** @nullable */
+  label?: string | null;
 };

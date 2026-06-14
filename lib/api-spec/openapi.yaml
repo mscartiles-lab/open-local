@@ -707,6 +707,15 @@ components:
         marketsText: { type: ["string", "null"] }
         latitude: { type: ["number", "null"] }
         longitude: { type: ["number", "null"] }
+        additionalLocations:
+          type: ["array", "null"]
+          items:
+            type: object
+            properties:
+              lat: { type: number }
+              lng: { type: number }
+              label: { type: ["string", "null"] }
+            required: [lat, lng]
         createdAt: { type: string, format: date-time }
         onboardingEmailsSent:
           type: array
@@ -757,6 +766,15 @@ components:
         marketsText: { type: ["string", "null"] }
         latitude: { type: ["number", "null"] }
         longitude: { type: ["number", "null"] }
+        additionalLocations:
+          type: ["array", "null"]
+          items:
+            type: object
+            properties:
+              lat: { type: number }
+              lng: { type: number }
+              label: { type: ["string", "null"] }
+            required: [lat, lng]
       required:
         - name
         - slug
@@ -790,6 +808,15 @@ components:
         marketsText: { type: ["string", "null"] }
         latitude: { type: ["number", "null"] }
         longitude: { type: ["number", "null"] }
+        additionalLocations:
+          type: ["array", "null"]
+          items:
+            type: object
+            properties:
+              lat: { type: number }
+              lng: { type: number }
+              label: { type: ["string", "null"] }
+            required: [lat, lng]
 
     ListingType:
       type: string

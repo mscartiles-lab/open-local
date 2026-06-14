@@ -29,6 +29,12 @@ export function tierIncludedFeaturedCount(tier: TierId | null | undefined): numb
   return tier === "premium" ? 3 : 0;
 }
 
+export function tierAllowsMultiplePins(tier: TierId | null | undefined): boolean {
+  return tier === "premium";
+}
+
+export const TIER_MAX_ADDITIONAL_PINS = 5;
+
 // À-la-carte feature boost (any vendor, any tier — purchased one-off)
 export const FEATURE_BOOST_PRICE_CENTS = 500;
 export const FEATURE_BOOST_DURATION_DAYS = 14;

@@ -29,6 +29,9 @@ export const vendorsTable = pgTable("vendors", {
   marketsText: text("markets_text"),
   latitude: doublePrecision("latitude"),
   longitude: doublePrecision("longitude"),
+  additionalLocations: jsonb("additional_locations")
+    .$type<Array<{ lat: number; lng: number; label?: string | null }>>()
+    .default([]),
   createdAt: timestamp("created_at", { withTimezone: true })
     .notNull()
     .defaultNow(),

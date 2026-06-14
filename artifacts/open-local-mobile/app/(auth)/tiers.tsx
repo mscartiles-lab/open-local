@@ -1,6 +1,6 @@
 import { Feather } from "@expo/vector-icons";
 import { router } from "expo-router";
-import React from "react";
+import React, { useEffect, useState } from "react";
 import {
   Linking,
   Pressable,
@@ -12,10 +12,20 @@ import {
 import { SafeAreaView } from "react-native-safe-area-context";
 
 import { useColors } from "@/hooks/useColors";
+import { apiFetch } from "@/lib/api";
 import { TIERS, TIER_ORDER } from "@/lib/tiers";
 
 export default function TiersScreen() {
   const colors = useColors();
+  const [trialDays, setTrialDays] = useState<number>(30);
+
+  useEffect(() => {
+    apiFetch<{ trialDays: number }>("/api/billing/vendor/status")
+      .then((data) => {
+        if (typeof data.trialDays === "number") setTrialDays(data.trialDays);
+      })
+      .catch(() => {});
+  }, []);
 
   const openBillingOnWeb = async () => {
     const url = `https://${process.env.EXPO_PUBLIC_DOMAIN}/billing`;
@@ -49,7 +59,7 @@ export default function TiersScreen() {
         >
           <Feather name="gift" size={18} color={colors.primary} />
           <Text style={[styles.trialText, { color: colors.foreground }]}>
-            Start with a free 30-day trial. Cancel anytime.
+            Start with a free {trialDays}-day trial. Cancel anytime.
           </Text>
         </View>
 
