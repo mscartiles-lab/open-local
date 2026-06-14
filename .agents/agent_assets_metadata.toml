@@ -1,5 +1,4 @@
 uploads = []
-outputs = []
 
 [[generated]]
 id = "fn1EDmYBomqpHUI2iy_0C"
@@ -132,3 +131,9 @@ id = "iibpWqQqS8EmfK9ZnQhFT"
 uri = "file://artifacts/open-local/public/wardrobe/galaxy-hair.png"
 type = "image"
 title = "generated_image"
+
+[[outputs]]
+id = "R4div1EbW0_Q7D279oyr4"
+uri = "file://artifacts/open-local-mobile/assets/images/icon.png"
+type = "image"
+title = "Open Local App Icon (1024×1024)"
