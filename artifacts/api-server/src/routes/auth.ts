@@ -5,7 +5,7 @@ import { db, usersTable, sessionsTable, signupVerificationsTable } from "@worksp
 import { generateVerificationCode, sendVerificationEmail, sendDirectEmail } from "../lib/email";
 import { logger } from "../lib/logger";
 import { emitEvent } from "../lib/webhooks";
-import { isReplitWorkspaceRequest } from "../lib/requireAdmin";
+import { isAdminEmail, isReplitWorkspaceRequest } from "../lib/requireAdmin";
 
 const router: IRouter = Router();
 
@@ -58,13 +58,14 @@ function generateToken(): string {
 }
 
 function userPublic(user: typeof usersTable.$inferSelect) {
+  const effectiveRole = (user.role === "admin" || isAdminEmail(user.email)) ? "admin" : user.role;
   return {
     id: user.id,
     email: user.email,
     username: user.username,
     avatarSeed: user.avatarSeed,
     avatarStyle: user.avatarStyle,
-    role: user.role,
+    role: effectiveRole,
     zip: user.zip,
     state: user.state,
     tier: user.tier ?? null,
