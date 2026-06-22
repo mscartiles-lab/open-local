@@ -11,6 +11,7 @@ import {
   InputOTPSlot,
 } from "@/components/ui/input-otp";
 import { useUser, type UserRole, type AvatarStyle, avatarUrl } from "@/context/UserContext";
+import { LogIn } from "lucide-react";
 
 const AVATAR_STYLES: { style: AvatarStyle; label: string }[] = [
   { style: "thumbs", label: "Thumbs" },
@@ -29,7 +30,7 @@ const AVATAR_STYLES: { style: AvatarStyle; label: string }[] = [
   { style: "croodles", label: "Doodle" },
 ];
 
-type Step = "role" | "profile" | "avatar" | "email" | "verify" | "welcome";
+type Step = "role" | "profile" | "avatar" | "email" | "verify" | "welcome" | "login-email" | "login-verify";
 
 interface FormState {
   role: UserRole | null;
@@ -48,7 +49,7 @@ const slideVariants = {
 };
 
 export default function OnboardingModal() {
-  const { showOnboarding, closeOnboarding, login } = useUser();
+  const { showOnboarding, loginMode, closeOnboarding, openOnboarding, login } = useUser();
   const [step, setStep] = useState<Step>("role");
   const [dir, setDir] = useState(1);
   const [form, setForm] = useState<FormState>({
@@ -237,7 +238,14 @@ export default function OnboardingModal() {
   const avatarSeed = form.username || "openlocal";
 
   useEffect(() => {
-    if (!showOnboarding) {
+    if (showOnboarding) {
+      setStep(loginMode ? "login-email" : "role");
+      setOtp("");
+      setError(null);
+      setLocationError(null);
+      setLocationLoading(false);
+      setForm({ role: null, username: "", zip: "", avatarStyle: "thumbs", email: "", verificationId: null, devCode: null });
+    } else {
       setStep("role");
       setOtp("");
       setError(null);
@@ -245,13 +253,65 @@ export default function OnboardingModal() {
       setLocationLoading(false);
       setForm({ role: null, username: "", zip: "", avatarStyle: "thumbs", email: "", verificationId: null, devCode: null });
     }
-  }, [showOnboarding]);
+  }, [showOnboarding, loginMode]);
+
+  const handleLoginSendCode = async () => {
+    if (!form.email.match(/^[^\s@]+@[^\s@]+\.[^\s@]+$/)) {
+      setError("Please enter a valid email address.");
+      return;
+    }
+    setLoading(true);
+    setError(null);
+    try {
+      const r = await fetch("/api/auth/login/start", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email: form.email }),
+      });
+      const data = await r.json() as { verificationId?: number; devCode?: string | null; error?: string };
+      if (!r.ok) {
+        setError(data.error || "Something went wrong.");
+        return;
+      }
+      setForm((f) => ({ ...f, verificationId: data.verificationId!, devCode: data.devCode ?? null }));
+      go("login-verify");
+    } catch {
+      setError("Network error. Please try again.");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleLoginVerify = async () => {
+    if (otp.length !== 6) { setError("Enter the 6-digit code."); return; }
+    setLoading(true);
+    setError(null);
+    try {
+      const r = await fetch("/api/auth/login/verify", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ verificationId: form.verificationId, code: otp }),
+      });
+      const data = await r.json() as { user?: Record<string, unknown>; sessionToken?: string; error?: string };
+      if (!r.ok) {
+        setError(data.error || "Verification failed.");
+        return;
+      }
+      login(data.sessionToken!, data.user as never);
+      closeOnboarding();
+    } catch {
+      setError("Network error. Please try again.");
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const STEP_ORDER: Step[] = ["role", "profile", "avatar", "email", "verify", "welcome"];
   const stepIndex = STEP_ORDER.indexOf(step);
-  const progress = step === "welcome" ? 100 : (stepIndex / (STEP_ORDER.length - 1)) * 100;
+  const isLoginStep = step === "login-email" || step === "login-verify";
+  const progress = step === "welcome" ? 100 : isLoginStep ? 0 : (stepIndex / (STEP_ORDER.length - 1)) * 100;
 
-  const canGoBack = step !== "role" && step !== "welcome";
+  const canGoBack = !isLoginStep && step !== "role" && step !== "welcome";
   const backStep: Record<Step, Step> = {
     role: "role",
     profile: "role",
@@ -259,6 +319,8 @@ export default function OnboardingModal() {
     email: "avatar",
     verify: "email",
     welcome: "welcome",
+    "login-email": "login-email",
+    "login-verify": "login-email",
   };
 
   return (
@@ -317,6 +379,96 @@ export default function OnboardingModal() {
                       }}
                     />
                   </div>
+                  <p className="text-center text-sm text-muted-foreground mt-6">
+                    Already have an account?{" "}
+                    <button
+                      onClick={() => go("login-email")}
+                      className="text-primary font-semibold hover:underline inline-flex items-center gap-1"
+                    >
+                      <LogIn size={13} /> Log in
+                    </button>
+                  </p>
+                </div>
+              </StepWrapper>
+            )}
+
+            {step === "login-email" && (
+              <StepWrapper key="login-email" custom={dir}>
+                <div className="px-8 pt-10 pb-8">
+                  <div className="text-center mb-6">
+                    <span className="inline-block font-serif text-4xl mb-3">👋</span>
+                    <h2 className="font-serif font-bold text-2xl text-foreground mb-1">Welcome back</h2>
+                    <p className="text-muted-foreground text-sm">We'll send a code to your email to sign you in.</p>
+                  </div>
+                  <div>
+                    <Label htmlFor="login-email" className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Email address</Label>
+                    <Input
+                      id="login-email"
+                      type="email"
+                      value={form.email}
+                      onChange={(e) => setForm((f) => ({ ...f, email: e.target.value }))}
+                      placeholder="you@example.com"
+                      className="mt-1.5"
+                      autoFocus
+                      onKeyDown={(e) => { if (e.key === "Enter") handleLoginSendCode(); }}
+                    />
+                  </div>
+                  {error && <p className="text-red-500 text-sm mt-3">{error}</p>}
+                  <Button
+                    className="w-full mt-6 bg-primary text-primary-foreground hover:bg-primary/90"
+                    onClick={handleLoginSendCode}
+                    disabled={loading || !form.email}
+                  >
+                    {loading ? "Sending…" : "Send login code"} <ArrowRight size={16} className="ml-1" />
+                  </Button>
+                  <p className="text-center text-sm text-muted-foreground mt-4">
+                    Don't have an account?{" "}
+                    <button
+                      onClick={() => { openOnboarding(); }}
+                      className="text-primary font-semibold hover:underline"
+                    >
+                      Join Open Local
+                    </button>
+                  </p>
+                </div>
+              </StepWrapper>
+            )}
+
+            {step === "login-verify" && (
+              <StepWrapper key="login-verify" custom={dir}>
+                <div className="px-8 pt-10 pb-8">
+                  <h2 className="font-serif font-bold text-xl text-foreground mb-1">Check your email</h2>
+                  <p className="text-muted-foreground text-sm mb-2">
+                    We sent a 6-digit code to <strong className="text-foreground">{form.email}</strong>.
+                  </p>
+                  {form.devCode && (
+                    <div className="mb-4 bg-amber-50 border border-amber-200 rounded-lg px-3 py-2 text-xs text-amber-800">
+                      Dev mode — your code is <strong className="font-mono tracking-widest">{form.devCode}</strong>
+                    </div>
+                  )}
+                  <div className="flex justify-center my-6">
+                    <InputOTP maxLength={6} value={otp} onChange={setOtp} autoFocus>
+                      <InputOTPGroup>
+                        {[0, 1, 2, 3, 4, 5].map((i) => (
+                          <InputOTPSlot key={i} index={i} className="h-12 w-11 text-lg" />
+                        ))}
+                      </InputOTPGroup>
+                    </InputOTP>
+                  </div>
+                  {error && <p className="text-red-500 text-sm mb-3 text-center">{error}</p>}
+                  <Button
+                    className="w-full bg-primary text-primary-foreground hover:bg-primary/90"
+                    onClick={handleLoginVerify}
+                    disabled={loading || otp.length !== 6}
+                  >
+                    {loading ? "Signing in…" : "Sign in"} <ArrowRight size={16} className="ml-1" />
+                  </Button>
+                  <button
+                    onClick={() => { setOtp(""); setError(null); go("login-email", -1); }}
+                    className="flex items-center gap-1 mx-auto mt-4 text-xs text-muted-foreground hover:text-foreground transition-colors"
+                  >
+                    <RefreshCw size={12} /> Use a different email
+                  </button>
                 </div>
               </StepWrapper>
             )}

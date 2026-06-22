@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { Link, useLocation } from "wouter";
-import { Store, ShoppingBag, PlusCircle, Settings, Menu, Heart, HandHelping, Percent, CalendarDays, LogOut, User, CreditCard, Sparkles, Search as SearchIcon, LifeBuoy } from "lucide-react";
+import { Store, ShoppingBag, PlusCircle, Settings, Menu, Heart, HandHelping, Percent, CalendarDays, LogOut, LogIn, User, CreditCard, Sparkles, Search as SearchIcon, LifeBuoy } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 import {
@@ -15,7 +15,7 @@ import Avatar from "@/components/Avatar";
 
 export function Navbar() {
   const [location, setLocation] = useLocation();
-  const { user, isLoading, openOnboarding, logout } = useUser();
+  const { user, isLoading, openOnboarding, openLogin, logout } = useUser();
   const [searchDraft, setSearchDraft] = useState("");
 
   const submitSearch = (e: React.FormEvent) => {
@@ -82,12 +82,20 @@ export function Navbar() {
       );
     }
     return (
-      <button
-        onClick={openOnboarding}
-        className="flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-semibold bg-primary text-primary-foreground hover:bg-primary/90 transition-all shadow-sm"
-      >
-        <User size={14} /> Join
-      </button>
+      <div className="flex items-center gap-2">
+        <button
+          onClick={openLogin}
+          className="flex items-center gap-1.5 px-3 py-2 rounded-xl text-sm font-medium text-muted-foreground hover:text-foreground hover:bg-secondary transition-all"
+        >
+          Log in
+        </button>
+        <button
+          onClick={openOnboarding}
+          className="flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-semibold bg-primary text-primary-foreground hover:bg-primary/90 transition-all shadow-sm"
+        >
+          <User size={14} /> Join
+        </button>
+      </div>
     );
   };
 
@@ -239,12 +247,20 @@ export function Navbar() {
                     <LogOut className="w-5 h-5 shrink-0" /> Sign out
                   </button>
                 ) : (
-                  <button
-                    onClick={openOnboarding}
-                    className="flex items-center gap-4 px-4 py-3.5 rounded-xl text-base font-semibold text-primary hover:bg-secondary transition-all"
-                  >
-                    <User className="w-5 h-5 shrink-0" /> Join Open Local
-                  </button>
+                  <>
+                    <button
+                      onClick={openLogin}
+                      className="flex items-center gap-4 px-4 py-3.5 rounded-xl text-base font-semibold text-foreground hover:bg-secondary transition-all"
+                    >
+                      <LogIn className="w-5 h-5 shrink-0" /> Log in
+                    </button>
+                    <button
+                      onClick={openOnboarding}
+                      className="flex items-center gap-4 px-4 py-3.5 rounded-xl text-base font-semibold text-primary hover:bg-secondary transition-all"
+                    >
+                      <User className="w-5 h-5 shrink-0" /> Join Open Local
+                    </button>
+                  </>
                 )}
               </nav>
             </SheetContent>

@@ -316,6 +316,150 @@ router.post("/auth/signup/verify", async (req: Request, res: Response): Promise<
   });
 });
 
+// ─── Login (OTP for existing users) ──────────────────────────────────────────
+
+const LoginStartBody = z.object({
+  email: z.string().email(),
+});
+
+const LoginVerifyBody = z.object({
+  verificationId: z.number().int().positive(),
+  code: z.string().regex(/^\d{6}$/),
+});
+
+router.post("/auth/login/start", async (req: Request, res: Response): Promise<void> => {
+  const parsed = LoginStartBody.safeParse(req.body);
+  if (!parsed.success) {
+    res.status(400).json({ error: "Please enter a valid email address." });
+    return;
+  }
+
+  const normalizedEmail = parsed.data.email.toLowerCase();
+
+  const [user] = await db
+    .select()
+    .from(usersTable)
+    .where(eq(usersTable.email, normalizedEmail));
+
+  if (!user) {
+    res.status(404).json({ error: "No account found with that email address." });
+    return;
+  }
+
+  const code = generateVerificationCode();
+  const expiresAt = new Date(Date.now() + VERIFICATION_TTL_MS);
+
+  const [row] = await db
+    .insert(signupVerificationsTable)
+    .values({
+      email: normalizedEmail,
+      code,
+      payload: { type: "login", userId: user.id },
+      expiresAt,
+    })
+    .returning({ id: signupVerificationsTable.id });
+
+  let devFallback = false;
+  try {
+    const result = await sendVerificationEmail({
+      to: normalizedEmail,
+      code,
+      businessName: user.username,
+    });
+    devFallback = result.devFallback;
+  } catch (err) {
+    logger.error({ err }, "[login] failed to send verification email");
+    res.status(502).json({ error: "Couldn't send the login code. Please try again." });
+    return;
+  }
+
+  const adminViewer = devFallback && isReplitWorkspaceRequest(req);
+  res.json({
+    verificationId: row!.id,
+    email: normalizedEmail,
+    expiresAt: expiresAt.toISOString(),
+    devFallback,
+    devCode: devFallback && adminViewer ? code : null,
+  });
+});
+
+router.post("/auth/login/verify", async (req: Request, res: Response): Promise<void> => {
+  const parsed = LoginVerifyBody.safeParse(req.body);
+  if (!parsed.success) {
+    res.status(400).json({ error: "Invalid request" });
+    return;
+  }
+
+  const [existing] = await db
+    .select()
+    .from(signupVerificationsTable)
+    .where(eq(signupVerificationsTable.id, parsed.data.verificationId));
+
+  if (!existing) {
+    res.status(404).json({ error: "Login request not found." });
+    return;
+  }
+  if (existing.consumed) {
+    res.status(400).json({ error: "This code has already been used." });
+    return;
+  }
+  if (new Date() > existing.expiresAt) {
+    res.status(400).json({ error: "This code has expired. Please request a new one." });
+    return;
+  }
+  if ((existing.attempts ?? 0) >= MAX_ATTEMPTS) {
+    res.status(400).json({ error: "Too many attempts. Please request a new code." });
+    return;
+  }
+
+  const pl = existing.payload as { type?: string; userId?: number };
+  if (pl?.type !== "login" || !pl?.userId) {
+    res.status(400).json({ error: "Invalid login request." });
+    return;
+  }
+
+  if (existing.code !== parsed.data.code) {
+    await db
+      .update(signupVerificationsTable)
+      .set({ attempts: (existing.attempts ?? 0) + 1 })
+      .where(eq(signupVerificationsTable.id, existing.id));
+    res.status(400).json({ error: "Incorrect code. Please try again." });
+    return;
+  }
+
+  await db
+    .update(signupVerificationsTable)
+    .set({ consumed: true })
+    .where(eq(signupVerificationsTable.id, existing.id));
+
+  const [user] = await db
+    .select()
+    .from(usersTable)
+    .where(eq(usersTable.id, pl.userId));
+
+  if (!user) {
+    res.status(404).json({ error: "Account not found." });
+    return;
+  }
+
+  const token = generateToken();
+  const sessionExpiresAt = new Date(Date.now() + SESSION_TTL_MS);
+
+  await db.insert(sessionsTable).values({
+    userId: user.id,
+    token,
+    expiresAt: sessionExpiresAt,
+  });
+
+  res.json({
+    user: userPublic(user),
+    sessionToken: token,
+    sessionExpiresAt: sessionExpiresAt.toISOString(),
+  });
+});
+
+// ─── Me / Logout ─────────────────────────────────────────────────────────────
+
 router.get("/auth/me", async (req: Request, res: Response): Promise<void> => {
   const authHeader = req.headers.authorization;
   if (!authHeader?.startsWith("Bearer ")) {
