@@ -43,6 +43,14 @@ function RootLayoutNav() {
         name="settings"
         options={{ headerShown: false, presentation: "modal" }}
       />
+      <Stack.Screen
+        name="about"
+        options={{ headerShown: false, presentation: "card" }}
+      />
+      <Stack.Screen
+        name="compliance"
+        options={{ headerShown: false, presentation: "card" }}
+      />
     </Stack>
   );
 }
