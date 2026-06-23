@@ -37,6 +37,10 @@ function NativeTabLayout() {
         <Icon sf={{ default: "heart", selected: "heart.fill" }} />
         <Label>Favorites</Label>
       </NativeTabs.Trigger>
+      <NativeTabs.Trigger name="more">
+        <Icon sf={{ default: "doc.text", selected: "doc.text.fill" }} />
+        <Label>Resources</Label>
+      </NativeTabs.Trigger>
     </NativeTabs>
   );
 }
@@ -150,6 +154,18 @@ function ClassicTabLayout() {
               <SymbolView name="heart" tintColor={color} size={22} />
             ) : (
               <Feather name="heart" size={22} color={color} />
+            ),
+        }}
+      />
+      <Tabs.Screen
+        name="more"
+        options={{
+          title: "Resources",
+          tabBarIcon: ({ color }) =>
+            isIOS ? (
+              <SymbolView name="doc.text" tintColor={color} size={22} />
+            ) : (
+              <Feather name="file-text" size={22} color={color} />
             ),
         }}
       />

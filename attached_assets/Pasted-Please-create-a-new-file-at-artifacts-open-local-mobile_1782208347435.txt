@@ -1,0 +1,15 @@
+Please create a new file at artifacts/open-local-mobile/app/(tabs)/more.tsx with the following content, and also update artifacts/open-local-mobile/app/(tabs)/_layout.tsx to add a new "Resources" tab with a file-text icon that points to the more screen.
+The more.tsx screen should be a scrollable public reference page called "Resources" that shows Florida vendor compliance information. It should match the existing app style (DMSans fonts, colors from useColors hook, same card/icon patterns as settings.tsx).
+Include these sections as expandable accordion cards:
+
+Florida Cottage Food Law (§500.80) — no permit needed, $250K cap, shelf-stable only, can sell online/at markets/from home, no wholesale, home kitchen only, Florida sales only
+Allowed cottage foods — baked goods, jams/jellies (high-acid fruit), honey, syrups, roasted nuts, granola, candy, fudge, dry mixes, pasta, nut butters, dried fruits
+Prohibited cottage foods — anything requiring refrigeration (TCS foods), meat/poultry/seafood, cut fruits/vegetables, raw sprouts, home-canned goods, dairy as standalone, pet food
+Required product labeling — seller name and home address, product name, ingredient list by weight, net weight/volume, allergen warnings, required statement in 10pt contrasting font: "Made in a cottage food operation that is not subject to Florida's food safety regulations."
+FDACS permit — for pre-packaged non-cottage foods, refrigerated/frozen products, wholesale/retail businesses, mobile vendors; apply at foodpermit.fdacs.gov
+DBPR license — for ready-to-eat on-site foods, food trucks, hot food/smoothies/juice; fees: 1-3 days ~$91, 4-30 days ~$105, annual ~$456; apply at myfloridalicense.com
+Universal requirements — Florida sales tax registration (850-488-6800), local business license/occupational permit (check city/county), general liability insurance, DBA registration at sunbiz.org, event permits
+Quick reference table — Home baker → None (Cottage Food exempt) · Packaged honey/granola → None · Farm with refrigerated items → FDACS · Food truck/hot food → DBPR · Lemonade/smoothies → DBPR · Candles/crafts/jewelry → None
+
+Add an amber disclaimer at the top: "This is a reference summary, not legal advice. Vendors should verify requirements with FDACS, DBPR, and their local county before selling."
+Add a footer: "Sources: FL Statute §500.80 (2025), FDACS, DBPR, UF/IFAS Extension, FL Farmers Market Toolkit"
