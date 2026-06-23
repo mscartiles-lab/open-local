@@ -267,8 +267,9 @@ export function MiniMap({
                 latitude: pin.latitude,
                 longitude: pin.longitude,
               }}
+              onPress={() => onPinPress?.(pin.key)}
             >
-              {/* Custom pin shape */}
+              {/* Custom pin shape — tapping the marker navigates directly */}
               <View
                 style={[
                   styles.pin,
@@ -281,17 +282,14 @@ export function MiniMap({
               >
                 <Feather
                   name={pin.iconName ?? "map-pin"}
-                  size={11}
+                  size={13}
                   color="#fff"
                 />
               </View>
 
-              {/* Callout bubble on tap */}
+              {/* Callout shows info; navigation already fires on Marker press */}
               {pin.label ? (
-                <Callout
-                  tooltip={false}
-                  onPress={() => onPinPress?.(pin.key)}
-                >
+                <Callout tooltip={false}>
                   <View style={styles.callout}>
                     <Text style={styles.calloutTitle}>{pin.label}</Text>
                     {pin.sublabel ? (
@@ -314,7 +312,7 @@ export function MiniMap({
                           { color: pin.color ?? colors.primary },
                         ]}
                       >
-                        Tap to view →
+                        Tap to open →
                       </Text>
                     ) : null}
                   </View>

@@ -73,11 +73,9 @@ export default function TheLocalsScreen() {
   // Map takes the top 50% of the screen; list scrolls in the bottom half.
   const mapHeight = Math.max(Math.round(screenH * 0.50), 280);
 
-  // Map expansion — double-overscroll-up from list top toggles fullscreen map
+  // Map expansion — tap the expand button at the bottom of the map to toggle
   const [mapExpanded, setMapExpanded] = useState(false);
   const mapHeightAnim = useRef(new Animated.Value(mapHeight)).current;
-  const upScrollCountRef = useRef(0);
-  const lastUpScrollRef = useRef(0);
 
   useEffect(() => {
     Animated.spring(mapHeightAnim, {
@@ -88,23 +86,9 @@ export default function TheLocalsScreen() {
     }).start();
   }, [mapExpanded, mapHeightAnim, mapHeight, screenH]);
 
-  function handleScrollBeginDrag(e: NativeSyntheticEvent<NativeScrollEvent>) {
-    const y = e.nativeEvent.contentOffset.y;
-    if (y <= 5) {
-      const now = Date.now();
-      if (now - lastUpScrollRef.current < 800) {
-        upScrollCountRef.current += 1;
-        if (upScrollCountRef.current >= 2) {
-          upScrollCountRef.current = 0;
-          setMapExpanded((prev) => !prev);
-        }
-      } else {
-        upScrollCountRef.current = 1;
-      }
-      lastUpScrollRef.current = now;
-    } else {
-      upScrollCountRef.current = 0;
-    }
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  function handleScrollBeginDrag(_e: NativeSyntheticEvent<NativeScrollEvent>) {
+    // reserved for future gesture handling
   }
 
   const pins: MapPin[] = useMemo(() => {
@@ -227,19 +211,21 @@ export default function TheLocalsScreen() {
             )}
           </View>
         </View>
-        {/* Collapse pill — visible only when map is fullscreen */}
-        {mapExpanded && (
-          <TouchableOpacity
-            style={[s.collapsePill, { bottom: bottomPad + 16 }]}
-            onPress={() => setMapExpanded(false)}
-            accessibilityLabel="Collapse map"
-          >
-            <Feather name="chevron-down" size={16} color={colors.foreground} />
-            <Text style={[s.collapsePillText, { color: colors.foreground }]}>
-              Show list
-            </Text>
-          </TouchableOpacity>
-        )}
+        {/* Expand / collapse button — always visible at bottom-centre of map */}
+        <TouchableOpacity
+          style={[s.expandBtn, mapExpanded && s.expandBtnFull]}
+          onPress={() => setMapExpanded((prev) => !prev)}
+          accessibilityLabel={mapExpanded ? "Collapse map" : "Expand map"}
+        >
+          <Feather
+            name={mapExpanded ? "minimize-2" : "maximize-2"}
+            size={14}
+            color={colors.foreground}
+          />
+          <Text style={[s.expandBtnText, { color: colors.foreground }]}>
+            {mapExpanded ? "Show list" : "Full map"}
+          </Text>
+        </TouchableOpacity>
       </Animated.View>
 
       {/* List panel — scrolls below the map, no overlap */}
@@ -500,28 +486,33 @@ const styles = (
   StyleSheet.create({
     container: { flex: 1, backgroundColor: colors.background },
     list: { flex: 1, backgroundColor: colors.background },
-    collapsePill: {
+    expandBtn: {
       position: "absolute",
+      bottom: 10,
       alignSelf: "center",
-      left: undefined,
-      right: undefined,
+      left: "35%",
+      right: "35%",
       flexDirection: "row",
       alignItems: "center",
-      gap: 6,
-      paddingVertical: 10,
-      paddingHorizontal: 20,
-      backgroundColor: colors.background,
-      borderRadius: 24,
+      justifyContent: "center",
+      gap: 5,
+      paddingVertical: 8,
+      paddingHorizontal: 16,
+      backgroundColor: colors.card,
+      borderRadius: 20,
       shadowColor: "#000",
       shadowOpacity: 0.15,
-      shadowRadius: 8,
+      shadowRadius: 6,
       shadowOffset: { width: 0, height: 2 },
       elevation: 4,
       zIndex: 20,
     },
-    collapsePillText: {
+    expandBtnFull: {
+      bottom: bottomPad + 20,
+    },
+    expandBtnText: {
       fontFamily: "DMSans_600SemiBold",
-      fontSize: 14,
+      fontSize: 12,
     },
     listContent: {
       paddingBottom: bottomPad,
