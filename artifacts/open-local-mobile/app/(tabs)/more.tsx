@@ -14,6 +14,19 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useColors } from "@/hooks/useColors";
 
 // ---------------------------------------------------------------------------
+// About paragraphs
+// ---------------------------------------------------------------------------
+const ABOUT_PARAGRAPHS = [
+  "Some of the best things you'll ever taste, wear, or bring into your home weren't made in a factory or shipped across the country. They were grown in a backyard garden, baked in a home kitchen, or handcrafted by someone in your own neighborhood who poured real care into every single one. The problem has never been that these makers don't exist — it's that they've been nearly impossible to find.",
+  "Open Local was built to change that.",
+  "We're a hyperlocal marketplace that connects shoppers directly with the farmers, vendors, and makers who live and work in their community. No algorithms pushing big brands to the top. No middlemen taking cuts. Just a direct line between you and the people behind the product — wherever you are.",
+  "Whether you're in the heart of a city, a quiet suburb, or a small town with more talent than anyone realizes, Open Local is designed to surface what's already around you. Pull up the app and discover the honey producer two miles away, the ceramic artist who sells at your weekend farmers market, the cottage baker who makes the best sourdough you've ever had. These aren't just purchases — they're connections to real people doing what they love, right where you live.",
+  "Shopping local has always mattered. It keeps money circulating in your community, supports independent livelihoods, and puts you in touch with the kind of quality and care that mass production simply can\u2019t replicate. But \u201cshop local\u201d only works when people can actually find who to shop from. That\u2019s the gap Open Local closes.",
+  "For vendors, Open Local is a launchpad. Whether you're a cottage food baker just getting started, a farmer looking to reach more customers beyond the market, or an established maker ready to grow — Open Local gives you a storefront, visibility, and a community of shoppers who are actively looking for exactly what you make.",
+  "For shoppers, it's the easiest way to put your dollars where your values are — not just when it's convenient, but every time.",
+];
+
+// ---------------------------------------------------------------------------
 // Quick-reference table data
 // ---------------------------------------------------------------------------
 type PermitKind = "none" | "fdacs" | "dbpr";
@@ -178,6 +191,78 @@ const SECTIONS: Section[] = [
     ],
   },
 ];
+
+// ---------------------------------------------------------------------------
+// About card
+// ---------------------------------------------------------------------------
+function AboutCard() {
+  const colors = useColors();
+  const [open, setOpen] = useState(false);
+  const s = cardStyles(colors);
+
+  return (
+    <View style={[s.card, { marginBottom: 24 }]}>
+      <TouchableOpacity
+        style={s.header}
+        onPress={() => setOpen((v) => !v)}
+        activeOpacity={0.7}
+      >
+        <View style={[s.iconWrap, { backgroundColor: "#fef3c7" }]}>
+          <Feather name="info" size={17} color={colors.primary} />
+        </View>
+        <View style={{ flex: 1 }}>
+          <Text style={s.title}>About Open Local</Text>
+          <Text
+            style={{
+              fontFamily: "DMSans_400Regular",
+              fontSize: 12,
+              color: colors.mutedForeground,
+              marginTop: 1,
+            }}
+          >
+            Local Sourcing and Experiences
+          </Text>
+        </View>
+        <Feather
+          name={open ? "chevron-up" : "chevron-down"}
+          size={18}
+          color={colors.mutedForeground}
+        />
+      </TouchableOpacity>
+
+      {open && (
+        <View style={[s.body, { gap: 12 }]}>
+          {ABOUT_PARAGRAPHS.map((para, i) => (
+            <Text
+              key={i}
+              style={{
+                fontFamily:
+                  para === "Open Local was built to change that."
+                    ? "DMSans_700Bold"
+                    : "DMSans_400Regular",
+                fontSize: 14,
+                color: colors.foreground,
+                lineHeight: 22,
+              }}
+            >
+              {para}
+            </Text>
+          ))}
+          <Text
+            style={{
+              fontFamily: "DMSans_700Bold",
+              fontSize: 15,
+              color: colors.primary,
+              marginTop: 4,
+            }}
+          >
+            Open Local. Shop the community around you.
+          </Text>
+        </View>
+      )}
+    </View>
+  );
+}
 
 // ---------------------------------------------------------------------------
 // Permit badge
@@ -425,6 +510,9 @@ export default function ResourcesScreen() {
         <Text style={s.pageSubtitle}>
           Compliance guide for local producers, makers, and vendors
         </Text>
+
+        {/* About Open Local */}
+        <AboutCard />
 
         {/* Disclaimer */}
         <View style={s.disclaimer}>

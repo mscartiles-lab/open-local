@@ -62,18 +62,6 @@ export default function SettingsScreen() {
           </View>
         </View>
 
-        <Text style={s.section}>About</Text>
-        <View style={s.card}>
-          <View style={[s.row, s.rowBorderless]}>
-            <View style={s.rowLeft}>
-              <View style={[s.iconWrap, { backgroundColor: colors.muted }]}>
-                <Feather name="info" size={16} color={colors.primary} />
-              </View>
-              <Text style={s.rowLabel}>Open Local</Text>
-            </View>
-            <Text style={s.rowValue}>Local Sourcing & Experiences</Text>
-          </View>
-        </View>
       </ScrollView>
     </View>
   );
