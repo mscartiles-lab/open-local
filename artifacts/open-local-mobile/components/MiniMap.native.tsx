@@ -49,7 +49,7 @@ function deltaForRadius(miles: number) {
 
 export function MiniMap({
   pins = [],
-  radiusMiles: initialRadius = 25,
+  radiusMiles: initialRadius = 3,
   height = 200,
   emptyHint,
   fullBleed = false,
@@ -139,7 +139,7 @@ export function MiniMap({
       latitudeDelta: delta,
       longitudeDelta: delta,
     };
-    const newDelta = Math.max(region.latitudeDelta / 2, 0.002);
+    const newDelta = Math.max(region.latitudeDelta / 2.5, 0.0005);
     (mapRef.current as { animateToRegion: (r: object, d: number) => void }).animateToRegion(
       { ...region, latitudeDelta: newDelta, longitudeDelta: newDelta },
       250,
@@ -153,7 +153,7 @@ export function MiniMap({
       latitudeDelta: delta,
       longitudeDelta: delta,
     };
-    const newDelta = Math.min(region.latitudeDelta * 2, 60);
+    const newDelta = Math.min(region.latitudeDelta * 2.5, 90);
     (mapRef.current as { animateToRegion: (r: object, d: number) => void }).animateToRegion(
       { ...region, latitudeDelta: newDelta, longitudeDelta: newDelta },
       250,
