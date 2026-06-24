@@ -18,12 +18,18 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useColors } from "@/hooks/useColors";
 import { ProductListItem } from "@/components/ProductListItem";
 import { isFavorite, toggleFavorite } from "@/app/(tabs)/favorites";
+import { useAuth } from "@/context/AuthContext";
+
+const BASE = process.env.EXPO_PUBLIC_DOMAIN
+  ? `https://${process.env.EXPO_PUBLIC_DOMAIN}`
+  : "";
 
 export default function VendorScreen() {
   const { slug } = useLocalSearchParams<{ slug: string }>();
   const colors = useColors();
   const insets = useSafeAreaInsets();
   const router = useRouter();
+  const { user, sessionToken } = useAuth();
   const [saved, setSaved] = useState(false);
 
   const topPad = Platform.OS === "web" ? 67 : insets.top;
@@ -128,6 +134,26 @@ export default function VendorScreen() {
         ) : null}
 
         <View style={s.linksRow}>
+          {user ? (
+            <TouchableOpacity
+              style={[s.linkBtn, { backgroundColor: colors.primary }]}
+              onPress={async () => {
+                if (!sessionToken) return;
+                const res = await fetch(`${BASE}/api/messages/conversations`, {
+                  method: "POST",
+                  headers: { "Content-Type": "application/json", Authorization: `Bearer ${sessionToken}` },
+                  body: JSON.stringify({ vendorId: vendor.id }),
+                });
+                if (res.ok) {
+                  const conv = await res.json();
+                  router.push(`/messages/${conv.id}` as any);
+                }
+              }}
+            >
+              <Feather name="message-circle" size={15} color="#fff" />
+              <Text style={[s.linkText, { color: "#fff" }]}>Message</Text>
+            </TouchableOpacity>
+          ) : null}
           {vendor.websiteUrl ? (
             <TouchableOpacity
               style={s.linkBtn}

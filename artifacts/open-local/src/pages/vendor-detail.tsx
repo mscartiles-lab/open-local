@@ -1,7 +1,7 @@
-import { useParams } from "wouter";
+import { useParams, useLocation } from "wouter";
 import { Link } from "wouter";
 import { motion } from "framer-motion";
-import { MapPin, Globe, Mail, Clock, Store, Tag, Heart, Phone, Instagram, Facebook } from "lucide-react";
+import { MapPin, Globe, Mail, Clock, Store, Tag, Heart, Phone, Instagram, Facebook, MessageCircle } from "lucide-react";
 import Layout from "@/components/layout/Layout";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Card, CardContent } from "@/components/ui/card";
@@ -9,12 +9,27 @@ import { useGetVendor, useListVendorProducts, getGetVendorQueryKey, getListVendo
 import NotFound from "./not-found";
 import { useFavorites } from "@/hooks/use-favorites";
 import CheckInButton from "@/components/CheckInButton";
+import { useUser } from "@/context/UserContext";
 
 export default function VendorDetail() {
   const params = useParams();
   const id = Number(params.id);
+  const [, setLocation] = useLocation();
+  const { user } = useUser();
 
   const { isFavoriteVendor, toggleVendor, isFavoriteProduct, toggleProduct } = useFavorites();
+
+  const startConversation = async () => {
+    if (!user) return;
+    const token = localStorage.getItem("ol_session");
+    const base = import.meta.env.BASE_URL?.replace(/\/$/, "") || "";
+    const res = await fetch(`${base}/api/messages/conversations`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+      body: JSON.stringify({ vendorId: id }),
+    });
+    if (res.ok) setLocation("/messages");
+  };
 
   const { data: vendor, isLoading: vendorLoading, error: vendorError } = useGetVendor(id, {
     query: {
@@ -105,6 +120,15 @@ export default function VendorDetail() {
                     vendorName={vendor.name}
                     hasLocation={vendor.latitude != null && vendor.longitude != null}
                   />
+                  {user && (
+                    <button
+                      onClick={startConversation}
+                      className="flex items-center gap-2 px-4 py-2 rounded-xl border border-border bg-secondary/50 text-sm font-semibold hover:bg-primary hover:text-primary-foreground hover:border-primary transition-all"
+                    >
+                      <MessageCircle className="w-4 h-4" />
+                      Message vendor
+                    </button>
+                  )}
                 </div>
 
                 <div className="mt-8 pt-8 border-t border-border prose prose-sm md:prose-base dark:prose-invert max-w-none text-foreground/80 font-sans leading-relaxed">

@@ -1,6 +1,6 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Link, useLocation } from "wouter";
-import { Store, ShoppingBag, PlusCircle, Settings, Menu, Heart, HandHelping, Percent, CalendarDays, LogOut, LogIn, User, CreditCard, Sparkles, Search as SearchIcon, LifeBuoy } from "lucide-react";
+import { Store, ShoppingBag, PlusCircle, Settings, Menu, Heart, HandHelping, Percent, CalendarDays, LogOut, LogIn, User, CreditCard, Sparkles, Search as SearchIcon, LifeBuoy, MessageCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 import {
@@ -17,6 +17,25 @@ export function Navbar() {
   const [location, setLocation] = useLocation();
   const { user, isLoading, openOnboarding, openLogin, logout } = useUser();
   const [searchDraft, setSearchDraft] = useState("");
+  const [unreadCount, setUnreadCount] = useState(0);
+
+  useEffect(() => {
+    if (!user) { setUnreadCount(0); return; }
+    const token = localStorage.getItem("ol_session");
+    if (!token) return;
+    const base = import.meta.env.BASE_URL?.replace(/\/$/, "") || "";
+    fetch(`${base}/api/messages/unread-count`, { headers: { Authorization: `Bearer ${token}` } })
+      .then((r) => r.ok ? r.json() : { count: 0 })
+      .then((d) => setUnreadCount(d.count ?? 0))
+      .catch(() => {});
+    const iv = setInterval(() => {
+      fetch(`${base}/api/messages/unread-count`, { headers: { Authorization: `Bearer ${token}` } })
+        .then((r) => r.ok ? r.json() : { count: 0 })
+        .then((d) => setUnreadCount(d.count ?? 0))
+        .catch(() => {});
+    }, 30000);
+    return () => clearInterval(iv);
+  }, [user]);
 
   const submitSearch = (e: React.FormEvent) => {
     e.preventDefault();
@@ -59,6 +78,19 @@ export function Navbar() {
             <DropdownMenuItem asChild className="gap-2 cursor-pointer">
               <Link href="/rewards">
                 <Sparkles size={14} /> Rewards
+              </Link>
+            </DropdownMenuItem>
+            <DropdownMenuItem asChild className="gap-2 cursor-pointer">
+              <Link href="/messages">
+                <span className="relative">
+                  <MessageCircle size={14} />
+                  {unreadCount > 0 && (
+                    <span className="absolute -top-1.5 -right-1.5 w-3.5 h-3.5 bg-primary text-primary-foreground text-[9px] font-bold rounded-full flex items-center justify-center leading-none">
+                      {unreadCount > 9 ? "9+" : unreadCount}
+                    </span>
+                  )}
+                </span>
+                Messages {unreadCount > 0 && <span className="ml-auto text-xs font-bold text-primary">{unreadCount}</span>}
               </Link>
             </DropdownMenuItem>
             {user.role === "vendor" && (

@@ -12,3 +12,4 @@ export * from "./vendor-visits";
 export * from "./avatar-unlocks";
 export * from "./webhooks";
 export * from "./support-tickets";
+export * from "./messages";

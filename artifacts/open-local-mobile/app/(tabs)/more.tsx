@@ -23,6 +23,13 @@ type MenuItem = {
 
 const MENU_ITEMS: MenuItem[] = [
   {
+    id: "messages",
+    icon: "message-circle",
+    label: "Messages",
+    subtitle: "Direct messages with vendors",
+    route: "/messages",
+  },
+  {
     id: "about",
     icon: "info",
     label: "About",
