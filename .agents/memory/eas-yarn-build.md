@@ -1,12 +1,13 @@
 ---
-name: EAS monorepo yarn build
-description: How to make artifacts/open-local-mobile build standalone with EAS/yarn from a pnpm monorepo
+name: EAS monorepo yarn build + OTA update
+description: How to make artifacts/open-local-mobile build/update from a pnpm monorepo with EAS
 ---
 
-## The Problem
+## EAS Build (eas build)
+
 EAS builds run with yarn. The pnpm monorepo's root `pnpm-lock.yaml` confuses EAS package manager detection, and `workspace:*` deps can't be resolved by yarn.
 
-## Fixes Applied
+### Fixes Applied
 1. **Vendor `@workspace/api-client-react`** into `artifacts/open-local-mobile/lib/api-client/` (copy source files)
 2. **Rewrite imports** from `@workspace/api-client-react` → `@/lib/api-client` (sed across all 13 source files)
 3. **package.json**: remove `@workspace/*` dep, move `expo` + all runtime packages to `dependencies` (not devDeps — EAS reads app config before installing devDeps), set `"packageManager": "yarn@1.22.22"`, rename from `@workspace/open-local-mobile` to `open-local-mobile`
@@ -18,3 +19,26 @@ EAS builds run with yarn. The pnpm monorepo's root `pnpm-lock.yaml` confuses EAS
 **Why:** EAS archives via git from the project root, detects package manager by lock file presence. Without these fixes it picks up pnpm from the root and fails to find expo.
 
 **Do NOT delete** root `pnpm-workspace.yaml` or `pnpm-lock.yaml` — they're needed for the web + API artifacts.
+
+## EAS OTA Update (eas update)
+
+`eas update` runs `expo export` locally then uploads bundles to EAS servers. Different issues than `eas build`.
+
+### Required setup
+1. **EAS project ID** must be in `app.json` under `extra.eas.projectId` (`01ce32a2-7226-4ae0-94e7-0fdfa18bd013`)
+2. **`babel-preset-expo` at workspace root** — Metro resolves from the pnpm root `node_modules` during export. Install with `pnpm add -D -w babel-preset-expo@54.0.10`. Without it: `Cannot find module 'babel-preset-expo'` fatal error.
+3. **`expo-updates` auto-installed** by EAS CLI on first run; it also writes `updates.url` into `app.json` automatically.
+4. **Runtime version policy** set to `appVersion` by EAS CLI automatically.
+
+### Command
+```
+cd artifacts/open-local-mobile && EXPO_TOKEN=<token> npx eas-cli update --branch production --message "..." --non-interactive
+```
+
+### Timing
+Metro bundling takes ~80–90 seconds for iOS + Android. Use at least a **300 second timeout**. The command exits with code 254 at the very end due to a git tag operation blocked by Replit's sandbox — this is harmless; all bundles are already uploaded before that step.
+
+### Branch
+Use `--branch production` for App Store builds. Fingerprint is auto-computed (can be slow; set `EAS_SKIP_AUTO_FINGERPRINT=1` to skip).
+
+**Why:** The exit-254 at the end is a Replit sandbox restriction on `git commit` — not an EAS failure. Bundles, assets, and assetmap are all confirmed uploaded before that step runs.

@@ -26,6 +26,8 @@
       "versionCode": 1,
       "permissions": [
         "ACCESS_COARSE_LOCATION",
+        "ACCESS_FINE_LOCATION",
+        "ACCESS_COARSE_LOCATION",
         "ACCESS_FINE_LOCATION"
       ]
     },
@@ -45,6 +47,17 @@
     "experiments": {
       "typedRoutes": true,
       "reactCompiler": true
+    },
+    "extra": {
+      "eas": {
+        "projectId": "01ce32a2-7226-4ae0-94e7-0fdfa18bd013"
+      }
+    },
+    "runtimeVersion": {
+      "policy": "appVersion"
+    },
+    "updates": {
+      "url": "https://u.expo.dev/01ce32a2-7226-4ae0-94e7-0fdfa18bd013"
     }
   }
 }
