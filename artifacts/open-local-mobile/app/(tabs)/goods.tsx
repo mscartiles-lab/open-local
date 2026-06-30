@@ -56,7 +56,7 @@ export default function GoodsScreen() {
     latitude: number;
     longitude: number;
   } | null>(null);
-  const [mapRadius, setMapRadius] = useState(25);
+  const [mapRadius, setMapRadius] = useState(0.5);
 
   const topPad = Platform.OS === "web" ? 67 : insets.top;
   const bottomPad = Platform.OS === "web" ? 34 : insets.bottom + 60;

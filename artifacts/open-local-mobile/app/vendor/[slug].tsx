@@ -16,6 +16,7 @@ import {
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import { useColors } from "@/hooks/useColors";
+import { MiniMap, type MapPin } from "@/components/MiniMap";
 import { ProductListItem } from "@/components/ProductListItem";
 import { isFavorite, toggleFavorite } from "@/app/(tabs)/favorites";
 import { useAuth } from "@/context/AuthContext";
@@ -185,6 +186,36 @@ export default function VendorScreen() {
           ) : null}
         </View>
 
+        {vendor.latitude != null && vendor.longitude != null ? (
+          <View style={s.mapSection}>
+            <Text style={s.sectionTitle}>Location</Text>
+            <MiniMap
+              pins={[{
+                key: `vendor-${vendor.id}`,
+                latitude: vendor.latitude,
+                longitude: vendor.longitude,
+                iconName: "shopping-bag",
+                color: "#3c4a26",
+                shape: "circle",
+                label: vendor.name,
+                sublabel: vendor.location ?? undefined,
+              } satisfies MapPin]}
+              height={200}
+              onPinPress={() => {
+                const lat = vendor.latitude!;
+                const lng = vendor.longitude!;
+                const label = encodeURIComponent(vendor.name);
+                const url = Platform.select({
+                  ios: `maps://?daddr=${lat},${lng}&q=${label}`,
+                  android: `geo:${lat},${lng}?q=${label}`,
+                  default: `https://maps.google.com/?q=${lat},${lng}`,
+                })!;
+                Linking.openURL(url).catch(() => {});
+              }}
+            />
+          </View>
+        ) : null}
+
         <View style={s.section}>
           <Text style={s.sectionTitle}>
             Products{" "}
@@ -276,6 +307,13 @@ const styles = (colors: ReturnType<typeof useColors>, topPad: number, bottomPad:
       paddingVertical: 16,
       borderTopWidth: 1,
       borderTopColor: colors.border,
+    },
+    mapSection: {
+      paddingHorizontal: 20,
+      paddingVertical: 16,
+      borderTopWidth: 1,
+      borderTopColor: colors.border,
+      gap: 10,
     },
     sectionTitle: {
       fontFamily: "DMSans_600SemiBold",

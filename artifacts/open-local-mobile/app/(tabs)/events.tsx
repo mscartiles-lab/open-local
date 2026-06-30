@@ -1,5 +1,6 @@
 import { useListEvents, useListVendors } from "@/lib/api-client";
 import { Feather } from "@expo/vector-icons";
+import { useRouter } from "expo-router";
 import React, { useMemo, useState } from "react";
 import {
   ActivityIndicator,
@@ -24,6 +25,7 @@ const EVENT_COLOR = "#1a4a6e";
 export default function EventsScreen() {
   const colors = useColors();
   const insets = useSafeAreaInsets();
+  const router = useRouter();
   const [refreshing, setRefreshing] = useState(false);
 
   const {
@@ -72,11 +74,14 @@ export default function EventsScreen() {
       <View style={s.mapLayer}>
         <MiniMap
           pins={pins}
-          radiusMiles={25}
+          radiusMiles={0.5}
           height={screenH}
           emptyHint="No locations mapped"
           fullBleed
           showControls
+          onPinPress={(key) => {
+            if (key.startsWith("v-")) router.push(`/vendor/${key.slice(2)}`);
+          }}
         />
       </View>
 
