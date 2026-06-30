@@ -41,7 +41,8 @@ interface MiniMapProps {
 }
 
 const FLORIDA_CENTER = { latitude: 27.9944024, longitude: -81.7602544 };
-const QUICK_PICKS = [5, 10, 25, 50] as const;
+const QUICK_PICKS = [0.5, 1, 2, 5] as const;
+const QUICK_PICK_LABELS: Record<number, string> = { 0.5: "½ mi", 1: "1 mi", 2: "2 mi", 5: "5 mi" };
 
 function deltaForRadius(miles: number) {
   return latDeltaForMiles(miles);
@@ -49,8 +50,8 @@ function deltaForRadius(miles: number) {
 
 export function MiniMap({
   pins = [],
-  radiusMiles: initialRadius = 3,
-  height = 200,
+  radiusMiles: initialRadius = 0.5,
+  height,
   emptyHint,
   fullBleed = false,
   showControls = false,
@@ -90,28 +91,29 @@ export function MiniMap({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [permission?.status, permission?.granted]);
 
+  type AnimateToRegion = (r: { latitude: number; longitude: number; latitudeDelta: number; longitudeDelta: number }, duration: number) => void;
+
   // Animate map to user location when it becomes available
   useEffect(() => {
     if (!userLocation || !mapRef.current) return;
     const delta = deltaForRadius(radius);
-    (
-      mapRef.current as {
-        animateToRegion: (
-          r: {
-            latitude: number;
-            longitude: number;
-            latitudeDelta: number;
-            longitudeDelta: number;
-          },
-          duration: number,
-        ) => void;
-      }
-    ).animateToRegion(
+    (mapRef.current as { animateToRegion: AnimateToRegion }).animateToRegion(
       { ...userLocation, latitudeDelta: delta, longitudeDelta: delta },
       1200,
     );
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [userLocation]);
+
+  // Animate map when radius changes from picker
+  useEffect(() => {
+    if (!userLocation || !mapRef.current) return;
+    const delta = deltaForRadius(radius);
+    (mapRef.current as { animateToRegion: AnimateToRegion }).animateToRegion(
+      { ...userLocation, latitudeDelta: delta, longitudeDelta: delta },
+      600,
+    );
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [radius]);
 
   async function locateUser() {
     setLocating(true);
@@ -215,7 +217,8 @@ export function MiniMap({
     <View
       style={[
         styles.mapWrap,
-        { height, borderColor: colors.border },
+        { borderColor: colors.border },
+        height !== undefined && { height },
         fullBleed && styles.flush,
       ]}
     >
@@ -406,13 +409,10 @@ export function MiniMap({
                   <Text
                     style={[
                       styles.radiusBtnText,
-                      {
-                        color:
-                          r === radius ? "#fff" : colors.mutedForeground,
-                      },
+                      { color: r === radius ? "#fff" : colors.mutedForeground },
                     ]}
                   >
-                    {r}
+                    {QUICK_PICK_LABELS[r] ?? `${r}`}
                   </Text>
                 </TouchableOpacity>
               ))}
@@ -490,6 +490,7 @@ export function MiniMap({
 
 const styles = StyleSheet.create({
   mapWrap: {
+    flex: 1,
     borderRadius: 16,
     overflow: "hidden",
     borderWidth: 1,

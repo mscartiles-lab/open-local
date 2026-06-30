@@ -52,7 +52,7 @@ export default function TheLocalsScreen() {
     latitude: number;
     longitude: number;
   } | null>(null);
-  const [mapRadius, setMapRadius] = useState(25);
+  const [mapRadius, setMapRadius] = useState(0.5);
 
   const {
     data: vendors,
@@ -73,9 +73,11 @@ export default function TheLocalsScreen() {
   // Map takes the top 50% of the screen; list scrolls in the bottom half.
   const mapHeight = Math.max(Math.round(screenH * 0.50), 280);
 
-  // Map expansion — tap the expand button at the bottom of the map to toggle
+  // Map expansion — auto-triggered when list is scrolled down, or toggled manually
   const [mapExpanded, setMapExpanded] = useState(false);
   const mapHeightAnim = useRef(new Animated.Value(mapHeight)).current;
+  const flatListRef = useRef<FlatList>(null);
+  const SCROLL_EXPAND_THRESHOLD = 60;
 
   useEffect(() => {
     Animated.spring(mapHeightAnim, {
@@ -86,9 +88,16 @@ export default function TheLocalsScreen() {
     }).start();
   }, [mapExpanded, mapHeightAnim, mapHeight, screenH]);
 
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  function handleScrollBeginDrag(_e: NativeSyntheticEvent<NativeScrollEvent>) {
-    // reserved for future gesture handling
+  function handleScroll(e: NativeSyntheticEvent<NativeScrollEvent>) {
+    const y = e.nativeEvent.contentOffset.y;
+    if (y > SCROLL_EXPAND_THRESHOLD && !mapExpanded) {
+      setMapExpanded(true);
+    }
+  }
+
+  function handleShowList() {
+    setMapExpanded(false);
+    flatListRef.current?.scrollToOffset({ offset: 0, animated: true });
   }
 
   const pins: MapPin[] = useMemo(() => {
@@ -168,9 +177,10 @@ export default function TheLocalsScreen() {
         <MiniMap
           pins={pins}
           radiusMiles={mapRadius}
-          height={mapHeight}
+          height={mapExpanded ? undefined : mapHeight}
           emptyHint="No mapped locations yet"
           showControls
+          fullBleed={mapExpanded}
           onPinPress={(key) => {
             if (key.startsWith("v-")) router.push(`/vendor/${key.slice(2)}`);
           }}
@@ -214,11 +224,11 @@ export default function TheLocalsScreen() {
         {/* Expand / collapse button — always visible at bottom-centre of map */}
         <TouchableOpacity
           style={[s.expandBtn, mapExpanded && s.expandBtnFull]}
-          onPress={() => setMapExpanded((prev) => !prev)}
-          accessibilityLabel={mapExpanded ? "Collapse map" : "Expand map"}
+          onPress={mapExpanded ? handleShowList : () => setMapExpanded(true)}
+          accessibilityLabel={mapExpanded ? "Show list" : "Expand map"}
         >
           <Feather
-            name={mapExpanded ? "minimize-2" : "maximize-2"}
+            name={mapExpanded ? "list" : "maximize-2"}
             size={14}
             color={colors.foreground}
           />
@@ -230,6 +240,7 @@ export default function TheLocalsScreen() {
 
       {/* List panel — scrolls below the map, no overlap */}
       <FlatList
+        ref={flatListRef}
         data={isLoading || isError ? [] : inRadiusItems}
         keyExtractor={(item) => `${item.kind}-${item.data.id}`}
         style={s.list}
@@ -354,7 +365,8 @@ export default function TheLocalsScreen() {
             progressViewOffset={mapHeight}
           />
         }
-        onScrollBeginDrag={handleScrollBeginDrag}
+        onScroll={handleScroll}
+        scrollEventThrottle={16}
         bounces
       />
 
