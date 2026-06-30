@@ -1,131 +1,15 @@
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import Layout from "@/components/layout/Layout";
 import { useUser } from "@/context/UserContext";
-import { Button } from "@/components/ui/button";
-import { CreditCard, Sparkles, Clock, ExternalLink, Loader2, CheckCircle, Store, AlertCircle } from "lucide-react";
-import { Link, useSearch } from "wouter";
-import { TierPicker } from "@/components/billing/TierPicker";
-import { TIERS, type TierId } from "@/lib/tiers";
+import { Loader2, CheckCircle, Store, Gift, Sparkles } from "lucide-react";
+import { Link } from "wouter";
+import { TIERS, TIER_ORDER, type TierId } from "@/lib/tiers";
 
-interface PricingInfo {
-  vendor: {
-    trialDays: number;
-    earlyBirdRemaining: number;
-    earlyBirdTotal: number;
-    earlyBirdTrialDays: number;
-    standardTrialDays: number;
-  };
-  business: {
-    trialDays: number;
-    earlyBirdRemaining: number;
-    earlyBirdTotal: number;
-  };
-}
-
-interface VendorStatus {
-  status: string;
-  trialDays?: number;
-  trialEnd?: number | null;
-  tier?: TierId;
-  priceMonthly?: number;
-}
-
-const SESSION_KEY = "ol_session";
-
-function getToken(): string | null {
-  return localStorage.getItem(SESSION_KEY);
-}
+const WAIVED_NOTICE = "Subscription fees are currently being waived while we grow our community. Enjoy full access to Open Local completely free until further notice — we'll give you plenty of heads-up before anything changes.";
 
 export default function Billing() {
   const { user, isLoading } = useUser();
-  const search = useSearch();
-  const isReactivating = new URLSearchParams(search).get("reactivate") === "1";
-  const showReactivationBanner = isReactivating || user?.paused === true;
-  const [pricing, setPricing] = useState<PricingInfo | null>(null);
-  const [status, setStatus] = useState<VendorStatus | null>(null);
-  const [tier, setTier] = useState<TierId>("middle");
-  const [checkoutLoading, setCheckoutLoading] = useState(false);
-  const [portalLoading, setPortalLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  const [pricingError, setPricingError] = useState(false);
-
-  useEffect(() => {
-    fetch("/api/billing/pricing")
-      .then((r) => {
-        if (!r.ok) throw new Error("pricing fetch failed");
-        return r.json();
-      })
-      .then(setPricing)
-      .catch(() => setPricingError(true));
-  }, []);
-
-  useEffect(() => {
-    const token = getToken();
-    if (!token || !user) return;
-    fetch("/api/billing/vendor/status", {
-      headers: { Authorization: `Bearer ${token}` },
-    })
-      .then((r) => {
-        if (!r.ok) throw new Error("status fetch failed");
-        return r.json();
-      })
-      .then((data: VendorStatus) => {
-        setStatus(data);
-        if (data.tier) setTier(data.tier);
-      })
-      .catch(() => {});
-  }, [user]);
-
-  const startCheckout = async () => {
-    setCheckoutLoading(true);
-    setError(null);
-    try {
-      const token = getToken();
-      const r = await fetch("/api/billing/vendor/checkout", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
-        },
-        body: JSON.stringify({ tier }),
-      });
-      const data = await r.json();
-      if (data.url) {
-        window.location.href = data.url;
-      } else {
-        setError(data.error ?? "Failed to start checkout.");
-        setCheckoutLoading(false);
-      }
-    } catch {
-      setError("Couldn't reach the billing service. Please try again.");
-      setCheckoutLoading(false);
-    }
-  };
-
-  const openPortal = async () => {
-    setPortalLoading(true);
-    setError(null);
-    try {
-      const token = getToken();
-      const r = await fetch("/api/billing/portal", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
-        },
-      });
-      const data = await r.json();
-      if (data.url) {
-        window.location.href = data.url;
-      } else {
-        setError(data.error ?? "Failed to open billing portal.");
-        setPortalLoading(false);
-      }
-    } catch {
-      setError("Couldn't reach the billing portal.");
-      setPortalLoading(false);
-    }
-  };
+  const [selected, setSelected] = useState<TierId>("middle");
 
   if (isLoading) {
     return (
@@ -141,8 +25,8 @@ export default function Billing() {
     return (
       <Layout>
         <div className="max-w-md mx-auto py-20 text-center px-4">
-          <h1 className="text-3xl font-serif font-bold mb-3">Sign in to manage billing</h1>
-          <p className="text-muted-foreground mb-6">You need an Open Local account to subscribe.</p>
+          <h1 className="text-3xl font-serif font-bold mb-3">Sign in to view plans</h1>
+          <p className="text-muted-foreground mb-6">You need an Open Local account to view vendor plans.</p>
           <Link href="/" className="inline-block bg-primary text-primary-foreground px-6 py-3 rounded-xl font-semibold hover:bg-primary/90 transition-colors">
             Back home
           </Link>
@@ -158,144 +42,80 @@ export default function Billing() {
           <Store className="w-12 h-12 text-muted-foreground mx-auto mb-4" />
           <h1 className="text-3xl font-serif font-bold mb-3">Vendor accounts only</h1>
           <p className="text-muted-foreground mb-6">
-            Billing is for vendors selling on Open Local. To list your business on the map instead, head to <Link href="/pin-your-business" className="text-primary underline">Pin Your Business</Link>.
+            Billing is for vendors selling on Open Local. To list your business on the map instead, head to{" "}
+            <Link href="/pin-your-business" className="text-primary underline">Pin Your Business</Link>.
           </p>
         </div>
       </Layout>
     );
   }
 
-  const isActive = status?.status === "active" || status?.status === "trialing";
-  const trialDays = pricing?.vendor.trialDays ?? 30;
-  const earlyBirdLeft = pricing?.vendor.earlyBirdRemaining ?? 0;
-  const isEarlyBird = earlyBirdLeft > 0;
-  const selectedTier = TIERS[tier];
-
   return (
     <Layout>
       <div className="max-w-4xl mx-auto px-4 py-12">
         <div className="mb-10">
-          <h1 className="text-4xl font-serif font-bold text-foreground mb-2">Vendor billing</h1>
-          <p className="text-muted-foreground">Sell your handmade & local goods on Open Local.</p>
+          <h1 className="text-4xl font-serif font-bold text-foreground mb-2">Vendor plans</h1>
+          <p className="text-muted-foreground">Everything included while we build our community together.</p>
         </div>
 
-        {error && (
-          <div className="mb-6 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
-            {error}
+        {/* Waived notice banner */}
+        <div className="mb-8 rounded-2xl border-2 border-green-300 bg-green-50 px-6 py-5 flex items-start gap-4">
+          <div className="w-10 h-10 rounded-full bg-green-100 flex items-center justify-center shrink-0 mt-0.5">
+            <Gift className="w-5 h-5 text-green-700" />
           </div>
-        )}
-        {showReactivationBanner && (
-          <div className="mb-6 rounded-xl border-2 border-amber-300 bg-amber-50 px-5 py-4 flex items-start gap-3">
-            <AlertCircle className="w-5 h-5 text-amber-700 shrink-0 mt-0.5" />
-            <div className="text-sm text-amber-900">
-              <p className="font-semibold mb-0.5">Your free trial has ended.</p>
-              <p>Your storefront is paused. Pick a plan below to reactivate it — shoppers will see your listings again as soon as your subscription is active.</p>
-            </div>
+          <div>
+            <p className="font-semibold text-green-900 mb-1">Subscription fees are currently waived 🎉</p>
+            <p className="text-sm text-green-800 leading-relaxed">{WAIVED_NOTICE}</p>
           </div>
-        )}
-        {pricingError && (
-          <div className="mb-6 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900">
-            We couldn't load the current trial offer. Plan prices below are still accurate.
-          </div>
-        )}
+        </div>
 
-        {isActive ? (
-          <div className="rounded-2xl border-2 border-primary/30 bg-primary/5 p-6 mb-6">
-            <div className="flex items-start gap-4">
-              <div className="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center shrink-0">
-                <CheckCircle className="w-6 h-6 text-primary" />
-              </div>
-              <div className="flex-1">
-                <h2 className="font-serif text-2xl font-bold text-foreground mb-1">
-                  {status?.status === "trialing" ? "Free trial active" : "Subscription active"}
-                </h2>
-                <p className="text-sm text-muted-foreground mb-1">
-                  Current plan: <strong className="text-foreground">{selectedTier.name}</strong> · ${selectedTier.priceMonthly.toFixed(2)}/mo
-                </p>
-                <p className="text-sm text-muted-foreground mb-4">
-                  {status?.status === "trialing" && status?.trialEnd
-                    ? `Your trial ends on ${new Date(status.trialEnd * 1000).toLocaleDateString()}.`
-                    : `Next charge: $${selectedTier.priceMonthly.toFixed(2)}.`}
-                </p>
-                <Button
-                  onClick={openPortal}
-                  disabled={portalLoading}
-                  variant="outline"
-                  className="gap-2"
-                >
-                  {portalLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : <ExternalLink className="w-4 h-4" />}
-                  Manage subscription
-                </Button>
-              </div>
-            </div>
-          </div>
-        ) : (
-          <>
-            <div className="mb-6 rounded-2xl border-2 border-border bg-card p-6">
-              <div className="flex items-center gap-2 mb-1">
-                <Sparkles className="w-4 h-4 text-primary" />
-                <span className="text-xs font-bold uppercase tracking-wider text-primary">Choose your plan</span>
-              </div>
-              <p className="text-sm text-muted-foreground mb-5">
-                {isEarlyBird
-                  ? `Early-bird offer: ${trialDays}-day free trial — ${earlyBirdLeft} of ${pricing?.vendor.earlyBirdTotal} spots left.`
-                  : `Standard ${trialDays}-day free trial.`}
-              </p>
-              <TierPicker
-                selected={tier}
-                onSelect={setTier}
-                trialDays={trialDays}
-                isEarlyBird={isEarlyBird}
-              />
-            </div>
+        {/* Tier comparison — informational only */}
+        <div className="mb-4 flex items-center gap-2">
+          <Sparkles className="w-4 h-4 text-primary" />
+          <span className="text-xs font-bold uppercase tracking-wider text-primary">Plans overview</span>
+        </div>
+        <p className="text-sm text-muted-foreground mb-6">Here's a preview of the plans we'll offer once subscriptions open. Your tier will be set to <strong>Standard</strong> in the meantime so you get pre-orders and everything you need to sell.</p>
 
-            <div className="rounded-2xl border-2 border-border bg-card overflow-hidden mb-6">
-              <div className="bg-amber-50 border-b border-border px-6 py-5 flex flex-wrap items-center justify-between gap-3">
-                <div>
-                  <p className="text-xs font-bold uppercase tracking-wider text-primary mb-1">
-                    Open Local Vendor Plan — {selectedTier.name}
-                  </p>
-                  <div className="flex items-baseline gap-2">
-                    <span className="text-4xl font-serif font-bold text-foreground">${selectedTier.priceMonthly.toFixed(2)}</span>
-                    <span className="text-muted-foreground">/ month</span>
-                  </div>
-                </div>
-                {isEarlyBird && trialDays > 0 && (
-                  <div className="flex items-center gap-2 text-amber-800 bg-amber-100 px-3 py-1.5 rounded-full text-sm font-semibold">
-                    <Clock className="w-4 h-4" /> {trialDays}-day free trial
-                  </div>
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
+          {TIER_ORDER.map((id) => {
+            const tier = TIERS[id];
+            const featured = id === "middle";
+            return (
+              <button
+                key={id}
+                onClick={() => setSelected(id)}
+                className={`text-left rounded-2xl border-2 p-5 transition-all ${
+                  selected === id
+                    ? "border-primary bg-primary/5"
+                    : "border-border bg-card hover:border-primary/40"
+                }`}
+              >
+                {featured && (
+                  <span className="inline-block text-xs font-bold uppercase tracking-wider text-primary bg-primary/10 px-2 py-0.5 rounded-full mb-2">
+                    Most popular
+                  </span>
                 )}
-              </div>
-
-              <div className="p-6">
-                <ul className="space-y-2.5 mb-6">
-                  {selectedTier.features.map((feature) => (
-                    <li key={feature} className="flex items-center gap-3 text-sm text-foreground">
-                      <CheckCircle className="w-4 h-4 text-primary shrink-0" />
-                      {feature}
+                <div className="font-serif text-xl font-bold text-foreground mb-0.5">{tier.name}</div>
+                <div className="text-xs text-muted-foreground mb-3">{tier.tagline}</div>
+                <div className="text-2xl font-bold text-foreground mb-4">
+                  ${tier.priceMonthly.toFixed(2)}<span className="text-sm font-normal text-muted-foreground"> / mo</span>
+                </div>
+                <ul className="space-y-2">
+                  {tier.features.map((f) => (
+                    <li key={f} className="flex items-start gap-2 text-sm text-foreground">
+                      <CheckCircle className="w-4 h-4 text-primary shrink-0 mt-0.5" />
+                      {f}
                     </li>
                   ))}
                 </ul>
+              </button>
+            );
+          })}
+        </div>
 
-                <Button
-                  onClick={startCheckout}
-                  disabled={checkoutLoading}
-                  className="w-full bg-primary text-primary-foreground hover:bg-primary/90 h-12 text-base gap-2"
-                >
-                  {checkoutLoading ? (
-                    <><Loader2 className="w-4 h-4 animate-spin" /> Starting checkout…</>
-                  ) : (
-                    <><CreditCard className="w-4 h-4" /> {isEarlyBird ? `Start ${trialDays}-day free trial` : `Subscribe — $${selectedTier.priceMonthly.toFixed(2)}/mo`}</>
-                  )}
-                </Button>
-
-                <p className="text-xs text-muted-foreground text-center mt-3">
-                  {isEarlyBird ? "You won't be charged until your trial ends. " : ""}Cancel anytime from the billing portal.
-                </p>
-              </div>
-            </div>
-          </>
-        )}
+        <p className="text-center text-xs text-muted-foreground">
+          No action needed — you have free access right now. We'll notify you by email before subscriptions go live.
+        </p>
       </div>
     </Layout>
   );

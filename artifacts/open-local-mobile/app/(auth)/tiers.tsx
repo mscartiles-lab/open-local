@@ -1,8 +1,7 @@
 import { Feather } from "@expo/vector-icons";
 import { router } from "expo-router";
-import React, { useEffect, useState } from "react";
+import React, { useState } from "react";
 import {
-  Linking,
   Pressable,
   ScrollView,
   StyleSheet,
@@ -12,29 +11,11 @@ import {
 import { SafeAreaView } from "react-native-safe-area-context";
 
 import { useColors } from "@/hooks/useColors";
-import { apiFetch } from "@/lib/api";
 import { TIERS, TIER_ORDER } from "@/lib/tiers";
 
 export default function TiersScreen() {
   const colors = useColors();
-  const [trialDays, setTrialDays] = useState<number>(30);
-
-  useEffect(() => {
-    apiFetch<{ trialDays: number }>("/api/billing/vendor/status")
-      .then((data) => {
-        if (typeof data.trialDays === "number") setTrialDays(data.trialDays);
-      })
-      .catch(() => {});
-  }, []);
-
-  const openBillingOnWeb = async () => {
-    const url = `https://${process.env.EXPO_PUBLIC_DOMAIN}/billing`;
-    try {
-      await Linking.openURL(url);
-    } catch {
-      // ignore
-    }
-  };
+  const [selected, setSelected] = useState<string>("middle");
 
   return (
     <SafeAreaView
@@ -51,40 +32,44 @@ export default function TiersScreen() {
       </View>
 
       <ScrollView contentContainerStyle={styles.scroll}>
-        <View
-          style={[
-            styles.trialBanner,
-            { borderColor: colors.primary, backgroundColor: colors.muted },
-          ]}
-        >
-          <Feather name="gift" size={18} color={colors.primary} />
-          <Text style={[styles.trialText, { color: colors.foreground }]}>
-            Start with a free {trialDays}-day trial. Cancel anytime.
-          </Text>
+
+        {/* Waived notice */}
+        <View style={[styles.waivedBanner, { backgroundColor: "#f0fdf4", borderColor: "#86efac" }]}>
+          <View style={styles.waivedIconWrap}>
+            <Feather name="gift" size={20} color="#16a34a" />
+          </View>
+          <View style={{ flex: 1 }}>
+            <Text style={styles.waivedTitle}>Subscription fees are waived 🎉</Text>
+            <Text style={styles.waivedBody}>
+              Enjoy full access to Open Local completely free while we grow our community. We'll give you plenty of heads-up before anything changes.
+            </Text>
+          </View>
         </View>
+
+        {/* Plans overview — informational */}
+        <Text style={[styles.sectionLabel, { color: colors.mutedForeground }]}>
+          Plans preview — no payment needed right now
+        </Text>
 
         {TIER_ORDER.map((id) => {
           const tier = TIERS[id];
           const featured = id === "middle";
+          const isSelected = selected === id;
           return (
-            <View
+            <Pressable
               key={id}
+              onPress={() => setSelected(id)}
               style={[
                 styles.tierCard,
                 {
-                  borderColor: featured ? colors.primary : colors.border,
-                  borderWidth: featured ? 2 : 1,
-                  backgroundColor: colors.background,
+                  borderColor: isSelected ? colors.primary : colors.border,
+                  borderWidth: isSelected ? 2 : 1,
+                  backgroundColor: isSelected ? colors.primary + "08" : colors.background,
                 },
               ]}
             >
               {featured ? (
-                <View
-                  style={[
-                    styles.popularBadge,
-                    { backgroundColor: colors.primary },
-                  ]}
-                >
+                <View style={[styles.popularBadge, { backgroundColor: colors.primary }]}>
                   <Text style={styles.popularText}>Most popular</Text>
                 </View>
               ) : null}
@@ -96,9 +81,7 @@ export default function TiersScreen() {
               </Text>
               <Text style={[styles.tierPrice, { color: colors.foreground }]}>
                 ${tier.priceMonthly.toFixed(2)}
-                <Text
-                  style={[styles.tierPriceUnit, { color: colors.mutedForeground }]}
-                >
+                <Text style={[styles.tierPriceUnit, { color: colors.mutedForeground }]}>
                   {" / mo"}
                 </Text>
               </Text>
@@ -106,28 +89,26 @@ export default function TiersScreen() {
                 {tier.features.map((f) => (
                   <View key={f} style={styles.featureRow}>
                     <Feather name="check" size={16} color={colors.primary} />
-                    <Text
-                      style={[styles.featureText, { color: colors.foreground }]}
-                    >
+                    <Text style={[styles.featureText, { color: colors.foreground }]}>
                       {f}
                     </Text>
                   </View>
                 ))}
               </View>
-            </View>
+            </Pressable>
           );
         })}
 
         <Pressable
-          onPress={openBillingOnWeb}
+          onPress={() => router.replace("/(tabs)")}
           style={[styles.cta, { backgroundColor: colors.primary }]}
         >
-          <Feather name="external-link" size={18} color="#fff" />
-          <Text style={styles.ctaText}>Continue checkout on web</Text>
+          <Feather name="check-circle" size={18} color="#fff" />
+          <Text style={styles.ctaText}>Got it — start selling</Text>
         </Pressable>
+
         <Text style={[styles.fineprint, { color: colors.mutedForeground }]}>
-          Payments are processed on the web app for now. Sign in there with the
-          same email to start your trial.
+          You'll get an email before subscriptions go live. No surprise charges.
         </Text>
       </ScrollView>
     </SafeAreaView>
@@ -145,16 +126,42 @@ const styles = StyleSheet.create({
   },
   headerTitle: { fontFamily: "DMSans_700Bold", fontSize: 18 },
   scroll: { padding: 16, gap: 12, paddingBottom: 40 },
-  trialBanner: {
+  waivedBanner: {
     flexDirection: "row",
-    alignItems: "center",
-    gap: 10,
-    padding: 14,
-    borderRadius: 12,
-    borderWidth: 1,
+    alignItems: "flex-start",
+    gap: 12,
+    padding: 16,
+    borderRadius: 14,
+    borderWidth: 1.5,
     marginBottom: 4,
   },
-  trialText: { fontFamily: "DMSans_500Medium", fontSize: 14, flex: 1 },
+  waivedIconWrap: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    backgroundColor: "#dcfce7",
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  waivedTitle: {
+    fontFamily: "DMSans_700Bold",
+    fontSize: 14,
+    color: "#15803d",
+    marginBottom: 4,
+  },
+  waivedBody: {
+    fontFamily: "DMSans_400Regular",
+    fontSize: 13,
+    color: "#166534",
+    lineHeight: 19,
+  },
+  sectionLabel: {
+    fontFamily: "DMSans_500Medium",
+    fontSize: 12,
+    textTransform: "uppercase",
+    letterSpacing: 0.5,
+    marginBottom: -4,
+  },
   tierCard: { borderRadius: 16, padding: 18, gap: 4 },
   popularBadge: {
     alignSelf: "flex-start",
@@ -166,11 +173,7 @@ const styles = StyleSheet.create({
   popularText: { color: "#fff", fontFamily: "DMSans_600SemiBold", fontSize: 11 },
   tierName: { fontFamily: "DMSans_700Bold", fontSize: 20 },
   tierTagline: { fontFamily: "DMSans_400Regular", fontSize: 13 },
-  tierPrice: {
-    fontFamily: "DMSans_700Bold",
-    fontSize: 28,
-    marginTop: 8,
-  },
+  tierPrice: { fontFamily: "DMSans_700Bold", fontSize: 28, marginTop: 8 },
   tierPriceUnit: { fontFamily: "DMSans_400Regular", fontSize: 14 },
   featureRow: { flexDirection: "row", gap: 8, alignItems: "flex-start" },
   featureText: { fontFamily: "DMSans_400Regular", fontSize: 14, flex: 1 },
