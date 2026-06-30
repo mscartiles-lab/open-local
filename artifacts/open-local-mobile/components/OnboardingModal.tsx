@@ -1,6 +1,6 @@
 import { Feather } from "@expo/vector-icons";
 import { router } from "expo-router";
-import React from "react";
+import React, { useState } from "react";
 import {
   Modal,
   Pressable,
@@ -13,18 +13,26 @@ import { useAuth } from "@/context/AuthContext";
 import { useColors } from "@/hooks/useColors";
 
 export function OnboardingGate() {
-  const { loading, user, hasSeenOnboarding, markOnboardingSeen } = useAuth();
+  const { loading, user } = useAuth();
   const colors = useColors();
+  const [dismissed, setDismissed] = useState(false);
 
-  const visible = !loading && !user && !hasSeenOnboarding;
+  // Show every time the app opens when the user is not logged in.
+  // "Maybe later" only dismisses for the current session (not persisted).
+  const visible = !loading && !user && !dismissed;
 
-  const handleChoose = async (role: "shopper" | "vendor") => {
-    await markOnboardingSeen();
+  const handleChoose = (role: "shopper" | "vendor") => {
+    setDismissed(true);
     router.push({ pathname: "/(auth)/signup", params: { role } });
   };
 
-  const handleSkip = async () => {
-    await markOnboardingSeen();
+  const handleSignIn = () => {
+    setDismissed(true);
+    router.push("/(auth)/login" as any);
+  };
+
+  const handleSkip = () => {
+    setDismissed(true);
   };
 
   return (
@@ -62,12 +70,7 @@ export function OnboardingGate() {
               <Text style={[styles.choiceTitle, { color: colors.foreground }]}>
                 I'm a shopper
               </Text>
-              <Text
-                style={[
-                  styles.choiceBody,
-                  { color: colors.mutedForeground },
-                ]}
-              >
+              <Text style={[styles.choiceBody, { color: colors.mutedForeground }]}>
                 Discover local makers, batch drops & events
               </Text>
             </View>
@@ -78,25 +81,28 @@ export function OnboardingGate() {
             style={[styles.choice, { borderColor: colors.primary }]}
             onPress={() => handleChoose("vendor")}
           >
-            <View
-              style={[styles.choiceIcon, { backgroundColor: "#c0622f" }]}
-            >
+            <View style={[styles.choiceIcon, { backgroundColor: "#c0622f" }]}>
               <Feather name="briefcase" size={20} color="#fff" />
             </View>
             <View style={{ flex: 1 }}>
               <Text style={[styles.choiceTitle, { color: colors.foreground }]}>
                 I'm a vendor or business
               </Text>
-              <Text
-                style={[
-                  styles.choiceBody,
-                  { color: colors.mutedForeground },
-                ]}
-              >
+              <Text style={[styles.choiceBody, { color: colors.mutedForeground }]}>
                 List products, run pre-orders, reach locals
               </Text>
             </View>
             <Feather name="chevron-right" size={20} color={colors.mutedForeground} />
+          </Pressable>
+
+          {/* Sign-in link */}
+          <Pressable onPress={handleSignIn} style={styles.signInRow}>
+            <Text style={[styles.signInText, { color: colors.mutedForeground }]}>
+              Already have an account?{" "}
+            </Text>
+            <Text style={[styles.signInLink, { color: colors.primary }]}>
+              Sign in
+            </Text>
           </Pressable>
 
           <Pressable onPress={handleSkip} style={styles.skip}>
@@ -172,8 +178,21 @@ const styles = StyleSheet.create({
     fontSize: 12,
     marginTop: 2,
   },
+  signInRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    marginTop: 4,
+  },
+  signInText: {
+    fontFamily: "DMSans_400Regular",
+    fontSize: 13,
+  },
+  signInLink: {
+    fontFamily: "DMSans_600SemiBold",
+    fontSize: 13,
+  },
   skip: {
-    marginTop: 8,
+    marginTop: 2,
     padding: 8,
   },
   skipText: {

@@ -68,7 +68,7 @@ export default function MoreScreen() {
             <TouchableOpacity
               key={item.id}
               style={[s.row, i < MENU_ITEMS.length - 1 && s.rowBorder]}
-              onPress={() => router.push(item.route as `/${string}`)}
+              onPress={() => router.push(item.route as any)}
               activeOpacity={0.7}
             >
               <View style={s.iconWrap}>

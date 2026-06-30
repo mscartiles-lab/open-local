@@ -62,7 +62,7 @@ export default function MessagesScreen() {
   if (!user) {
     return (
       <View style={[s.container, s.center]}>
-        <Feather name="message-circle" size={40} color={colors.textSecondary} />
+        <Feather name="message-circle" size={40} color={colors.mutedForeground} />
         <Text style={s.emptyTitle}>Sign in to view messages</Text>
       </View>
     );
@@ -125,7 +125,7 @@ export default function MessagesScreen() {
         </View>
       ) : convs.length === 0 ? (
         <View style={s.center}>
-          <Feather name="message-circle" size={40} color={colors.textSecondary} />
+          <Feather name="message-circle" size={40} color={colors.mutedForeground} />
           <Text style={s.emptyTitle}>No conversations yet</Text>
           <Text style={s.emptyBody}>Visit a vendor and tap "Message" to start one.</Text>
         </View>
@@ -157,11 +157,11 @@ const styles = (colors: ReturnType<typeof useColors>, topInset: number) =>
     rowTop: { flexDirection: "row", justifyContent: "space-between", alignItems: "center", marginBottom: 2 },
     rowName: { fontSize: 15, fontFamily: "DMSans_500Medium", color: colors.text, flex: 1 },
     rowNameBold: { fontFamily: "DMSans_700Bold" },
-    rowTime: { fontSize: 12, color: colors.textSecondary, fontFamily: "DMSans_400Regular" },
-    rowPreview: { fontSize: 13, color: colors.textSecondary, fontFamily: "DMSans_400Regular" },
+    rowTime: { fontSize: 12, color: colors.mutedForeground, fontFamily: "DMSans_400Regular" },
+    rowPreview: { fontSize: 13, color: colors.mutedForeground, fontFamily: "DMSans_400Regular" },
     rowPreviewBold: { color: colors.text, fontFamily: "DMSans_500Medium" },
-    rowPreviewEmpty: { fontSize: 13, color: colors.textSecondary, fontStyle: "italic", fontFamily: "DMSans_400Regular" },
+    rowPreviewEmpty: { fontSize: 13, color: colors.mutedForeground, fontStyle: "italic", fontFamily: "DMSans_400Regular" },
     separator: { height: 1, backgroundColor: colors.border, marginLeft: 76 },
     emptyTitle: { fontSize: 17, fontFamily: "DMSans_600SemiBold", color: colors.text, textAlign: "center" },
-    emptyBody: { fontSize: 14, color: colors.textSecondary, textAlign: "center", fontFamily: "DMSans_400Regular" },
+    emptyBody: { fontSize: 14, color: colors.mutedForeground, textAlign: "center", fontFamily: "DMSans_400Regular" },
   });

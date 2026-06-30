@@ -148,7 +148,7 @@ export default function ConversationScreen() {
           contentContainerStyle={s.messageList}
           ListEmptyComponent={
             <View style={s.emptyWrap}>
-              <Feather name="message-circle" size={32} color={colors.textSecondary} />
+              <Feather name="message-circle" size={32} color={colors.mutedForeground} />
               <Text style={s.emptyText}>Say hello! 👋</Text>
             </View>
           }
@@ -175,7 +175,7 @@ export default function ConversationScreen() {
           value={draft}
           onChangeText={setDraft}
           placeholder="Type a message…"
-          placeholderTextColor={colors.textSecondary}
+          placeholderTextColor={colors.mutedForeground}
           multiline
           maxLength={5000}
         />
@@ -210,7 +210,7 @@ const styles = (colors: ReturnType<typeof useColors>, insets: { top: number; bot
     headerTitle: { flex: 1, fontSize: 16, fontFamily: "DMSans_600SemiBold", color: colors.text },
     messageList: { paddingHorizontal: 16, paddingVertical: 12, gap: 8 },
     emptyWrap: { alignItems: "center", justifyContent: "center", paddingTop: 60, gap: 8 },
-    emptyText: { fontSize: 15, color: colors.textSecondary, fontFamily: "DMSans_400Regular" },
+    emptyText: { fontSize: 15, color: colors.mutedForeground, fontFamily: "DMSans_400Regular" },
     bubbleRow: { marginVertical: 3 },
     bubbleRowMine: { alignItems: "flex-end" },
     bubbleRowOther: { alignItems: "flex-start" },
@@ -220,7 +220,7 @@ const styles = (colors: ReturnType<typeof useColors>, insets: { top: number; bot
     bubbleText: { fontSize: 15, lineHeight: 21, fontFamily: "DMSans_400Regular" },
     bubbleTextMine: { color: "#fff" },
     bubbleTextOther: { color: colors.text },
-    time: { fontSize: 11, marginTop: 2, fontFamily: "DMSans_400Regular", color: colors.textSecondary },
+    time: { fontSize: 11, marginTop: 2, fontFamily: "DMSans_400Regular", color: colors.mutedForeground },
     timeMine: { textAlign: "right", marginRight: 2 },
     timeOther: { marginLeft: 2 },
     compose: {
