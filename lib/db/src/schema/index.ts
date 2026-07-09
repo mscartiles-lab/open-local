@@ -13,3 +13,6 @@ export * from "./avatar-unlocks";
 export * from "./webhooks";
 export * from "./support-tickets";
 export * from "./messages";
+export * from "./product-variations";
+export * from "./reviews";
+export * from "./vendor-certifications";

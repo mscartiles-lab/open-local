@@ -17,6 +17,11 @@ import webhooksRouter from "./webhooks";
 import onboardingRouter from "./onboarding";
 import supportRouter from "./support";
 import messagesRouter from "./messages";
+import reviewsRouter from "./reviews";
+import certificationsRouter from "./certifications";
+import productVariationsRouter from "./product-variations";
+import productBulkRouter from "./product-bulk";
+import storageRouter from "./storage";
 
 const router: IRouter = Router();
 
@@ -38,5 +43,10 @@ router.use(webhooksRouter);
 router.use(onboardingRouter);
 router.use(supportRouter);
 router.use(messagesRouter);
+router.use(reviewsRouter);
+router.use(certificationsRouter);
+router.use(productVariationsRouter);
+router.use(productBulkRouter);
+router.use(storageRouter);
 
 export default router;

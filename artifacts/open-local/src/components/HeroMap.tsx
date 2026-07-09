@@ -81,6 +81,32 @@ function MapFlyTo({ position, zoom }: { position: [number, number]; zoom: number
   return null;
 }
 
+function ZoomButtons() {
+  const map = useMap();
+  return (
+    <div
+      className="absolute right-4 bottom-24 flex flex-col rounded-xl bg-white shadow-lg overflow-hidden pointer-events-auto"
+      style={{ zIndex: 10 }}
+    >
+      <button
+        onClick={() => map.zoomIn()}
+        className="w-9 h-9 flex items-center justify-center hover:bg-gray-50 transition-colors text-[#7a3f08] font-bold text-lg"
+        title="Zoom in"
+      >
+        +
+      </button>
+      <div className="h-px bg-gray-200" />
+      <button
+        onClick={() => map.zoomOut()}
+        className="w-9 h-9 flex items-center justify-center hover:bg-gray-50 transition-colors text-[#7a3f08] font-bold text-lg"
+        title="Zoom out"
+      >
+        −
+      </button>
+    </div>
+  );
+}
+
 export default function HeroMap() {
   const { data: vendors } = useListVendors();
   const { data: establishments } = useListEstablishments();
@@ -145,7 +171,7 @@ export default function HeroMap() {
         center={FLORIDA_CENTER}
         zoom={9}
         scrollWheelZoom
-        zoomControl={true}
+        zoomControl={false}
         minZoom={3}
         maxZoom={18}
         doubleClickZoom
@@ -159,6 +185,7 @@ export default function HeroMap() {
         />
 
         {userPos && <MapFlyTo position={userPos} zoom={zoomForRadius(radius)} />}
+        <ZoomButtons />
 
         {userPos && (
           <Circle

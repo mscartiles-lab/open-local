@@ -51,6 +51,8 @@ import VisitRequestsPanel from "@/components/VisitRequestsPanel";
 import AnalyticsPanel from "@/components/AnalyticsPanel";
 import SupportRequestForm from "@/components/SupportRequestForm";
 import AdditionalLocationsPanel from "@/components/AdditionalLocationsPanel";
+import InventoryCsvTools from "@/components/InventoryCsvTools";
+import ProductVariationsManager from "@/components/ProductVariationsManager";
 
 type QuickType = "batch_drop" | "surplus" | "regular";
 
@@ -280,9 +282,12 @@ export default function Dashboard() {
           ))}
         </div>
 
-        <h2 className="mt-12 mb-4 font-serif text-2xl font-bold text-foreground">
-          Your listings
-        </h2>
+        <div className="mt-12 mb-4 flex flex-wrap items-center justify-between gap-3">
+          <h2 className="font-serif text-2xl font-bold text-foreground">
+            Your listings
+          </h2>
+          <InventoryCsvTools vendorId={vendor.id} onImported={invalidateAll} />
+        </div>
         {products.length === 0 ? (
           <div className="rounded-lg border border-dashed border-border bg-muted px-6 py-16 text-center">
             <Sparkles className="mx-auto h-10 w-10 text-muted-foreground" />
@@ -299,90 +304,93 @@ export default function Dashboard() {
               <div
                 key={p.id}
                 className={cn(
-                  "flex flex-col gap-4 p-4 md:flex-row md:items-center",
+                  "flex flex-col gap-4 p-4",
                   i > 0 && "border-t border-border",
                 )}
               >
-                <img
-                  src={p.imageUrl}
-                  alt={p.name}
-                  className="h-16 w-16 shrink-0 rounded-md border border-border object-cover"
-                />
-                <div className="flex-1 min-w-0">
-                  <div className="flex flex-wrap items-center gap-2">
-                    <p className="font-serif text-lg font-bold text-foreground">
-                      {p.name}
+                <div className="flex flex-col gap-4 md:flex-row md:items-center">
+                  <img
+                    src={p.imageUrl}
+                    alt={p.name}
+                    className="h-16 w-16 shrink-0 rounded-md border border-border object-cover"
+                  />
+                  <div className="flex-1 min-w-0">
+                    <div className="flex flex-wrap items-center gap-2">
+                      <p className="font-serif text-lg font-bold text-foreground">
+                        {p.name}
+                      </p>
+                      <ListingBadge type={p.listingType} />
+                    </div>
+                    <p className="text-sm text-muted-foreground line-clamp-1">
+                      {p.description}
                     </p>
-                    <ListingBadge type={p.listingType} />
+                    <p className="mt-1 text-sm">
+                      <span className="font-semibold text-foreground">
+                        ${(p.priceCents / 100).toFixed(2)}
+                      </span>
+                      <span className="text-muted-foreground"> / {p.unit}</span>
+                      {p.listingType === "surplus" && p.originalPriceCents && (
+                        <span className="ml-2 text-xs text-muted-foreground line-through">
+                          ${(p.originalPriceCents / 100).toFixed(2)}
+                        </span>
+                      )}
+                      {p.availableUntil && (
+                        <span className="ml-3 inline-flex items-center gap-1 text-xs text-muted-foreground">
+                          <Clock className="h-3 w-3" />
+                          Until{" "}
+                          {new Date(p.availableUntil).toLocaleDateString()}
+                        </span>
+                      )}
+                    </p>
                   </div>
-                  <p className="text-sm text-muted-foreground line-clamp-1">
-                    {p.description}
-                  </p>
-                  <p className="mt-1 text-sm">
-                    <span className="font-semibold text-foreground">
-                      ${(p.priceCents / 100).toFixed(2)}
-                    </span>
-                    <span className="text-muted-foreground"> / {p.unit}</span>
-                    {p.listingType === "surplus" && p.originalPriceCents && (
-                      <span className="ml-2 text-xs text-muted-foreground line-through">
-                        ${(p.originalPriceCents / 100).toFixed(2)}
-                      </span>
-                    )}
-                    {p.availableUntil && (
-                      <span className="ml-3 inline-flex items-center gap-1 text-xs text-muted-foreground">
-                        <Clock className="h-3 w-3" />
-                        Until{" "}
-                        {new Date(p.availableUntil).toLocaleDateString()}
-                      </span>
-                    )}
-                  </p>
-                </div>
-                <div className="flex items-center gap-3">
-                  <label className="flex items-center gap-2 text-sm font-medium">
-                    <Switch
-                      checked={p.inStock}
-                      onCheckedChange={(checked) => {
-                        updateProduct.mutate(
-                          {
-                            id: p.id,
-                            data: { inStock: checked },
-                          },
+                  <div className="flex items-center gap-3">
+                    <label className="flex items-center gap-2 text-sm font-medium">
+                      <Switch
+                        checked={p.inStock}
+                        onCheckedChange={(checked) => {
+                          updateProduct.mutate(
+                            {
+                              id: p.id,
+                              data: { inStock: checked },
+                            },
+                            {
+                              onSuccess: () => {
+                                invalidateAll();
+                              },
+                            },
+                          );
+                        }}
+                      />
+                      <span className="hidden md:inline">In stock</span>
+                    </label>
+                    <ListingPromoActions productId={p.id} featured={p.featured} />
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      onClick={() => {
+                        if (
+                          !confirm(`Delete "${p.name}"? This can't be undone.`)
+                        )
+                          return;
+                        deleteProduct.mutate(
+                          { id: p.id },
                           {
                             onSuccess: () => {
                               invalidateAll();
+                              toast({
+                                title: "Deleted",
+                                description: `${p.name} was removed.`,
+                              });
                             },
                           },
                         );
                       }}
-                    />
-                    <span className="hidden md:inline">In stock</span>
-                  </label>
-                  <ListingPromoActions productId={p.id} featured={p.featured} />
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    onClick={() => {
-                      if (
-                        !confirm(`Delete "${p.name}"? This can't be undone.`)
-                      )
-                        return;
-                      deleteProduct.mutate(
-                        { id: p.id },
-                        {
-                          onSuccess: () => {
-                            invalidateAll();
-                            toast({
-                              title: "Deleted",
-                              description: `${p.name} was removed.`,
-                            });
-                          },
-                        },
-                      );
-                    }}
-                  >
-                    <Trash2 className="h-4 w-4 text-destructive" />
-                  </Button>
+                    >
+                      <Trash2 className="h-4 w-4 text-destructive" />
+                    </Button>
+                  </div>
                 </div>
+                <ProductVariationsManager productId={p.id} />
               </div>
             ))}
           </div>

@@ -40,6 +40,8 @@ export * from "./searchLogInput";
 export * from "./searchQueryStat";
 export * from "./startEmailVerificationRequest";
 export * from "./startEmailVerificationResponse";
+export * from "./uploadUrlRequest";
+export * from "./uploadUrlResponse";
 export * from "./vendor";
 export * from "./vendorAdditionalLocationsItem";
 export * from "./vendorInput";

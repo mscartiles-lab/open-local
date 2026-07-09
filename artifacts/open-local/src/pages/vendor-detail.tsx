@@ -10,6 +10,9 @@ import NotFound from "./not-found";
 import { useFavorites } from "@/hooks/use-favorites";
 import CheckInButton from "@/components/CheckInButton";
 import { useUser } from "@/context/UserContext";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import VendorReviews from "@/components/VendorReviews";
+import VendorCertifications, { VendorCertificationBadges } from "@/components/VendorCertifications";
 
 export default function VendorDetail() {
   const params = useParams();
@@ -85,7 +88,10 @@ export default function VendorDetail() {
                   <div>
                     <div className="text-xs font-medium text-primary uppercase tracking-wider mb-2">{vendor.category}</div>
                     <h1 className="text-4xl font-serif font-bold text-foreground mb-2">{vendor.name}</h1>
-                    <p className="text-xl text-muted-foreground font-serif italic mb-6">{vendor.tagline}</p>
+                    <p className="text-xl text-muted-foreground font-serif italic mb-4">{vendor.tagline}</p>
+                    <div className="mb-6">
+                      <VendorCertificationBadges vendorId={vendor.id} />
+                    </div>
                     
                     <div className="flex flex-wrap gap-6 text-sm text-muted-foreground">
                       <div className="flex items-center gap-2">
@@ -178,12 +184,24 @@ export default function VendorDetail() {
             </Card>
           </div>
 
-          {/* Products */}
+          {/* Products / Reviews / Certifications */}
           <div className="container max-w-6xl mx-auto px-4 pb-24">
-            <h2 className="text-2xl font-serif font-bold text-foreground mb-8 border-b border-border pb-4">
-              Goods by {vendor.name}
-            </h2>
+            <Tabs defaultValue="products" className="w-full">
+              <TabsList className="mb-8">
+                <TabsTrigger value="products">Goods</TabsTrigger>
+                <TabsTrigger value="reviews">Reviews</TabsTrigger>
+                <TabsTrigger value="certifications">Certifications</TabsTrigger>
+              </TabsList>
 
+              <TabsContent value="reviews">
+                <VendorReviews vendorId={vendor.id} />
+              </TabsContent>
+
+              <TabsContent value="certifications">
+                <VendorCertifications vendorId={vendor.id} />
+              </TabsContent>
+
+              <TabsContent value="products">
             {productsLoading ? (
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
                 {[...Array(4)].map((_, i) => <Skeleton key={i} className="h-[350px] w-full" />)}
@@ -260,6 +278,8 @@ export default function VendorDetail() {
                 <p className="text-muted-foreground">This producer hasn't added any products yet.</p>
               </div>
             )}
+              </TabsContent>
+            </Tabs>
           </div>
         </div>
       ) : null}

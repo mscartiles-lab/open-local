@@ -11,7 +11,7 @@ function getToken() {
   return localStorage.getItem("ol_session");
 }
 
-function authHeaders() {
+function authHeaders(): Record<string, string> {
   const t = getToken();
   return t ? { Authorization: `Bearer ${t}` } : {};
 }
@@ -263,7 +263,7 @@ export default function Messages() {
                         ) : !mine ? (
                           <Avatar
                             seed={detail.shopper?.avatarSeed ?? "default"}
-                            style={detail.shopper?.avatarStyle ?? "adventurer"}
+                            style={(detail.shopper?.avatarStyle ?? "adventurer") as any}
                             size={28}
                           />
                         ) : null}
