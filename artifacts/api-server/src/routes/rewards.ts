@@ -296,5 +296,160 @@ router.patch("/rewards/equipped", requireAuth, async (req, res): Promise<void> =
   res.json({ equipped: updated?.equippedUnlocks ?? [] });
 });
 
+// ── Vendor-initiated: directly verify a shopper by username ─────────────────
+const verifyBody = z.object({
+  username: z.string().min(1),
+});
+
+router.post("/rewards/vendor/:vendorId/verify", requireAuth, async (req, res): Promise<void> => {
+  const userId = (req as AuthRequest).userId;
+  const vendorId = Number(req.params.vendorId);
+  if (!Number.isFinite(vendorId)) {
+    res.status(400).json({ error: "Invalid vendorId" });
+    return;
+  }
+  const parsed = verifyBody.safeParse(req.body);
+  if (!parsed.success) {
+    res.status(400).json({ error: parsed.error.message });
+    return;
+  }
+
+  if (!(await userOwnsVendor(userId, vendorId))) {
+    res.status(403).json({ error: "You don't manage this shop." });
+    return;
+  }
+
+  // Resolve shopper by username (case-insensitive)
+  const [shopper] = await db
+    .select({ id: usersTable.id, username: usersTable.username, role: usersTable.role })
+    .from(usersTable)
+    .where(sql`lower(${usersTable.username}) = lower(${parsed.data.username})`);
+
+  if (!shopper) {
+    res.status(404).json({ error: "No account found with that username." });
+    return;
+  }
+  if (shopper.role === "vendor" || shopper.role === "admin") {
+    res.status(400).json({ error: "Only shopper accounts can receive visit credit." });
+    return;
+  }
+
+  // Already approved for this vendor?
+  const [existing] = await db
+    .select({ id: vendorVisitsTable.id, status: vendorVisitsTable.status })
+    .from(vendorVisitsTable)
+    .where(
+      and(
+        eq(vendorVisitsTable.userId, shopper.id),
+        eq(vendorVisitsTable.vendorId, vendorId),
+        eq(vendorVisitsTable.status, "approved"),
+      ),
+    );
+  if (existing) {
+    res.status(409).json({ error: `@${shopper.username} already has an approved visit for this shop.` });
+    return;
+  }
+
+  // If there is a pending request from them, approve that; otherwise create a new approved one.
+  const [pending] = await db
+    .select({ id: vendorVisitsTable.id })
+    .from(vendorVisitsTable)
+    .where(
+      and(
+        eq(vendorVisitsTable.userId, shopper.id),
+        eq(vendorVisitsTable.vendorId, vendorId),
+        eq(vendorVisitsTable.status, "pending"),
+      ),
+    );
+
+  let visitId: number;
+  if (pending) {
+    await db
+      .update(vendorVisitsTable)
+      .set({ status: "approved", decidedAt: new Date() })
+      .where(eq(vendorVisitsTable.id, pending.id));
+    visitId = pending.id;
+  } else {
+    const [inserted] = await db
+      .insert(vendorVisitsTable)
+      .values({ userId: shopper.id, vendorId, status: "approved", decidedAt: new Date() })
+      .returning();
+    visitId = inserted.id;
+  }
+
+  // Award unlocks
+  const [{ count }] = await db
+    .select({ count: sql<number>`count(distinct ${vendorVisitsTable.vendorId})::int` })
+    .from(vendorVisitsTable)
+    .where(
+      and(
+        eq(vendorVisitsTable.userId, shopper.id),
+        eq(vendorVisitsTable.status, "approved"),
+      ),
+    );
+
+  const earnedKeys = unlocksEarnedFor(count ?? 0);
+  const existing2 = await db
+    .select({ key: avatarUnlocksTable.unlockKey })
+    .from(avatarUnlocksTable)
+    .where(eq(avatarUnlocksTable.userId, shopper.id));
+  const existingSet = new Set(existing2.map((r) => r.key));
+  const newlyEarned = earnedKeys.filter((k) => !existingSet.has(k));
+
+  if (newlyEarned.length > 0) {
+    await db
+      .insert(avatarUnlocksTable)
+      .values(newlyEarned.map((k) => ({ userId: shopper.id, unlockKey: k })))
+      .onConflictDoNothing();
+  }
+
+  emitEvent("vendor.visit_approved", { visitId, vendorId, shopperUserId: shopper.id });
+
+  res.json({ ok: true, visitId, username: shopper.username, newlyUnlocked: newlyEarned });
+});
+
+// ── Full visit history for a vendor ─────────────────────────────────────────
+router.get("/rewards/vendor/:vendorId/history", requireAuth, async (req, res): Promise<void> => {
+  const userId = (req as AuthRequest).userId;
+  const vendorId = Number(req.params.vendorId);
+  if (!Number.isFinite(vendorId)) {
+    res.status(400).json({ error: "Invalid vendorId" });
+    return;
+  }
+
+  if (!(await userOwnsVendor(userId, vendorId))) {
+    res.status(403).json({ error: "You don't manage this shop." });
+    return;
+  }
+
+  const statusFilter = req.query.status as string | undefined;
+  const allowed = ["pending", "approved", "rejected"];
+
+  const rows = await db
+    .select({
+      id: vendorVisitsTable.id,
+      status: vendorVisitsTable.status,
+      requestedAt: vendorVisitsTable.requestedAt,
+      decidedAt: vendorVisitsTable.decidedAt,
+      shopperUserId: vendorVisitsTable.userId,
+      username: usersTable.username,
+      avatarSeed: usersTable.avatarSeed,
+      avatarStyle: usersTable.avatarStyle,
+    })
+    .from(vendorVisitsTable)
+    .innerJoin(usersTable, eq(usersTable.id, vendorVisitsTable.userId))
+    .where(
+      and(
+        eq(vendorVisitsTable.vendorId, vendorId),
+        statusFilter && allowed.includes(statusFilter)
+          ? eq(vendorVisitsTable.status, statusFilter as "pending" | "approved" | "rejected")
+          : undefined,
+      ),
+    )
+    .orderBy(desc(vendorVisitsTable.requestedAt));
+
+  res.json({ visits: rows });
+});
+
 export default router;
 void loadUserEmail;
