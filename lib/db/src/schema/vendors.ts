@@ -40,6 +40,10 @@ export const vendorsTable = pgTable("vendors", {
     .notNull()
     .default([]),
   flaggedForFollowup: boolean("flagged_for_followup").notNull().default(false),
+  stripeConnectId: text("stripe_connect_id"),
+  stripeConnectStatus: text("stripe_connect_status")
+    .$type<"pending" | "active" | "restricted">()
+    .default("pending"),
 });
 
 export type Vendor = typeof vendorsTable.$inferSelect;

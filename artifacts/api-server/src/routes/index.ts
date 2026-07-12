@@ -22,6 +22,8 @@ import certificationsRouter from "./certifications";
 import productVariationsRouter from "./product-variations";
 import productBulkRouter from "./product-bulk";
 import storageRouter from "./storage";
+import ordersRouter from "./orders";
+import connectRouter from "./connect";
 
 const router: IRouter = Router();
 
@@ -48,5 +50,7 @@ router.use(certificationsRouter);
 router.use(productVariationsRouter);
 router.use(productBulkRouter);
 router.use(storageRouter);
+router.use(ordersRouter);
+router.use(connectRouter);
 
 export default router;

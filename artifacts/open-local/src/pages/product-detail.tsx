@@ -1,19 +1,54 @@
 import { useParams } from "wouter";
 import { Link } from "wouter";
 import { motion } from "framer-motion";
-import { Store, Tag, MapPin, Heart } from "lucide-react";
+import { Store, Tag, MapPin, Heart, ShoppingCart, Loader2 } from "lucide-react";
 import Layout from "@/components/layout/Layout";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Card, CardContent } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
 import { useGetProduct, useGetVendor, useListVendorProducts, getGetProductQueryKey, getGetVendorQueryKey, getListVendorProductsQueryKey } from "@workspace/api-client-react";
 import NotFound from "./not-found";
 import { useFavorites } from "@/hooks/use-favorites";
+import { useUser } from "@/context/UserContext";
+import { useToast } from "@/hooks/use-toast";
+import { useState } from "react";
+
+const SESSION_KEY = "ol_session";
+function authHeaders(): Record<string, string> {
+  const token = localStorage.getItem(SESSION_KEY);
+  return token ? { Authorization: `Bearer ${token}` } : {};
+}
 
 export default function ProductDetail() {
   const params = useParams();
   const id = Number(params.id);
+  const { user, openOnboarding } = useUser();
+  const { toast } = useToast();
+  const [buyBusy, setBuyBusy] = useState(false);
 
   const { isFavoriteProduct, toggleProduct } = useFavorites();
+
+  const handleBuy = async () => {
+    if (!user) {
+      openOnboarding();
+      toast({ title: "Sign in to purchase", description: "Create a free account to buy from local producers." });
+      return;
+    }
+    setBuyBusy(true);
+    try {
+      const r = await fetch("/api/orders/checkout", {
+        method: "POST",
+        headers: { "Content-Type": "application/json", ...authHeaders() },
+        body: JSON.stringify({ productId: id, quantity: 1 }),
+      });
+      const data = await r.json();
+      if (!r.ok) throw new Error(data.error ?? `HTTP ${r.status}`);
+      window.location.href = data.url;
+    } catch (e) {
+      toast({ variant: "destructive", title: "Couldn't start checkout", description: (e as Error).message });
+      setBuyBusy(false);
+    }
+  };
 
   const { data: product, isLoading: productLoading, error: productError } = useGetProduct(id, {
     query: {
@@ -125,9 +160,28 @@ export default function ProductDetail() {
                   </div>
                 )}
 
-                <div className="prose prose-sm md:prose-base dark:prose-invert max-w-none text-foreground/80 font-sans leading-relaxed mb-12">
+                <div className="prose prose-sm md:prose-base dark:prose-invert max-w-none text-foreground/80 font-sans leading-relaxed mb-8">
                   <p>{product.description}</p>
                 </div>
+
+                {/* Buy button */}
+                {product.inStock ? (
+                  <div className="mb-8 space-y-2">
+                    <Button size="lg" className="w-full gap-2 text-base" onClick={handleBuy} disabled={buyBusy}>
+                      {buyBusy
+                        ? <><Loader2 className="w-5 h-5 animate-spin" /> Redirecting to checkout…</>
+                        : <><ShoppingCart className="w-5 h-5" />
+                          {product.listingType === "pre_order" ? "Reserve & Pay" : "Buy Now"} — ${(product.priceCents / 100).toFixed(2)}
+                        </>
+                      }
+                    </Button>
+                    <p className="text-xs text-center text-muted-foreground">Secure checkout via Stripe · 8% platform fee included</p>
+                  </div>
+                ) : (
+                  <div className="mb-8 rounded border border-border bg-muted px-4 py-3 text-sm text-muted-foreground text-center">
+                    Currently out of stock
+                  </div>
+                )}
 
                 <div className="bg-muted/30 border border-border p-6 mt-auto">
                   <h3 className="text-sm font-bold uppercase tracking-widest mb-4">About the Producer</h3>

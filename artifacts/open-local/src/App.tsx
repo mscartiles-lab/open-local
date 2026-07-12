@@ -29,6 +29,7 @@ import SearchPage from "@/pages/search";
 import Rewards from "@/pages/rewards";
 import SupportPage from "@/pages/support";
 import Messages from "@/pages/messages";
+import OrdersPage from "@/pages/orders";
 import NotFound from "@/pages/not-found";
 
 const queryClient = new QueryClient({
@@ -66,6 +67,7 @@ function Router() {
       <Route path="/rewards" component={Rewards} />
       <Route path="/support" component={SupportPage} />
       <Route path="/messages" component={Messages} />
+      <Route path="/orders" component={OrdersPage} />
       <Route component={NotFound} />
     </Switch>
   );

@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { Link, useLocation } from "wouter";
-import { Store, ShoppingBag, PlusCircle, Settings, Menu, Heart, HandHelping, Percent, CalendarDays, LogOut, LogIn, User, CreditCard, Sparkles, Search as SearchIcon, LifeBuoy, MessageCircle } from "lucide-react";
+import { Store, ShoppingBag, PlusCircle, Settings, Menu, Heart, HandHelping, Percent, CalendarDays, LogOut, LogIn, User, CreditCard, Sparkles, Search as SearchIcon, LifeBuoy, MessageCircle, Package } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 import {
@@ -75,6 +75,11 @@ export function Navbar() {
               <p className="text-xs text-muted-foreground capitalize">{user.role}{user.zip ? ` · ${user.zip}` : ""}</p>
             </div>
             <DropdownMenuSeparator />
+            <DropdownMenuItem asChild className="gap-2 cursor-pointer">
+              <Link href="/orders">
+                <Package size={14} /> My orders
+              </Link>
+            </DropdownMenuItem>
             <DropdownMenuItem asChild className="gap-2 cursor-pointer">
               <Link href="/rewards">
                 <Sparkles size={14} /> Rewards

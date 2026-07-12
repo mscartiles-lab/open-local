@@ -48,6 +48,8 @@ import {
 import { useQueryClient } from "@tanstack/react-query";
 import { cn } from "@/lib/utils";
 import CustomerVerificationPanel from "@/components/CustomerVerificationPanel";
+import PayoutsPanel from "@/components/PayoutsPanel";
+import VendorOrdersPanel from "@/components/VendorOrdersPanel";
 import AnalyticsPanel from "@/components/AnalyticsPanel";
 import SupportRequestForm from "@/components/SupportRequestForm";
 import AdditionalLocationsPanel from "@/components/AdditionalLocationsPanel";
@@ -218,6 +220,8 @@ export default function Dashboard() {
 
       <div className="container mx-auto max-w-6xl px-4 py-10 space-y-8">
         <AnalyticsPanel kind="vendor" id={vendor.id} />
+        <PayoutsPanel vendorSlug={vendor.slug} />
+        <VendorOrdersPanel vendorId={vendor.id} />
         <CustomerVerificationPanel vendorId={vendor.id} />
         <AdditionalLocationsPanel
           vendor={vendor}
