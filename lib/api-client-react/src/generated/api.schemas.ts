@@ -70,6 +70,14 @@ export interface Vendor {
   /** @nullable */
   marketsText: string | null;
   /** @nullable */
+  pickupAddress: string | null;
+  /** @nullable */
+  openDays: string[] | null;
+  /** @nullable */
+  openHours: string | null;
+  /** @nullable */
+  howToOrder: string | null;
+  /** @nullable */
   latitude: number | null;
   /** @nullable */
   longitude: number | null;
@@ -110,6 +118,14 @@ export interface VendorInput {
   /** @nullable */
   marketsText?: string | null;
   /** @nullable */
+  pickupAddress?: string | null;
+  /** @nullable */
+  openDays?: string[] | null;
+  /** @nullable */
+  openHours?: string | null;
+  /** @nullable */
+  howToOrder?: string | null;
+  /** @nullable */
   latitude?: number | null;
   /** @nullable */
   longitude?: number | null;
@@ -146,6 +162,14 @@ export interface VendorUpdate {
   facebookUrl?: string | null;
   /** @nullable */
   marketsText?: string | null;
+  /** @nullable */
+  pickupAddress?: string | null;
+  /** @nullable */
+  openDays?: string[] | null;
+  /** @nullable */
+  openHours?: string | null;
+  /** @nullable */
+  howToOrder?: string | null;
   /** @nullable */
   latitude?: number | null;
   /** @nullable */

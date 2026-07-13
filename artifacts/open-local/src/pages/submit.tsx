@@ -29,6 +29,10 @@ import {
   Minus,
   Mail,
   ShieldCheck,
+  Clock,
+  CalendarDays,
+  ShoppingBag,
+  Home,
 } from "lucide-react";
 import Layout from "@/components/layout/Layout";
 import { Button } from "@/components/ui/button";
@@ -70,6 +74,16 @@ const popularCities = [
   "Key West",
 ];
 
+const DAYS_OF_WEEK = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"] as const;
+const HOW_TO_ORDER_OPTIONS = [
+  { value: "walk_in", label: "Walk-in / First come, first served" },
+  { value: "dm_instagram", label: "DM on Instagram" },
+  { value: "website", label: "Order on my website" },
+  { value: "email", label: "Email to order" },
+  { value: "preorder_required", label: "Pre-order required" },
+  { value: "farmers_market", label: "Find me at the farmers market" },
+] as const;
+
 const formSchema = z.object({
   category: z.string().min(2, "Pick a category."),
   name: z.string().min(2, "Add your business name."),
@@ -78,13 +92,19 @@ const formSchema = z.object({
   location: z.string().min(2, "Pick or type a city."),
   region: z.string().min(2),
   established: z.coerce.number().int().min(1800).max(new Date().getFullYear()),
+  // Step 3 — availability
+  pickupAddress: z.string().optional().or(z.literal("")),
+  openDays: z.array(z.string()).optional(),
+  openHours: z.string().optional().or(z.literal("")),
+  howToOrder: z.array(z.string()).optional(),
+  marketsText: z.string().optional().or(z.literal("")),
+  // Step 4 — contact
   contactEmail: z.string().email("Enter a valid email."),
   imageUrl: z.string().url("Must be a valid image URL").optional().or(z.literal("")),
   websiteUrl: z.string().url("Must be a valid URL").optional().or(z.literal("")),
   phone: z.string().optional().or(z.literal("")),
   instagramHandle: z.string().optional().or(z.literal("")),
   facebookUrl: z.string().url("Must be a valid URL").optional().or(z.literal("")),
-  marketsText: z.string().optional().or(z.literal("")),
 });
 
 type FormValues = z.infer<typeof formSchema>;
@@ -92,7 +112,8 @@ type FormValues = z.infer<typeof formSchema>;
 const stepFields: Record<number, (keyof FormValues)[]> = {
   1: ["category"],
   2: ["name", "tagline", "description", "location", "region"],
-  3: ["contactEmail", "imageUrl", "websiteUrl", "phone", "instagramHandle", "facebookUrl", "marketsText"],
+  3: ["pickupAddress", "openDays", "openHours", "howToOrder", "marketsText"],
+  4: ["contactEmail", "imageUrl", "websiteUrl", "phone", "instagramHandle", "facebookUrl"],
 };
 
 type VerificationState = {
@@ -128,13 +149,17 @@ export default function Submit() {
       location: "",
       region: "Florida",
       established: new Date().getFullYear(),
+      pickupAddress: "",
+      openDays: [],
+      openHours: "",
+      howToOrder: [],
+      marketsText: "",
       contactEmail: "",
       imageUrl: "",
       websiteUrl: "",
       phone: "",
       instagramHandle: "",
       facebookUrl: "",
-      marketsText: "",
     },
   });
 
@@ -164,7 +189,7 @@ export default function Submit() {
   }
 
   async function publish() {
-    const fields = stepFields[3];
+    const fields = stepFields[4];
     const valid = await form.trigger(fields);
     if (!valid) return;
     const values = form.getValues();
@@ -183,6 +208,10 @@ export default function Submit() {
       instagramHandle: instagramHandleClean || null,
       facebookUrl: values.facebookUrl || null,
       marketsText: values.marketsText || null,
+      pickupAddress: values.pickupAddress || null,
+      openDays: values.openDays?.length ? values.openDays : null,
+      openHours: values.openHours || null,
+      howToOrder: values.howToOrder?.length ? values.howToOrder.join(", ") : null,
     };
 
     startVerification.mutate(
@@ -280,13 +309,13 @@ export default function Submit() {
         <div className="container max-w-3xl mx-auto px-4 py-10 md:py-14">
           <div className="text-center">
             <p className="text-sm tracking-[0.2em] uppercase text-primary font-semibold mb-3">
-              Three quick steps
+              Four quick steps
             </p>
             <h1 className="text-4xl md:text-5xl font-serif font-bold text-foreground mb-3">
               List your business on Open Local
             </h1>
             <p className="text-lg text-muted-foreground max-w-xl mx-auto">
-              We'll help neighbors and visitors find what you make. Free to list, takes about a minute.
+              We'll guide you through everything customers need to find and buy from you. Free to list, takes 2–3 minutes.
             </p>
           </div>
 
@@ -466,7 +495,150 @@ export default function Submit() {
               transition={{ duration: 0.25 }}
             >
               <StepHeader
-                eyebrow="Step 3"
+                eyebrow="Step 3 of 4"
+                title="Availability & ordering"
+                subtitle="Help customers find you and know how to buy. All fields are optional — fill in what applies."
+              />
+
+              <div className="mt-8 space-y-8">
+                {/* Pickup location */}
+                <Field
+                  label="Pickup or selling location"
+                  hint="Where do customers pick up orders? E.g. 'Our garage at 123 Mango Lane, Miami' or 'Wynwood Saturday Market, booth #12'."
+                >
+                  <div className="relative">
+                    <Home className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+                    <Input
+                      placeholder="Address, market booth, farm gate…"
+                      className="pl-9"
+                      {...form.register("pickupAddress")}
+                    />
+                  </div>
+                </Field>
+
+                {/* Days open */}
+                <Field
+                  label="Days you're available"
+                  hint="Pick every day that applies."
+                >
+                  <div className="flex flex-wrap gap-2 mt-1">
+                    {DAYS_OF_WEEK.map((day) => {
+                      const selected = (form.watch("openDays") ?? []).includes(day);
+                      return (
+                        <button
+                          key={day}
+                          type="button"
+                          onClick={() => {
+                            const current = form.getValues("openDays") ?? [];
+                            form.setValue(
+                              "openDays",
+                              selected ? current.filter((d) => d !== day) : [...current, day],
+                              { shouldValidate: true },
+                            );
+                          }}
+                          className={cn(
+                            "rounded-full border px-3 py-1.5 text-sm font-medium transition-colors",
+                            selected
+                              ? "border-primary bg-primary text-primary-foreground"
+                              : "border-border bg-card text-foreground hover:border-primary/50",
+                          )}
+                        >
+                          {day.slice(0, 3)}
+                        </button>
+                      );
+                    })}
+                  </div>
+                </Field>
+
+                {/* Hours */}
+                <Field
+                  label="Hours you're open"
+                  hint="E.g. 'Saturdays 8 am – 1 pm' or 'Tuesday–Friday by appointment'."
+                >
+                  <div className="relative">
+                    <Clock className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+                    <Input
+                      placeholder="Saturdays 8 am – 1 pm"
+                      className="pl-9"
+                      {...form.register("openHours")}
+                    />
+                  </div>
+                </Field>
+
+                {/* How to order */}
+                <Field
+                  label="How do customers order?"
+                  hint="Select everything that applies — we'll show this on your profile."
+                >
+                  <div className="flex flex-col gap-2 mt-1">
+                    {HOW_TO_ORDER_OPTIONS.map(({ value, label }) => {
+                      const selected = (form.watch("howToOrder") ?? []).includes(value);
+                      return (
+                        <button
+                          key={value}
+                          type="button"
+                          onClick={() => {
+                            const current = form.getValues("howToOrder") ?? [];
+                            form.setValue(
+                              "howToOrder",
+                              selected ? current.filter((v) => v !== value) : [...current, value],
+                              { shouldValidate: true },
+                            );
+                          }}
+                          className={cn(
+                            "flex items-center gap-3 rounded-xl border px-4 py-3 text-sm font-medium text-left transition-colors",
+                            selected
+                              ? "border-primary bg-primary/5 text-foreground"
+                              : "border-border bg-card text-foreground hover:border-primary/50",
+                          )}
+                        >
+                          <span className={cn(
+                            "flex h-5 w-5 items-center justify-center rounded-full border-2 shrink-0 transition-colors",
+                            selected ? "border-primary bg-primary" : "border-border"
+                          )}>
+                            {selected && <Check className="h-3 w-3 text-primary-foreground" />}
+                          </span>
+                          {label}
+                        </button>
+                      );
+                    })}
+                  </div>
+                </Field>
+
+                {/* Markets */}
+                <Field
+                  label="Farmers markets or pop-ups you attend"
+                  hint="Separate with commas — e.g. 'Wynwood Saturday Market, Coconut Grove Sunday Market'."
+                >
+                  <div className="relative">
+                    <CalendarDays className="pointer-events-none absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+                    <Textarea
+                      placeholder="Wynwood Saturday Market, Coconut Grove Sunday Market…"
+                      className="min-h-[80px] pl-9"
+                      {...form.register("marketsText")}
+                    />
+                  </div>
+                </Field>
+              </div>
+
+              <NavRow
+                onBack={prevStep}
+                onNext={nextStep}
+                nextLabel="Continue"
+              />
+            </motion.div>
+          )}
+
+          {step === 4 && (
+            <motion.div
+              key="step-4"
+              initial={{ opacity: 0, y: 12 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -12 }}
+              transition={{ duration: 0.25 }}
+            >
+              <StepHeader
+                eyebrow="Step 4 of 4"
                 title="How can people reach you?"
                 subtitle="Just an email is enough. Add a cover photo and socials if you'd like."
               />
@@ -595,14 +767,13 @@ export default function Submit() {
                           </Field>
                         </div>
                         <Field
-                          label="Markets you sell at"
-                          hint="Separate with commas — e.g. Wynwood Saturday Market, Coconut Grove Sunday Market."
-                          error={form.formState.errors.marketsText?.message}
+                          label="Year established"
+                          error={form.formState.errors.established?.message}
                         >
-                          <Textarea
-                            placeholder="Wynwood Saturday Market, Coconut Grove Sunday Market"
-                            className="min-h-[80px]"
-                            {...form.register("marketsText")}
+                          <Input
+                            type="number"
+                            placeholder={String(new Date().getFullYear())}
+                            {...form.register("established")}
                           />
                         </Field>
                       </div>
@@ -645,9 +816,9 @@ export default function Submit() {
             </motion.div>
           )}
 
-          {step === 4 && verification && (
+          {step === 5 && verification && (
             <motion.div
-              key="step-4"
+              key="step-5"
               initial={{ opacity: 0, y: 12 }}
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: -12 }}
@@ -661,7 +832,7 @@ export default function Submit() {
                 onSubmit={submitCode}
                 onResend={resendCode}
                 onBack={() => {
-                  setStep(3);
+                  setStep(4);
                   setVerification(null);
                   setCode("");
                   setVerifyError(null);
@@ -679,7 +850,7 @@ export default function Submit() {
 }
 
 function Stepper({ step }: { step: number }) {
-  const labels = ["Category", "Story", "Contact", "Verify"];
+  const labels = ["Category", "Story", "Availability", "Contact", "Verify"];
   return (
     <div className="mt-8 flex items-center justify-center gap-2 sm:gap-4">
       {labels.map((label, i) => {
@@ -816,7 +987,7 @@ function VerifyStep({
           <Mail className="h-6 w-6" />
         </div>
         <p className="text-xs uppercase tracking-[0.2em] text-primary font-semibold mb-2">
-          Step 4 — Final check
+          Step 5 — Final check
         </p>
         <h2 className="text-3xl md:text-4xl font-serif font-bold text-foreground mb-2">
           Verify your email

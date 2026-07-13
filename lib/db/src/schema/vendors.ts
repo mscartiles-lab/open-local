@@ -27,6 +27,10 @@ export const vendorsTable = pgTable("vendors", {
   instagramHandle: text("instagram_handle"),
   facebookUrl: text("facebook_url"),
   marketsText: text("markets_text"),
+  pickupAddress: text("pickup_address"),
+  openDays: jsonb("open_days").$type<string[]>().default([]),
+  openHours: text("open_hours"),
+  howToOrder: text("how_to_order"),
   latitude: doublePrecision("latitude"),
   longitude: doublePrecision("longitude"),
   additionalLocations: jsonb("additional_locations")

@@ -840,6 +840,12 @@ components:
         instagramHandle: { type: ["string", "null"] }
         facebookUrl: { type: ["string", "null"] }
         marketsText: { type: ["string", "null"] }
+        pickupAddress: { type: ["string", "null"] }
+        openDays:
+          type: ["array", "null"]
+          items: { type: string }
+        openHours: { type: ["string", "null"] }
+        howToOrder: { type: ["string", "null"] }
         latitude: { type: ["number", "null"] }
         longitude: { type: ["number", "null"] }
         additionalLocations:
@@ -874,6 +880,10 @@ components:
         - instagramHandle
         - facebookUrl
         - marketsText
+        - pickupAddress
+        - openDays
+        - openHours
+        - howToOrder
         - latitude
         - longitude
         - createdAt
@@ -899,6 +909,12 @@ components:
         instagramHandle: { type: ["string", "null"] }
         facebookUrl: { type: ["string", "null"] }
         marketsText: { type: ["string", "null"] }
+        pickupAddress: { type: ["string", "null"] }
+        openDays:
+          type: ["array", "null"]
+          items: { type: string }
+        openHours: { type: ["string", "null"] }
+        howToOrder: { type: ["string", "null"] }
         latitude: { type: ["number", "null"] }
         longitude: { type: ["number", "null"] }
         additionalLocations:
@@ -941,6 +957,12 @@ components:
         instagramHandle: { type: ["string", "null"] }
         facebookUrl: { type: ["string", "null"] }
         marketsText: { type: ["string", "null"] }
+        pickupAddress: { type: ["string", "null"] }
+        openDays:
+          type: ["array", "null"]
+          items: { type: string }
+        openHours: { type: ["string", "null"] }
+        howToOrder: { type: ["string", "null"] }
         latitude: { type: ["number", "null"] }
         longitude: { type: ["number", "null"] }
         additionalLocations:

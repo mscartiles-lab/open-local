@@ -30,6 +30,14 @@ export interface VendorInput {
   /** @nullable */
   marketsText?: string | null;
   /** @nullable */
+  pickupAddress?: string | null;
+  /** @nullable */
+  openDays?: string[] | null;
+  /** @nullable */
+  openHours?: string | null;
+  /** @nullable */
+  howToOrder?: string | null;
+  /** @nullable */
   latitude?: number | null;
   /** @nullable */
   longitude?: number | null;
