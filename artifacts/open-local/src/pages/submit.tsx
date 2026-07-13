@@ -621,11 +621,36 @@ export default function Submit() {
                 </Field>
               </div>
 
-              <NavRow
-                onBack={prevStep}
-                onNext={nextStep}
-                nextLabel="Continue"
-              />
+              <div className="mt-10 border-t border-border pt-6 space-y-3">
+                <div className="flex items-center justify-between gap-3">
+                  <Button type="button" variant="ghost" onClick={prevStep}>
+                    <ArrowLeft className="mr-2 h-4 w-4" />
+                    Back
+                  </Button>
+                  <Button type="button" onClick={nextStep} className="px-6">
+                    Continue
+                    <ArrowRight className="ml-2 h-4 w-4" />
+                  </Button>
+                </div>
+                <p className="text-center text-sm text-muted-foreground">
+                  Not sure yet?{" "}
+                  <button
+                    type="button"
+                    onClick={() => {
+                      form.setValue("pickupAddress", "");
+                      form.setValue("openDays", []);
+                      form.setValue("openHours", "");
+                      form.setValue("howToOrder", []);
+                      form.setValue("marketsText", "");
+                      setStep(4);
+                    }}
+                    className="font-semibold text-primary hover:underline"
+                  >
+                    Skip this step
+                  </button>
+                  {" "}— you can always add it from your dashboard later.
+                </p>
+              </div>
             </motion.div>
           )}
 
