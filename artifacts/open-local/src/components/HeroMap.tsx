@@ -47,7 +47,8 @@ const EST_ICON = L.divIcon({
 
 const FLORIDA_CENTER: [number, number] = [27.6, -82.5];
 const MILES_TO_METERS = 1609.344;
-const QUICK_PICKS = [5, 10, 25, 50] as const;
+const QUICK_PICKS = [0.5, 1, 2, 5] as const;
+const QUICK_PICK_LABELS: Record<number, string> = { 0.5: "½ mi", 1: "1 mi", 2: "2 mi", 5: "5 mi" };
 
 function haversineMiles(lat1: number, lng1: number, lat2: number, lng2: number) {
   const R = 3958.8;
@@ -62,11 +63,13 @@ function haversineMiles(lat1: number, lng1: number, lat2: number, lng2: number) 
 }
 
 function zoomForRadius(miles: number): number {
-  // Hyper-local at small radius, regional at large
-  if (miles <= 5) return 13;
-  if (miles <= 10) return 12;
-  if (miles <= 25) return 11;
-  return 10;
+  if (miles <= 0.5) return 15;
+  if (miles <= 1) return 14;
+  if (miles <= 2) return 13;
+  if (miles <= 5) return 12;
+  if (miles <= 10) return 11;
+  if (miles <= 25) return 10;
+  return 9;
 }
 
 function MapFlyTo({ position, zoom }: { position: [number, number]; zoom: number }) {
@@ -114,7 +117,7 @@ export default function HeroMap() {
   const [userPos, setUserPos] = useState<[number, number] | null>(null);
   const [locating, setLocating] = useState(false);
   const [locationError, setLocationError] = useState<string | null>(null);
-  const [radius, setRadius] = useState(5);
+  const [radius, setRadius] = useState(1);
 
   const locate = useCallback(() => {
     if (!navigator.geolocation) {
@@ -285,8 +288,8 @@ export default function HeroMap() {
       >
         <div className="bg-white/95 backdrop-blur-sm rounded-2xl shadow-lg px-3 py-2.5 flex flex-col gap-2">
           <div className="flex items-center justify-between gap-3">
-            <span className="text-xs font-semibold text-gray-500 uppercase tracking-wide">Radius</span>
-            <span className="text-sm font-bold text-[#7a3f08]">{radius} mi</span>
+            <span className="text-xs font-semibold text-gray-500 uppercase tracking-wide">Nearby</span>
+            <span className="text-sm font-bold text-[#7a3f08]">{QUICK_PICK_LABELS[radius] ?? `${radius} mi`}</span>
           </div>
           <div className="flex gap-1.5">
             {QUICK_PICKS.map((r) => (
@@ -299,7 +302,7 @@ export default function HeroMap() {
                     : "bg-gray-100 text-gray-600 hover:bg-gray-200"
                 }`}
               >
-                {r} mi
+                {QUICK_PICK_LABELS[r] ?? `${r} mi`}
               </button>
             ))}
           </div>
@@ -312,7 +315,7 @@ export default function HeroMap() {
           </div>
           <span className="text-xs text-gray-700">
             {userPos
-              ? `${totalVisible} place${totalVisible !== 1 ? "s" : ""} within ${radius} mi`
+              ? `${totalVisible} place${totalVisible !== 1 ? "s" : ""} within ${QUICK_PICK_LABELS[radius] ?? `${radius} mi`}`
               : `${totalVisible} place${totalVisible !== 1 ? "s" : ""} on the map`}
           </span>
         </div>
