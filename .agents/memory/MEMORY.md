@@ -1,1 +1,2 @@
 - [EAS monorepo yarn build](eas-yarn-build.md) — pnpm monorepo + EAS build requires vendoring @workspace/* deps and several config fixes
+- [Mobile-web feature parity](mobile-web-parity.md) — any workflow or feature added to mobile must also be applied to the equivalent web page in the same task
