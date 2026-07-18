@@ -173,7 +173,7 @@ export default function Submit() {
   }, [watchedCategory]);
 
   function pickCategory(name: string) {
-    form.setValue("category", name, { shouldValidate: true });
+    form.setValue("category", name, { shouldDirty: true, shouldTouch: true });
     setStep(2);
   }
 
