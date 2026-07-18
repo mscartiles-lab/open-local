@@ -173,8 +173,10 @@ export default function Submit() {
   }, [watchedCategory]);
 
   function pickCategory(name: string) {
+    console.log("[OL-submit] pickCategory fired:", name, "step before:", step);
     form.setValue("category", name, { shouldDirty: true, shouldTouch: true });
     setStep(2);
+    console.log("[OL-submit] setStep(2) called");
   }
 
   async function nextStep() {
@@ -325,14 +327,14 @@ export default function Submit() {
 
       <div className="container max-w-3xl mx-auto px-4 py-10 md:py-14">
         <AnimatePresence mode="wait">
-          {step === 1 && (
-            <motion.div
-              key="step-1"
-              initial={{ opacity: 0, y: 12 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -12 }}
-              transition={{ duration: 0.25 }}
-            >
+          <motion.div
+            key={step}
+            initial={{ opacity: 0, y: 12 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -12 }}
+            transition={{ duration: 0.25 }}
+          >
+            {step === 1 && (<>
               <StepHeader
                 eyebrow="Step 1"
                 title="What do you make?"
@@ -373,17 +375,8 @@ export default function Submit() {
               <p className="text-sm text-muted-foreground text-center mt-6">
                 Tap a category to continue.
               </p>
-            </motion.div>
-          )}
-
-          {step === 2 && (
-            <motion.div
-              key="step-2"
-              initial={{ opacity: 0, y: 12 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -12 }}
-              transition={{ duration: 0.25 }}
-            >
+            </>)}
+            {step === 2 && (<>
               <StepHeader
                 eyebrow="Step 2"
                 title="Tell us about your business"
@@ -483,17 +476,8 @@ export default function Submit() {
                 nextLabel="Continue"
                 disabled={false}
               />
-            </motion.div>
-          )}
-
-          {step === 3 && (
-            <motion.div
-              key="step-3"
-              initial={{ opacity: 0, y: 12 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -12 }}
-              transition={{ duration: 0.25 }}
-            >
+            </>)}
+            {step === 3 && (<>
               <StepHeader
                 eyebrow="Step 3 of 4"
                 title="Availability & ordering"
@@ -651,17 +635,8 @@ export default function Submit() {
                   {" "}— you can always add it from your dashboard later.
                 </p>
               </div>
-            </motion.div>
-          )}
-
-          {step === 4 && (
-            <motion.div
-              key="step-4"
-              initial={{ opacity: 0, y: 12 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -12 }}
-              transition={{ duration: 0.25 }}
-            >
+            </>)}
+            {step === 4 && (<>
               <StepHeader
                 eyebrow="Step 4 of 4"
                 title="How can people reach you?"
@@ -838,17 +813,8 @@ export default function Submit() {
                 }
                 disabled={startVerification.isPending}
               />
-            </motion.div>
-          )}
-
-          {step === 5 && verification && (
-            <motion.div
-              key="step-5"
-              initial={{ opacity: 0, y: 12 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -12 }}
-              transition={{ duration: 0.25 }}
-            >
+            </>)}
+            {step === 5 && verification && (<>
               <VerifyStep
                 email={verification.email}
                 devCode={verification.devCode}
@@ -866,8 +832,8 @@ export default function Submit() {
                 isVerifying={verifyCode.isPending}
                 isResending={resendVerification.isPending}
               />
-            </motion.div>
-          )}
+            </>)}
+          </motion.div>
         </AnimatePresence>
       </div>
     </Layout>
