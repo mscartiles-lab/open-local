@@ -11,13 +11,11 @@ export interface SendVerificationResult {
   devFallback: boolean;
 }
 
-const EMAILJS_API = "https://api.emailjs.com/api/v1.0/email/send";
+const RESEND_API = "https://api.resend.com/emails";
+const FROM = process.env.MAIL_FROM ?? "Open Local <onboarding@resend.dev>";
 
-function emailJsConfigured(): boolean {
-  return !!(
-    process.env.EMAILJS_SERVICE_ID &&
-    process.env.EMAILJS_PUBLIC_KEY
-  );
+function resendConfigured(): boolean {
+  return !!process.env.RESEND_API_KEY;
 }
 
 // ─── Verification code email (vendor/shopper signup) ─────────────────────────
@@ -25,68 +23,60 @@ function emailJsConfigured(): boolean {
 export async function sendVerificationEmail(
   opts: SendVerificationOptions,
 ): Promise<SendVerificationResult> {
-  const templateId = process.env.EMAILJS_TEMPLATE_ID;
-  if (!emailJsConfigured() || !templateId) {
+  if (!resendConfigured()) {
     logger.warn(
       { to: opts.to },
-      "[email] EmailJS not configured — verification code shown in dev fallback only",
+      "[email] RESEND_API_KEY not set — verification code shown in dev fallback only",
     );
     return { sent: false, devFallback: true };
   }
 
-  const payload: Record<string, unknown> = {
-    service_id: process.env.EMAILJS_SERVICE_ID,
-    template_id: templateId,
-    user_id: process.env.EMAILJS_PUBLIC_KEY,
-    template_params: {
-      to_email: opts.to,
-      to_name: opts.businessName,
-      passcode: opts.code,
-      time: "10 minutes",
-    },
-  };
-
-  if (process.env.EMAILJS_PRIVATE_KEY) {
-    payload.accessToken = process.env.EMAILJS_PRIVATE_KEY;
-  }
+  const html = `
+    <div style="font-family:sans-serif;max-width:480px;margin:0 auto;padding:24px">
+      <h2 style="color:#3c4a26;margin-bottom:8px">Open Local</h2>
+      <p style="color:#555;margin-bottom:24px">Hi ${opts.businessName},</p>
+      <p style="color:#555">Here's your verification code:</p>
+      <div style="font-size:36px;font-weight:700;letter-spacing:8px;color:#3c4a26;padding:16px 0">${opts.code}</div>
+      <p style="color:#888;font-size:13px">This code expires in 10 minutes. If you didn't request this, you can safely ignore this email.</p>
+    </div>
+  `;
 
   try {
-    const resp = await fetch(EMAILJS_API, {
+    const resp = await fetch(RESEND_API, {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(payload),
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${process.env.RESEND_API_KEY}`,
+      },
+      body: JSON.stringify({
+        from: FROM,
+        to: [opts.to],
+        subject: `${opts.code} — your Open Local verification code`,
+        html,
+      }),
     });
 
     if (!resp.ok) {
       const body = await resp.text().catch(() => "");
       logger.warn(
         { to: opts.to, status: resp.status, body },
-        "[email] EmailJS verification send failed — falling back to dev mode",
+        "[email] Resend verification send failed — falling back to dev mode",
       );
       return { sent: false, devFallback: true };
     }
 
-    logger.info({ to: opts.to }, "[email] verification sent via EmailJS");
+    logger.info({ to: opts.to }, "[email] verification sent via Resend");
     return { sent: true, devFallback: false };
   } catch (err) {
     logger.warn(
       { err, to: opts.to },
-      "[email] EmailJS request failed — falling back to dev mode",
+      "[email] Resend request failed — falling back to dev mode",
     );
     return { sent: false, devFallback: true };
   }
 }
 
 // ─── Generic direct email (onboarding, welcome, trial reminders) ─────────────
-//
-// Uses a second EmailJS template whose params are:
-//   to_email  — recipient address  (set as "To Email" in the EmailJS template)
-//   to_name   — recipient display name
-//   subject   — email subject line
-//   message   — plain-text email body
-//
-// Template ID is read from EMAILJS_ONBOARDING_TEMPLATE_ID.  If the env var
-// is absent the call is a no-op so the rest of the flow never breaks.
 
 export async function sendDirectEmail(opts: {
   to: string;
@@ -94,48 +84,51 @@ export async function sendDirectEmail(opts: {
   subject: string;
   message: string;
 }): Promise<void> {
-  const templateId = process.env.EMAILJS_ONBOARDING_TEMPLATE_ID;
-  if (!emailJsConfigured() || !templateId) {
+  if (!resendConfigured()) {
     logger.warn(
       { to: opts.to, subject: opts.subject },
-      "[email] EMAILJS_ONBOARDING_TEMPLATE_ID not set — onboarding email skipped",
+      "[email] RESEND_API_KEY not set — direct email skipped",
     );
     return;
   }
 
-  const payload: Record<string, unknown> = {
-    service_id: process.env.EMAILJS_SERVICE_ID,
-    template_id: templateId,
-    user_id: process.env.EMAILJS_PUBLIC_KEY,
-    template_params: {
-      to_email: opts.to,
-      to_name: opts.toName,
-      subject: opts.subject,
-      message: opts.message,
-    },
-  };
-
-  if (process.env.EMAILJS_PRIVATE_KEY) {
-    payload.accessToken = process.env.EMAILJS_PRIVATE_KEY;
-  }
+  const html = `
+    <div style="font-family:sans-serif;max-width:480px;margin:0 auto;padding:24px">
+      <h2 style="color:#3c4a26;margin-bottom:8px">Open Local</h2>
+      <p style="color:#555;margin-bottom:16px">Hi ${opts.toName},</p>
+      <div style="color:#555;white-space:pre-wrap">${opts.message}</div>
+      <hr style="border:none;border-top:1px solid #eee;margin:24px 0"/>
+      <p style="color:#aaa;font-size:12px">Open Local · Local Sourcing and Experiences</p>
+    </div>
+  `;
 
   try {
-    const resp = await fetch(EMAILJS_API, {
+    const resp = await fetch(RESEND_API, {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(payload),
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${process.env.RESEND_API_KEY}`,
+      },
+      body: JSON.stringify({
+        from: FROM,
+        to: [opts.to],
+        subject: opts.subject,
+        html,
+      }),
     });
+
     if (!resp.ok) {
       const body = await resp.text().catch(() => "");
       logger.warn(
         { to: opts.to, status: resp.status, body },
-        "[email] direct send failed",
+        "[email] Resend direct send failed",
       );
       return;
     }
-    logger.info({ to: opts.to, subject: opts.subject }, "[email] direct send OK");
+
+    logger.info({ to: opts.to, subject: opts.subject }, "[email] direct send OK via Resend");
   } catch (err) {
-    logger.warn({ err, to: opts.to }, "[email] direct send request failed");
+    logger.warn({ err, to: opts.to }, "[email] Resend direct send request failed");
   }
 }
 
