@@ -17,6 +17,7 @@ export const vendorsTable = pgTable("vendors", {
   description: text("description").notNull(),
   category: text("category").notNull(),
   location: text("location").notNull(),
+  zipCode: text("zip_code"),
   region: text("region").notNull(),
   contactEmail: text("contact_email").notNull(),
   websiteUrl: text("website_url"),

@@ -31,8 +31,9 @@ import {
   ShieldCheck,
   Clock,
   CalendarDays,
-  ShoppingBag,
   Home,
+  ImagePlus,
+  X,
 } from "lucide-react";
 import Layout from "@/components/layout/Layout";
 import { Button } from "@/components/ui/button";
@@ -76,10 +77,8 @@ const popularCities = [
 
 const DAYS_OF_WEEK = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"] as const;
 const HOW_TO_ORDER_OPTIONS = [
-  { value: "walk_in", label: "Walk-in / First come, first served" },
-  { value: "dm_instagram", label: "DM on Instagram" },
+  { value: "open_local_storefront", label: "Order via Open Local storefront" },
   { value: "website", label: "Order on my website" },
-  { value: "email", label: "Email to order" },
   { value: "preorder_required", label: "Pre-order required" },
   { value: "farmers_market", label: "Find me at the farmers market" },
 ] as const;
@@ -91,6 +90,7 @@ const formSchema = z.object({
   description: z.string().min(20, "Tell us a sentence or two about what you make."),
   location: z.string().min(2, "Pick or type a city."),
   region: z.string().min(2),
+  zipCode: z.string().optional().or(z.literal("")),
   established: z.coerce.number().int().min(1800).max(new Date().getFullYear()),
   // Step 3 — availability
   pickupAddress: z.string().optional().or(z.literal("")),
@@ -100,7 +100,7 @@ const formSchema = z.object({
   marketsText: z.string().optional().or(z.literal("")),
   // Step 4 — contact
   contactEmail: z.string().email("Enter a valid email."),
-  imageUrl: z.string().url("Must be a valid image URL").optional().or(z.literal("")),
+  imageUrl: z.string().optional().or(z.literal("")),
   websiteUrl: z.string().url("Must be a valid URL").optional().or(z.literal("")),
   phone: z.string().optional().or(z.literal("")),
   instagramHandle: z.string().optional().or(z.literal("")),
@@ -111,7 +111,7 @@ type FormValues = z.infer<typeof formSchema>;
 
 const stepFields: Record<number, (keyof FormValues)[]> = {
   1: ["category"],
-  2: ["name", "tagline", "description", "location", "region"],
+  2: ["name", "tagline", "description", "location", "region", "zipCode"],
   3: ["pickupAddress", "openDays", "openHours", "howToOrder", "marketsText"],
   4: ["contactEmail", "imageUrl", "websiteUrl", "phone", "instagramHandle", "facebookUrl"],
 };
@@ -132,6 +132,9 @@ export default function Submit() {
 
   const [step, setStep] = useState(1);
   const [showOptionalContact, setShowOptionalContact] = useState(false);
+  const [geolocating, setGeolocating] = useState(false);
+  const [isUploading, setIsUploading] = useState(false);
+  const [uploadError, setUploadError] = useState<string | null>(null);
   const [verification, setVerification] = useState<VerificationState | null>(
     null,
   );
@@ -148,6 +151,7 @@ export default function Submit() {
       description: "",
       location: "",
       region: "Florida",
+      zipCode: "",
       established: new Date().getFullYear(),
       pickupAddress: "",
       openDays: [],
@@ -232,7 +236,7 @@ export default function Submit() {
           });
           setCode("");
           setVerifyError(null);
-          setStep(4);
+          setStep(5);
         },
         onError: () => {
           toast({
@@ -314,10 +318,10 @@ export default function Submit() {
               Four quick steps
             </p>
             <h1 className="text-4xl md:text-5xl font-serif font-bold text-foreground mb-3">
-              List your business on Open Local
+              Onboard your business
             </h1>
             <p className="text-lg text-muted-foreground max-w-xl mx-auto">
-              We'll guide you through everything customers need to find and buy from you. Free to list, takes 2–3 minutes.
+              Get set up in 2–3 minutes. Free to join.
             </p>
           </div>
 
@@ -463,6 +467,55 @@ export default function Submit() {
                           })
                         }
                       />
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <div className="relative flex-1">
+                        <Input
+                          placeholder="ZIP code (optional)"
+                          {...form.register("zipCode")}
+                          className="font-mono"
+                        />
+                      </div>
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        className="shrink-0"
+                        onClick={() => {
+                          if (!navigator.geolocation) return;
+                          setGeolocating(true);
+                          navigator.geolocation.getCurrentPosition(
+                            async (pos) => {
+                              try {
+                                const r = await fetch(
+                                  `https://nominatim.openstreetmap.org/reverse?lat=${pos.coords.latitude}&lon=${pos.coords.longitude}&format=json`,
+                                );
+                                const data = await r.json();
+                                const city =
+                                  data.address?.city ||
+                                  data.address?.town ||
+                                  data.address?.village ||
+                                  "";
+                                const zip = data.address?.postcode || "";
+                                if (city) form.setValue("location", city, { shouldValidate: true });
+                                if (zip) form.setValue("zipCode", zip, { shouldValidate: true });
+                              } catch {
+                                // silently ignore
+                              } finally {
+                                setGeolocating(false);
+                              }
+                            },
+                            () => setGeolocating(false),
+                          );
+                        }}
+                      >
+                        {geolocating ? (
+                          <Loader2 className="h-4 w-4 animate-spin" />
+                        ) : (
+                          <MapPin className="h-4 w-4" />
+                        )}
+                        <span className="ml-1.5">Use my location</span>
+                      </Button>
                     </div>
                   </div>
                 </Field>
@@ -665,28 +718,105 @@ export default function Submit() {
                 <Field
                   label="Cover photo"
                   hint={
-                    defaultImage
-                      ? `Leave blank and we'll use a clean ${watchedCategory.toLowerCase()} cover.`
-                      : "Paste an image URL — a wide shot of your storefront, farm, or studio."
+                    form.watch("imageUrl")
+                      ? undefined
+                      : defaultImage
+                        ? `We'll use a ${watchedCategory.toLowerCase()} cover if you skip this — or upload your own.`
+                        : "Upload a wide shot of your storefront, farm, or studio."
                   }
-                  error={form.formState.errors.imageUrl?.message}
                 >
-                  <Input
-                    placeholder="https://..."
-                    {...form.register("imageUrl")}
-                  />
-                  {defaultImage && !form.watch("imageUrl") && (
-                    <div className="mt-3 overflow-hidden rounded-md border border-border">
-                      <img
-                        src={defaultImage}
-                        alt="Default cover preview"
-                        className="h-32 w-full object-cover"
+                  <div className="space-y-3">
+                    {form.watch("imageUrl") ? (
+                      <div className="relative overflow-hidden rounded-md border border-border">
+                        <img
+                          src={form.watch("imageUrl")}
+                          alt="Cover preview"
+                          className="h-36 w-full object-cover"
+                        />
+                        <button
+                          type="button"
+                          onClick={() => {
+                            form.setValue("imageUrl", "");
+                          }}
+                          className="absolute right-2 top-2 flex h-7 w-7 items-center justify-center rounded-full bg-black/60 text-white hover:bg-black/80"
+                        >
+                          <X className="h-4 w-4" />
+                        </button>
+                        <p className="bg-muted px-3 py-1.5 text-xs text-muted-foreground">
+                          Uploaded — tap ✕ to remove
+                        </p>
+                      </div>
+                    ) : defaultImage ? (
+                      <div className="overflow-hidden rounded-md border border-dashed border-border">
+                        <img
+                          src={defaultImage}
+                          alt="Default cover"
+                          className="h-36 w-full object-cover opacity-60"
+                        />
+                        <p className="bg-muted px-3 py-1.5 text-xs text-muted-foreground">
+                          Using this as your default cover — or upload your own below.
+                        </p>
+                      </div>
+                    ) : null}
+
+                    <label
+                      className={cn(
+                        "flex cursor-pointer items-center justify-center gap-2 rounded-lg border-2 border-dashed px-4 py-4 text-sm font-medium transition-colors",
+                        isUploading
+                          ? "cursor-not-allowed opacity-60 border-border text-muted-foreground"
+                          : "border-primary/30 text-primary hover:border-primary hover:bg-primary/5",
+                      )}
+                    >
+                      {isUploading ? (
+                        <>
+                          <Loader2 className="h-4 w-4 animate-spin" />
+                          Uploading…
+                        </>
+                      ) : (
+                        <>
+                          <ImagePlus className="h-4 w-4" />
+                          {form.watch("imageUrl") ? "Replace photo" : "Upload a photo"}
+                        </>
+                      )}
+                      <input
+                        type="file"
+                        accept="image/*"
+                        className="sr-only"
+                        disabled={isUploading}
+                        onChange={async (e) => {
+                          const file = e.target.files?.[0];
+                          if (!file) return;
+                          setIsUploading(true);
+                          setUploadError(null);
+                          try {
+                            const metaRes = await fetch("/api/storage/uploads/request-url", {
+                              method: "POST",
+                              headers: { "Content-Type": "application/json" },
+                              body: JSON.stringify({ name: file.name, size: file.size, contentType: file.type }),
+                            });
+                            if (!metaRes.ok) throw new Error("Couldn't start upload");
+                            const { uploadURL, objectPath } = await metaRes.json();
+                            const putRes = await fetch(uploadURL, {
+                              method: "PUT",
+                              body: file,
+                              headers: { "Content-Type": file.type },
+                            });
+                            if (!putRes.ok) throw new Error("Upload failed");
+                            const servingUrl = `/api/storage${objectPath}`;
+                            form.setValue("imageUrl", servingUrl, { shouldValidate: true });
+                          } catch (err) {
+                            setUploadError(err instanceof Error ? err.message : "Upload failed");
+                          } finally {
+                            setIsUploading(false);
+                            e.target.value = "";
+                          }
+                        }}
                       />
-                      <p className="bg-muted px-3 py-1.5 text-xs text-muted-foreground">
-                        Using this as your cover unless you add your own.
-                      </p>
-                    </div>
-                  )}
+                    </label>
+                    {uploadError && (
+                      <p className="text-xs text-destructive">{uploadError}</p>
+                    )}
+                  </div>
                 </Field>
 
                 <button

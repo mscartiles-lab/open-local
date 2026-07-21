@@ -191,7 +191,7 @@ export function Navbar() {
             className="flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-semibold bg-secondary text-foreground hover:bg-primary hover:text-primary-foreground transition-all duration-150"
           >
             <PlusCircle className="w-4 h-4" />
-            List your business
+            Onboard
           </Link>
           <Link href="/admin" className="p-2.5 rounded-xl text-muted-foreground hover:bg-secondary hover:text-primary transition-all duration-150">
             <Settings className="w-5 h-5" />
@@ -265,7 +265,7 @@ export function Navbar() {
                   className="flex items-center gap-4 px-4 py-3.5 rounded-xl text-base font-semibold text-foreground hover:bg-secondary transition-all"
                 >
                   <PlusCircle className="w-5 h-5 shrink-0" />
-                  List your business
+                  Onboard
                 </Link>
                 <div className="w-full h-px bg-border my-2" />
                 <Link href="/support" className="flex items-center gap-4 px-4 py-3.5 rounded-xl text-base font-semibold text-foreground hover:bg-secondary transition-all">
