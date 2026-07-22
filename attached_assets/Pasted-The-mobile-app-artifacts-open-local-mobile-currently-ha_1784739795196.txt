@@ -1,0 +1,12 @@
+The mobile app (artifacts/open-local-mobile) currently has no vendor onboarding/signup wizard at all — vendors can only sign up through the website (artifacts/open-local/src/pages/submit.tsx and pin-your-business.tsx). Please build an equivalent vendor onboarding flow natively in the mobile app, using the same backend (api-server) so both platforms share the same vendor/product/order data — this should be a new UI built with React Native conventions (Expo image picker instead of URL-paste, native inputs, etc.), not a webview wrapper around the website.
+
+The flow should cover:
+
+Business info collection (name, category/type, description, location by city/zip or device GPS).
+Tier selection (Basic/Standard/Premium — reuse the existing tier definitions in lib/tiers.ts) with Stripe Connect checkout, matching the web flow's billing.
+Real photo AND video upload via the device's photo library/camera (not URL paste) — gate how many uploads are allowed by tier, matching web's tier features. Check artifacts/api-server/src/routes/storage.ts for existing upload infrastructure to reuse.
+"How do customers order" selection with checkboxes: DM on Instagram, email to order, walk-in/first-come-first-served, and order via Open Local storefront (this last option should connect to the real in-app ordering/checkout system already built in orders.ts).
+Email verification as the final step — a real 6-digit code input screen. Note: we just fixed a bug on the web version where a step-advance function was called but the UI silently failed to re-render (turned out to be an AnimatePresence issue with multiple simultaneous conditional children). Please test each step transition thoroughly on-device, not just that state-setters are called, to avoid a similar issue in React Native.
+Also rename any "List Your Business" label to "Onboard" for consistency with the web copy change.
+
+One open question before you build the 'additional selling locations' feature (Premium tier currently includes 5 free map pins as a flat perk) — the business owner wants to add a '+ Selling Location' button, up to 3 additional, at $5 each. Please confirm with them directly whether this replaces the existing 5-free-pins perk, or is an add-on beyond it, before implementing — don't guess on this one since it changes pricing.
