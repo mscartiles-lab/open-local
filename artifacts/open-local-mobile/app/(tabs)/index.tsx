@@ -45,7 +45,7 @@ export default function TheLocalsScreen() {
   const colors = useColors();
   const insets = useSafeAreaInsets();
   const router = useRouter();
-  const { user, logout } = useAuth();
+  const { user } = useAuth();
   const [segment, setSegment] = useState<Segment>("all");
   const [refreshing, setRefreshing] = useState(false);
   const [userLocation, setUserLocation] = useState<{
@@ -203,10 +203,7 @@ export default function TheLocalsScreen() {
             </TouchableOpacity>
             {user ? (
               <TouchableOpacity
-                onLongPress={logout}
-                onPress={() => {
-                  if (user.role === "vendor") router.push("/(auth)/tiers");
-                }}
+                onPress={() => router.push("/(tabs)/more" as any)}
                 accessibilityLabel="Your profile"
               >
                 <Avatar seed={user.avatarSeed} style={user.avatarStyle} size={44} />

@@ -2,6 +2,7 @@ import { Feather } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
 import React from "react";
 import {
+  Alert,
   Platform,
   ScrollView,
   StyleSheet,
@@ -11,6 +12,8 @@ import {
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
+import Avatar from "@/components/Avatar";
+import { useAuth } from "@/context/AuthContext";
 import { useColors } from "@/hooks/useColors";
 
 type MenuItem = {
@@ -43,15 +46,30 @@ const MENU_ITEMS: MenuItem[] = [
     subtitle: "Florida vendor permits and requirements",
     route: "/compliance",
   },
+  {
+    id: "settings",
+    icon: "settings",
+    label: "Settings",
+    subtitle: "Appearance and preferences",
+    route: "/settings",
+  },
 ];
 
 export default function MoreScreen() {
   const colors = useColors();
   const insets = useSafeAreaInsets();
   const router = useRouter();
+  const { user, logout } = useAuth();
   const topPad = Platform.OS === "web" ? 67 : insets.top;
   const bottomPad = Platform.OS === "web" ? 34 : insets.bottom + 60;
   const s = styles(colors, topPad, bottomPad);
+
+  const handleLogout = () => {
+    Alert.alert("Sign out", "Are you sure you want to sign out?", [
+      { text: "Cancel", style: "cancel" },
+      { text: "Sign out", style: "destructive", onPress: logout },
+    ]);
+  };
 
   return (
     <View style={s.container}>
@@ -62,7 +80,100 @@ export default function MoreScreen() {
       >
         <Text style={s.pageTitle}>More</Text>
 
-        <Text style={s.sectionLabel}>Resources</Text>
+        {/* Account section */}
+        {user ? (
+          <>
+            <Text style={s.sectionLabel}>Account</Text>
+            <View style={s.card}>
+              <View style={[s.row, s.rowBorder]}>
+                <Avatar
+                  seed={user.avatarSeed}
+                  style={user.avatarStyle as any}
+                  size={44}
+                />
+                <View style={s.rowText}>
+                  <Text style={s.rowLabel}>@{user.username}</Text>
+                  <Text style={s.rowSubtitle}>{user.email}</Text>
+                </View>
+                <View
+                  style={[
+                    s.rolePill,
+                    {
+                      backgroundColor:
+                        user.role === "vendor"
+                          ? colors.primary + "18"
+                          : colors.muted,
+                    },
+                  ]}
+                >
+                  <Text
+                    style={[
+                      s.rolePillText,
+                      {
+                        color:
+                          user.role === "vendor"
+                            ? colors.primary
+                            : colors.mutedForeground,
+                      },
+                    ]}
+                  >
+                    {user.role === "vendor" ? "Vendor" : "Shopper"}
+                  </Text>
+                </View>
+              </View>
+              <TouchableOpacity
+                style={s.row}
+                onPress={handleLogout}
+                activeOpacity={0.7}
+              >
+                <View style={[s.iconWrap, { backgroundColor: "#fef2f2" }]}>
+                  <Feather name="log-out" size={18} color="#dc2626" />
+                </View>
+                <View style={s.rowText}>
+                  <Text style={[s.rowLabel, { color: "#dc2626" }]}>
+                    Sign out
+                  </Text>
+                </View>
+              </TouchableOpacity>
+            </View>
+          </>
+        ) : (
+          <>
+            <Text style={s.sectionLabel}>Account</Text>
+            <View style={s.card}>
+              <TouchableOpacity
+                style={[s.row, s.rowBorder]}
+                onPress={() => router.push("/(auth)/signup" as any)}
+                activeOpacity={0.7}
+              >
+                <View style={[s.iconWrap, { backgroundColor: colors.primary + "18" }]}>
+                  <Feather name="user-plus" size={18} color={colors.primary} />
+                </View>
+                <View style={s.rowText}>
+                  <Text style={s.rowLabel}>Join Open Local</Text>
+                  <Text style={s.rowSubtitle}>Create a free account</Text>
+                </View>
+                <Feather name="chevron-right" size={18} color={colors.mutedForeground} />
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={s.row}
+                onPress={() => router.push("/(auth)/login" as any)}
+                activeOpacity={0.7}
+              >
+                <View style={[s.iconWrap, { backgroundColor: colors.muted }]}>
+                  <Feather name="log-in" size={18} color={colors.primary} />
+                </View>
+                <View style={s.rowText}>
+                  <Text style={s.rowLabel}>Sign in</Text>
+                  <Text style={s.rowSubtitle}>Already have an account?</Text>
+                </View>
+                <Feather name="chevron-right" size={18} color={colors.mutedForeground} />
+              </TouchableOpacity>
+            </View>
+          </>
+        )}
+
+        <Text style={[s.sectionLabel, { marginTop: 20 }]}>Resources</Text>
         <View style={s.card}>
           {MENU_ITEMS.map((item, i) => (
             <TouchableOpacity
@@ -156,5 +267,14 @@ const styles = (
       fontSize: 12,
       color: colors.mutedForeground,
       marginTop: 1,
+    },
+    rolePill: {
+      paddingHorizontal: 10,
+      paddingVertical: 4,
+      borderRadius: 999,
+    },
+    rolePillText: {
+      fontFamily: "DMSans_600SemiBold",
+      fontSize: 11,
     },
   });

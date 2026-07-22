@@ -2,6 +2,7 @@ import { useRouter } from "expo-router";
 import { Feather } from "@expo/vector-icons";
 import React from "react";
 import {
+  Alert,
   Platform,
   ScrollView,
   StyleSheet,
@@ -12,6 +13,7 @@ import {
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
+import { useAuth } from "@/context/AuthContext";
 import { useColors } from "@/hooks/useColors";
 import { useTheme } from "@/context/ThemeContext";
 
@@ -20,9 +22,17 @@ export default function SettingsScreen() {
   const { theme, toggleTheme } = useTheme();
   const insets = useSafeAreaInsets();
   const router = useRouter();
+  const { user, logout } = useAuth();
   const topPad = Platform.OS === "web" ? 20 : insets.top;
 
   const s = styles(colors, topPad);
+
+  const handleLogout = () => {
+    Alert.alert("Sign out", "Are you sure you want to sign out?", [
+      { text: "Cancel", style: "cancel" },
+      { text: "Sign out", style: "destructive", onPress: logout },
+    ]);
+  };
 
   return (
     <View style={s.container}>
@@ -37,7 +47,7 @@ export default function SettingsScreen() {
       <ScrollView contentContainerStyle={s.content} showsVerticalScrollIndicator={false}>
         <Text style={s.section}>Appearance</Text>
         <View style={s.card}>
-          <View style={s.row}>
+          <View style={[s.row, s.rowBorderless]}>
             <View style={s.rowLeft}>
               <View style={[s.iconWrap, { backgroundColor: colors.muted }]}>
                 <Feather
@@ -62,6 +72,24 @@ export default function SettingsScreen() {
           </View>
         </View>
 
+        {user && (
+          <>
+            <Text style={s.section}>Account</Text>
+            <View style={s.card}>
+              <TouchableOpacity style={[s.row, s.rowBorderless]} onPress={handleLogout} activeOpacity={0.7}>
+                <View style={s.rowLeft}>
+                  <View style={[s.iconWrap, { backgroundColor: "#fef2f2" }]}>
+                    <Feather name="log-out" size={16} color="#dc2626" />
+                  </View>
+                  <View>
+                    <Text style={[s.rowLabel, { color: "#dc2626" }]}>Sign out</Text>
+                    <Text style={s.rowSub}>Signed in as @{user.username}</Text>
+                  </View>
+                </View>
+              </TouchableOpacity>
+            </View>
+          </>
+        )}
       </ScrollView>
     </View>
   );
