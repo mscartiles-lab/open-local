@@ -8,6 +8,12 @@ export interface TierDef {
   features: string[];
 }
 
+/** Number of selling location pins included in Premium at no extra charge. */
+export const PREMIUM_INCLUDED_LOCATIONS = 3;
+
+/** Monthly cost in dollars for each selling location beyond the included count. */
+export const ADDITIONAL_LOCATION_PRICE_MONTHLY = 5;
+
 export const TIERS: Record<TierId, TierDef> = {
   basic: {
     id: "basic",
@@ -44,7 +50,7 @@ export const TIERS: Record<TierId, TierDef> = {
     tagline: "Maximum visibility and promotional power.",
     features: [
       "Everything in Standard",
-      "Up to 5 map pins across multiple locations",
+      `${PREMIUM_INCLUDED_LOCATIONS} selling locations included (+$${ADDITIONAL_LOCATION_PRICE_MONTHLY}/mo each additional)`,
       "3 listings, products, batch drops, or pre-orders featured at the top of the feed",
       "Featured on the homepage",
       "Featured in your category",

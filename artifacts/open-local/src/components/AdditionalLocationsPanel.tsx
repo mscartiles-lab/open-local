@@ -5,6 +5,10 @@ import { Input } from "@/components/ui/input";
 import { useUser } from "@/context/UserContext";
 import { useToast } from "@/hooks/use-toast";
 import { cn } from "@/lib/utils";
+import {
+  PREMIUM_INCLUDED_LOCATIONS,
+  ADDITIONAL_LOCATION_PRICE_MONTHLY,
+} from "@/lib/tiers";
 
 type Pin = { lat: number; lng: number; label?: string | null };
 
@@ -12,8 +16,6 @@ interface Vendor {
   id: number;
   additionalLocations?: Pin[] | null;
 }
-
-const MAX_PINS = 5;
 
 export default function AdditionalLocationsPanel({
   vendor,
@@ -34,11 +36,15 @@ export default function AdditionalLocationsPanel({
   const [locating, setLocating] = useState(false);
   const [latError, setLatError] = useState("");
   const [lngError, setLngError] = useState("");
+  const [showForm, setShowForm] = useState(false);
 
   const sessionToken =
     typeof window !== "undefined"
       ? window.localStorage.getItem("ol_session")
       : null;
+
+  const extraCount = Math.max(0, pins.length - PREMIUM_INCLUDED_LOCATIONS);
+  const extraCostMonthly = extraCount * ADDITIONAL_LOCATION_PRICE_MONTHLY;
 
   async function savePins(newPins: Pin[]) {
     if (!sessionToken) return;
@@ -110,14 +116,12 @@ export default function AdditionalLocationsPanel({
     if (!validate()) return;
     const lat = parseFloat(addLat);
     const lng = parseFloat(addLng);
-    const newPins = [
-      ...pins,
-      { lat, lng, label: addLabel.trim() || null },
-    ];
+    const newPins = [...pins, { lat, lng, label: addLabel.trim() || null }];
     savePins(newPins).then(() => {
       setAddLat("");
       setAddLng("");
       setAddLabel("");
+      setShowForm(false);
     });
   }
 
@@ -132,7 +136,7 @@ export default function AdditionalLocationsPanel({
         <div className="flex items-center gap-2.5">
           <MapPin className="h-5 w-5 text-primary" />
           <h2 className="font-serif text-xl font-bold text-foreground">
-            Additional Locations
+            Selling Locations
           </h2>
           <span className="inline-flex items-center gap-1 rounded-full bg-amber-100 px-2 py-0.5 text-[11px] font-semibold uppercase tracking-wider text-amber-800">
             <Crown className="h-2.5 w-2.5" />
@@ -141,7 +145,7 @@ export default function AdditionalLocationsPanel({
         </div>
         {isPremium && pins.length > 0 && (
           <span className="text-sm text-muted-foreground tabular-nums">
-            {pins.length} / {MAX_PINS}
+            {pins.length} location{pins.length !== 1 ? "s" : ""}
           </span>
         )}
       </div>
@@ -151,8 +155,11 @@ export default function AdditionalLocationsPanel({
           <Lock className="h-8 w-8 text-muted-foreground" />
           <p className="font-semibold text-foreground">Premium feature</p>
           <p className="max-w-sm text-sm text-muted-foreground">
-            Upgrade to Premium to pin up to {MAX_PINS} market locations on the
-            map — great for vendors who sell at multiple spots throughout the week.
+            Upgrade to Premium to pin{" "}
+            <strong>{PREMIUM_INCLUDED_LOCATIONS} selling locations</strong> on
+            the map (included), then add more for{" "}
+            <strong>${ADDITIONAL_LOCATION_PRICE_MONTHLY}/mo each</strong> —
+            great for vendors who sell at multiple spots throughout the week.
           </p>
           <a href="/billing">
             <Button size="sm" variant="outline" className="gap-1.5 mt-1">
@@ -163,47 +170,93 @@ export default function AdditionalLocationsPanel({
         </div>
       ) : (
         <div className="space-y-4">
+          {/* Included vs extra cost summary */}
+          <div className="rounded-lg bg-muted px-4 py-3 text-sm text-muted-foreground">
+            <span className="font-medium text-foreground">
+              {PREMIUM_INCLUDED_LOCATIONS} locations included
+            </span>{" "}
+            with Premium.{" "}
+            {extraCount > 0 ? (
+              <span>
+                You have{" "}
+                <span className="font-medium text-foreground">
+                  {extraCount} extra location{extraCount !== 1 ? "s" : ""}
+                </span>{" "}
+                adding{" "}
+                <span className="font-medium text-foreground">
+                  ${extraCostMonthly}/mo
+                </span>{" "}
+                to your subscription.
+              </span>
+            ) : (
+              <span>
+                Add more at ${ADDITIONAL_LOCATION_PRICE_MONTHLY}/mo each.
+              </span>
+            )}
+          </div>
+
           {pins.length === 0 ? (
             <p className="text-sm text-muted-foreground">
-              No extra pins yet. Add your first additional market location below.
+              No location pins yet. Add your first selling location below.
             </p>
           ) : (
             <div className="space-y-2">
-              {pins.map((pin, idx) => (
-                <div
-                  key={idx}
-                  className="flex items-center gap-3 rounded-lg border border-border bg-muted px-4 py-3"
-                >
-                  <MapPin className="h-4 w-4 shrink-0 text-primary" />
-                  <div className="min-w-0 flex-1">
-                    {pin.label && (
-                      <p className="truncate text-sm font-semibold text-foreground">
-                        {pin.label}
-                      </p>
-                    )}
-                    <p className="font-mono text-xs text-muted-foreground">
-                      {pin.lat.toFixed(5)}, {pin.lng.toFixed(5)}
-                    </p>
-                  </div>
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    disabled={saving}
-                    onClick={() => removePin(idx)}
-                    title="Remove this pin"
+              {pins.map((pin, idx) => {
+                const isExtra = idx >= PREMIUM_INCLUDED_LOCATIONS;
+                return (
+                  <div
+                    key={idx}
+                    className="flex items-center gap-3 rounded-lg border border-border bg-muted px-4 py-3"
                   >
-                    <Trash2 className="h-4 w-4 text-destructive" />
-                  </Button>
-                </div>
-              ))}
+                    <MapPin
+                      className={cn(
+                        "h-4 w-4 shrink-0",
+                        isExtra ? "text-amber-500" : "text-primary",
+                      )}
+                    />
+                    <div className="min-w-0 flex-1">
+                      {pin.label && (
+                        <p className="truncate text-sm font-semibold text-foreground">
+                          {pin.label}
+                        </p>
+                      )}
+                      <p className="font-mono text-xs text-muted-foreground">
+                        {pin.lat.toFixed(5)}, {pin.lng.toFixed(5)}
+                      </p>
+                    </div>
+                    {isExtra && (
+                      <span className="shrink-0 rounded-full bg-amber-100 px-2 py-0.5 text-[10px] font-semibold text-amber-700">
+                        +${ADDITIONAL_LOCATION_PRICE_MONTHLY}/mo
+                      </span>
+                    )}
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      disabled={saving}
+                      onClick={() => removePin(idx)}
+                      title="Remove this pin"
+                    >
+                      <Trash2 className="h-4 w-4 text-destructive" />
+                    </Button>
+                  </div>
+                );
+              })}
             </div>
           )}
 
-          {pins.length < MAX_PINS ? (
+          {/* Add location form */}
+          {showForm ? (
             <div className="rounded-lg border border-dashed border-border p-4 space-y-3">
-              <p className="text-sm font-semibold text-foreground">
-                Add a location
-              </p>
+              <div className="flex items-center justify-between">
+                <p className="text-sm font-semibold text-foreground">
+                  Add a location
+                </p>
+                {pins.length >= PREMIUM_INCLUDED_LOCATIONS && (
+                  <span className="text-xs text-amber-600 font-medium">
+                    +${ADDITIONAL_LOCATION_PRICE_MONTHLY}/mo added to your plan
+                  </span>
+                )}
+              </div>
               <div className="grid grid-cols-2 gap-2">
                 <div>
                   <label className="mb-1 block text-xs text-muted-foreground">
@@ -284,13 +337,31 @@ export default function AdditionalLocationsPanel({
                   )}
                   Add pin
                 </Button>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => setShowForm(false)}
+                  disabled={saving}
+                >
+                  Cancel
+                </Button>
               </div>
             </div>
           ) : (
-            <p className="text-center text-xs text-muted-foreground">
-              Maximum of {MAX_PINS} additional pins reached. Remove one to add
-              another.
-            </p>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setShowForm(true)}
+              className="gap-1.5"
+            >
+              <Plus className="h-3.5 w-3.5" />
+              + Selling Location
+              {pins.length >= PREMIUM_INCLUDED_LOCATIONS && (
+                <span className="ml-1 text-amber-600 font-normal">
+                  (${ADDITIONAL_LOCATION_PRICE_MONTHLY}/mo)
+                </span>
+              )}
+            </Button>
           )}
         </div>
       )}

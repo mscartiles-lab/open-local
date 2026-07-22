@@ -33,7 +33,11 @@ export function tierAllowsMultiplePins(tier: TierId | null | undefined): boolean
   return tier === "premium";
 }
 
-export const TIER_MAX_ADDITIONAL_PINS = 5;
+/** Number of selling location pins included in the Premium tier at no extra charge. */
+export const PREMIUM_INCLUDED_LOCATIONS = 3;
+
+/** Monthly cost in cents for each location pin beyond the included count. */
+export const ADDITIONAL_LOCATION_PRICE_MONTHLY_CENTS = 500;
 
 // À-la-carte feature boost (any vendor, any tier — purchased one-off)
 export const FEATURE_BOOST_PRICE_CENTS = 500;
