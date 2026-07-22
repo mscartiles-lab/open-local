@@ -100,11 +100,15 @@ export default function TiersScreen() {
         })}
 
         <Pressable
-          onPress={() => router.replace("/(tabs)")}
+          onPress={() => router.replace("/(auth)/vendor-onboard" as any)}
           style={[styles.cta, { backgroundColor: colors.primary }]}
         >
-          <Feather name="check-circle" size={18} color="#fff" />
-          <Text style={styles.ctaText}>Got it — start selling</Text>
+          <Feather name="arrow-right" size={18} color="#fff" />
+          <Text style={styles.ctaText}>Continue — set up my listing</Text>
+        </Pressable>
+
+        <Pressable onPress={() => router.replace("/(tabs)")} style={{ alignSelf: "center" }}>
+          <Text style={[styles.skipText, { color: colors.mutedForeground }]}>Skip for now</Text>
         </Pressable>
 
         <Text style={[styles.fineprint, { color: colors.mutedForeground }]}>
@@ -187,6 +191,12 @@ const styles = StyleSheet.create({
     paddingVertical: 16,
   },
   ctaText: { color: "#fff", fontFamily: "DMSans_700Bold", fontSize: 15 },
+  skipText: {
+    fontFamily: "DMSans_500Medium",
+    fontSize: 13,
+    textAlign: "center",
+    marginTop: 4,
+  },
   fineprint: {
     fontFamily: "DMSans_400Regular",
     fontSize: 12,
