@@ -24,6 +24,7 @@ import productBulkRouter from "./product-bulk";
 import storageRouter from "./storage";
 import ordersRouter from "./orders";
 import connectRouter from "./connect";
+import dashboardOtpRouter from "./dashboard-otp";
 
 const router: IRouter = Router();
 
@@ -52,5 +53,6 @@ router.use(productBulkRouter);
 router.use(storageRouter);
 router.use(ordersRouter);
 router.use(connectRouter);
+router.use(dashboardOtpRouter);
 
 export default router;

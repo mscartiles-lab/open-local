@@ -1,5 +1,6 @@
-import { useState, useRef, useCallback } from "react";
-import { Monitor, Smartphone, Tablet, RotateCcw, ExternalLink, Moon, Sun, ChevronDown } from "lucide-react";
+import { useState, useRef, useCallback, useEffect } from "react";
+import { Copy, Check, ExternalLink, ChevronDown, Smartphone, RotateCcw } from "lucide-react";
+import { useListVendors } from "@workspace/api-client-react";
 
 type DevicePreset = {
   id: string;
@@ -9,292 +10,360 @@ type DevicePreset = {
   frameColor: string;
   hasIsland: boolean;
   borderRadius: number;
+  bezelTop: number;
+  bezelBottom: number;
 };
 
 const DEVICES: DevicePreset[] = [
-  { id: "se", label: "iPhone SE", width: 375, height: 667, frameColor: "#1a1a1a", hasIsland: false, borderRadius: 40 },
-  { id: "14", label: "iPhone 14", width: 390, height: 844, frameColor: "#1a1a1a", hasIsland: false, borderRadius: 47 },
-  { id: "14pro", label: "iPhone 14 Pro", width: 393, height: 852, frameColor: "#2a2520", hasIsland: true, borderRadius: 47 },
-  { id: "14max", label: "iPhone 14 Pro Max", width: 430, height: 932, frameColor: "#1a1a1a", hasIsland: true, borderRadius: 55 },
-  { id: "pixel", label: "Pixel 7", width: 412, height: 892, frameColor: "#222", hasIsland: false, borderRadius: 36 },
+  { id: "se", label: "iPhone SE", width: 375, height: 667, frameColor: "#1c1c1e", hasIsland: false, borderRadius: 38, bezelTop: 36, bezelBottom: 28 },
+  { id: "14", label: "iPhone 14", width: 390, height: 844, frameColor: "#1c1c1e", hasIsland: false, borderRadius: 50, bezelTop: 46, bezelBottom: 34 },
+  { id: "14pro", label: "iPhone 14 Pro", width: 393, height: 852, frameColor: "#231f20", hasIsland: true, borderRadius: 50, bezelTop: 46, bezelBottom: 34 },
+  { id: "pixel", label: "Pixel 7", width: 412, height: 892, frameColor: "#1a1a1a", hasIsland: false, borderRadius: 38, bezelTop: 40, bezelBottom: 30 },
 ];
 
-type Screen = {
-  id: string;
-  label: string;
-  icon: string;
-  path: string;
-};
-
-// Use the Expo dev domain so the Metro bundler serves all assets from its own origin.
-// Falls back to proxy path if the domain isn't injected (e.g. in production builds).
-const EXPO_BASE = __EXPO_DEV_DOMAIN__
-  ? `https://${__EXPO_DEV_DOMAIN__}`
-  : "/mobile";
-
-const SCREENS: Screen[] = [
-  { id: "home", label: "The Locals", icon: "🗺", path: `${EXPO_BASE}/` },
-  { id: "browse", label: "Browse", icon: "🛍", path: `${EXPO_BASE}/browse` },
-  { id: "events", label: "Events", icon: "📅", path: `${EXPO_BASE}/events` },
-  { id: "sale", label: "Final Sale", icon: "💸", path: `${EXPO_BASE}/sale` },
-  { id: "favorites", label: "Saved", icon: "❤️", path: `${EXPO_BASE}/favorites` },
-  { id: "more", label: "More", icon: "⋯", path: `${EXPO_BASE}/more` },
-];
-
-const SCALE_OPTIONS = [
-  { label: "50%", value: 0.5 },
-  { label: "65%", value: 0.65 },
-  { label: "80%", value: 0.8 },
-  { label: "100%", value: 1 },
-];
-
-const FRAME_PADDING = 14; // px around the screen inside the frame
+const FRAME_SIDE = 12;
 
 export default function SimulatorPage() {
-  const [device, setDevice] = useState<DevicePreset>(DEVICES[1]); // iPhone 14
-  const [scale, setScale] = useState(0.65);
-  const [activeScreen, setActiveScreen] = useState<Screen>(SCREENS[0]);
-  const [darkMode, setDarkMode] = useState(false);
+  const [device, setDevice] = useState<DevicePreset>(DEVICES[1]);
+  const [scale, setScale] = useState(0.62);
+  const [copied, setCopied] = useState(false);
+  const [vendorId, setVendorId] = useState<number | null>(null);
+  const [deviceOpen, setDeviceOpen] = useState(false);
   const iframeRef = useRef<HTMLIFrameElement>(null);
-  const [key, setKey] = useState(0); // force re-mount on reload
+  const [key, setKey] = useState(0);
+
+  const { data: vendors } = useListVendors();
+
+  // Auto-pick first vendor if none selected
+  useEffect(() => {
+    if (!vendorId && vendors?.length) {
+      setVendorId(vendors[0].id);
+    }
+  }, [vendors, vendorId]);
+
+  const selectedVendor = vendors?.find((v) => v.id === vendorId);
+  const previewUrl = vendorId ? `/vendors/${vendorId}` : "/vendors";
+
+  const publicUrl =
+    typeof window !== "undefined"
+      ? `${window.location.origin}/vendors/${vendorId ?? ""}`
+      : `/vendors/${vendorId ?? ""}`;
 
   const reload = useCallback(() => setKey((k) => k + 1), []);
 
-  const navigateTo = (screen: Screen) => {
-    setActiveScreen(screen);
-    // Try to navigate the iframe if it's on same origin; fallback: remount
-    try {
-      if (iframeRef.current?.contentWindow) {
-        iframeRef.current.contentWindow.location.href = screen.path;
-      }
-    } catch {
-      setKey((k) => k + 1);
-    }
-  };
+  const copyLink = useCallback(() => {
+    navigator.clipboard.writeText(publicUrl).then(() => {
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    });
+  }, [publicUrl]);
 
-  const frameW = device.width + FRAME_PADDING * 2;
-  const frameH = device.height + FRAME_PADDING * 2 + 40 + 28; // top bezel + bottom bezel
-
+  const frameW = device.width + FRAME_SIDE * 2;
+  const frameH = device.height + device.bezelTop + device.bezelBottom;
   const scaledW = frameW * scale;
   const scaledH = frameH * scale;
 
-  const iframeFilter = darkMode
-    ? "invert(1) hue-rotate(180deg)"
-    : "none";
 
   return (
-    <div className="min-h-screen bg-neutral-950 text-white flex flex-col">
+    <div className="min-h-screen flex flex-col" style={{ background: "#0e0e10", color: "#fff" }}>
       {/* Top bar */}
-      <header className="flex items-center justify-between px-6 py-3 border-b border-white/10 shrink-0 bg-neutral-900">
-        <div className="flex items-center gap-3">
-          <Smartphone size={18} className="text-[#8a9a5b]" />
-          <span className="font-semibold text-sm tracking-tight">Mobile Preview</span>
-          <span className="text-white/30 text-xs">— Open Local</span>
+      <header
+        style={{
+          background: "#18181b",
+          borderBottom: "1px solid rgba(255,255,255,0.08)",
+          padding: "0 24px",
+          height: 56,
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "space-between",
+          flexShrink: 0,
+        }}
+      >
+        <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+          <Smartphone size={17} color="#8ca45a" />
+          <span style={{ fontWeight: 700, fontSize: 15, letterSpacing: "-0.3px" }}>
+            Storefront Preview
+          </span>
+          <span style={{ color: "rgba(255,255,255,0.3)", fontSize: 13 }}>— Open Local</span>
         </div>
-        <div className="flex items-center gap-2">
-          <a
-            href="/mobile/"
-            target="_blank"
-            rel="noopener noreferrer"
-            className="flex items-center gap-1.5 text-xs text-white/50 hover:text-white transition-colors px-3 py-1.5 rounded-md hover:bg-white/5"
+
+        {/* Vendor picker */}
+        <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+          <div style={{ position: "relative" }}>
+            <button
+              onClick={() => setDeviceOpen((v) => !v)}
+              style={{
+                display: "flex",
+                alignItems: "center",
+                gap: 6,
+                background: "rgba(255,255,255,0.06)",
+                border: "1px solid rgba(255,255,255,0.1)",
+                borderRadius: 8,
+                padding: "6px 12px",
+                color: "#fff",
+                fontSize: 13,
+                cursor: "pointer",
+                minWidth: 140,
+              }}
+            >
+              <Smartphone size={13} color="rgba(255,255,255,0.5)" />
+              <span style={{ flex: 1, textAlign: "left" }}>{device.label}</span>
+              <ChevronDown size={12} color="rgba(255,255,255,0.4)" />
+            </button>
+            {deviceOpen && (
+              <div
+                style={{
+                  position: "absolute",
+                  top: "calc(100% + 4px)",
+                  left: 0,
+                  background: "#27272a",
+                  border: "1px solid rgba(255,255,255,0.12)",
+                  borderRadius: 10,
+                  overflow: "hidden",
+                  zIndex: 50,
+                  minWidth: 160,
+                  boxShadow: "0 8px 32px rgba(0,0,0,0.5)",
+                }}
+              >
+                {DEVICES.map((d) => (
+                  <button
+                    key={d.id}
+                    onClick={() => { setDevice(d); setDeviceOpen(false); }}
+                    style={{
+                      display: "block",
+                      width: "100%",
+                      textAlign: "left",
+                      padding: "9px 14px",
+                      fontSize: 13,
+                      color: d.id === device.id ? "#8ca45a" : "rgba(255,255,255,0.8)",
+                      background: d.id === device.id ? "rgba(140,164,90,0.1)" : "transparent",
+                      border: "none",
+                      cursor: "pointer",
+                    }}
+                  >
+                    {d.label}
+                  </button>
+                ))}
+              </div>
+            )}
+          </div>
+
+          {/* Scale */}
+          <div style={{ display: "flex", gap: 4 }}>
+            {[0.5, 0.62, 0.75, 1].map((s) => (
+              <button
+                key={s}
+                onClick={() => setScale(s)}
+                style={{
+                  padding: "5px 10px",
+                  borderRadius: 6,
+                  fontSize: 12,
+                  fontWeight: 600,
+                  background: scale === s ? "#3c4a26" : "rgba(255,255,255,0.05)",
+                  color: scale === s ? "#fff" : "rgba(255,255,255,0.5)",
+                  border: "none",
+                  cursor: "pointer",
+                }}
+              >
+                {Math.round(s * 100)}%
+              </button>
+            ))}
+          </div>
+
+          <button
+            onClick={reload}
+            style={{
+              display: "flex", alignItems: "center", gap: 6,
+              background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.1)",
+              borderRadius: 8, padding: "6px 12px", color: "rgba(255,255,255,0.6)", fontSize: 13, cursor: "pointer",
+            }}
           >
-            <ExternalLink size={13} />
-            Open in tab
-          </a>
+            <RotateCcw size={13} />
+            Reload
+          </button>
         </div>
       </header>
 
-      <div className="flex flex-1 overflow-hidden">
-        {/* Left sidebar — controls */}
-        <aside className="w-60 shrink-0 border-r border-white/10 bg-neutral-900 flex flex-col overflow-y-auto">
-          {/* Device */}
-          <section className="p-4 border-b border-white/10">
-            <p className="text-[11px] font-semibold text-white/40 uppercase tracking-widest mb-2">Device</p>
-            <div className="flex flex-col gap-1">
-              {DEVICES.map((d) => (
-                <button
-                  key={d.id}
-                  onClick={() => setDevice(d)}
-                  className={`flex items-center gap-2 px-3 py-2 rounded-lg text-sm text-left transition-colors ${
-                    device.id === d.id
-                      ? "bg-[#3c4a26] text-white"
-                      : "text-white/60 hover:bg-white/5 hover:text-white"
-                  }`}
-                >
-                  <Monitor size={13} className="shrink-0 opacity-60" />
-                  <span>{d.label}</span>
-                  <span className="ml-auto text-[10px] text-white/30">
-                    {d.width}
-                  </span>
-                </button>
-              ))}
-            </div>
-          </section>
-
-          {/* Scale */}
-          <section className="p-4 border-b border-white/10">
-            <p className="text-[11px] font-semibold text-white/40 uppercase tracking-widest mb-2">Scale</p>
-            <div className="flex gap-1 flex-wrap">
-              {SCALE_OPTIONS.map((s) => (
-                <button
-                  key={s.label}
-                  onClick={() => setScale(s.value)}
-                  className={`px-3 py-1.5 rounded-md text-xs font-medium transition-colors ${
-                    scale === s.value
-                      ? "bg-[#3c4a26] text-white"
-                      : "bg-white/5 text-white/60 hover:bg-white/10 hover:text-white"
-                  }`}
-                >
-                  {s.label}
-                </button>
-              ))}
-            </div>
-          </section>
-
-          {/* Screens */}
-          <section className="p-4 border-b border-white/10">
-            <p className="text-[11px] font-semibold text-white/40 uppercase tracking-widest mb-2">Screen</p>
-            <div className="flex flex-col gap-1">
-              {SCREENS.map((s) => (
-                <button
-                  key={s.id}
-                  onClick={() => navigateTo(s)}
-                  className={`flex items-center gap-2.5 px-3 py-2 rounded-lg text-sm text-left transition-colors ${
-                    activeScreen.id === s.id
-                      ? "bg-[#3c4a26] text-white"
-                      : "text-white/60 hover:bg-white/5 hover:text-white"
-                  }`}
-                >
-                  <span className="text-base w-5 text-center">{s.icon}</span>
-                  <span>{s.label}</span>
-                </button>
-              ))}
-            </div>
-          </section>
-
-          {/* Theme */}
-          <section className="p-4 border-b border-white/10">
-            <p className="text-[11px] font-semibold text-white/40 uppercase tracking-widest mb-2">Theme preview</p>
-            <p className="text-[11px] text-white/30 mb-3 leading-relaxed">
-              Toggle dark mode inside the app using the More → Settings screen. The button below approximates it via a CSS filter.
+      <div style={{ display: "flex", flex: 1, overflow: "hidden" }}>
+        {/* Left panel — vendor selector */}
+        <aside
+          style={{
+            width: 220,
+            flexShrink: 0,
+            background: "#18181b",
+            borderRight: "1px solid rgba(255,255,255,0.07)",
+            overflowY: "auto",
+            display: "flex",
+            flexDirection: "column",
+          }}
+        >
+          <div style={{ padding: "16px 14px 8px" }}>
+            <p style={{ fontSize: 10, fontWeight: 700, letterSpacing: "0.1em", textTransform: "uppercase", color: "rgba(255,255,255,0.35)", marginBottom: 8 }}>
+              Storefront
             </p>
-            <button
-              onClick={() => setDarkMode((v) => !v)}
-              className={`flex items-center gap-2 px-3 py-2 rounded-lg text-sm w-full transition-colors ${
-                darkMode
-                  ? "bg-indigo-900/50 text-indigo-200 border border-indigo-500/30"
-                  : "bg-white/5 text-white/60 hover:bg-white/10 hover:text-white"
-              }`}
-            >
-              {darkMode ? <Moon size={14} /> : <Sun size={14} />}
-              {darkMode ? "Dark mode (approx)" : "Light mode"}
-            </button>
-          </section>
-
-          {/* Reload */}
-          <section className="p-4">
-            <button
-              onClick={reload}
-              className="flex items-center gap-2 px-3 py-2 rounded-lg text-sm w-full text-white/60 hover:bg-white/5 hover:text-white transition-colors"
-            >
-              <RotateCcw size={13} />
-              Reload app
-            </button>
-          </section>
+            {vendors?.map((v) => (
+              <button
+                key={v.id}
+                onClick={() => { setVendorId(v.id); setKey((k) => k + 1); }}
+                style={{
+                  display: "flex",
+                  alignItems: "center",
+                  gap: 10,
+                  width: "100%",
+                  padding: "8px 10px",
+                  borderRadius: 8,
+                  border: "none",
+                  textAlign: "left",
+                  cursor: "pointer",
+                  background: vendorId === v.id ? "rgba(140,164,90,0.15)" : "transparent",
+                  marginBottom: 2,
+                }}
+              >
+                <img
+                  src={v.imageUrl}
+                  alt={v.name}
+                  style={{ width: 32, height: 32, borderRadius: 6, objectFit: "cover", flexShrink: 0, border: "1px solid rgba(255,255,255,0.08)" }}
+                />
+                <div style={{ minWidth: 0 }}>
+                  <p style={{ fontSize: 13, fontWeight: 600, color: vendorId === v.id ? "#8ca45a" : "rgba(255,255,255,0.85)", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
+                    {v.name}
+                  </p>
+                  <p style={{ fontSize: 11, color: "rgba(255,255,255,0.35)", marginTop: 1 }}>{v.category}</p>
+                </div>
+              </button>
+            ))}
+          </div>
         </aside>
 
         {/* Main canvas */}
-        <main className="flex-1 flex items-center justify-center overflow-auto bg-neutral-950 p-8">
-          <div
-            style={{ width: scaledW, height: scaledH }}
-            className="relative shrink-0"
-          >
-            {/* Phone shell */}
+        <main
+          style={{
+            flex: 1,
+            display: "flex",
+            flexDirection: "column",
+            alignItems: "center",
+            justifyContent: "center",
+            overflow: "auto",
+            padding: "32px 24px",
+            gap: 24,
+          }}
+        >
+          {/* Storefront link bar */}
+          {selectedVendor && (
+            <div
+              style={{
+                display: "flex",
+                alignItems: "center",
+                gap: 10,
+                background: "#18181b",
+                border: "1px solid rgba(255,255,255,0.1)",
+                borderRadius: 12,
+                padding: "10px 16px",
+                maxWidth: Math.max(scaledW, 340),
+                width: "100%",
+              }}
+            >
+              <div style={{ flex: 1, minWidth: 0 }}>
+                <p style={{ fontSize: 10, color: "rgba(255,255,255,0.35)", marginBottom: 2, textTransform: "uppercase", letterSpacing: "0.08em", fontWeight: 600 }}>
+                  Your storefront link — share with customers
+                </p>
+                <p style={{ fontSize: 13, color: "rgba(255,255,255,0.7)", fontFamily: "monospace", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
+                  {publicUrl}
+                </p>
+              </div>
+              <button
+                onClick={copyLink}
+                style={{
+                  display: "flex", alignItems: "center", gap: 6,
+                  background: copied ? "#3c4a26" : "rgba(255,255,255,0.08)",
+                  border: "1px solid rgba(255,255,255,0.12)",
+                  borderRadius: 8, padding: "7px 14px",
+                  color: copied ? "#8ca45a" : "rgba(255,255,255,0.7)",
+                  fontSize: 13, fontWeight: 600, cursor: "pointer",
+                  transition: "all 0.15s",
+                  flexShrink: 0,
+                }}
+              >
+                {copied ? <Check size={13} /> : <Copy size={13} />}
+                {copied ? "Copied!" : "Copy link"}
+              </button>
+              <a
+                href={previewUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                style={{
+                  display: "flex", alignItems: "center", gap: 6,
+                  background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.1)",
+                  borderRadius: 8, padding: "7px 12px",
+                  color: "rgba(255,255,255,0.6)", fontSize: 13, cursor: "pointer",
+                  textDecoration: "none", flexShrink: 0,
+                }}
+              >
+                <ExternalLink size={13} />
+                Open
+              </a>
+            </div>
+          )}
+
+          {/* Phone frame */}
+          <div style={{ width: scaledW, height: scaledH, position: "relative", flexShrink: 0 }}>
             <div
               style={{
                 width: frameW,
                 height: frameH,
-                borderRadius: device.borderRadius + 6,
+                borderRadius: device.borderRadius + 8,
                 backgroundColor: device.frameColor,
                 transformOrigin: "top left",
                 transform: `scale(${scale})`,
-                boxShadow: "0 40px 120px rgba(0,0,0,0.8), inset 0 0 0 1px rgba(255,255,255,0.08)",
+                boxShadow: "0 0 0 1px rgba(255,255,255,0.06), 0 32px 80px rgba(0,0,0,0.7), 0 0 0 8px rgba(255,255,255,0.03)",
                 position: "absolute",
                 top: 0,
                 left: 0,
               }}
             >
-              {/* Side buttons */}
+              {/* Left buttons */}
+              {[90, 136, 192].map((top, i) => (
+                <div
+                  key={i}
+                  style={{
+                    position: "absolute", left: -4, top,
+                    width: 4, height: i === 0 ? 28 : 58,
+                    background: "linear-gradient(to right, #111, #2a2a2a)",
+                    borderRadius: "3px 0 0 3px",
+                  }}
+                />
+              ))}
+              {/* Right button */}
               <div
                 style={{
-                  position: "absolute",
-                  left: -3,
-                  top: 90,
-                  width: 3,
-                  height: 32,
-                  backgroundColor: "#333",
-                  borderRadius: "2px 0 0 2px",
-                }}
-              />
-              <div
-                style={{
-                  position: "absolute",
-                  left: -3,
-                  top: 134,
-                  width: 3,
-                  height: 64,
-                  backgroundColor: "#333",
-                  borderRadius: "2px 0 0 2px",
-                }}
-              />
-              <div
-                style={{
-                  position: "absolute",
-                  left: -3,
-                  top: 210,
-                  width: 3,
-                  height: 64,
-                  backgroundColor: "#333",
-                  borderRadius: "2px 0 0 2px",
-                }}
-              />
-              {/* Power button */}
-              <div
-                style={{
-                  position: "absolute",
-                  right: -3,
-                  top: 140,
-                  width: 3,
-                  height: 80,
-                  backgroundColor: "#333",
-                  borderRadius: "0 2px 2px 0",
+                  position: "absolute", right: -4, top: 150,
+                  width: 4, height: 72,
+                  background: "linear-gradient(to left, #111, #2a2a2a)",
+                  borderRadius: "0 3px 3px 0",
                 }}
               />
 
-              {/* Screen area */}
+              {/* Screen cutout */}
               <div
                 style={{
                   position: "absolute",
-                  top: FRAME_PADDING + 40,
-                  left: FRAME_PADDING,
+                  top: device.bezelTop,
+                  left: FRAME_SIDE,
                   width: device.width,
                   height: device.height,
-                  borderRadius: device.borderRadius - 6,
+                  borderRadius: device.borderRadius - 4,
                   overflow: "hidden",
-                  backgroundColor: "#000",
+                  background: "#000",
                 }}
               >
-                {/* Dynamic island or notch */}
+                {/* Dynamic island */}
                 {device.hasIsland ? (
                   <div
                     style={{
-                      position: "absolute",
-                      top: 12,
-                      left: "50%",
+                      position: "absolute", top: 12, left: "50%",
                       transform: "translateX(-50%)",
-                      width: 120,
-                      height: 35,
-                      backgroundColor: "#000",
+                      width: 118, height: 34,
+                      background: "#000",
                       borderRadius: 20,
                       zIndex: 10,
                     }}
@@ -302,106 +371,68 @@ export default function SimulatorPage() {
                 ) : (
                   <div
                     style={{
-                      position: "absolute",
-                      top: 0,
-                      left: "50%",
+                      position: "absolute", top: 0, left: "50%",
                       transform: "translateX(-50%)",
-                      width: 150,
-                      height: 28,
-                      backgroundColor: device.frameColor,
-                      borderRadius: "0 0 18px 18px",
+                      width: 140, height: 26,
+                      background: device.frameColor,
+                      borderRadius: "0 0 16px 16px",
                       zIndex: 10,
                     }}
                   />
                 )}
 
-                {/* The app */}
+                {/* Status bar dots (camera/sensor area) */}
+                <div
+                  style={{
+                    position: "absolute",
+                    top: device.hasIsland ? 0 : 0,
+                    right: 20,
+                    zIndex: 11,
+                    display: "flex",
+                    alignItems: "center",
+                    gap: 6,
+                    height: device.hasIsland ? 0 : 26,
+                    opacity: 0,
+                  }}
+                />
+
+                {/* Live iframe */}
                 <iframe
                   key={key}
                   ref={iframeRef}
-                  src={activeScreen.path}
+                  src={previewUrl}
                   style={{
                     width: device.width,
                     height: device.height,
                     border: "none",
                     display: "block",
-                    filter: iframeFilter,
                   }}
-                  title="Mobile app preview"
+                  title="Storefront preview"
                   allow="geolocation"
                 />
               </div>
 
-              {/* Top bezel — home bar area */}
+              {/* Home indicator */}
               <div
                 style={{
                   position: "absolute",
                   bottom: 10,
                   left: "50%",
                   transform: "translateX(-50%)",
-                  width: 120,
-                  height: 4,
-                  backgroundColor: "rgba(255,255,255,0.25)",
-                  borderRadius: 4,
+                  width: 134,
+                  height: 5,
+                  background: "rgba(255,255,255,0.3)",
+                  borderRadius: 3,
                 }}
               />
             </div>
           </div>
+
+          {/* Caption */}
+          <p style={{ fontSize: 12, color: "rgba(255,255,255,0.2)", textAlign: "center" }}>
+            Live preview — click to interact · {device.width}×{device.height}px
+          </p>
         </main>
-
-        {/* Right panel — info */}
-        <aside className="w-56 shrink-0 border-l border-white/10 bg-neutral-900 flex flex-col p-4 gap-5">
-          <div>
-            <p className="text-[11px] font-semibold text-white/40 uppercase tracking-widest mb-2">Device info</p>
-            <div className="space-y-1.5 text-xs text-white/60">
-              <div className="flex justify-between">
-                <span>Model</span>
-                <span className="text-white">{device.label}</span>
-              </div>
-              <div className="flex justify-between">
-                <span>Resolution</span>
-                <span className="text-white">{device.width} × {device.height}</span>
-              </div>
-              <div className="flex justify-between">
-                <span>Scale</span>
-                <span className="text-white">{Math.round(scale * 100)}%</span>
-              </div>
-              <div className="flex justify-between">
-                <span>Island</span>
-                <span className="text-white">{device.hasIsland ? "Yes" : "No"}</span>
-              </div>
-            </div>
-          </div>
-
-          <div>
-            <p className="text-[11px] font-semibold text-white/40 uppercase tracking-widest mb-2">Current screen</p>
-            <div className="flex items-center gap-2 px-3 py-2 rounded-lg bg-white/5 text-sm">
-              <span className="text-lg">{activeScreen.icon}</span>
-              <span className="text-white">{activeScreen.label}</span>
-            </div>
-            <p className="text-[10px] text-white/25 mt-1.5 font-mono">{activeScreen.path}</p>
-          </div>
-
-          <div>
-            <p className="text-[11px] font-semibold text-white/40 uppercase tracking-widest mb-2">Tips</p>
-            <ul className="space-y-2 text-[11px] text-white/40 leading-relaxed">
-              <li>• Click inside the phone to interact with the live app</li>
-              <li>• Toggle dark mode in More → Settings inside the app</li>
-              <li>• Use "Open in tab" to see full browser view</li>
-              <li>• Resize scale for different viewport previews</li>
-            </ul>
-          </div>
-
-          <div className="mt-auto">
-            <div className="rounded-lg border border-white/10 p-3 text-[11px] text-white/30 space-y-1">
-              <div className="flex items-center gap-1.5">
-                <Tablet size={11} className="opacity-60" />
-                <span className="text-white/50 font-medium">Live preview</span>
-              </div>
-              <p>This is the real app running in web mode — fully interactive.</p>
-            </div>
-          </div>
-        </aside>
       </div>
     </div>
   );

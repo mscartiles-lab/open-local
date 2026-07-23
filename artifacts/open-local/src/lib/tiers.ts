@@ -62,6 +62,20 @@ export const TIERS: Record<TierId, TierDef> = {
 
 export const TIER_ORDER: TierId[] = ["basic", "middle", "premium"];
 
+/** Max photos per product listing. Standard+ gets unlimited (Infinity). */
+export const TIER_PHOTO_LIMIT: Record<TierId, number> = {
+  basic: 1,
+  middle: Infinity,
+  premium: Infinity,
+};
+
+/** Max videos per product listing. Basic gets 0, Standard+ gets unlimited. */
+export const TIER_VIDEO_LIMIT: Record<TierId, number> = {
+  basic: 0,
+  middle: Infinity,
+  premium: Infinity,
+};
+
 // À-la-carte boost: anyone can pay to feature a single listing for 2 weeks.
 export const FEATURE_BOOST_PRICE = 5;
 export const FEATURE_BOOST_DURATION_DAYS = 14;
