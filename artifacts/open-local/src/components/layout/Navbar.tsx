@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { Link, useLocation } from "wouter";
-import { Store, ShoppingBag, PlusCircle, Settings, Menu, Heart, HandHelping, Percent, CalendarDays, LogOut, LogIn, User, CreditCard, Sparkles, Search as SearchIcon, LifeBuoy, MessageCircle, Package, Smartphone } from "lucide-react";
+import { Store, ShoppingBag, PlusCircle, Settings, Menu, Heart, Zap, Percent, CalendarDays, LogOut, LogIn, User, CreditCard, Sparkles, Search as SearchIcon, LifeBuoy, MessageCircle, Package, Smartphone } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 import {
@@ -48,7 +48,7 @@ export function Navbar() {
   const links = [
     { href: "/vendors", label: "Vendors", icon: Store },
     { href: "/products", label: "Goods", icon: ShoppingBag },
-    { href: "/listings", label: "Listings", icon: HandHelping },
+    { href: "/drops", label: "Listings", icon: Zap },
     { href: "/surplus", label: "Sale", icon: Percent },
     { href: "/events", label: "Events", icon: CalendarDays },
     { href: "/favorites", label: "Favorites", icon: Heart },

@@ -22,6 +22,7 @@ import Terms from "@/pages/terms";
 import Privacy from "@/pages/privacy";
 import MasterList from "@/pages/master-list";
 import Listings from "@/pages/listings";
+import Drops from "@/pages/drops";
 import Surplus from "@/pages/surplus";
 import Events from "@/pages/events";
 import SearchInsights from "@/pages/search-insights";
@@ -61,6 +62,7 @@ function Router() {
       <Route path="/privacy" component={Privacy} />
       <Route path="/master-list" component={MasterList} />
       <Route path="/listings" component={Listings} />
+      <Route path="/drops" component={Drops} />
       <Route path="/surplus" component={Surplus} />
       <Route path="/events" component={Events} />
       <Route path="/search-insights" component={SearchInsights} />
