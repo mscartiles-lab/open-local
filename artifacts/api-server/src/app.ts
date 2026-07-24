@@ -15,10 +15,15 @@ app.use(
     logger,
     serializers: {
       req(req) {
+        const forwarded = req.headers["x-forwarded-for"];
+        const ip = forwarded
+          ? (Array.isArray(forwarded) ? forwarded[0] : forwarded.split(",")[0]).trim()
+          : req.socket?.remoteAddress ?? "unknown";
         return {
           id: req.id,
           method: req.method,
           url: req.url?.split("?")[0],
+          ip,
         };
       },
       res(res) {

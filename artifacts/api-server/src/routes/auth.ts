@@ -142,7 +142,9 @@ router.post("/auth/signup/start", async (req: Request, res: Response): Promise<v
     return;
   }
 
-  void logIp(extractIp(req), "POST", "/auth/signup/start", "signup_attempt", { userAgent: req.headers["user-agent"] });
+  const signupIp = extractIp(req);
+  req.log.info({ ip: signupIp, email: normalizedEmail, username }, "signup OTP generated");
+  void logIp(signupIp, "POST", "/auth/signup/start", "signup_attempt", { userAgent: req.headers["user-agent"] });
   const adminViewer = devFallback && isReplitWorkspaceRequest(req);
   res.status(201).json({
     verificationId: row!.id,
@@ -378,7 +380,9 @@ router.post("/auth/login/start", async (req: Request, res: Response): Promise<vo
     return;
   }
 
-  void logIp(extractIp(req), "POST", "/auth/login/start", "login_attempt", { userAgent: req.headers["user-agent"] });
+  const loginIp = extractIp(req);
+  req.log.info({ ip: loginIp, email: normalizedEmail, userId: user.id }, "login OTP generated");
+  void logIp(loginIp, "POST", "/auth/login/start", "login_attempt", { userAgent: req.headers["user-agent"] });
   const adminViewer = devFallback && isReplitWorkspaceRequest(req);
   res.json({
     verificationId: row!.id,
