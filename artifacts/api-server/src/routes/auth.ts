@@ -1,7 +1,7 @@
 import { Router, type IRouter, type Request, type Response } from "express";
 import { eq, and, gt } from "drizzle-orm";
 import { z } from "zod";
-import { db, usersTable, sessionsTable, signupVerificationsTable } from "@workspace/db";
+import { db, usersTable, sessionsTable, signupVerificationsTable, vendorsTable } from "@workspace/db";
 import { generateVerificationCode, sendVerificationEmail, sendDirectEmail } from "../lib/email";
 import { logger } from "../lib/logger";
 import { emitEvent } from "../lib/webhooks";
@@ -494,7 +494,17 @@ router.get("/auth/me", async (req: Request, res: Response): Promise<void> => {
     return;
   }
 
-  res.json({ user: userPublic(user) });
+  let vendorSlug: string | null = null;
+  if (user.role === "vendor") {
+    const [vendor] = await db
+      .select({ slug: vendorsTable.slug })
+      .from(vendorsTable)
+      .where(eq(vendorsTable.contactEmail, user.email))
+      .limit(1);
+    vendorSlug = vendor?.slug ?? null;
+  }
+
+  res.json({ user: { ...userPublic(user), vendorSlug } });
 });
 
 router.post("/auth/logout", async (req: Request, res: Response): Promise<void> => {

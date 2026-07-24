@@ -1,5 +1,6 @@
 import { Feather } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
+import { Linking } from "react-native";
 import React from "react";
 import {
   Alert,
@@ -15,6 +16,10 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import Avatar from "@/components/Avatar";
 import { useAuth } from "@/context/AuthContext";
 import { useColors } from "@/hooks/useColors";
+
+const WEB_BASE = process.env.EXPO_PUBLIC_DOMAIN
+  ? `https://${process.env.EXPO_PUBLIC_DOMAIN}`
+  : "";
 
 type MenuItem = {
   id: string;
@@ -121,6 +126,57 @@ export default function MoreScreen() {
                   </Text>
                 </View>
               </View>
+
+              {/* Rewards — all logged-in users */}
+              <TouchableOpacity
+                style={[s.row, s.rowBorder]}
+                onPress={() => Linking.openURL(`${WEB_BASE}/rewards`)}
+                activeOpacity={0.7}
+              >
+                <View style={[s.iconWrap, { backgroundColor: colors.primary + "18" }]}>
+                  <Feather name="star" size={18} color={colors.primary} />
+                </View>
+                <View style={s.rowText}>
+                  <Text style={s.rowLabel}>Rewards</Text>
+                  <Text style={s.rowSubtitle}>Avatar unlocks &amp; visit badges</Text>
+                </View>
+                <Feather name="external-link" size={16} color={colors.mutedForeground} />
+              </TouchableOpacity>
+
+              {/* Vendor-only: Dashboard + Billing */}
+              {user.role === "vendor" && (
+                <>
+                  <TouchableOpacity
+                    style={[s.row, s.rowBorder]}
+                    onPress={() => Linking.openURL(`${WEB_BASE}/dashboard/${user.vendorSlug ?? ""}`)}
+                    activeOpacity={0.7}
+                  >
+                    <View style={[s.iconWrap, { backgroundColor: colors.primary + "18" }]}>
+                      <Feather name="layout" size={18} color={colors.primary} />
+                    </View>
+                    <View style={s.rowText}>
+                      <Text style={s.rowLabel}>My Dashboard</Text>
+                      <Text style={s.rowSubtitle}>Manage products, analytics &amp; store</Text>
+                    </View>
+                    <Feather name="external-link" size={16} color={colors.mutedForeground} />
+                  </TouchableOpacity>
+                  <TouchableOpacity
+                    style={[s.row, s.rowBorder]}
+                    onPress={() => Linking.openURL(`${WEB_BASE}/billing`)}
+                    activeOpacity={0.7}
+                  >
+                    <View style={[s.iconWrap, { backgroundColor: colors.muted }]}>
+                      <Feather name="credit-card" size={18} color={colors.primary} />
+                    </View>
+                    <View style={s.rowText}>
+                      <Text style={s.rowLabel}>Billing &amp; Plan</Text>
+                      <Text style={s.rowSubtitle}>Manage your subscription</Text>
+                    </View>
+                    <Feather name="external-link" size={16} color={colors.mutedForeground} />
+                  </TouchableOpacity>
+                </>
+              )}
+
               <TouchableOpacity
                 style={s.row}
                 onPress={handleLogout}

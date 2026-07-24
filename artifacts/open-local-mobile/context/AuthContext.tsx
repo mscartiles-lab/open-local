@@ -25,6 +25,7 @@ export interface AppUser {
   paused: boolean;
   trialEndsAt: string | null;
   createdAt: string;
+  vendorSlug: string | null;
 }
 
 interface AuthContextValue {
