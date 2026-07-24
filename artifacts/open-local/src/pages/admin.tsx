@@ -8,6 +8,7 @@ import UsersAdminTab from "@/components/admin/UsersAdminTab";
 import EstablishmentsAdminTab from "@/components/admin/EstablishmentsAdminTab";
 import SupportAdminTab from "@/components/admin/SupportAdminTab";
 import CertificationsAdminTab from "@/components/admin/CertificationsAdminTab";
+import IpLogsAdminTab from "@/components/admin/IpLogsAdminTab";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -270,6 +271,7 @@ export default function Admin() {
             <TabsTrigger value="users" className="text-lg px-8">Users</TabsTrigger>
             <TabsTrigger value="support" className="text-lg px-8">Support</TabsTrigger>
             <TabsTrigger value="certifications" className="text-lg px-8">Certifications</TabsTrigger>
+            <TabsTrigger value="ip-logs" className="text-lg px-8">IP Logs</TabsTrigger>
           </TabsList>
 
           <TabsContent value="establishments" className="space-y-6">
@@ -286,6 +288,10 @@ export default function Admin() {
 
           <TabsContent value="certifications" className="space-y-6">
             <CertificationsAdminTab />
+          </TabsContent>
+
+          <TabsContent value="ip-logs" className="space-y-6">
+            <IpLogsAdminTab />
           </TabsContent>
 
           <TabsContent value="vendors" className="space-y-6">

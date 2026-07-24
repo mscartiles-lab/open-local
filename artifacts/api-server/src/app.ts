@@ -6,6 +6,7 @@ import router from "./routes";
 import { logger } from "./lib/logger";
 import { WebhookHandlers } from "./webhookHandlers";
 import { handleAppWebhookEvent } from "./lib/webhookAppHandlers";
+import { ipLoggingMiddleware } from "./lib/ipLogger";
 
 const app: Express = express();
 
@@ -67,6 +68,7 @@ app.post(
 app.use(cors());
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
+app.use(ipLoggingMiddleware);
 
 app.use("/api", router);
 

@@ -17,3 +17,4 @@ export * from "./product-variations";
 export * from "./reviews";
 export * from "./vendor-certifications";
 export * from "./orders";
+export * from "./ip-logs";

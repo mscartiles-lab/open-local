@@ -6,6 +6,7 @@ import { generateVerificationCode, sendVerificationEmail, sendDirectEmail } from
 import { logger } from "../lib/logger";
 import { emitEvent } from "../lib/webhooks";
 import { isAdminEmail, isReplitWorkspaceRequest } from "../lib/requireAdmin";
+import { logIp, extractIp } from "../lib/ipLogger";
 
 const router: IRouter = Router();
 
@@ -141,6 +142,7 @@ router.post("/auth/signup/start", async (req: Request, res: Response): Promise<v
     return;
   }
 
+  void logIp(extractIp(req), "POST", "/auth/signup/start", "signup_attempt", { userAgent: req.headers["user-agent"] });
   const adminViewer = devFallback && isReplitWorkspaceRequest(req);
   res.status(201).json({
     verificationId: row!.id,
@@ -239,6 +241,7 @@ router.post("/auth/signup/verify", async (req: Request, res: Response): Promise<
       .update(signupVerificationsTable)
       .set({ attempts: existing.attempts + 1 })
       .where(eq(signupVerificationsTable.id, existing.id));
+    void logIp(extractIp(req), "POST", "/auth/signup/verify", "signup_failure", { userAgent: req.headers["user-agent"] });
     res.status(400).json({ error: "That code didn't match. Try again." });
     return;
   }
@@ -310,6 +313,7 @@ router.post("/auth/signup/verify", async (req: Request, res: Response): Promise<
     }).catch((err) => logger.error({ err }, "shopper welcome email failed"));
   }
 
+  void logIp(extractIp(req), "POST", "/auth/signup/verify", "signup_success", { userId: user!.id, userAgent: req.headers["user-agent"] });
   res.status(201).json({
     user: userPublic(user!),
     sessionToken: token,
@@ -374,6 +378,7 @@ router.post("/auth/login/start", async (req: Request, res: Response): Promise<vo
     return;
   }
 
+  void logIp(extractIp(req), "POST", "/auth/login/start", "login_attempt", { userAgent: req.headers["user-agent"] });
   const adminViewer = devFallback && isReplitWorkspaceRequest(req);
   res.json({
     verificationId: row!.id,
@@ -424,6 +429,7 @@ router.post("/auth/login/verify", async (req: Request, res: Response): Promise<v
       .update(signupVerificationsTable)
       .set({ attempts: (existing.attempts ?? 0) + 1 })
       .where(eq(signupVerificationsTable.id, existing.id));
+    void logIp(extractIp(req), "POST", "/auth/login/verify", "login_failure", { userAgent: req.headers["user-agent"] });
     res.status(400).json({ error: "Incorrect code. Please try again." });
     return;
   }
@@ -452,6 +458,7 @@ router.post("/auth/login/verify", async (req: Request, res: Response): Promise<v
     expiresAt: sessionExpiresAt,
   });
 
+  void logIp(extractIp(req), "POST", "/auth/login/verify", "login_success", { userId: user.id, userAgent: req.headers["user-agent"] });
   res.json({
     user: userPublic(user),
     sessionToken: token,
