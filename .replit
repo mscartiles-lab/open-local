@@ -33,3 +33,19 @@ EMAILJS_TEMPLATE_ID = "template_05e3r7u"
 EMAILJS_PUBLIC_KEY = "bXLUPvpo7S-IxJwMT"
 EMAILJS_PRIVATE_KEY = "RTUcX2RqDC1xLHNzYnoZr"
 EMAILJS_ONBOARDING_TEMPLATE_ID = "template_ddumzg3"
+
+[[ports]]
+localPort = 8080
+externalPort = 8080
+
+[[ports]]
+localPort = 8081
+externalPort = 8081
+
+[[ports]]
+localPort = 24149
+externalPort = 3000
+
+[[ports]]
+localPort = 25681
+externalPort = 80
