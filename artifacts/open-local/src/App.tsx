@@ -33,6 +33,7 @@ import Messages from "@/pages/messages";
 import OrdersPage from "@/pages/orders";
 import Simulator from "@/pages/simulator";
 import NotFound from "@/pages/not-found";
+import InvitePage from "@/pages/invite";
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -72,6 +73,7 @@ function Router() {
       <Route path="/messages" component={Messages} />
       <Route path="/orders" component={OrdersPage} />
       <Route path="/simulator" component={Simulator} />
+      <Route path="/invite" component={InvitePage} />
       <Route component={NotFound} />
     </Switch>
   );

@@ -25,6 +25,7 @@ import storageRouter from "./storage";
 import ordersRouter from "./orders";
 import connectRouter from "./connect";
 import dashboardOtpRouter from "./dashboard-otp";
+import inviteRouter from "./invite";
 
 const router: IRouter = Router();
 
@@ -54,5 +55,6 @@ router.use(storageRouter);
 router.use(ordersRouter);
 router.use(connectRouter);
 router.use(dashboardOtpRouter);
+router.use(inviteRouter);
 
 export default router;
