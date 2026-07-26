@@ -5,6 +5,8 @@ import { logger } from "./lib/logger";
 import { runOnboardingSweep } from "./lib/onboarding";
 import { runTrialReminderSweep } from "./lib/trialReminders";
 import { runSupportTicketSweep } from "./lib/supportTickets";
+import { runWaitlistReminderSweep } from "./lib/waitlistReminders";
+import { getAppUrl } from "./lib/appUrl";
 
 async function initStripe() {
   const databaseUrl = process.env.DATABASE_URL;
@@ -68,17 +70,15 @@ const MS_PER_DAY = 24 * 60 * 60 * 1000;
 async function runDailySweep(): Promise<void> {
   logger.info("daily sweep starting");
   try {
-    const domain = process.env.REPLIT_DOMAINS?.split(",")[0];
-    const reactivationUrl = domain
-      ? `https://${domain}/billing?reactivate=1`
-      : "https://openlocalapp.com/billing?reactivate=1";
+    const reactivationUrl = `${getAppUrl()}/billing?reactivate=1`;
 
-    const [onboarding, trial, support] = await Promise.all([
+    const [onboarding, trial, support, waitlist] = await Promise.all([
       runOnboardingSweep(),
       runTrialReminderSweep({ reactivationUrl }),
       runSupportTicketSweep(),
+      runWaitlistReminderSweep(),
     ]);
-    logger.info({ onboarding, trial, support }, "daily sweep complete");
+    logger.info({ onboarding, trial, support, waitlist }, "daily sweep complete");
   } catch (err) {
     logger.error({ err }, "daily sweep failed");
   }
