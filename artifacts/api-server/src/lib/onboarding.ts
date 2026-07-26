@@ -97,10 +97,9 @@ export function buildOnboardingPayload(args: BuildPayloadArgs): Record<string, u
 // ─── Direct email composers ───────────────────────────────────────────────────
 // Each function returns { subject, message } for its email type.
 
-const APP_URL = (() => {
-  const domain = process.env.REPLIT_DOMAINS?.split(",")[0];
-  return domain ? `https://${domain}` : "https://openlocalapp.com";
-})();
+import { getAppUrl } from "./appUrl";
+
+const APP_URL = getAppUrl();
 
 function vendorEmailContent(
   type: OnboardingEmailType,

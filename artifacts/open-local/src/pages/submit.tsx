@@ -101,10 +101,10 @@ const formSchema = z.object({
   // Step 4 — contact
   contactEmail: z.string().email("Enter a valid email."),
   imageUrl: z.string().optional().or(z.literal("")),
-  websiteUrl: z.string().url("Must be a valid URL").optional().or(z.literal("")),
+  websiteUrl: z.string().optional().or(z.literal("")),
   phone: z.string().optional().or(z.literal("")),
   instagramHandle: z.string().optional().or(z.literal("")),
-  facebookUrl: z.string().url("Must be a valid URL").optional().or(z.literal("")),
+  facebookUrl: z.string().optional().or(z.literal("")),
 });
 
 type FormValues = z.infer<typeof formSchema>;
@@ -194,10 +194,22 @@ export default function Submit() {
     setStep(Math.max(1, step - 1));
   }
 
+  function normalizeUrl(val: string | undefined): string | null {
+    if (!val || !val.trim()) return null;
+    const trimmed = val.trim();
+    if (/^https?:\/\//i.test(trimmed)) return trimmed;
+    return `https://${trimmed}`;
+  }
+
   async function publish() {
     const fields = stepFields[4];
     const valid = await form.trigger(fields);
-    if (!valid) return;
+    if (!valid) {
+      // Scroll to the first visible error so the user knows what's wrong
+      const firstError = document.querySelector("[data-error]");
+      firstError?.scrollIntoView({ behavior: "smooth", block: "center" });
+      return;
+    }
     const values = form.getValues();
     const slug = values.name
       .toLowerCase()
@@ -209,10 +221,10 @@ export default function Submit() {
       ...values,
       slug,
       imageUrl: values.imageUrl || defaultImage,
-      websiteUrl: values.websiteUrl || null,
+      websiteUrl: normalizeUrl(values.websiteUrl),
       phone: values.phone || null,
       instagramHandle: instagramHandleClean || null,
-      facebookUrl: values.facebookUrl || null,
+      facebookUrl: normalizeUrl(values.facebookUrl),
       marketsText: values.marketsText || null,
       pickupAddress: values.pickupAddress || null,
       openDays: values.openDays?.length ? values.openDays : null,

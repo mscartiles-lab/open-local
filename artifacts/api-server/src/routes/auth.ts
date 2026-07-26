@@ -7,6 +7,7 @@ import { logger } from "../lib/logger";
 import { emitEvent } from "../lib/webhooks";
 import { isAdminEmail, isReplitWorkspaceRequest } from "../lib/requireAdmin";
 import { logIp, extractIp } from "../lib/ipLogger";
+import { getAppUrl } from "../lib/appUrl";
 
 const router: IRouter = Router();
 
@@ -305,8 +306,7 @@ router.post("/auth/signup/verify", async (req: Request, res: Response): Promise<
   // Send shopper welcome email directly via EmailJS. Vendors get their welcome
   // via fireWelcome() after the vendor profile is created (not at user signup).
   if (user!.role === "shopper") {
-    const domain = process.env.REPLIT_DOMAINS?.split(",")[0];
-    const appUrl = domain ? `https://${domain}` : "https://openlocalapp.com";
+    const appUrl = getAppUrl();
     void sendDirectEmail({
       to: user!.email,
       toName: user!.username,

@@ -5,6 +5,7 @@ import { db, waitlistTable } from "@workspace/db";
 import { requireAdmin } from "../lib/requireAdmin";
 import { sendInvitationEmail } from "../lib/email";
 import { logger } from "../lib/logger";
+import { getAppUrl } from "../lib/appUrl";
 
 const router: IRouter = Router();
 
@@ -13,12 +14,8 @@ const requestBody = z.object({
   name: z.string().trim().max(120).optional(),
 });
 
-function signupUrl(req: Request): string {
-  const domain = process.env.REPLIT_DOMAINS?.split(",")[0];
-  const base = domain
-    ? `https://${domain}`
-    : `${req.protocol}://${req.get("host")}`;
-  return `${base}/submit`;
+function signupUrl(): string {
+  return `${getAppUrl()}/submit`;
 }
 
 // ─── Public: submit email for an invitation ──────────────────────────────────
@@ -45,7 +42,7 @@ router.post("/invite/request", async (req: Request, res: Response): Promise<void
       void sendInvitationEmail({
         to: normalizedEmail,
         name: existing.name,
-        signupUrl: signupUrl(req),
+        signupUrl: signupUrl(),
       });
       res.json({ status: "already_invited", message: "We've resent your invitation — check your inbox!" });
     } else {
@@ -66,7 +63,7 @@ router.post("/invite/request", async (req: Request, res: Response): Promise<void
   const result = await sendInvitationEmail({
     to: normalizedEmail,
     name: name ?? null,
-    signupUrl: signupUrl(req),
+    signupUrl: signupUrl(),
   });
 
   // Mark as invited
@@ -118,14 +115,10 @@ router.post("/admin/invite/:id/resend", requireAdmin, async (req: Request, res: 
     return;
   }
 
-  const domain = process.env.REPLIT_DOMAINS?.split(",")[0];
-  const base = domain ? `https://${domain}` : "https://open.local";
-  const url = `${base}/submit`;
-
   const result = await sendInvitationEmail({
     to: row.email,
     name: row.name,
-    signupUrl: url,
+    signupUrl: signupUrl(),
   });
 
   await db
