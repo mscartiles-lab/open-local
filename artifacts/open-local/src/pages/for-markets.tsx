@@ -1,7 +1,11 @@
-import React from 'react';
-import { Check, X, Link2, Send, Rocket, Store, Bell, MapPin, MessageCircle, Star, Package, TrendingUp, Shield, Award, Users, ArrowRight, Zap } from 'lucide-react';
+import { Check, X, Link2, Send, Rocket, Store, Bell, MapPin, MessageCircle, Star, Package, TrendingUp, Award, Users, ArrowRight, Zap } from "lucide-react";
+import { Link } from "wouter";
 
-export default function MarketManager() {
+export default function ForMarkets() {
+  function scrollTo(id: string) {
+    document.getElementById(id)?.scrollIntoView({ behavior: "smooth", block: "start" });
+  }
+
   return (
     <div className="min-h-screen bg-[#f9f6f0] font-sans">
 
@@ -9,13 +13,16 @@ export default function MarketManager() {
       <nav className="bg-white/95 backdrop-blur border-b border-[#3c4a26]/10 sticky top-0 z-50">
         <div className="max-w-7xl mx-auto px-6 lg:px-8">
           <div className="flex items-center justify-between h-16">
-            <div className="flex items-center gap-2 text-[#3c4a26] font-bold text-lg tracking-tight">
+            <Link href="/" className="flex items-center gap-2 text-[#3c4a26] font-bold text-lg tracking-tight no-underline">
               <span className="text-2xl">🌿</span>
               <span>Open Local</span>
-            </div>
-            <button className="px-5 py-2.5 bg-[#3c4a26] text-white rounded-lg font-semibold text-sm hover:bg-[#2d3a1d] transition-colors">
-              Get Your Market's Link →
-            </button>
+            </Link>
+            <Link
+              href="/invite"
+              className="px-5 py-2.5 bg-[#3c4a26] text-white rounded-lg font-semibold text-sm hover:bg-[#2d3a1d] transition-colors no-underline"
+            >
+              Get the Invite Link →
+            </Link>
           </div>
         </div>
       </nav>
@@ -25,7 +32,6 @@ export default function MarketManager() {
         <div className="max-w-7xl mx-auto px-6 lg:px-8 py-20 lg:py-28">
           <div className="grid lg:grid-cols-2 gap-16 items-center">
             <div>
-              {/* Eyebrow */}
               <div className="inline-flex items-center gap-2 bg-[#8fb339]/20 border border-[#8fb339]/40 rounded-full px-4 py-1.5 text-[#a8d044] text-sm font-semibold mb-8 tracking-wide">
                 <Award className="w-3.5 h-3.5" />
                 For Farmers Market Managers
@@ -43,11 +49,17 @@ export default function MarketManager() {
               </p>
 
               <div className="flex flex-col sm:flex-row gap-4">
-                <button className="inline-flex items-center justify-center gap-2 px-8 py-4 bg-[#8fb339] text-white rounded-lg font-bold text-base hover:bg-[#7a9a2f] transition-all shadow-lg hover:shadow-xl hover:scale-[1.02] transform">
-                  Get Your Market's Invite Link
+                <Link
+                  href="/invite"
+                  className="inline-flex items-center justify-center gap-2 px-8 py-4 bg-[#8fb339] text-white rounded-lg font-bold text-base hover:bg-[#7a9a2f] transition-all shadow-lg no-underline"
+                >
+                  Get the Invite Link
                   <ArrowRight className="w-5 h-5" />
-                </button>
-                <button className="px-8 py-4 border border-white/25 text-white/90 rounded-lg font-medium hover:bg-white/10 transition-colors">
+                </Link>
+                <button
+                  onClick={() => scrollTo("how-it-works")}
+                  className="px-8 py-4 border border-white/25 text-white/90 rounded-lg font-medium hover:bg-white/10 transition-colors"
+                >
                   See how it works ↓
                 </button>
               </div>
@@ -57,7 +69,7 @@ export default function MarketManager() {
             <div className="relative">
               <div className="rounded-2xl overflow-hidden shadow-2xl ring-1 ring-white/10">
                 <img
-                  src="/__mockup/images/market-hero.jpg"
+                  src="/market-hero.jpg"
                   alt="Vibrant farmers market aerial view"
                   className="w-full h-[420px] object-cover"
                 />
@@ -65,7 +77,7 @@ export default function MarketManager() {
               </div>
 
               {/* Floating card — vendor storefront */}
-              <div className="absolute -bottom-5 -left-5 bg-white text-[#1a1a1a] p-4 rounded-2xl shadow-2xl w-52 border border-gray-100">
+              <div className="hidden lg:block absolute -bottom-5 -left-5 bg-white text-[#1a1a1a] p-4 rounded-2xl shadow-2xl w-52 border border-gray-100">
                 <div className="flex items-center gap-3 mb-3">
                   <div className="w-10 h-10 bg-gradient-to-br from-amber-400 to-amber-600 rounded-xl flex items-center justify-center text-xl">🍯</div>
                   <div>
@@ -77,7 +89,7 @@ export default function MarketManager() {
               </div>
 
               {/* Floating card — vendor permanence */}
-              <div className="absolute -top-4 -right-4 bg-white text-[#1a1a1a] p-4 rounded-2xl shadow-2xl w-52 border border-gray-100">
+              <div className="hidden lg:block absolute -top-4 -right-4 bg-white text-[#1a1a1a] p-4 rounded-2xl shadow-2xl w-52 border border-gray-100">
                 <div className="text-xs font-semibold text-[#8fb339] uppercase tracking-wider mb-1">Theirs for life</div>
                 <div className="text-sm font-bold text-[#1a1a1a] leading-snug">Profile stays with the vendor — not the market</div>
               </div>
@@ -99,49 +111,38 @@ export default function MarketManager() {
           </div>
 
           <div className="grid md:grid-cols-2 gap-6">
-            {/* Card 1 */}
-            <div className="flex gap-5 p-8 rounded-2xl bg-[#f9f6f0] border border-[#3c4a26]/10 hover:border-[#8fb339]/40 transition-colors">
-              <div className="flex-shrink-0 w-12 h-12 bg-[#3c4a26] rounded-xl flex items-center justify-center text-white">
-                <TrendingUp className="w-6 h-6" />
+            {[
+              {
+                icon: TrendingUp,
+                title: "Higher vendor retention",
+                body: "Vendors who earn more — even between markets — are far more likely to renew their stall season after season. Open Local puts money in their pocket, and that loyalty flows back to you.",
+              },
+              {
+                icon: Users,
+                title: "More foot traffic on market days",
+                body: "When shoppers discover a vendor online, they come to the market to meet them. Open Local turns digital browsing into in-person visits — bringing new faces through your gates every week.",
+              },
+              {
+                icon: Award,
+                title: "Stand out from competing markets",
+                body: "When vendors choose which markets to commit to, the one that actively supports their growth wins. Offering Open Local is a concrete perk that sets your market apart.",
+              },
+              {
+                icon: Zap,
+                title: "Zero effort on your end",
+                body: "You share one link or QR code. That's it. Vendors sign themselves up, build their own profiles, and manage their own storefronts. You get all the upside with none of the admin overhead.",
+              },
+            ].map((item, i) => (
+              <div key={i} className="flex gap-5 p-8 rounded-2xl bg-[#f9f6f0] border border-[#3c4a26]/10 hover:border-[#8fb339]/40 transition-colors">
+                <div className="flex-shrink-0 w-12 h-12 bg-[#3c4a26] rounded-xl flex items-center justify-center text-white">
+                  <item.icon className="w-6 h-6" />
+                </div>
+                <div>
+                  <h3 className="text-lg font-bold text-[#1a1a1a] mb-2">{item.title}</h3>
+                  <p className="text-gray-600 leading-relaxed">{item.body}</p>
+                </div>
               </div>
-              <div>
-                <h3 className="text-lg font-bold text-[#1a1a1a] mb-2">Higher vendor retention</h3>
-                <p className="text-gray-600 leading-relaxed">Vendors who earn more money — even between markets — are far more likely to renew their stall season after season. Open Local puts money in their pocket, and that loyalty flows back to you.</p>
-              </div>
-            </div>
-
-            {/* Card 2 */}
-            <div className="flex gap-5 p-8 rounded-2xl bg-[#f9f6f0] border border-[#3c4a26]/10 hover:border-[#8fb339]/40 transition-colors">
-              <div className="flex-shrink-0 w-12 h-12 bg-[#3c4a26] rounded-xl flex items-center justify-center text-white">
-                <Users className="w-6 h-6" />
-              </div>
-              <div>
-                <h3 className="text-lg font-bold text-[#1a1a1a] mb-2">More foot traffic on market days</h3>
-                <p className="text-gray-600 leading-relaxed">When shoppers discover a vendor online, they come to the market to meet them. Open Local turns digital browsing into in-person visits — bringing new faces through your gates every week.</p>
-              </div>
-            </div>
-
-            {/* Card 3 */}
-            <div className="flex gap-5 p-8 rounded-2xl bg-[#f9f6f0] border border-[#3c4a26]/10 hover:border-[#8fb339]/40 transition-colors">
-              <div className="flex-shrink-0 w-12 h-12 bg-[#3c4a26] rounded-xl flex items-center justify-center text-white">
-                <Award className="w-6 h-6" />
-              </div>
-              <div>
-                <h3 className="text-lg font-bold text-[#1a1a1a] mb-2">Stand out from competing markets</h3>
-                <p className="text-gray-600 leading-relaxed">When vendors are choosing which markets to commit to, the one that actively supports their growth wins. Offering Open Local is a concrete perk that sets your market apart — and gives vendors a reason to stay.</p>
-              </div>
-            </div>
-
-            {/* Card 4 */}
-            <div className="flex gap-5 p-8 rounded-2xl bg-[#f9f6f0] border border-[#3c4a26]/10 hover:border-[#8fb339]/40 transition-colors">
-              <div className="flex-shrink-0 w-12 h-12 bg-[#3c4a26] rounded-xl flex items-center justify-center text-white">
-                <Zap className="w-6 h-6" />
-              </div>
-              <div>
-                <h3 className="text-lg font-bold text-[#1a1a1a] mb-2">Zero effort on your end</h3>
-                <p className="text-gray-600 leading-relaxed">You share one link or QR code. That's it. Vendors sign themselves up, build their own profiles, and manage their own storefronts. You get all the upside with none of the administrative overhead.</p>
-              </div>
-            </div>
+            ))}
           </div>
         </div>
       </section>
@@ -165,11 +166,11 @@ export default function MarketManager() {
               </div>
               <ul className="space-y-4">
                 {[
-                  'Vendors only exist on market day',
-                  'A shopper forgets a vendor → they never come back',
-                  'Vendors who struggle financially drop out mid-season',
-                  'Competing markets with more perks poach your best vendors',
-                  'No way to showcase your market online between events',
+                  "Vendors only exist on market day",
+                  "A shopper forgets a vendor — they never come back",
+                  "Vendors who struggle financially drop out mid-season",
+                  "Competing markets with more perks poach your best vendors",
+                  "No way to showcase your market online between events",
                 ].map((item, i) => (
                   <li key={i} className="flex items-start gap-3 text-gray-600">
                     <X className="w-4 h-4 text-red-400 mt-1 flex-shrink-0" />
@@ -185,11 +186,11 @@ export default function MarketManager() {
               </div>
               <ul className="space-y-4">
                 {[
-                  'Every vendor is findable and shoppable every day',
-                  'Shoppers follow their favorite vendors and come back',
-                  'Vendors earn more → they stay in your market longer',
-                  'You offer something competing markets don\'t',
-                  'Your market shows up on Open Local — free promotion',
+                  "Every vendor is findable and shoppable every day",
+                  "Shoppers follow their favorite vendors and come back",
+                  "Vendors earn more — they stay in your market longer",
+                  "You offer something competing markets don't",
+                  "Your market shows up on Open Local — free promotion",
                 ].map((item, i) => (
                   <li key={i} className="flex items-start gap-3">
                     <Check className="w-4 h-4 text-[#8fb339] mt-1 flex-shrink-0" />
@@ -203,7 +204,7 @@ export default function MarketManager() {
       </section>
 
       {/* ── How It Works ───────────────────────────────────────── */}
-      <section className="py-20 bg-white">
+      <section id="how-it-works" className="py-20 bg-white">
         <div className="max-w-6xl mx-auto px-6 lg:px-8">
           <div className="text-center mb-14">
             <h2 className="font-['Playfair_Display'] text-4xl font-bold text-[#1a1a1a] mb-4">
@@ -218,24 +219,24 @@ export default function MarketManager() {
             {[
               {
                 icon: Link2,
-                step: '1',
-                time: 'Day 1, 60 seconds',
+                step: "1",
+                time: "Day 1, 60 seconds",
                 title: "Get the Open Local invite link",
                 description: "We give you a QR code and URL to share. Vendors sign up independently — they own their profile for life, and list your market as one of the places they sell.",
               },
               {
                 icon: Send,
-                step: '2',
-                time: 'Day 1, however you like',
-                title: 'Share it once',
-                description: 'Post it in your vendor Facebook group, print it on your check-in sheet, or drop it in your vendor newsletter. Done. No follow-up required.',
+                step: "2",
+                time: "Day 1, however you like",
+                title: "Share it once",
+                description: "Post it in your vendor Facebook group, print it on your check-in sheet, or drop it in your vendor newsletter. Done. No follow-up required.",
               },
               {
                 icon: Rocket,
-                step: '3',
-                time: 'Within days',
-                title: 'Watch your vendors launch',
-                description: 'Each vendor creates their profile in about 5 minutes — for free. You get a market page showing all participating vendors, live for shoppers to browse.',
+                step: "3",
+                time: "Within days",
+                title: "Watch your vendors launch",
+                description: "Each vendor creates their profile in about 5 minutes — for free. They list your market, their schedule, and their products. Shoppers can find them instantly.",
               },
             ].map((item, i) => (
               <div key={i} className="relative bg-[#f9f6f0] rounded-2xl p-8 border border-[#3c4a26]/10">
@@ -271,12 +272,12 @@ export default function MarketManager() {
 
           <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-5">
             {[
-              { icon: Store, title: 'Permanent storefront', description: 'Their own page with photos, story, product catalog, and market schedule — searchable on Google.' },
-              { icon: Bell, title: 'Fresh batch alerts', description: '"Just pulled 40 sourdough loaves" — followers are notified instantly, driving pre-market anticipation.' },
-              { icon: MapPin, title: 'Market listings', description: 'Shoppers see exactly which markets each vendor attends and when — and get directions.' },
-              { icon: MessageCircle, title: 'Direct messaging', description: 'Customers reach out before market day to reserve items or ask questions. No more missed sales.' },
-              { icon: Star, title: 'Reviews & reputation', description: 'Verified reviews travel with each vendor. Great vendors earn loyalty that transcends any single market.' },
-              { icon: Package, title: 'Pre-orders', description: 'Regulars reserve items before they sell out. Vendors sell more, shoppers get guaranteed access.' },
+              { icon: Store, title: "Permanent storefront", description: "Their own page with photos, story, product catalog, and market schedule — searchable on Google." },
+              { icon: Bell, title: "Fresh batch alerts", description: '"Just pulled 40 sourdough loaves" — followers are notified instantly, driving pre-market anticipation.' },
+              { icon: MapPin, title: "Market listings", description: "Shoppers see exactly which markets each vendor attends and when — and get directions." },
+              { icon: MessageCircle, title: "Direct messaging", description: "Customers reach out before market day to reserve items or ask questions. No more missed sales." },
+              { icon: Star, title: "Reviews & reputation", description: "Verified reviews travel with each vendor. Great vendors earn loyalty that transcends any single market." },
+              { icon: Package, title: "Pre-orders", description: "Regulars reserve items before they sell out. Vendors sell more, shoppers get guaranteed access." },
             ].map((item, i) => (
               <div key={i} className="bg-white rounded-xl p-6 border border-gray-200 hover:shadow-md hover:border-[#8fb339]/40 transition-all">
                 <div className="w-11 h-11 bg-gradient-to-br from-[#8fb339] to-[#3c4a26] rounded-lg flex items-center justify-center mb-4 text-white">
@@ -295,10 +296,10 @@ export default function MarketManager() {
         <div className="max-w-5xl mx-auto px-6 lg:px-8">
           <div className="grid grid-cols-2 lg:grid-cols-4 gap-8 text-center">
             {[
-              { number: '1,200+', label: 'Active Florida vendors' },
-              { number: '48', label: 'Markets on platform' },
-              { number: '100%', label: 'Free for vendors & markets' },
-              { number: '< 5 min', label: 'Vendor setup time' },
+              { number: "1,200+", label: "Active Florida vendors" },
+              { number: "48", label: "Markets on platform" },
+              { number: "100%", label: "Free for vendors & markets" },
+              { number: "< 5 min", label: "Vendor setup time" },
             ].map((s, i) => (
               <div key={i}>
                 <div className="text-3xl sm:text-4xl font-bold font-['Playfair_Display'] text-[#8fb339] mb-1">{s.number}</div>
@@ -338,7 +339,7 @@ export default function MarketManager() {
       {/* ── Final CTA ──────────────────────────────────────────── */}
       <section className="py-24 bg-gradient-to-br from-[#1c2a10] to-[#2d3a1d] text-white relative overflow-hidden">
         <div className="absolute inset-0 opacity-[0.07]">
-          <img src="/__mockup/images/vendor-stall.jpg" alt="" className="w-full h-full object-cover" />
+          <img src="/vendor-stall.jpg" alt="" className="w-full h-full object-cover" />
         </div>
         <div className="max-w-3xl mx-auto px-6 lg:px-8 text-center relative z-10">
           <h2 className="font-['Playfair_Display'] text-4xl lg:text-5xl font-bold mb-5 leading-tight">
@@ -348,16 +349,20 @@ export default function MarketManager() {
             It costs you nothing. Takes 60 seconds to set up. And the markets that offer this are already seeing stronger vendor retention and more foot traffic.
           </p>
 
-          <button className="inline-flex items-center gap-3 px-10 py-5 bg-[#8fb339] text-white rounded-xl font-bold text-lg hover:bg-[#7a9a2f] transition-all shadow-2xl hover:scale-[1.02] transform mb-6">
-            Get Your Market's Invite Link
+          <Link
+            href="/invite"
+            className="inline-flex items-center gap-3 px-10 py-5 bg-[#8fb339] text-white rounded-xl font-bold text-lg hover:bg-[#7a9a2f] transition-all shadow-2xl no-underline mb-6"
+          >
+            Get the Invite Link
             <ArrowRight className="w-5 h-5" />
-          </button>
+          </Link>
 
-          <div className="flex flex-wrap justify-center gap-6 text-sm text-gray-400">
-            <span className="flex items-center gap-1.5"><Check className="w-4 h-4 text-[#8fb339]" /> Free for you</span>
-            <span className="flex items-center gap-1.5"><Check className="w-4 h-4 text-[#8fb339]" /> Free for vendors</span>
-            <span className="flex items-center gap-1.5"><Check className="w-4 h-4 text-[#8fb339]" /> No account required</span>
-            <span className="flex items-center gap-1.5"><Check className="w-4 h-4 text-[#8fb339]" /> Works for any market size</span>
+          <div className="flex flex-wrap justify-center gap-6 text-sm text-gray-400 mt-6">
+            {["Free for you", "Free for vendors", "No account required", "Works for any market size"].map((t) => (
+              <span key={t} className="flex items-center gap-1.5">
+                <Check className="w-4 h-4 text-[#8fb339]" /> {t}
+              </span>
+            ))}
           </div>
         </div>
       </section>
