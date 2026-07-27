@@ -36,7 +36,7 @@ export default function MarketManager() {
               </h1>
 
               <p className="text-lg text-gray-300 mb-4 leading-relaxed">
-                Open Local gives every vendor in your market a free digital storefront — so they earn more between markets, stay loyal to yours, and bring new shoppers through your gates.
+                Open Local gives every vendor in your market a free digital storefront — so they sell more at market through pre-orders and location exposure, stay loyal to yours, and bring new shoppers through your gates.
               </p>
               <p className="text-base text-[#8fb339] font-medium mb-10">
                 Zero cost to you. Zero admin work. One shared link.
