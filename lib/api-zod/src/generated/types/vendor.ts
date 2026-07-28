@@ -47,4 +47,15 @@ export interface Vendor {
   createdAt: Date;
   onboardingEmailsSent: string[];
   flaggedForFollowup: boolean;
+  /** @nullable */
+  storeTheme: string | null;
+  /** @nullable */
+  storePrimaryColor: string | null;
+  /** @nullable */
+  storeFont: string | null;
+  /** @nullable */
+  storeLayout: string | null;
+  /** @nullable */
+  storeBannerUrl: string | null;
+  storeCustomizationEnabled: boolean;
 }

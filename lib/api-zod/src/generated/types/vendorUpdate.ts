@@ -43,4 +43,15 @@ export interface VendorUpdate {
   longitude?: number | null;
   /** @nullable */
   additionalLocations?: VendorUpdateAdditionalLocationsItem[] | null;
+  /** @nullable */
+  storeTheme?: string | null;
+  /** @nullable */
+  storePrimaryColor?: string | null;
+  /** @nullable */
+  storeFont?: string | null;
+  /** @nullable */
+  storeLayout?: string | null;
+  /** @nullable */
+  storeBannerUrl?: string | null;
+  storeCustomizationEnabled?: boolean;
 }

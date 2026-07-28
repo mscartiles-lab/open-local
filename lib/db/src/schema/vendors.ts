@@ -49,6 +49,13 @@ export const vendorsTable = pgTable("vendors", {
   stripeConnectStatus: text("stripe_connect_status")
     .$type<"pending" | "active" | "restricted">()
     .default("pending"),
+  // Tier 3 storefront customization
+  storeTheme: text("store_theme").$type<"rustic" | "modern" | "bold" | "minimal">(),
+  storePrimaryColor: text("store_primary_color"),
+  storeFont: text("store_font").$type<"serif" | "sans" | "handwritten">(),
+  storeLayout: text("store_layout").$type<"grid" | "list" | "hero">(),
+  storeBannerUrl: text("store_banner_url"),
+  storeCustomizationEnabled: boolean("store_customization_enabled").notNull().default(true),
 });
 
 export type Vendor = typeof vendorsTable.$inferSelect;

@@ -1,10 +1,11 @@
-import { useGetVendorBySlug, useListVendorProducts } from "@/lib/api-client";
+import { useGetVendorBySlug, useListVendorProducts, getListVendorProductsQueryKey } from "@/lib/api-client";
 import * as Haptics from "expo-haptics";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { Feather } from "@expo/vector-icons";
 import React, { useEffect, useState } from "react";
 import {
   ActivityIndicator,
+  Image,
   Linking,
   Platform,
   ScrollView,
@@ -39,8 +40,19 @@ export default function VendorScreen() {
   const { data: vendor, isLoading: loadingVendor } = useGetVendorBySlug(slug ?? "");
   const { data: products, isLoading: loadingProducts } = useListVendorProducts(
     vendor?.id ?? 0,
-    { query: { enabled: !!vendor?.id } },
+    { query: { enabled: !!vendor?.id, queryKey: getListVendorProductsQueryKey(vendor?.id ?? 0) } },
   );
+
+  const THEME_PRESETS: Record<string, { color: string }> = {
+    rustic:  { color: "#7C4D1E" },
+    modern:  { color: "#4F46E5" },
+    bold:    { color: "#166534" },
+    minimal: { color: "#6B7280" },
+  };
+  const storeAccentColor = vendor?.storeCustomizationEnabled
+    ? (vendor.storePrimaryColor || (vendor.storeTheme ? THEME_PRESETS[vendor.storeTheme]?.color : null))
+    : null;
+  const storeBanner = vendor?.storeCustomizationEnabled ? vendor.storeBannerUrl : null;
 
   useEffect(() => {
     if (vendor) {
@@ -102,11 +114,15 @@ export default function VendorScreen() {
           </TouchableOpacity>
         </View>
 
+        {storeBanner ? (
+          <Image source={{ uri: storeBanner }} style={s.bannerImage} resizeMode="cover" />
+        ) : null}
+
         <View style={s.heroSection}>
           <View style={s.categoryBadge}>
             <Text style={s.categoryText}>{vendor.category}</Text>
           </View>
-          <Text style={s.vendorName}>{vendor.name}</Text>
+          <Text style={[s.vendorName, storeAccentColor ? { color: storeAccentColor } : null]}>{vendor.name}</Text>
           <Text style={s.tagline}>{vendor.tagline}</Text>
           <View style={s.metaRow}>
             <Feather name="map-pin" size={13} color={colors.mutedForeground} />
@@ -263,6 +279,7 @@ const styles = (colors: ReturnType<typeof useColors>, topPad: number, bottomPad:
       alignItems: "center",
       justifyContent: "center",
     },
+    bannerImage: { width: "100%", height: 160 },
     heroSection: { paddingHorizontal: 20, paddingTop: 12, paddingBottom: 20 },
     categoryBadge: {
       alignSelf: "flex-start",

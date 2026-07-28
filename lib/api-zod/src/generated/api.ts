@@ -60,6 +60,12 @@ export const ListVendorsResponseItem = zod.object({
   createdAt: zod.coerce.date(),
   onboardingEmailsSent: zod.array(zod.string()),
   flaggedForFollowup: zod.boolean(),
+  storeTheme: zod.string().nullable(),
+  storePrimaryColor: zod.string().nullable(),
+  storeFont: zod.string().nullable(),
+  storeLayout: zod.string().nullable(),
+  storeBannerUrl: zod.string().nullable(),
+  storeCustomizationEnabled: zod.boolean(),
 });
 export const ListVendorsResponse = zod.array(ListVendorsResponseItem);
 
@@ -139,6 +145,12 @@ export const ListFeaturedVendorsResponseItem = zod.object({
   createdAt: zod.coerce.date(),
   onboardingEmailsSent: zod.array(zod.string()),
   flaggedForFollowup: zod.boolean(),
+  storeTheme: zod.string().nullable(),
+  storePrimaryColor: zod.string().nullable(),
+  storeFont: zod.string().nullable(),
+  storeLayout: zod.string().nullable(),
+  storeBannerUrl: zod.string().nullable(),
+  storeCustomizationEnabled: zod.boolean(),
 });
 export const ListFeaturedVendorsResponse = zod.array(
   ListFeaturedVendorsResponseItem,
@@ -187,6 +199,12 @@ export const GetVendorResponse = zod.object({
   createdAt: zod.coerce.date(),
   onboardingEmailsSent: zod.array(zod.string()),
   flaggedForFollowup: zod.boolean(),
+  storeTheme: zod.string().nullable(),
+  storePrimaryColor: zod.string().nullable(),
+  storeFont: zod.string().nullable(),
+  storeLayout: zod.string().nullable(),
+  storeBannerUrl: zod.string().nullable(),
+  storeCustomizationEnabled: zod.boolean(),
 });
 
 /**
@@ -228,6 +246,12 @@ export const UpdateVendorBody = zod.object({
       }),
     )
     .nullish(),
+  storeTheme: zod.string().nullish(),
+  storePrimaryColor: zod.string().nullish(),
+  storeFont: zod.string().nullish(),
+  storeLayout: zod.string().nullish(),
+  storeBannerUrl: zod.string().nullish(),
+  storeCustomizationEnabled: zod.boolean().optional(),
 });
 
 export const UpdateVendorResponse = zod.object({
@@ -266,6 +290,12 @@ export const UpdateVendorResponse = zod.object({
   createdAt: zod.coerce.date(),
   onboardingEmailsSent: zod.array(zod.string()),
   flaggedForFollowup: zod.boolean(),
+  storeTheme: zod.string().nullable(),
+  storePrimaryColor: zod.string().nullable(),
+  storeFont: zod.string().nullable(),
+  storeLayout: zod.string().nullable(),
+  storeBannerUrl: zod.string().nullable(),
+  storeCustomizationEnabled: zod.boolean(),
 });
 
 /**
@@ -573,6 +603,12 @@ export const GetVendorBySlugResponse = zod.object({
   createdAt: zod.coerce.date(),
   onboardingEmailsSent: zod.array(zod.string()),
   flaggedForFollowup: zod.boolean(),
+  storeTheme: zod.string().nullable(),
+  storePrimaryColor: zod.string().nullable(),
+  storeFont: zod.string().nullable(),
+  storeLayout: zod.string().nullable(),
+  storeBannerUrl: zod.string().nullable(),
+  storeCustomizationEnabled: zod.boolean(),
 });
 
 /**

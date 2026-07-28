@@ -22,6 +22,13 @@ import {
   Tag,
   Clock,
   Sparkles,
+  Crown,
+  Palette,
+  Type,
+  LayoutGrid,
+  List,
+  Image as ImageIcon,
+  LayoutTemplate,
 } from "lucide-react";
 import { useUser } from "@/context/UserContext";
 import { FEATURE_BOOST_PRICE, FEATURE_BOOST_DURATION_DAYS, TIER_PHOTO_LIMIT, TIER_VIDEO_LIMIT, type TierId } from "@/lib/tiers";
@@ -515,13 +522,36 @@ function InventoryTab({
 
 // ─── Store editor tab ────────────────────────────────────────────────────────
 
-function StoreEditorTab({ vendor }: { vendor: Vendor }) {
+const STORE_THEMES = [
+  { id: "rustic",  label: "Rustic",   color: "#7C4D1E", font: "serif", layout: "grid", swatches: ["#7C4D1E","#C4956A","#FDF3E7"] },
+  { id: "modern",  label: "Modern",   color: "#4F46E5", font: "sans",  layout: "grid", swatches: ["#4F46E5","#818CF8","#EEF2FF"] },
+  { id: "bold",    label: "Bold",     color: "#166534", font: "serif", layout: "hero", swatches: ["#166534","#22C55E","#F0FFF4"] },
+  { id: "minimal", label: "Minimal",  color: "#6B7280", font: "sans",  layout: "list", swatches: ["#6B7280","#D1D5DB","#F9FAFB"] },
+] as const;
+
+async function uploadBannerFile(file: File): Promise<string> {
+  const base = import.meta.env.BASE_URL?.replace(/\/$/, "") || "";
+  const metaRes = await fetch(`${base}/api/storage/uploads/request-url`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ name: file.name, size: file.size, contentType: file.type }),
+  });
+  if (!metaRes.ok) throw new Error("Failed to get upload URL");
+  const { uploadURL, objectPath } = await metaRes.json();
+  const putRes = await fetch(uploadURL, { method: "PUT", body: file, headers: { "Content-Type": file.type } });
+  if (!putRes.ok) throw new Error(`Upload failed (${putRes.status})`);
+  return `${base}/api/storage${objectPath}`;
+}
+
+function StoreEditorTab({ vendor, tier }: { vendor: Vendor; tier: TierId }) {
   const { toast } = useToast();
   const queryClient = useQueryClient();
+  const bannerInputRef = useRef<HTMLInputElement>(null);
 
   const sessionToken =
     typeof window !== "undefined" ? window.localStorage.getItem("ol_session") : null;
 
+  // ── Info fields ──────────────────────────────────────────────────────────
   const [name, setName] = useState(vendor.name);
   const [tagline, setTagline] = useState(vendor.tagline ?? "");
   const [description, setDescription] = useState(vendor.description ?? "");
@@ -536,27 +566,70 @@ function StoreEditorTab({ vendor }: { vendor: Vendor }) {
   const [howToOrder, setHowToOrder] = useState(vendor.howToOrder ?? "");
   const [saving, setSaving] = useState(false);
 
+  // ── Appearance fields (Premium only) ────────────────────────────────────
+  const [customEnabled, setCustomEnabled] = useState(vendor.storeCustomizationEnabled ?? true);
+  const [storeTheme, setStoreTheme] = useState(vendor.storeTheme ?? "");
+  const [storeColor, setStoreColor] = useState(vendor.storePrimaryColor ?? "#3c4a26");
+  const [storeFont, setStoreFont] = useState(vendor.storeFont ?? "sans");
+  const [storeLayout, setStoreLayout] = useState(vendor.storeLayout ?? "grid");
+  const [storeBanner, setStoreBanner] = useState(vendor.storeBannerUrl ?? "");
+  const [bannerUploading, setBannerUploading] = useState(false);
+  const isPremium = tier === "premium";
+
+  function applyThemePreset(id: string) {
+    const t = STORE_THEMES.find((t) => t.id === id);
+    if (!t) return;
+    setStoreTheme(id);
+    setStoreColor(t.color);
+    setStoreFont(t.font);
+    setStoreLayout(t.layout);
+  }
+
+  async function handleBannerChange(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setBannerUploading(true);
+    try {
+      const url = await uploadBannerFile(file);
+      setStoreBanner(url);
+    } catch {
+      toast({ title: "Banner upload failed", variant: "destructive" });
+    } finally {
+      setBannerUploading(false);
+      if (bannerInputRef.current) bannerInputRef.current.value = "";
+    }
+  }
+
   const save = async () => {
     if (!sessionToken) { toast({ title: "Not signed in", variant: "destructive" }); return; }
     setSaving(true);
     try {
+      const body: Record<string, unknown> = {
+        name: name.trim() || undefined,
+        tagline: tagline.trim() || undefined,
+        description: description.trim() || undefined,
+        location: location.trim() || undefined,
+        phone: phone.trim() || undefined,
+        websiteUrl: websiteUrl.trim() || undefined,
+        instagramHandle: instagramHandle.trim() || undefined,
+        facebookUrl: facebookUrl.trim() || undefined,
+        marketsText: marketsText.trim() || undefined,
+        pickupAddress: pickupAddress.trim() || undefined,
+        openHours: openHours.trim() || undefined,
+        howToOrder: howToOrder.trim() || undefined,
+      };
+      if (isPremium) {
+        body.storeCustomizationEnabled = customEnabled;
+        body.storeTheme = storeTheme || null;
+        body.storePrimaryColor = customEnabled ? (storeColor || null) : null;
+        body.storeFont = customEnabled ? storeFont : null;
+        body.storeLayout = customEnabled ? storeLayout : null;
+        body.storeBannerUrl = customEnabled ? (storeBanner || null) : null;
+      }
       const res = await fetch(`/api/vendors/${vendor.id}`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json", Authorization: `Bearer ${sessionToken}` },
-        body: JSON.stringify({
-          name: name.trim() || undefined,
-          tagline: tagline.trim() || undefined,
-          description: description.trim() || undefined,
-          location: location.trim() || undefined,
-          phone: phone.trim() || undefined,
-          websiteUrl: websiteUrl.trim() || undefined,
-          instagramHandle: instagramHandle.trim() || undefined,
-          facebookUrl: facebookUrl.trim() || undefined,
-          marketsText: marketsText.trim() || undefined,
-          pickupAddress: pickupAddress.trim() || undefined,
-          openHours: openHours.trim() || undefined,
-          howToOrder: howToOrder.trim() || undefined,
-        }),
+        body: JSON.stringify(body),
       });
       if (!res.ok) {
         const d = await res.json().catch(() => ({})) as { error?: string };
@@ -577,62 +650,259 @@ function StoreEditorTab({ vendor }: { vendor: Vendor }) {
     </div>
   );
 
-  return (
-    <div className="max-w-2xl space-y-6">
-      <Field label="Business name">
-        <Input value={name} onChange={(e) => setName(e.target.value)} />
-      </Field>
-      <Field label="Tagline">
-        <Input value={tagline} onChange={(e) => setTagline(e.target.value)} placeholder="One-line description for the directory listing" />
-      </Field>
-      <Field label="About / Story">
-        <textarea
-          value={description}
-          onChange={(e) => setDescription(e.target.value)}
-          placeholder="Tell people about your business, your craft, your values…"
-          className="flex w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring min-h-[120px]"
-        />
-      </Field>
-      <div className="grid grid-cols-2 gap-4">
-        <Field label="City / Area">
-          <Input value={location} onChange={(e) => setLocation(e.target.value)} placeholder="Tampa, FL" />
-        </Field>
-        <Field label="Phone">
-          <Input value={phone} onChange={(e) => setPhone(e.target.value)} placeholder="+1 (555) 000-0000" />
-        </Field>
-      </div>
-      <Field label="Website URL">
-        <Input value={websiteUrl} onChange={(e) => setWebsiteUrl(e.target.value)} placeholder="https://yourbusiness.com" />
-      </Field>
-      <div className="grid grid-cols-2 gap-4">
-        <Field label="Instagram handle">
-          <Input value={instagramHandle} onChange={(e) => setInstagramHandle(e.target.value)} placeholder="@handle" />
-        </Field>
-        <Field label="Facebook URL">
-          <Input value={facebookUrl} onChange={(e) => setFacebookUrl(e.target.value)} placeholder="https://facebook.com/…" />
-        </Field>
-      </div>
-      <Field label="Markets / Where to find you">
-        <textarea
-          value={marketsText}
-          onChange={(e) => setMarketsText(e.target.value)}
-          placeholder="Saturday Farmers Market (9am–1pm), downtown …"
-          className="flex w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring min-h-[60px]"
-        />
-      </Field>
-      <div className="grid grid-cols-2 gap-4">
-        <Field label="Pickup address">
-          <Input value={pickupAddress} onChange={(e) => setPickupAddress(e.target.value)} placeholder="123 Main St, Tampa" />
-        </Field>
-        <Field label="Open hours">
-          <Input value={openHours} onChange={(e) => setOpenHours(e.target.value)} placeholder="Sat 9am–1pm, by appt" />
-        </Field>
-      </div>
-      <Field label="How to order">
-        <Input value={howToOrder} onChange={(e) => setHowToOrder(e.target.value)} placeholder="DM on Instagram, order online, walk-in…" />
-      </Field>
+  const SectionHeading = ({ icon: Icon, label }: { icon: React.ElementType; label: string }) => (
+    <h3 className="flex items-center gap-2 text-base font-bold text-foreground border-b border-border pb-3 mb-5">
+      <Icon className="h-4 w-4 text-primary" /> {label}
+    </h3>
+  );
 
-      <div className="pt-2">
+  return (
+    <div className="max-w-2xl space-y-10">
+      {/* ── Business info ────────────────────────────────────── */}
+      <div>
+        <SectionHeading icon={Store} label="Business Info" />
+        <div className="space-y-5">
+          <Field label="Business name">
+            <Input value={name} onChange={(e) => setName(e.target.value)} />
+          </Field>
+          <Field label="Tagline">
+            <Input value={tagline} onChange={(e) => setTagline(e.target.value)} placeholder="One-line description for the directory listing" />
+          </Field>
+          <Field label="About / Story">
+            <textarea
+              value={description}
+              onChange={(e) => setDescription(e.target.value)}
+              placeholder="Tell people about your business, your craft, your values…"
+              className="flex w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring min-h-[120px]"
+            />
+          </Field>
+          <div className="grid grid-cols-2 gap-4">
+            <Field label="City / Area">
+              <Input value={location} onChange={(e) => setLocation(e.target.value)} placeholder="Tampa, FL" />
+            </Field>
+            <Field label="Phone">
+              <Input value={phone} onChange={(e) => setPhone(e.target.value)} placeholder="+1 (555) 000-0000" />
+            </Field>
+          </div>
+          <Field label="Website URL">
+            <Input value={websiteUrl} onChange={(e) => setWebsiteUrl(e.target.value)} placeholder="https://yourbusiness.com" />
+          </Field>
+          <div className="grid grid-cols-2 gap-4">
+            <Field label="Instagram handle">
+              <Input value={instagramHandle} onChange={(e) => setInstagramHandle(e.target.value)} placeholder="@handle" />
+            </Field>
+            <Field label="Facebook URL">
+              <Input value={facebookUrl} onChange={(e) => setFacebookUrl(e.target.value)} placeholder="https://facebook.com/…" />
+            </Field>
+          </div>
+          <Field label="Markets / Where to find you">
+            <textarea
+              value={marketsText}
+              onChange={(e) => setMarketsText(e.target.value)}
+              placeholder="Saturday Farmers Market (9am–1pm), downtown …"
+              className="flex w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring min-h-[60px]"
+            />
+          </Field>
+          <div className="grid grid-cols-2 gap-4">
+            <Field label="Pickup address">
+              <Input value={pickupAddress} onChange={(e) => setPickupAddress(e.target.value)} placeholder="123 Main St, Tampa" />
+            </Field>
+            <Field label="Open hours">
+              <Input value={openHours} onChange={(e) => setOpenHours(e.target.value)} placeholder="Sat 9am–1pm, by appt" />
+            </Field>
+          </div>
+          <Field label="How to order">
+            <Input value={howToOrder} onChange={(e) => setHowToOrder(e.target.value)} placeholder="DM on Instagram, order online, walk-in…" />
+          </Field>
+        </div>
+      </div>
+
+      {/* ── Storefront Appearance (Premium) ─────────────────── */}
+      <div>
+        <SectionHeading icon={Palette} label="Storefront Appearance" />
+
+        {!isPremium ? (
+          <div className="rounded-xl border border-border bg-muted p-6 text-center">
+            <Crown className="mx-auto mb-3 h-8 w-8 text-amber-500" />
+            <p className="font-semibold text-foreground mb-1">Premium feature</p>
+            <p className="text-sm text-muted-foreground">
+              Custom themes, colors, fonts, layouts, and banner images are available on the Premium plan.
+            </p>
+          </div>
+        ) : (
+          <div className="space-y-7">
+            {/* Enable toggle */}
+            <div className="flex items-center justify-between rounded-lg border border-border bg-muted/40 px-4 py-3">
+              <div>
+                <p className="text-sm font-semibold text-foreground">Use custom storefront style</p>
+                <p className="text-xs text-muted-foreground">Turn off to use the default Open Local styling</p>
+              </div>
+              <Switch checked={customEnabled} onCheckedChange={setCustomEnabled} />
+            </div>
+
+            {customEnabled && (
+              <>
+                {/* Theme presets */}
+                <div>
+                  <label className="mb-3 block text-sm font-semibold text-foreground">Theme preset</label>
+                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                    {STORE_THEMES.map((t) => (
+                      <button
+                        key={t.id}
+                        type="button"
+                        onClick={() => applyThemePreset(t.id)}
+                        className={cn(
+                          "rounded-xl border-2 p-3 text-left transition-all hover:shadow-md",
+                          storeTheme === t.id
+                            ? "border-primary ring-2 ring-primary/20"
+                            : "border-border bg-card hover:border-muted-foreground/40",
+                        )}
+                      >
+                        <div className="flex gap-1 mb-2">
+                          {t.swatches.map((s) => (
+                            <div key={s} className="h-4 w-4 rounded-full ring-1 ring-black/10" style={{ background: s }} />
+                          ))}
+                        </div>
+                        <p className="text-xs font-bold text-foreground">{t.label}</p>
+                        <p className="text-[10px] text-muted-foreground mt-0.5 capitalize">
+                          {t.font} · {t.layout}
+                        </p>
+                        {storeTheme === t.id && (
+                          <div className="mt-1.5 flex items-center gap-1 text-[10px] font-semibold text-primary">
+                            <Check className="h-3 w-3" /> Applied
+                          </div>
+                        )}
+                      </button>
+                    ))}
+                    <button
+                      type="button"
+                      onClick={() => setStoreTheme("")}
+                      className={cn(
+                        "rounded-xl border-2 p-3 text-left transition-all hover:shadow-md",
+                        storeTheme === "" ? "border-primary ring-2 ring-primary/20" : "border-border bg-card hover:border-muted-foreground/40",
+                      )}
+                    >
+                      <div className="h-4 w-[52px] rounded-full bg-gradient-to-r from-muted to-border mb-2" />
+                      <p className="text-xs font-bold text-foreground">Custom</p>
+                      <p className="text-[10px] text-muted-foreground mt-0.5">Set your own</p>
+                    </button>
+                  </div>
+                </div>
+
+                {/* Brand color */}
+                <div>
+                  <label className="mb-2 flex items-center gap-2 text-sm font-semibold text-foreground">
+                    <Palette className="h-4 w-4 text-muted-foreground" /> Brand / accent color
+                  </label>
+                  <div className="flex items-center gap-3">
+                    <input
+                      type="color"
+                      value={storeColor}
+                      onChange={(e) => { setStoreColor(e.target.value); setStoreTheme(""); }}
+                      className="h-10 w-12 cursor-pointer rounded-md border border-input"
+                    />
+                    <Input
+                      value={storeColor}
+                      onChange={(e) => { setStoreColor(e.target.value); setStoreTheme(""); }}
+                      placeholder="#3c4a26"
+                      className="font-mono text-sm max-w-[120px]"
+                    />
+                    <p className="text-xs text-muted-foreground">Used for your vendor name and accents</p>
+                  </div>
+                </div>
+
+                {/* Font */}
+                <div>
+                  <label className="mb-2 flex items-center gap-2 text-sm font-semibold text-foreground">
+                    <Type className="h-4 w-4 text-muted-foreground" /> Heading font
+                  </label>
+                  <div className="flex gap-2">
+                    {[
+                      { id: "sans",        label: "Clean",       preview: "Aa", cls: "font-sans" },
+                      { id: "serif",       label: "Serif",       preview: "Aa", cls: "font-['Playfair_Display']" },
+                      { id: "handwritten", label: "Handwritten", preview: "Aa", cls: "font-['Caveat']" },
+                    ].map((f) => (
+                      <button
+                        key={f.id}
+                        type="button"
+                        onClick={() => setStoreFont(f.id)}
+                        className={cn(
+                          "flex-1 rounded-lg border-2 px-3 py-2 text-center transition-all",
+                          storeFont === f.id ? "border-primary bg-primary/5" : "border-border bg-card hover:border-muted-foreground/40",
+                        )}
+                      >
+                        <p className={cn("text-xl leading-none mb-1", f.cls)}>{f.preview}</p>
+                        <p className="text-[11px] font-medium text-muted-foreground">{f.label}</p>
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Layout */}
+                <div>
+                  <label className="mb-2 flex items-center gap-2 text-sm font-semibold text-foreground">
+                    <LayoutGrid className="h-4 w-4 text-muted-foreground" /> Product layout
+                  </label>
+                  <div className="flex gap-2">
+                    {[
+                      { id: "grid", label: "Grid",   icon: LayoutGrid,    desc: "4-column cards" },
+                      { id: "list", label: "List",   icon: List,          desc: "Single-column rows" },
+                      { id: "hero", label: "Hero",   icon: LayoutTemplate, desc: "Large feature + grid" },
+                    ].map((l) => (
+                      <button
+                        key={l.id}
+                        type="button"
+                        onClick={() => setStoreLayout(l.id)}
+                        className={cn(
+                          "flex-1 rounded-lg border-2 px-3 py-3 text-center transition-all",
+                          storeLayout === l.id ? "border-primary bg-primary/5" : "border-border bg-card hover:border-muted-foreground/40",
+                        )}
+                      >
+                        <l.icon className="mx-auto mb-1.5 h-5 w-5 text-foreground/70" />
+                        <p className="text-xs font-bold text-foreground">{l.label}</p>
+                        <p className="text-[10px] text-muted-foreground">{l.desc}</p>
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Banner image */}
+                <div>
+                  <label className="mb-2 flex items-center gap-2 text-sm font-semibold text-foreground">
+                    <ImageIcon className="h-4 w-4 text-muted-foreground" /> Banner image
+                    <span className="text-xs font-normal text-muted-foreground">(replaces hero background on your storefront)</span>
+                  </label>
+                  <input ref={bannerInputRef} type="file" accept="image/*" className="hidden" onChange={handleBannerChange} />
+                  {storeBanner ? (
+                    <div className="relative rounded-xl overflow-hidden border border-border">
+                      <img src={storeBanner} alt="Banner" className="w-full h-28 object-cover" />
+                      <button
+                        type="button"
+                        onClick={() => setStoreBanner("")}
+                        className="absolute top-2 right-2 rounded-full bg-background/80 p-1.5 text-foreground/70 hover:text-destructive transition-colors"
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </button>
+                    </div>
+                  ) : (
+                    <button
+                      type="button"
+                      onClick={() => bannerInputRef.current?.click()}
+                      disabled={bannerUploading}
+                      className="flex w-full items-center gap-3 rounded-xl border border-dashed border-border bg-muted px-5 py-4 text-sm text-muted-foreground hover:bg-muted/70 transition-colors"
+                    >
+                      {bannerUploading ? <Loader2 className="h-5 w-5 animate-spin" /> : <ImageIcon className="h-5 w-5" />}
+                      {bannerUploading ? "Uploading…" : "Upload a banner image"}
+                    </button>
+                  )}
+                </div>
+              </>
+            )}
+          </div>
+        )}
+      </div>
+
+      <div className="pt-2 border-t border-border">
         <Button onClick={save} disabled={saving} className="min-w-[120px]">
           {saving ? <><Loader2 className="mr-2 h-4 w-4 animate-spin" />Saving…</> : "Save changes"}
         </Button>
@@ -812,7 +1082,7 @@ export default function Dashboard() {
             onRefresh={invalidateAll}
           />
         )}
-        {activeTab === "store" && <StoreEditorTab vendor={vendor} />}
+        {activeTab === "store" && <StoreEditorTab vendor={vendor} tier={tier} />}
         {activeTab === "settings" && <SettingsTab vendor={vendor} />}
       </div>
 

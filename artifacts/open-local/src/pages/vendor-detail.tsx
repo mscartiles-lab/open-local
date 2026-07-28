@@ -5,7 +5,7 @@ import { MapPin, Globe, Mail, Clock, Store, Tag, Heart, Phone, Instagram, Facebo
 import Layout from "@/components/layout/Layout";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Card, CardContent } from "@/components/ui/card";
-import { useGetVendor, useListVendorProducts, getGetVendorQueryKey, getListVendorProductsQueryKey } from "@workspace/api-client-react";
+import { useGetVendor, useListVendorProducts, getGetVendorQueryKey, getListVendorProductsQueryKey, type Vendor } from "@workspace/api-client-react";
 import NotFound from "./not-found";
 import { useFavorites } from "@/hooks/use-favorites";
 import CheckInButton from "@/components/CheckInButton";
@@ -13,6 +13,27 @@ import { useUser } from "@/context/UserContext";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import VendorReviews from "@/components/VendorReviews";
 import VendorCertifications, { VendorCertificationBadges } from "@/components/VendorCertifications";
+import { cn } from "@/lib/utils";
+
+const THEME_PRESETS: Record<string, { color: string; font: string; layout: string }> = {
+  rustic:  { color: "#7C4D1E", font: "serif",       layout: "grid" },
+  modern:  { color: "#4F46E5", font: "sans",        layout: "grid" },
+  bold:    { color: "#166534", font: "serif",       layout: "hero" },
+  minimal: { color: "#6B7280", font: "sans",        layout: "list" },
+};
+
+function resolveStoreStyle(vendor: Vendor) {
+  if (!vendor.storeCustomizationEnabled) return null;
+  const preset = vendor.storeTheme ? THEME_PRESETS[vendor.storeTheme] : null;
+  const color  = vendor.storePrimaryColor  || preset?.color  || null;
+  const font   = vendor.storeFont          || preset?.font   || "sans";
+  const layout = vendor.storeLayout        || preset?.layout || "grid";
+  const banner = vendor.storeBannerUrl     || null;
+  const fontClass =
+    font === "serif"       ? "font-['Playfair_Display']" :
+    font === "handwritten" ? "font-['Caveat']"           : "";
+  return { color, font, layout, banner, fontClass };
+}
 
 export default function VendorDetail() {
   const params = useParams();
@@ -52,6 +73,10 @@ export default function VendorDetail() {
     return <NotFound />;
   }
 
+  const storeStyle = vendor ? resolveStoreStyle(vendor) : null;
+  const accentStyle = storeStyle?.color ? { color: storeStyle.color } : undefined;
+  const heroBg = storeStyle?.banner ?? vendor?.imageUrl;
+
   return (
     <Layout>
       {vendorLoading ? (
@@ -71,8 +96,8 @@ export default function VendorDetail() {
             >
               <Heart className="w-8 h-8" fill={isFavoriteVendor(vendor.id) ? "currentColor" : "none"} />
             </button>
-            {vendor.imageUrl ? (
-              <img src={vendor.imageUrl} alt={vendor.name} className="w-full h-full object-cover" />
+            {heroBg ? (
+              <img src={heroBg} alt={vendor.name} className="w-full h-full object-cover" />
             ) : (
               <div className="w-full h-full flex items-center justify-center">
                 <Store className="w-24 h-24 text-muted-foreground opacity-20" />
@@ -86,9 +111,9 @@ export default function VendorDetail() {
               <CardContent className="p-8 md:p-12">
                 <div className="flex flex-col md:flex-row gap-8 justify-between items-start">
                   <div>
-                    <div className="text-xs font-medium text-primary uppercase tracking-wider mb-2">{vendor.category}</div>
-                    <h1 className="text-4xl font-serif font-bold text-foreground mb-2">{vendor.name}</h1>
-                    <p className="text-xl text-muted-foreground font-serif italic mb-4">{vendor.tagline}</p>
+                    <div className="text-xs font-medium uppercase tracking-wider mb-2" style={accentStyle ?? { color: undefined }}>{vendor.category}</div>
+                    <h1 className={cn("text-4xl font-bold text-foreground mb-2", storeStyle?.fontClass ?? "font-serif")} style={accentStyle}>{vendor.name}</h1>
+                    <p className={cn("text-xl text-muted-foreground italic mb-4", storeStyle?.fontClass ?? "font-serif")}>{vendor.tagline}</p>
                     <div className="mb-6">
                       <VendorCertificationBadges vendorId={vendor.id} />
                     </div>
@@ -207,9 +232,14 @@ export default function VendorDetail() {
                 {[...Array(4)].map((_, i) => <Skeleton key={i} className="h-[350px] w-full" />)}
               </div>
             ) : products && products.length > 0 ? (
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+              <div className={cn(
+                storeStyle?.layout === "list" ? "flex flex-col gap-4" :
+                storeStyle?.layout === "hero" ? "grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6" :
+                "grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6"
+              )}>
                 {products.map((product, i) => (
-                  <motion.div 
+                  <motion.div
+                    className={cn(storeStyle?.layout === "hero" && i === 0 && "col-span-full")}
                     key={product.id}
                     initial={{ opacity: 0, y: 20 }}
                     whileInView={{ opacity: 1, y: 0 }}
