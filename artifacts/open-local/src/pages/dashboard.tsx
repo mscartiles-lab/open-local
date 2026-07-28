@@ -683,7 +683,7 @@ export default function Dashboard() {
   });
 
   const { data: products = [] } = useListVendorProducts(vendor?.id ?? 0, {
-    query: { enabled: !!vendor, queryKey: ["vendor-products", vendor?.id] },
+    query: { enabled: !!vendor, queryKey: getListVendorProductsQueryKey(vendor?.id ?? 0) },
   });
 
   function invalidateAll() {

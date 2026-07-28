@@ -39,7 +39,7 @@ export default function VendorScreen() {
   const { data: vendor, isLoading: loadingVendor } = useGetVendorBySlug(slug ?? "");
   const { data: products, isLoading: loadingProducts } = useListVendorProducts(
     vendor?.id ?? 0,
-    { query: { enabled: !!vendor?.id, queryKey: ["vendor-products", vendor?.id] } },
+    { query: { enabled: !!vendor?.id } },
   );
 
   useEffect(() => {
