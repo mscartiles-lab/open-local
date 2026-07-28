@@ -49,9 +49,27 @@ export default function Vendors() {
       <div className="bg-muted border-b border-border py-12">
         <div className="container max-w-6xl mx-auto px-4">
           <h1 className="text-5xl font-serif font-bold text-foreground mb-4">Florida Producers</h1>
-          <p className="text-xl text-muted-foreground max-w-2xl font-sans">
+          <p className="text-xl text-muted-foreground max-w-2xl font-sans mb-8">
             Discover the independent makers, farmers, and artisans crafting small-batch goods in Florida.
           </p>
+          <div className="relative max-w-2xl">
+            <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground pointer-events-none" />
+            <input
+              type="search"
+              placeholder="Search by vendor name…"
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              className="w-full h-12 pl-12 pr-4 rounded-xl border border-border bg-background text-base shadow-sm focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary transition"
+            />
+            {search && (
+              <button
+                onClick={() => setSearch("")}
+                className="absolute right-3 top-1/2 -translate-y-1/2 p-1 rounded-full hover:bg-muted text-muted-foreground"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            )}
+          </div>
         </div>
       </div>
 
@@ -89,18 +107,6 @@ export default function Vendors() {
                 </div>
               )}
               {locationError && <p className="text-xs text-amber-600">{locationError}</p>}
-            </div>
-
-            <div className="space-y-4">
-              <h3 className="font-serif font-bold text-lg flex items-center gap-2">
-                <Search className="w-4 h-4" /> Search
-              </h3>
-              <Input 
-                placeholder="Search by name or description..." 
-                value={search}
-                onChange={(e) => setSearch(e.target.value)}
-                className="bg-background"
-              />
             </div>
 
             {categories && categories.vendorCategories.length > 0 && (
