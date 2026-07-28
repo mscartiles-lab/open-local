@@ -28,12 +28,14 @@ import type {
   ListEstablishmentsParams,
   ListEventsParams,
   ListListingsParams,
+  ListMarketsParams,
   ListProductsParams,
   ListVendorsParams,
   ListingInput,
   ListingItem,
   LocalNowFeed,
   LocationCount,
+  Market,
   MarketplaceStats,
   Product,
   ProductInput,
@@ -2937,6 +2939,63 @@ export type GetStorageObjectQueryResult = NonNullable<
   Awaited<ReturnType<typeof getStorageObject>>
 >;
 export type GetStorageObjectQueryError = ErrorType<ErrorResponse>;
+
+// ─── Markets ─────────────────────────────────────────────────────────────────
+
+export const getListMarketsUrl = (params?: ListMarketsParams) => {
+  const url = new URL(`/api/markets`, "http://n");
+  if (params?.search) url.searchParams.set("search", params.search);
+  if (params?.city) url.searchParams.set("city", params.city);
+  if (params?.region) url.searchParams.set("region", params.region);
+  if (params?.day) url.searchParams.set("day", params.day);
+  return url.pathname + url.search;
+};
+
+export const listMarkets = async (
+  params?: ListMarketsParams,
+  options?: SecondParameter<typeof customFetch>,
+): Promise<Market[]> => {
+  return customFetch<Market[]>(getListMarketsUrl(params), { method: "GET", ...options });
+};
+
+export const getListMarketsQueryKey = (params?: ListMarketsParams) =>
+  [`/api/markets`, ...(params ? [params] : [])] as const;
+
+export const getListMarketsQueryOptions = <
+  TData = Awaited<ReturnType<typeof listMarkets>>,
+  TError = ErrorType<ErrorResponse>,
+>(
+  params?: ListMarketsParams,
+  options?: {
+    query?: UseQueryOptions<Awaited<ReturnType<typeof listMarkets>>, TError, TData>;
+    request?: SecondParameter<typeof customFetch>;
+  },
+) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+  const queryKey = queryOptions?.queryKey ?? getListMarketsQueryKey(params);
+  const queryFn: QueryFunction<Awaited<ReturnType<typeof listMarkets>>> = () =>
+    listMarkets(params, requestOptions);
+  return { queryKey, queryFn, ...queryOptions } as UseQueryOptions<
+    Awaited<ReturnType<typeof listMarkets>>,
+    TError,
+    TData
+  >;
+};
+
+export function useListMarkets<
+  TData = Awaited<ReturnType<typeof listMarkets>>,
+  TError = ErrorType<ErrorResponse>,
+>(
+  params?: ListMarketsParams,
+  options?: {
+    query?: UseQueryOptions<Awaited<ReturnType<typeof listMarkets>>, TError, TData>;
+    request?: SecondParameter<typeof customFetch>;
+  },
+): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+  const queryOptions = getListMarketsQueryOptions(params, options);
+  const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & { queryKey: QueryKey };
+  return { ...query, queryKey: queryOptions.queryKey };
+}
 
 /**
  * @summary Serve an object entity from PRIVATE_OBJECT_DIR

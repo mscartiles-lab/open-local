@@ -19,3 +19,4 @@ export * from "./vendor-certifications";
 export * from "./orders";
 export * from "./ip-logs";
 export * from "./waitlist";
+export * from "./markets";

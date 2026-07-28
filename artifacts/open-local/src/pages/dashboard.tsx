@@ -29,6 +29,12 @@ import {
   List,
   Image as ImageIcon,
   LayoutTemplate,
+  MapPin,
+  Calendar,
+  Mail,
+  Globe,
+  Instagram,
+  Search,
 } from "lucide-react";
 import { useUser } from "@/context/UserContext";
 import { FEATURE_BOOST_PRICE, FEATURE_BOOST_DURATION_DAYS, TIER_PHOTO_LIMIT, TIER_VIDEO_LIMIT, type TierId } from "@/lib/tiers";
@@ -42,12 +48,15 @@ import {
   useListVendorProducts,
   useUpdateProduct,
   useDeleteProduct,
+  useListMarkets,
   getListVendorProductsQueryKey,
+  getListMarketsQueryKey,
   getListProductsQueryKey,
   getGetLocalNowFeedQueryKey,
   getGetMarketplaceStatsQueryKey,
   type Vendor,
   type Product,
+  type Market,
 } from "@workspace/api-client-react";
 import { useQueryClient } from "@tanstack/react-query";
 import { cn } from "@/lib/utils";
@@ -62,7 +71,7 @@ import ProductVariationsManager from "@/components/ProductVariationsManager";
 import VisitRequestsPanel from "@/components/VisitRequestsPanel";
 import ProductUploadDialog, { type ListingType } from "@/components/ProductUploadDialog";
 
-type Tab = "analytics" | "inventory" | "store" | "settings";
+type Tab = "analytics" | "inventory" | "store" | "markets" | "settings";
 
 const SESSION_OTP_KEY = "ol_dashboard_verified";
 
@@ -911,6 +920,171 @@ function StoreEditorTab({ vendor, tier }: { vendor: Vendor; tier: TierId }) {
   );
 }
 
+// ─── Markets tab ─────────────────────────────────────────────────────────────
+
+function MarketsTab() {
+  const [search, setSearch] = useState("");
+  const [dayFilter, setDayFilter] = useState<string>("");
+
+  const { data: markets = [], isLoading } = useListMarkets(
+    { search: search || undefined, day: dayFilter || undefined },
+    { query: { queryKey: getListMarketsQueryKey({ search: search || undefined, day: dayFilter || undefined }) } },
+  );
+
+  const DAYS = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"];
+
+  return (
+    <div className="space-y-6">
+      <div>
+        <h2 className="font-serif text-2xl font-bold text-foreground mb-1">Discover Markets</h2>
+        <p className="text-muted-foreground text-sm">
+          Find Florida farmers markets to apply to as a vendor. Each listing includes contact info so you can reach out directly.
+        </p>
+      </div>
+
+      {/* Filters */}
+      <div className="flex flex-col sm:flex-row gap-3">
+        <div className="relative flex-1">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+          <input
+            type="text"
+            placeholder="Search by name or city…"
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            className="w-full pl-9 pr-4 py-2 rounded-lg border border-border bg-background text-sm focus:outline-none focus:ring-2 focus:ring-primary/30"
+          />
+        </div>
+        <select
+          value={dayFilter}
+          onChange={(e) => setDayFilter(e.target.value)}
+          className="px-3 py-2 rounded-lg border border-border bg-background text-sm focus:outline-none focus:ring-2 focus:ring-primary/30"
+        >
+          <option value="">All days</option>
+          {DAYS.map((d) => (
+            <option key={d} value={d}>{d}</option>
+          ))}
+        </select>
+      </div>
+
+      {isLoading ? (
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+          {[...Array(6)].map((_, i) => (
+            <div key={i} className="h-52 rounded-xl bg-muted animate-pulse" />
+          ))}
+        </div>
+      ) : markets.length === 0 ? (
+        <div className="py-20 text-center text-muted-foreground">
+          <MapPin className="mx-auto h-10 w-10 opacity-20 mb-3" />
+          <p className="font-medium">No markets found</p>
+          <p className="text-sm mt-1">Try a different search or check back soon.</p>
+        </div>
+      ) : (
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+          {markets.map((market: Market) => (
+            <MarketCard key={market.id} market={market} />
+          ))}
+        </div>
+      )}
+
+      <div className="rounded-xl border border-dashed border-border bg-muted/40 p-5 flex flex-col sm:flex-row items-start sm:items-center gap-4">
+        <div className="flex-1">
+          <p className="font-semibold text-foreground text-sm">Is your market not listed?</p>
+          <p className="text-xs text-muted-foreground mt-0.5">
+            Share our market manager page and we'll add them to the directory once they sign up.
+          </p>
+        </div>
+        <Link href="/for-markets">
+          <Button variant="outline" size="sm" className="gap-1.5 whitespace-nowrap">
+            <ExternalLink className="h-3.5 w-3.5" />
+            Invite a market
+          </Button>
+        </Link>
+      </div>
+    </div>
+  );
+}
+
+function MarketCard({ market }: { market: Market }) {
+  const DAY_COLORS: Record<string, string> = {
+    saturday: "bg-emerald-50 text-emerald-800 border-emerald-200",
+    sunday:   "bg-amber-50 text-amber-800 border-amber-200",
+    default:  "bg-blue-50 text-blue-800 border-blue-200",
+  };
+  const dayKey = market.day?.toLowerCase() ?? "default";
+  const dayColor = DAY_COLORS[dayKey] ?? DAY_COLORS.default;
+
+  return (
+    <div className="rounded-xl border border-border bg-card p-5 flex flex-col gap-3 hover:shadow-md transition-shadow">
+      <div className="flex items-start justify-between gap-2">
+        <div className="flex-1 min-w-0">
+          <h3 className="font-bold text-foreground text-base leading-tight">{market.name}</h3>
+          <p className="text-xs text-muted-foreground mt-0.5 flex items-center gap-1">
+            <MapPin className="h-3 w-3 shrink-0" />
+            {market.city}, {market.region}
+          </p>
+        </div>
+        {market.day && (
+          <span className={cn("text-[10px] font-bold uppercase tracking-wider px-2 py-1 rounded-full border shrink-0", dayColor)}>
+            {market.day}
+          </span>
+        )}
+      </div>
+
+      {market.time && (
+        <p className="text-xs text-muted-foreground flex items-center gap-1.5">
+          <Clock className="h-3 w-3 shrink-0" />
+          {market.time}
+        </p>
+      )}
+
+      {market.address && (
+        <p className="text-xs text-muted-foreground flex items-start gap-1.5 leading-relaxed">
+          <MapPin className="h-3 w-3 shrink-0 mt-0.5" />
+          {market.address}
+        </p>
+      )}
+
+      {market.description && (
+        <p className="text-xs text-muted-foreground line-clamp-3 leading-relaxed">{market.description}</p>
+      )}
+
+      <div className="flex items-center gap-2 flex-wrap mt-auto pt-1">
+        {market.contactEmail && (
+          <a
+            href={`mailto:${market.contactEmail}`}
+            className="inline-flex items-center gap-1.5 text-xs font-medium text-primary hover:underline"
+          >
+            <Mail className="h-3 w-3" />
+            Apply via email
+          </a>
+        )}
+        {market.websiteUrl && (
+          <a
+            href={market.websiteUrl}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="inline-flex items-center gap-1.5 text-xs font-medium text-muted-foreground hover:text-foreground"
+          >
+            <Globe className="h-3 w-3" />
+            Website
+          </a>
+        )}
+        {market.instagramHandle && (
+          <a
+            href={`https://instagram.com/${market.instagramHandle}`}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="inline-flex items-center gap-1.5 text-xs font-medium text-muted-foreground hover:text-foreground"
+          >
+            <Instagram className="h-3 w-3" />
+            @{market.instagramHandle}
+          </a>
+        )}
+      </div>
+    </div>
+  );
+}
+
 // ─── Settings tab ────────────────────────────────────────────────────────────
 
 function SettingsTab({ vendor }: { vendor: Vendor }) {
@@ -1004,6 +1178,7 @@ export default function Dashboard() {
     { id: "analytics", label: "Analytics", icon: BarChart3 },
     { id: "inventory", label: "Inventory", icon: Layers },
     { id: "store", label: "Store Editor", icon: Store },
+    { id: "markets", label: "Find Markets", icon: MapPin },
     { id: "settings", label: "Settings", icon: Settings },
   ];
 
@@ -1083,6 +1258,7 @@ export default function Dashboard() {
           />
         )}
         {activeTab === "store" && <StoreEditorTab vendor={vendor} tier={tier} />}
+        {activeTab === "markets" && <MarketsTab />}
         {activeTab === "settings" && <SettingsTab vendor={vendor} />}
       </div>
 

@@ -594,3 +594,39 @@ export type ListListingsParams = {
   city?: string;
   search?: string;
 };
+
+export interface Market {
+  id: number;
+  name: string;
+  city: string;
+  region: string;
+  /** @nullable */
+  address: string | null;
+  /** @nullable */
+  day: string | null;
+  /** @nullable */
+  time: string | null;
+  /** @nullable */
+  description: string | null;
+  /** @nullable */
+  imageUrl: string | null;
+  /** @nullable */
+  websiteUrl: string | null;
+  /** @nullable */
+  contactEmail: string | null;
+  /** @nullable */
+  instagramHandle: string | null;
+  /** @nullable */
+  latitude: number | null;
+  /** @nullable */
+  longitude: number | null;
+  active: boolean;
+  createdAt: string;
+}
+
+export type ListMarketsParams = {
+  search?: string;
+  city?: string;
+  region?: string;
+  day?: string;
+};
