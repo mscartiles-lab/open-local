@@ -25,6 +25,7 @@ interface MiniMapProps {
   onPinPress?: (key: string) => void;
   onUserLocationChange?: (loc: { latitude: number; longitude: number } | null) => void;
   onRadiusChange?: (miles: number) => void;
+  onMapCenterChange?: (center: { latitude: number; longitude: number }) => void;
 }
 
 export function MiniMap({

@@ -17,6 +17,7 @@ import {
   RefreshControl,
   StyleSheet,
   Text,
+  TextInput,
   TouchableOpacity,
   View,
 } from "react-native";
@@ -47,8 +48,13 @@ export default function TheLocalsScreen() {
   const router = useRouter();
   const { user } = useAuth();
   const [segment, setSegment] = useState<Segment>("all");
+  const [search, setSearch] = useState("");
   const [refreshing, setRefreshing] = useState(false);
   const [userLocation, setUserLocation] = useState<{
+    latitude: number;
+    longitude: number;
+  } | null>(null);
+  const [mapCenter, setMapCenter] = useState<{
     latitude: number;
     longitude: number;
   } | null>(null);
@@ -59,7 +65,7 @@ export default function TheLocalsScreen() {
     isLoading: vendorsLoading,
     isError: vendorsError,
     refetch: refetchVendors,
-  } = useListVendors();
+  } = useListVendors({ search: search.trim() || undefined });
   const {
     data: establishments,
     isLoading: estLoading,
@@ -144,20 +150,21 @@ export default function TheLocalsScreen() {
     return [...vendorItems, ...estItems];
   }, [vendors, establishments, segment]);
 
-  // Split into in-radius and beyond when location is known
+  // Split into in-radius and beyond using mapCenter (follows drags) or GPS
+  const filterCenter = mapCenter ?? userLocation;
   const { inRadiusItems, beyondItems } = useMemo(() => {
-    if (!userLocation) return { inRadiusItems: items, beyondItems: [] as LocalItem[] };
+    if (!filterCenter) return { inRadiusItems: items, beyondItems: [] as LocalItem[] };
     const inR: LocalItem[] = [];
     const out: LocalItem[] = [];
     for (const item of items) {
-      const lat = item.kind === "vendor" ? item.data.latitude : item.data.latitude;
-      const lng = item.kind === "vendor" ? item.data.longitude : item.data.longitude;
+      const lat = item.data.latitude;
+      const lng = item.data.longitude;
       if (!lat || !lng) { out.push(item); continue; }
-      const dist = haversineDistanceMiles(userLocation.latitude, userLocation.longitude, lat, lng);
+      const dist = haversineDistanceMiles(filterCenter.latitude, filterCenter.longitude, lat, lng);
       (dist <= mapRadius ? inR : out).push(item);
     }
     return { inRadiusItems: inR, beyondItems: out };
-  }, [items, userLocation, mapRadius]);
+  }, [items, filterCenter, mapRadius]);
 
   const isLoading = vendorsLoading || estLoading;
   const isError = vendorsError && estError;
@@ -184,8 +191,12 @@ export default function TheLocalsScreen() {
           onPinPress={(key) => {
             if (key.startsWith("v-")) router.push(`/vendor/${key.slice(2)}`);
           }}
-          onUserLocationChange={setUserLocation}
+          onUserLocationChange={(loc) => {
+            setUserLocation(loc);
+            if (loc) setMapCenter(loc);
+          }}
           onRadiusChange={setMapRadius}
+          onMapCenterChange={setMapCenter}
         />
         {/* Brand + profile bar floating over the map */}
         <View style={[s.floatHeader, { top: topPad + 8 }]}>
@@ -267,6 +278,19 @@ export default function TheLocalsScreen() {
           <View>
             <View style={s.panelHead}>
               <View style={s.grabber} />
+              {/* Search bar */}
+              <View style={[s.searchRow, { backgroundColor: colors.muted }]}>
+                <Feather name="search" size={14} color={colors.mutedForeground} style={{ marginRight: 6 }} />
+                <TextInput
+                  style={[s.searchInput, { color: colors.foreground }]}
+                  placeholder="Search vendors…"
+                  placeholderTextColor={colors.mutedForeground}
+                  value={search}
+                  onChangeText={setSearch}
+                  returnKeyType="search"
+                  clearButtonMode="while-editing"
+                />
+              </View>
               <View style={s.segmentRow}>
                 {(
                   [
@@ -525,6 +549,19 @@ const styles = (
     },
     listContent: {
       paddingBottom: bottomPad,
+    },
+    searchRow: {
+      flexDirection: "row" as const,
+      alignItems: "center" as const,
+      borderRadius: 10,
+      paddingHorizontal: 10,
+      height: 38,
+      marginBottom: 12,
+    },
+    searchInput: {
+      flex: 1,
+      fontFamily: "DMSans_400Regular",
+      fontSize: 14,
     },
     floatHeader: {
       position: "absolute",

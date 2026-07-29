@@ -38,6 +38,7 @@ interface MiniMapProps {
   onPinPress?: (key: string) => void;
   onUserLocationChange?: (loc: { latitude: number; longitude: number } | null) => void;
   onRadiusChange?: (miles: number) => void;
+  onMapCenterChange?: (center: { latitude: number; longitude: number }) => void;
 }
 
 const FLORIDA_CENTER = { latitude: 27.9944024, longitude: -81.7602544 };
@@ -58,10 +59,17 @@ export function MiniMap({
   onPinPress,
   onUserLocationChange,
   onRadiusChange,
+  onMapCenterChange,
 }: MiniMapProps) {
   const colors = useColors();
   const [permission, requestPermission] = Location.useForegroundPermissions();
   const [userLocation, setUserLocation] = useState<{
+    latitude: number;
+    longitude: number;
+  } | null>(null);
+  // mapCenter tracks where the map is currently centred (updates on drag).
+  // Distance filtering uses this so dragging pans the list results too.
+  const [mapCenter, setMapCenter] = useState<{
     latitude: number;
     longitude: number;
   } | null>(null);
@@ -126,7 +134,9 @@ export function MiniMap({
         longitude: loc.coords.longitude,
       };
       setUserLocation(next);
+      setMapCenter(next);
       onUserLocationChange?.(next);
+      onMapCenterChange?.(next);
     } catch {
       // ignore — user stays on Florida center
     } finally {
@@ -200,13 +210,15 @@ export function MiniMap({
   const center = userLocation ?? FLORIDA_CENTER;
   const delta = deltaForRadius(radius);
 
-  // When the user's location is known, only show pins within the chosen radius.
-  const visiblePins = userLocation
+  // Use mapCenter (updated on drag) for filtering so the list and circle
+  // follow the map view rather than being locked to the GPS fix.
+  const filterCenter = mapCenter ?? userLocation;
+  const visiblePins = filterCenter
     ? pins.filter(
         (p) =>
           haversineDistanceMiles(
-            userLocation.latitude,
-            userLocation.longitude,
+            filterCenter.latitude,
+            filterCenter.longitude,
             p.latitude,
             p.longitude,
           ) <= radius,
@@ -240,12 +252,15 @@ export function MiniMap({
         scrollEnabled
         onRegionChangeComplete={(region) => {
           currentRegionRef.current = region;
+          const newCenter = { latitude: region.latitude, longitude: region.longitude };
+          setMapCenter(newCenter);
+          onMapCenterChange?.(newCenter);
         }}
       >
-        {/* Radius circle around user */}
-        {locationGranted && userLocation && (
+        {/* Radius circle — follows the map centre as the user drags */}
+        {locationGranted && filterCenter && (
           <Circle
-            center={userLocation}
+            center={filterCenter}
             radius={milesToMeters(radius)}
             strokeColor={colors.primary}
             strokeWidth={1.5}
@@ -290,9 +305,13 @@ export function MiniMap({
                 />
               </View>
 
-              {/* Callout shows info; navigation already fires on Marker press */}
+              {/* Callout — tapping it navigates on iOS (where marker onPress
+                  only opens the callout on first tap) */}
               {pin.label ? (
-                <Callout tooltip={false}>
+                <Callout
+                  tooltip={false}
+                  onPress={() => onPinPress?.(pin.key)}
+                >
                   <View style={styles.callout}>
                     <Text style={styles.calloutTitle}>{pin.label}</Text>
                     {pin.sublabel ? (
