@@ -35,6 +35,7 @@ import Simulator from "@/pages/simulator";
 import NotFound from "@/pages/not-found";
 import InvitePage from "@/pages/invite";
 import ForMarkets from "@/pages/for-markets";
+import ForVendors from "@/pages/for-vendors";
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -76,6 +77,7 @@ function Router() {
       <Route path="/simulator" component={Simulator} />
       <Route path="/invite" component={InvitePage} />
       <Route path="/for-markets" component={ForMarkets} />
+      <Route path="/for-vendors" component={ForVendors} />
       <Route component={NotFound} />
     </Switch>
   );
