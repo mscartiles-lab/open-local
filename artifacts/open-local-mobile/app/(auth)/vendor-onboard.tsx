@@ -58,7 +58,6 @@ const DAYS_SHORT = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
 const DAYS_FULL = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"];
 
 const ORDER_OPTIONS = [
-  { value: "dm_instagram", label: "DM on Instagram" },
   { value: "email_to_order", label: "Email to order" },
   { value: "walk_in", label: "Walk-in / first-come-first-served" },
   { value: "open_local_storefront", label: "Order via Open Local storefront" },
