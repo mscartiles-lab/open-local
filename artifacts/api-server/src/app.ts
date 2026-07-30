@@ -1,4 +1,4 @@
-import express, { type Express } from "express";
+import express, { type Express, type Request, type Response, type NextFunction } from "express";
 import cors from "cors";
 import pinoHttp from "pino-http";
 import type Stripe from "stripe";
@@ -7,6 +7,18 @@ import { logger } from "./lib/logger";
 import { WebhookHandlers } from "./webhookHandlers";
 import { handleAppWebhookEvent } from "./lib/webhookAppHandlers";
 import { ipLoggingMiddleware } from "./lib/ipLogger";
+
+// Origins explicitly permitted for cross-origin requests.
+// APP_URL carries the Replit dev-domain in the workspace; the production origin
+// is always included. Both are checked at runtime so nothing is hardcoded into
+// the binary for the wrong environment.
+const ALLOWED_ORIGINS = new Set(
+  [
+    "https://openlocalapp.com",
+    "https://www.openlocalapp.com",
+    process.env.APP_URL ?? "",
+  ].filter(Boolean),
+);
 
 const app: Express = express();
 
@@ -70,7 +82,40 @@ app.post(
   },
 );
 
-app.use(cors());
+app.use(
+  cors({
+    // Allow the production domain, the dev-workspace domain, and requests that
+    // carry no Origin at all (native mobile clients, server-to-server calls).
+    origin(origin, callback) {
+      if (!origin || ALLOWED_ORIGINS.has(origin)) {
+        callback(null, true);
+      } else {
+        callback(null, false);
+      }
+    },
+    credentials: true,
+  }),
+);
+
+// Security response headers — applied globally to every route.
+app.use((_req: Request, res: Response, next: NextFunction) => {
+  // Prevent framing by any third-party page.
+  res.setHeader("X-Frame-Options", "DENY");
+  // Prevent MIME-type sniffing.
+  res.setHeader("X-Content-Type-Options", "nosniff");
+  // Limit referrer information sent to third parties.
+  res.setHeader("Referrer-Policy", "strict-origin-when-cross-origin");
+  // Disable browser features that this API does not use.
+  res.setHeader("Permissions-Policy", "geolocation=(), camera=(), microphone=()");
+  // CSP: this is a JSON API — no HTML/scripts are served from here.
+  // frame-ancestors 'none' mirrors X-Frame-Options for modern browsers.
+  res.setHeader(
+    "Content-Security-Policy",
+    "default-src 'none'; frame-ancestors 'none'",
+  );
+  next();
+});
+
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(ipLoggingMiddleware);

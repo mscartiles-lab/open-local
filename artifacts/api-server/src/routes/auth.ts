@@ -106,7 +106,11 @@ router.post("/auth/signup/start", async (req: Request, res: Response): Promise<v
     .from(usersTable)
     .where(eq(usersTable.email, normalizedEmail));
   if (existingUser) {
-    res.status(409).json({ error: "An account with this email already exists." });
+    // Return the same generic response as a successful signup to prevent
+    // email enumeration — callers cannot distinguish registered from new emails.
+    res.status(201).json({
+      message: "If this email is new to Open Local, a verification code has been sent.",
+    });
     return;
   }
 
@@ -349,7 +353,11 @@ router.post("/auth/login/start", async (req: Request, res: Response): Promise<vo
     .where(eq(usersTable.email, normalizedEmail));
 
   if (!user) {
-    res.status(404).json({ error: "No account found with that email address." });
+    // Return the same generic response as a successful login start to prevent
+    // email enumeration — callers cannot distinguish registered from unknown emails.
+    res.status(200).json({
+      message: "If an account exists for this email, a login code has been sent.",
+    });
     return;
   }
 
