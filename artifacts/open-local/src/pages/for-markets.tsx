@@ -56,12 +56,12 @@ export default function ForMarkets() {
                   Get the Invite Link
                   <ArrowRight className="w-5 h-5" />
                 </Link>
-                <button
-                  onClick={() => scrollTo("how-it-works")}
-                  className="px-8 py-4 border border-white/25 text-white/90 rounded-lg font-medium hover:bg-white/10 transition-colors"
+                <Link
+                  href="/markets/register"
+                  className="inline-flex items-center justify-center gap-2 px-8 py-4 border border-white/25 text-white/90 rounded-lg font-medium hover:bg-white/10 transition-colors no-underline"
                 >
-                  See how it works ↓
-                </button>
+                  List Your Market →
+                </Link>
               </div>
             </div>
 

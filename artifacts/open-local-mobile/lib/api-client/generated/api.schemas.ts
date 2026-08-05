@@ -533,3 +533,40 @@ export type ListWholesaleParams = {
   category?: string;
   vendorId?: number;
 };
+
+// ─── Markets ──────────────────────────────────────────────────────────────────
+
+export interface Market {
+  id: number;
+  name: string;
+  slug: string | null;
+  city: string;
+  region: string;
+  address: string | null;
+  day: string | null;
+  time: string | null;
+  description: string | null;
+  imageUrl: string | null;
+  logoUrl: string | null;
+  featuredImageUrl: string | null;
+  websiteUrl: string | null;
+  contactEmail: string | null;
+  instagramHandle: string | null;
+  facebookUrl: string | null;
+  twitterHandle: string | null;
+  latitude: number | null;
+  longitude: number | null;
+  managerId: number | null;
+  verified: boolean;
+  vendorCount: number;
+  tags: string[];
+  active: boolean;
+  createdAt: string;
+}
+
+export type ListMarketsParams = {
+  search?: string;
+  city?: string;
+  region?: string;
+  day?: string;
+};

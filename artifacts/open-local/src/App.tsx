@@ -25,6 +25,9 @@ import Listings from "@/pages/listings";
 import Drops from "@/pages/drops";
 import Surplus from "@/pages/surplus";
 import Wholesale from "@/pages/wholesale";
+import Markets from "@/pages/markets";
+import MarketRegister from "@/pages/market-register";
+import MarketDetail from "@/pages/market-detail";
 import Events from "@/pages/events";
 import SearchInsights from "@/pages/search-insights";
 import SearchPage from "@/pages/search";
@@ -69,6 +72,9 @@ function Router() {
       <Route path="/drops" component={Drops} />
       <Route path="/surplus" component={Surplus} />
       <Route path="/wholesale" component={Wholesale} />
+      <Route path="/markets/register" component={MarketRegister} />
+      <Route path="/markets/:slug" component={MarketDetail} />
+      <Route path="/markets" component={Markets} />
       <Route path="/events" component={Events} />
       <Route path="/search-insights" component={SearchInsights} />
       <Route path="/search" component={SearchPage} />

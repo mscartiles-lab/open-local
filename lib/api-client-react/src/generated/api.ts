@@ -55,6 +55,7 @@ import type {
   WholesaleListing,
   ListWholesaleParams,
   CreateWholesaleListingBody,
+  RegisterMarketBody,
 } from "./api.schemas";
 
 import { customFetch } from "../custom-fetch";
@@ -3276,4 +3277,249 @@ export const useDeleteWholesaleListing = <
   TContext
 > => {
   return useMutation(getDeleteWholesaleListingMutationOptions(options));
+};
+
+// ─── Markets: GET /api/markets/:slug ─────────────────────────────────────────
+
+export const getGetMarketUrl = (slug: string) => `/api/markets/${slug}`;
+
+export const getGetMarketQueryKey = (slug: string) =>
+  ["getMarket", slug] as const;
+
+export const getMarket = async (
+  slug: string,
+  options?: RequestInit,
+): Promise<Market> => {
+  return customFetch<Market>(getGetMarketUrl(slug), { method: "GET", ...options });
+};
+
+export const getGetMarketQueryOptions = <
+  TData = Awaited<ReturnType<typeof getMarket>>,
+  TError = ErrorType<unknown>,
+>(
+  slug: string,
+  options?: {
+    query?: UseQueryOptions<Awaited<ReturnType<typeof getMarket>>, TError, TData>;
+    request?: SecondParameter<typeof customFetch>;
+  },
+) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+  const queryKey = queryOptions?.queryKey ?? getGetMarketQueryKey(slug);
+  const queryFn: QueryFunction<Awaited<ReturnType<typeof getMarket>>> = ({ signal }) =>
+    getMarket(slug, { signal, ...requestOptions });
+  return { queryKey, queryFn, enabled: !!slug, ...queryOptions } as UseQueryOptions<
+    Awaited<ReturnType<typeof getMarket>>,
+    TError,
+    TData
+  >;
+};
+
+export function useGetMarket<
+  TData = Awaited<ReturnType<typeof getMarket>>,
+  TError = ErrorType<unknown>,
+>(
+  slug: string,
+  options?: {
+    query?: UseQueryOptions<Awaited<ReturnType<typeof getMarket>>, TError, TData>;
+    request?: SecondParameter<typeof customFetch>;
+  },
+): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+  const queryOptions = getGetMarketQueryOptions(slug, options);
+  const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & { queryKey: QueryKey };
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+// ─── Markets: POST /api/markets/register ─────────────────────────────────────
+
+export const getRegisterMarketUrl = () => `/api/markets/register`;
+
+export const registerMarket = async (
+  data: BodyType<RegisterMarketBody>,
+  options?: RequestInit,
+): Promise<Market> => {
+  return customFetch<Market>(getRegisterMarketUrl(), {
+    ...options,
+    method: "POST",
+    body: JSON.stringify(data),
+  });
+};
+
+export const getRegisterMarketMutationOptions = <
+  TError = ErrorType<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof registerMarket>>,
+    TError,
+    { data: BodyType<RegisterMarketBody> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof registerMarket>>,
+  TError,
+  { data: BodyType<RegisterMarketBody> },
+  TContext
+> => {
+  const mutationKey = ["registerMarket"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation && "mutationKey" in options.mutation && options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof registerMarket>>,
+    { data: BodyType<RegisterMarketBody> }
+  > = (props) => registerMarket(props.data, requestOptions);
+  return { mutationFn, ...mutationOptions };
+};
+
+export const useRegisterMarket = <
+  TError = ErrorType<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof registerMarket>>,
+    TError,
+    { data: BodyType<RegisterMarketBody> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof registerMarket>>,
+  TError,
+  { data: BodyType<RegisterMarketBody> },
+  TContext
+> => {
+  return useMutation(getRegisterMarketMutationOptions(options));
+};
+
+// ─── Markets: PATCH /api/markets/:slug ────────────────────────────────────────
+
+export const getUpdateMarketUrl = (slug: string) => `/api/markets/${slug}`;
+
+export const updateMarket = async (
+  slug: string,
+  data: BodyType<Partial<RegisterMarketBody>>,
+  options?: RequestInit,
+): Promise<Market> => {
+  return customFetch<Market>(getUpdateMarketUrl(slug), {
+    ...options,
+    method: "PATCH",
+    body: JSON.stringify(data),
+  });
+};
+
+export const getUpdateMarketMutationOptions = <
+  TError = ErrorType<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof updateMarket>>,
+    TError,
+    { slug: string; data: BodyType<Partial<RegisterMarketBody>> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof updateMarket>>,
+  TError,
+  { slug: string; data: BodyType<Partial<RegisterMarketBody>> },
+  TContext
+> => {
+  const mutationKey = ["updateMarket"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation && "mutationKey" in options.mutation && options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof updateMarket>>,
+    { slug: string; data: BodyType<Partial<RegisterMarketBody>> }
+  > = (props) => updateMarket(props.slug, props.data, requestOptions);
+  return { mutationFn, ...mutationOptions };
+};
+
+export const useUpdateMarket = <
+  TError = ErrorType<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof updateMarket>>,
+    TError,
+    { slug: string; data: BodyType<Partial<RegisterMarketBody>> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof updateMarket>>,
+  TError,
+  { slug: string; data: BodyType<Partial<RegisterMarketBody>> },
+  TContext
+> => {
+  return useMutation(getUpdateMarketMutationOptions(options));
+};
+
+// ─── Markets: POST /api/markets/:slug/claim ────────────────────────────────────
+
+export const getClaimMarketUrl = (slug: string) => `/api/markets/${slug}/claim`;
+
+export const claimMarket = async (
+  slug: string,
+  options?: RequestInit,
+): Promise<Market> => {
+  return customFetch<Market>(getClaimMarketUrl(slug), {
+    ...options,
+    method: "POST",
+  });
+};
+
+export const getClaimMarketMutationOptions = <
+  TError = ErrorType<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof claimMarket>>,
+    TError,
+    { slug: string },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof claimMarket>>,
+  TError,
+  { slug: string },
+  TContext
+> => {
+  const mutationKey = ["claimMarket"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation && "mutationKey" in options.mutation && options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof claimMarket>>,
+    { slug: string }
+  > = (props) => claimMarket(props.slug, requestOptions);
+  return { mutationFn, ...mutationOptions };
+};
+
+export const useClaimMarket = <
+  TError = ErrorType<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof claimMarket>>,
+    TError,
+    { slug: string },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof claimMarket>>,
+  TError,
+  { slug: string },
+  TContext
+> => {
+  return useMutation(getClaimMarketMutationOptions(options));
 };

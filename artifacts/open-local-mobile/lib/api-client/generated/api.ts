@@ -50,6 +50,8 @@ import type {
   VerifyEmailRequest,
   WholesaleListing,
   ListWholesaleParams,
+  Market,
+  ListMarketsParams,
 } from "./api.schemas";
 
 import { customFetch } from "../custom-fetch";
@@ -2738,5 +2740,98 @@ export function useListWholesaleListings(
   },
 ) {
   const queryOptions = getListWholesaleQueryOptions(params, options);
+  return useQuery(queryOptions);
+}
+
+// ─── Markets: GET /api/markets ────────────────────────────────────────────────
+
+// ─── Markets ──────────────────────────────────────────────────────────────────
+
+export const getListMarketsUrl = (params?: ListMarketsParams) => {
+  const query = new URLSearchParams();
+  if (params?.search) query.set("search", params.search);
+  if (params?.city) query.set("city", params.city);
+  if (params?.region) query.set("region", params.region);
+  if (params?.day) query.set("day", params.day);
+  const qs = query.toString();
+  return `/api/markets${qs ? `?${qs}` : ""}`;
+};
+
+export const getListMarketsQueryKey = (params?: ListMarketsParams) =>
+  ["listMarkets", params] as const;
+
+export const listMarkets = async (
+  params?: ListMarketsParams,
+  options?: RequestInit,
+): Promise<Market[]> => {
+  return customFetch<Market[]>(getListMarketsUrl(params), options);
+};
+
+export const getListMarketsQueryOptions = (
+  params?: ListMarketsParams,
+  options?: {
+    query?: Partial<UseQueryOptions<Market[], ErrorType<unknown>>>;
+    request?: SecondParameter<typeof customFetch>;
+  },
+) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+  const queryKey = queryOptions?.queryKey ?? getListMarketsQueryKey(params);
+  return {
+    queryKey,
+    queryFn: () => listMarkets(params, requestOptions),
+    ...queryOptions,
+  } satisfies UseQueryOptions<Market[], ErrorType<unknown>>;
+};
+
+export function useListMarkets(
+  params?: ListMarketsParams,
+  options?: {
+    query?: Partial<UseQueryOptions<Market[], ErrorType<unknown>>>;
+    request?: SecondParameter<typeof customFetch>;
+  },
+) {
+  const queryOptions = getListMarketsQueryOptions(params, options);
+  return useQuery(queryOptions);
+}
+
+// ─── Markets: GET /api/markets/:slug ─────────────────────────────────────────
+
+export const getGetMarketUrl = (slug: string) => `/api/markets/${slug}`;
+
+export const getGetMarketQueryKey = (slug: string) =>
+  ["getMarket", slug] as const;
+
+export const getMarket = async (
+  slug: string,
+  options?: RequestInit,
+): Promise<Market> => {
+  return customFetch<Market>(getGetMarketUrl(slug), { method: "GET", ...options });
+};
+
+export const getGetMarketQueryOptions = (
+  slug: string,
+  options?: {
+    query?: Partial<UseQueryOptions<Market, ErrorType<unknown>>>;
+    request?: SecondParameter<typeof customFetch>;
+  },
+) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+  const queryKey = queryOptions?.queryKey ?? getGetMarketQueryKey(slug);
+  return {
+    queryKey,
+    queryFn: () => getMarket(slug, requestOptions),
+    enabled: !!slug,
+    ...queryOptions,
+  } satisfies UseQueryOptions<Market, ErrorType<unknown>>;
+};
+
+export function useGetMarket(
+  slug: string,
+  options?: {
+    query?: Partial<UseQueryOptions<Market, ErrorType<unknown>>>;
+    request?: SecondParameter<typeof customFetch>;
+  },
+) {
+  const queryOptions = getGetMarketQueryOptions(slug, options);
   return useQuery(queryOptions);
 }

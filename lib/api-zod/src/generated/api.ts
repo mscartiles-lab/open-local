@@ -1104,3 +1104,24 @@ export const CreateWholesaleListingBody = zod.object({
 });
 
 export const UpdateWholesaleListingBody = CreateWholesaleListingBody.partial();
+
+// ─── Markets ──────────────────────────────────────────────────────────────────
+
+export const RegisterMarketBodySchema = zod.object({
+  name: zod.string().min(2),
+  city: zod.string().min(1),
+  region: zod.string().optional(),
+  address: zod.string().optional(),
+  day: zod.string().optional(),
+  time: zod.string().optional(),
+  description: zod.string().optional(),
+  contactEmail: zod.string().email(),
+  phone: zod.string().optional(),
+  websiteUrl: zod.string().url().optional(),
+  instagramHandle: zod.string().optional(),
+  facebookUrl: zod.string().url().optional(),
+  twitterHandle: zod.string().optional(),
+  logoUrl: zod.string().url().optional(),
+  featuredImageUrl: zod.string().url().optional(),
+  tags: zod.array(zod.string()).optional(),
+});

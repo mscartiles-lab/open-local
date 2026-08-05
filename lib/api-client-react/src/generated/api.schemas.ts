@@ -598,6 +598,8 @@ export type ListListingsParams = {
 export interface Market {
   id: number;
   name: string;
+  /** @nullable */
+  slug: string | null;
   city: string;
   region: string;
   /** @nullable */
@@ -611,15 +613,28 @@ export interface Market {
   /** @nullable */
   imageUrl: string | null;
   /** @nullable */
+  logoUrl: string | null;
+  /** @nullable */
+  featuredImageUrl: string | null;
+  /** @nullable */
   websiteUrl: string | null;
   /** @nullable */
   contactEmail: string | null;
   /** @nullable */
   instagramHandle: string | null;
   /** @nullable */
+  facebookUrl: string | null;
+  /** @nullable */
+  twitterHandle: string | null;
+  /** @nullable */
   latitude: number | null;
   /** @nullable */
   longitude: number | null;
+  /** @nullable */
+  managerId: number | null;
+  verified: boolean;
+  vendorCount: number;
+  tags: string[];
   active: boolean;
   createdAt: string;
 }
@@ -630,6 +645,25 @@ export type ListMarketsParams = {
   region?: string;
   day?: string;
 };
+
+export interface RegisterMarketBody {
+  name: string;
+  city: string;
+  region?: string;
+  address?: string;
+  day?: string;
+  time?: string;
+  description?: string;
+  contactEmail: string;
+  phone?: string;
+  websiteUrl?: string;
+  instagramHandle?: string;
+  facebookUrl?: string;
+  twitterHandle?: string;
+  logoUrl?: string;
+  featuredImageUrl?: string;
+  tags?: string[];
+}
 
 // ─── Wholesale Exchange ───────────────────────────────────────────────────────
 

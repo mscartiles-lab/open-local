@@ -170,6 +170,7 @@ function ClassicTabLayout() {
         }}
       />
       <Tabs.Screen name="wholesale" options={{ href: null }} />
+      <Tabs.Screen name="markets" options={{ href: null }} />
       <Tabs.Screen name="browse" options={{ href: null }} />
       <Tabs.Screen name="final-sale" options={{ href: null }} />
     </Tabs>
