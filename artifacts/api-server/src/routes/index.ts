@@ -27,6 +27,7 @@ import connectRouter from "./connect";
 import dashboardOtpRouter from "./dashboard-otp";
 import inviteRouter from "./invite";
 import marketsRouter from "./markets";
+import wholesaleRouter from "./wholesale";
 
 const router: IRouter = Router();
 
@@ -58,5 +59,6 @@ router.use(connectRouter);
 router.use(dashboardOtpRouter);
 router.use(inviteRouter);
 router.use(marketsRouter);
+router.use(wholesaleRouter);
 
 export default router;

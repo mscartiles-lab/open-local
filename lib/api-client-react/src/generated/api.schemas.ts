@@ -630,3 +630,42 @@ export type ListMarketsParams = {
   region?: string;
   day?: string;
 };
+
+// ─── Wholesale Exchange ───────────────────────────────────────────────────────
+
+export interface WholesaleListing {
+  id: number;
+  vendorId: number;
+  vendorName: string;
+  vendorSlug: string;
+  vendorImageUrl: string | null;
+  title: string;
+  description: string | null;
+  category: string | null;
+  pricePerUnit: number | null;
+  unit: string | null;
+  minOrderQty: number;
+  availableQty: number | null;
+  imageUrl: string | null;
+  expiresAt: string | null;
+  active: boolean;
+  createdAt: string;
+}
+
+export type ListWholesaleParams = {
+  search?: string;
+  category?: string;
+  vendorId?: number;
+};
+
+export interface CreateWholesaleListingBody {
+  title: string;
+  description?: string;
+  category?: string;
+  pricePerUnit?: number;
+  unit?: string;
+  minOrderQty?: number;
+  availableQty?: number;
+  imageUrl?: string;
+  expiresAt?: string;
+}

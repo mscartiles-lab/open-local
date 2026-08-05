@@ -24,6 +24,7 @@ import MasterList from "@/pages/master-list";
 import Listings from "@/pages/listings";
 import Drops from "@/pages/drops";
 import Surplus from "@/pages/surplus";
+import Wholesale from "@/pages/wholesale";
 import Events from "@/pages/events";
 import SearchInsights from "@/pages/search-insights";
 import SearchPage from "@/pages/search";
@@ -67,6 +68,7 @@ function Router() {
       <Route path="/listings" component={Listings} />
       <Route path="/drops" component={Drops} />
       <Route path="/surplus" component={Surplus} />
+      <Route path="/wholesale" component={Wholesale} />
       <Route path="/events" component={Events} />
       <Route path="/search-insights" component={SearchInsights} />
       <Route path="/search" component={SearchPage} />

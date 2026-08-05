@@ -52,6 +52,9 @@ import type {
   VendorInput,
   VendorUpdate,
   VerifyEmailRequest,
+  WholesaleListing,
+  ListWholesaleParams,
+  CreateWholesaleListingBody,
 } from "./api.schemas";
 
 import { customFetch } from "../custom-fetch";
@@ -3023,3 +3026,254 @@ export function useGetStorageObject<
 
   return { ...query, queryKey: queryOptions.queryKey };
 }
+
+// ─── Wholesale Exchange ───────────────────────────────────────────────────────
+
+export const getListWholesaleUrl = (params?: ListWholesaleParams) => {
+  const query = new URLSearchParams();
+  if (params?.search) query.set("search", params.search);
+  if (params?.category) query.set("category", params.category);
+  if (params?.vendorId !== undefined) query.set("vendorId", String(params.vendorId));
+  const qs = query.toString();
+  return `/api/wholesale${qs ? `?${qs}` : ""}`;
+};
+
+export const getListWholesaleQueryKey = (params?: ListWholesaleParams) =>
+  ["listWholesale", params] as const;
+
+export const listWholesaleListings = async (
+  params?: ListWholesaleParams,
+  options?: RequestInit,
+): Promise<WholesaleListing[]> => {
+  return customFetch<WholesaleListing[]>(getListWholesaleUrl(params), options);
+};
+
+export const getListWholesaleQueryOptions = <
+  TData = Awaited<ReturnType<typeof listWholesaleListings>>,
+  TError = ErrorType<unknown>,
+>(
+  params?: ListWholesaleParams,
+  options?: {
+    query?: UseQueryOptions<Awaited<ReturnType<typeof listWholesaleListings>>, TError, TData>;
+    request?: SecondParameter<typeof customFetch>;
+  },
+) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+  const queryKey = queryOptions?.queryKey ?? getListWholesaleQueryKey(params);
+  const queryFn: QueryFunction<Awaited<ReturnType<typeof listWholesaleListings>>> = () =>
+    listWholesaleListings(params, requestOptions);
+  return { queryKey, queryFn, ...queryOptions } as UseQueryOptions<
+    Awaited<ReturnType<typeof listWholesaleListings>>,
+    TError,
+    TData
+  >;
+};
+
+export function useListWholesaleListings<
+  TData = Awaited<ReturnType<typeof listWholesaleListings>>,
+  TError = ErrorType<unknown>,
+>(
+  params?: ListWholesaleParams,
+  options?: {
+    query?: UseQueryOptions<Awaited<ReturnType<typeof listWholesaleListings>>, TError, TData>;
+    request?: SecondParameter<typeof customFetch>;
+  },
+): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+  const queryOptions = getListWholesaleQueryOptions(params, options);
+  const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & { queryKey: QueryKey };
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+// Create
+export const getCreateWholesaleListingUrl = () => `/api/wholesale`;
+
+export const createWholesaleListing = async (
+  body: CreateWholesaleListingBody,
+  options?: RequestInit,
+): Promise<WholesaleListing> => {
+  return customFetch<WholesaleListing>(getCreateWholesaleListingUrl(), {
+    ...options,
+    method: "POST",
+    headers: { "Content-Type": "application/json", ...options?.headers },
+    body: JSON.stringify(body),
+  });
+};
+
+export const getCreateWholesaleListingMutationOptions = <
+  TError = ErrorType<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof createWholesaleListing>>,
+    TError,
+    { data: BodyType<CreateWholesaleListingBody> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof createWholesaleListing>>,
+  TError,
+  { data: BodyType<CreateWholesaleListingBody> },
+  TContext
+> => {
+  const mutationKey = ["createWholesaleListing"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation && "mutationKey" in options.mutation && options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof createWholesaleListing>>,
+    { data: BodyType<CreateWholesaleListingBody> }
+  > = (props) => createWholesaleListing(props.data, requestOptions);
+  return { mutationFn, ...mutationOptions };
+};
+
+export const useCreateWholesaleListing = <
+  TError = ErrorType<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof createWholesaleListing>>,
+    TError,
+    { data: BodyType<CreateWholesaleListingBody> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof createWholesaleListing>>,
+  TError,
+  { data: BodyType<CreateWholesaleListingBody> },
+  TContext
+> => {
+  return useMutation(getCreateWholesaleListingMutationOptions(options));
+};
+
+// Update
+export const getUpdateWholesaleListingUrl = (id: number) => `/api/wholesale/${id}`;
+
+export const updateWholesaleListing = async (
+  id: number,
+  body: Partial<CreateWholesaleListingBody>,
+  options?: RequestInit,
+): Promise<WholesaleListing> => {
+  return customFetch<WholesaleListing>(getUpdateWholesaleListingUrl(id), {
+    ...options,
+    method: "PATCH",
+    headers: { "Content-Type": "application/json", ...options?.headers },
+    body: JSON.stringify(body),
+  });
+};
+
+export const getUpdateWholesaleListingMutationOptions = <
+  TError = ErrorType<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof updateWholesaleListing>>,
+    TError,
+    { id: number; data: BodyType<Partial<CreateWholesaleListingBody>> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof updateWholesaleListing>>,
+  TError,
+  { id: number; data: BodyType<Partial<CreateWholesaleListingBody>> },
+  TContext
+> => {
+  const mutationKey = ["updateWholesaleListing"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation && "mutationKey" in options.mutation && options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof updateWholesaleListing>>,
+    { id: number; data: BodyType<Partial<CreateWholesaleListingBody>> }
+  > = (props) => updateWholesaleListing(props.id, props.data, requestOptions);
+  return { mutationFn, ...mutationOptions };
+};
+
+export const useUpdateWholesaleListing = <
+  TError = ErrorType<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof updateWholesaleListing>>,
+    TError,
+    { id: number; data: BodyType<Partial<CreateWholesaleListingBody>> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof updateWholesaleListing>>,
+  TError,
+  { id: number; data: BodyType<Partial<CreateWholesaleListingBody>> },
+  TContext
+> => {
+  return useMutation(getUpdateWholesaleListingMutationOptions(options));
+};
+
+// Delete
+export const getDeleteWholesaleListingUrl = (id: number) => `/api/wholesale/${id}`;
+
+export const deleteWholesaleListing = async (
+  id: number,
+  options?: RequestInit,
+): Promise<void> => {
+  return customFetch<void>(getDeleteWholesaleListingUrl(id), {
+    ...options,
+    method: "DELETE",
+  });
+};
+
+export const getDeleteWholesaleListingMutationOptions = <
+  TError = ErrorType<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof deleteWholesaleListing>>,
+    TError,
+    { id: number },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof deleteWholesaleListing>>,
+  TError,
+  { id: number },
+  TContext
+> => {
+  const mutationKey = ["deleteWholesaleListing"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation && "mutationKey" in options.mutation && options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof deleteWholesaleListing>>,
+    { id: number }
+  > = (props) => deleteWholesaleListing(props.id, requestOptions);
+  return { mutationFn, ...mutationOptions };
+};
+
+export const useDeleteWholesaleListing = <
+  TError = ErrorType<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof deleteWholesaleListing>>,
+    TError,
+    { id: number },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof deleteWholesaleListing>>,
+  TError,
+  { id: number },
+  TContext
+> => {
+  return useMutation(getDeleteWholesaleListingMutationOptions(options));
+};

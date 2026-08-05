@@ -48,6 +48,8 @@ import type {
   VendorInput,
   VendorUpdate,
   VerifyEmailRequest,
+  WholesaleListing,
+  ListWholesaleParams,
 } from "./api.schemas";
 
 import { customFetch } from "../custom-fetch";
@@ -2690,3 +2692,51 @@ export const useCreateListing = <
 > => {
   return useMutation(getCreateListingMutationOptions(options));
 };
+
+// ─── Wholesale Exchange ───────────────────────────────────────────────────────
+
+export const getListWholesaleUrl = (params?: ListWholesaleParams) => {
+  const query = new URLSearchParams();
+  if (params?.search) query.set("search", params.search);
+  if (params?.category) query.set("category", params.category);
+  if (params?.vendorId !== undefined) query.set("vendorId", String(params.vendorId));
+  const qs = query.toString();
+  return `/api/wholesale${qs ? `?${qs}` : ""}`;
+};
+
+export const getListWholesaleQueryKey = (params?: ListWholesaleParams) =>
+  ["listWholesale", params] as const;
+
+export const listWholesaleListings = async (
+  params?: ListWholesaleParams,
+  options?: RequestInit,
+): Promise<WholesaleListing[]> => {
+  return customFetch<WholesaleListing[]>(getListWholesaleUrl(params), options);
+};
+
+export const getListWholesaleQueryOptions = (
+  params?: ListWholesaleParams,
+  options?: {
+    query?: Partial<UseQueryOptions<WholesaleListing[], ErrorType<unknown>>>;
+    request?: SecondParameter<typeof customFetch>;
+  },
+) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+  const queryKey = queryOptions?.queryKey ?? getListWholesaleQueryKey(params);
+  return {
+    queryKey,
+    queryFn: () => listWholesaleListings(params, requestOptions),
+    ...queryOptions,
+  } satisfies UseQueryOptions<WholesaleListing[], ErrorType<unknown>>;
+};
+
+export function useListWholesaleListings(
+  params?: ListWholesaleParams,
+  options?: {
+    query?: Partial<UseQueryOptions<WholesaleListing[], ErrorType<unknown>>>;
+    request?: SecondParameter<typeof customFetch>;
+  },
+) {
+  const queryOptions = getListWholesaleQueryOptions(params, options);
+  return useQuery(queryOptions);
+}

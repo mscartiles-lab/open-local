@@ -50,6 +50,7 @@ export function Navbar() {
     { href: "/products", label: "Goods", icon: ShoppingBag },
     { href: "/drops", label: "Listings", icon: Zap },
     { href: "/surplus", label: "Sale", icon: Percent },
+    { href: "/wholesale", label: "Wholesale", icon: Package },
     { href: "/events", label: "Events", icon: CalendarDays },
     { href: "/favorites", label: "Favorites", icon: Heart },
   ];

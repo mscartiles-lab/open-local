@@ -35,6 +35,8 @@ import {
   Globe,
   Instagram,
   Search,
+  Box,
+  Pencil,
 } from "lucide-react";
 import { useUser } from "@/context/UserContext";
 import { FEATURE_BOOST_PRICE, FEATURE_BOOST_DURATION_DAYS, TIER_PHOTO_LIMIT, TIER_VIDEO_LIMIT, type TierId } from "@/lib/tiers";
@@ -49,14 +51,20 @@ import {
   useUpdateProduct,
   useDeleteProduct,
   useListMarkets,
+  useListWholesaleListings,
+  useCreateWholesaleListing,
+  useUpdateWholesaleListing,
+  useDeleteWholesaleListing,
   getListVendorProductsQueryKey,
   getListMarketsQueryKey,
   getListProductsQueryKey,
   getGetLocalNowFeedQueryKey,
   getGetMarketplaceStatsQueryKey,
+  getListWholesaleQueryKey,
   type Vendor,
   type Product,
   type Market,
+  type WholesaleListing,
 } from "@workspace/api-client-react";
 import { useQueryClient } from "@tanstack/react-query";
 import { cn } from "@/lib/utils";
@@ -71,7 +79,7 @@ import ProductVariationsManager from "@/components/ProductVariationsManager";
 import VisitRequestsPanel from "@/components/VisitRequestsPanel";
 import ProductUploadDialog, { type ListingType } from "@/components/ProductUploadDialog";
 
-type Tab = "analytics" | "inventory" | "store" | "markets" | "settings";
+type Tab = "analytics" | "inventory" | "store" | "markets" | "wholesale" | "settings";
 
 const SESSION_OTP_KEY = "ol_dashboard_verified";
 
@@ -1004,6 +1012,229 @@ function MarketsTab() {
   );
 }
 
+// ─── Wholesale tab ────────────────────────────────────────────────────────────
+
+const WHOLESALE_UNITS = ["lb", "oz", "kg", "case", "flat", "dozen", "bundle", "bag", "each", "gallon", "pint", "quart"];
+const WHOLESALE_CATEGORIES = ["Bakery", "Farm", "Apiary", "Brewery", "Crafts", "Pantry", "Butcher", "Florist", "Coffee", "Other"];
+
+interface WForm {
+  title: string; description: string; category: string;
+  pricePerUnit: string; unit: string; minOrderQty: string;
+  availableQty: string; imageUrl: string; expiresAt: string;
+}
+const WEMPTY: WForm = { title: "", description: "", category: "", pricePerUnit: "", unit: "", minOrderQty: "1", availableQty: "", imageUrl: "", expiresAt: "" };
+
+function WholesaleTab({ vendorId }: { vendorId: number }) {
+  const queryClient = useQueryClient();
+  const { toast } = useToast();
+  const [modalOpen, setModalOpen] = useState(false);
+  const [editing, setEditing] = useState<WholesaleListing | null>(null);
+  const [form, setForm] = useState<WForm>(WEMPTY);
+  const setF = (k: keyof WForm) => (v: string) => setForm((f) => ({ ...f, [k]: v }));
+
+  const { data: listings = [], isLoading } = useListWholesaleListings(
+    { vendorId },
+    { query: { queryKey: getListWholesaleQueryKey({ vendorId }) } },
+  );
+
+  const createM = useCreateWholesaleListing();
+  const updateM = useUpdateWholesaleListing();
+  const deleteM = useDeleteWholesaleListing();
+  const saving = createM.isPending || updateM.isPending;
+
+  const openCreate = () => { setEditing(null); setForm(WEMPTY); setModalOpen(true); };
+  const openEdit = (l: WholesaleListing) => {
+    setEditing(l);
+    setForm({
+      title: l.title, description: l.description ?? "", category: l.category ?? "",
+      pricePerUnit: l.pricePerUnit != null ? String(l.pricePerUnit) : "",
+      unit: l.unit ?? "", minOrderQty: String(l.minOrderQty),
+      availableQty: l.availableQty != null ? String(l.availableQty) : "",
+      imageUrl: l.imageUrl ?? "",
+      expiresAt: l.expiresAt ? l.expiresAt.slice(0, 10) : "",
+    });
+    setModalOpen(true);
+  };
+
+  const invalidate = () => {
+    queryClient.invalidateQueries({ queryKey: getListWholesaleQueryKey({ vendorId }) });
+    queryClient.invalidateQueries({ queryKey: getListWholesaleQueryKey() });
+  };
+
+  const handleSubmit = async () => {
+    const payload = {
+      title: form.title.trim(),
+      description: form.description.trim() || undefined,
+      category: form.category || undefined,
+      pricePerUnit: form.pricePerUnit ? parseFloat(form.pricePerUnit) : undefined,
+      unit: form.unit || undefined,
+      minOrderQty: parseInt(form.minOrderQty) || 1,
+      availableQty: form.availableQty ? parseInt(form.availableQty) : undefined,
+      imageUrl: form.imageUrl.trim() || undefined,
+      expiresAt: form.expiresAt ? new Date(form.expiresAt).toISOString() : undefined,
+    };
+    try {
+      if (editing) { await updateM.mutateAsync({ id: editing.id, data: payload }); toast({ title: "Listing updated" }); }
+      else { await createM.mutateAsync({ data: payload }); toast({ title: "Listing posted!" }); }
+      invalidate();
+      setModalOpen(false);
+    } catch { toast({ title: "Something went wrong", variant: "destructive" }); }
+  };
+
+  const handleDelete = async (id: number) => {
+    if (!confirm("Remove this listing?")) return;
+    try { await deleteM.mutateAsync({ id }); invalidate(); toast({ title: "Listing removed" }); }
+    catch { toast({ title: "Could not remove", variant: "destructive" }); }
+  };
+
+  return (
+    <div className="space-y-6">
+      <div className="flex items-start justify-between gap-4 flex-wrap">
+        <div>
+          <h2 className="font-serif text-2xl font-bold text-foreground mb-1">Wholesale Exchange</h2>
+          <p className="text-muted-foreground text-sm">
+            Post bulk or wholesale availability for other Florida vendors to discover and contact you.
+          </p>
+        </div>
+        <Button onClick={openCreate} className="gap-2 shrink-0">
+          <Plus className="h-4 w-4" /> New listing
+        </Button>
+      </div>
+
+      {isLoading ? (
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+          {[...Array(3)].map((_, i) => <div key={i} className="h-44 rounded-xl bg-muted animate-pulse" />)}
+        </div>
+      ) : listings.length === 0 ? (
+        <div className="py-16 text-center border border-dashed border-border rounded-2xl">
+          <Box className="mx-auto h-10 w-10 opacity-20 mb-3 text-foreground" />
+          <p className="font-semibold text-foreground">No wholesale listings yet</p>
+          <p className="text-sm text-muted-foreground mt-1 mb-4">
+            Post your first listing to connect with other Florida producers.
+          </p>
+          <Button onClick={openCreate} variant="outline" size="sm" className="gap-2">
+            <Plus className="h-3.5 w-3.5" /> Post a listing
+          </Button>
+        </div>
+      ) : (
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+          {listings.map((l: WholesaleListing) => (
+            <div key={l.id} className="rounded-xl border border-border bg-card p-4 flex flex-col gap-2">
+              {l.imageUrl && (
+                <img src={l.imageUrl} alt={l.title} className="w-full h-32 object-cover rounded-lg mb-1" />
+              )}
+              <div className="flex items-start justify-between gap-2">
+                <div className="flex-1 min-w-0">
+                  <p className="font-semibold text-foreground text-sm leading-snug">{l.title}</p>
+                  {l.category && (
+                    <span className="inline-block mt-0.5 text-[10px] font-bold bg-green-100 text-green-800 px-1.5 py-0.5 rounded-full">
+                      {l.category}
+                    </span>
+                  )}
+                </div>
+                <div className="flex gap-1 shrink-0">
+                  <button onClick={() => openEdit(l)} className="p-1.5 rounded-md hover:bg-muted transition-colors text-muted-foreground">
+                    <Pencil className="h-3.5 w-3.5" />
+                  </button>
+                  <button onClick={() => handleDelete(l.id)} className="p-1.5 rounded-md hover:bg-destructive/10 transition-colors text-muted-foreground hover:text-destructive">
+                    <Trash2 className="h-3.5 w-3.5" />
+                  </button>
+                </div>
+              </div>
+              {l.description && <p className="text-xs text-muted-foreground line-clamp-2">{l.description}</p>}
+              <div className="flex items-center gap-2 flex-wrap mt-auto pt-1">
+                {l.pricePerUnit != null && (
+                  <span className="text-sm font-bold text-green-800">
+                    ${Number(l.pricePerUnit).toFixed(2)}{l.unit ? `/${l.unit}` : ""}
+                  </span>
+                )}
+                {l.minOrderQty > 1 && (
+                  <span className="text-xs text-muted-foreground bg-muted px-1.5 py-0.5 rounded-full">
+                    Min {l.minOrderQty}
+                  </span>
+                )}
+                {l.expiresAt && (
+                  <span className="text-xs text-muted-foreground">
+                    Until {new Date(l.expiresAt).toLocaleDateString()}
+                  </span>
+                )}
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+
+      {/* Create/Edit modal */}
+      {modalOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
+          <div className="bg-background rounded-2xl shadow-xl w-full max-w-lg max-h-[90vh] overflow-y-auto p-6 space-y-4">
+            <h3 className="font-bold text-lg text-foreground">{editing ? "Edit listing" : "Post wholesale listing"}</h3>
+
+            <div className="space-y-3">
+              <div>
+                <label className="text-xs font-semibold text-foreground mb-1 block">Title *</label>
+                <Input placeholder="e.g. Bulk wildflower honey" value={form.title} onChange={(e) => setF("title")(e.target.value)} />
+              </div>
+              <div>
+                <label className="text-xs font-semibold text-foreground mb-1 block">Description</label>
+                <textarea value={form.description} onChange={(e) => setF("description")(e.target.value)} className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm resize-none focus:outline-none focus:ring-2 focus:ring-ring min-h-[70px]" placeholder="Product details, harvest info, terms…" />
+              </div>
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="text-xs font-semibold text-foreground mb-1 block">Category</label>
+                  <select value={form.category} onChange={(e) => setF("category")(e.target.value)} className="w-full px-3 py-2 rounded-md border border-input bg-background text-sm focus:outline-none focus:ring-2 focus:ring-ring">
+                    <option value="">Choose…</option>
+                    {WHOLESALE_CATEGORIES.map((c) => <option key={c} value={c}>{c}</option>)}
+                  </select>
+                </div>
+                <div>
+                  <label className="text-xs font-semibold text-foreground mb-1 block">Unit</label>
+                  <select value={form.unit} onChange={(e) => setF("unit")(e.target.value)} className="w-full px-3 py-2 rounded-md border border-input bg-background text-sm focus:outline-none focus:ring-2 focus:ring-ring">
+                    <option value="">Choose…</option>
+                    {WHOLESALE_UNITS.map((u) => <option key={u} value={u}>{u}</option>)}
+                  </select>
+                </div>
+              </div>
+              <div className="grid grid-cols-3 gap-3">
+                <div>
+                  <label className="text-xs font-semibold text-foreground mb-1 block">Price/unit</label>
+                  <Input type="number" placeholder="0.00" min="0" step="0.01" value={form.pricePerUnit} onChange={(e) => setF("pricePerUnit")(e.target.value)} />
+                </div>
+                <div>
+                  <label className="text-xs font-semibold text-foreground mb-1 block">Min order</label>
+                  <Input type="number" placeholder="1" min="1" value={form.minOrderQty} onChange={(e) => setF("minOrderQty")(e.target.value)} />
+                </div>
+                <div>
+                  <label className="text-xs font-semibold text-foreground mb-1 block">Available qty</label>
+                  <Input type="number" placeholder="—" min="1" value={form.availableQty} onChange={(e) => setF("availableQty")(e.target.value)} />
+                </div>
+              </div>
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="text-xs font-semibold text-foreground mb-1 block">Image URL</label>
+                  <Input placeholder="https://…" value={form.imageUrl} onChange={(e) => setF("imageUrl")(e.target.value)} />
+                </div>
+                <div>
+                  <label className="text-xs font-semibold text-foreground mb-1 block">Expires on</label>
+                  <Input type="date" value={form.expiresAt} onChange={(e) => setF("expiresAt")(e.target.value)} />
+                </div>
+              </div>
+            </div>
+
+            <div className="flex justify-end gap-2 pt-2">
+              <Button variant="outline" onClick={() => setModalOpen(false)} disabled={saving}>Cancel</Button>
+              <Button onClick={handleSubmit} disabled={saving || !form.title.trim()}>
+                {saving && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                {editing ? "Save changes" : "Post listing"}
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
 function MarketCard({ market }: { market: Market }) {
   const DAY_COLORS: Record<string, string> = {
     saturday: "bg-emerald-50 text-emerald-800 border-emerald-200",
@@ -1179,6 +1410,7 @@ export default function Dashboard() {
     { id: "inventory", label: "Inventory", icon: Layers },
     { id: "store", label: "Store Editor", icon: Store },
     { id: "markets", label: "Find Markets", icon: MapPin },
+    { id: "wholesale", label: "Wholesale", icon: Box },
     { id: "settings", label: "Settings", icon: Settings },
   ];
 
@@ -1259,6 +1491,7 @@ export default function Dashboard() {
         )}
         {activeTab === "store" && <StoreEditorTab vendor={vendor} tier={tier} />}
         {activeTab === "markets" && <MarketsTab />}
+        {activeTab === "wholesale" && <WholesaleTab vendorId={vendor.id} />}
         {activeTab === "settings" && <SettingsTab vendor={vendor} />}
       </div>
 

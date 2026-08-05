@@ -1082,3 +1082,25 @@ export const GetStorageObjectParams = zod.object({
       "Object path within the private object dir (e.g. `uploads\/some-uuid`).",
     ),
 });
+
+// ─── Wholesale Exchange ───────────────────────────────────────────────────────
+
+export const ListWholesaleQueryParams = zod.object({
+  search: zod.string().optional(),
+  category: zod.string().optional(),
+  vendorId: zod.coerce.number().int().positive().optional(),
+});
+
+export const CreateWholesaleListingBody = zod.object({
+  title: zod.string().min(2),
+  description: zod.string().optional(),
+  category: zod.string().optional(),
+  pricePerUnit: zod.number().positive().optional(),
+  unit: zod.string().optional(),
+  minOrderQty: zod.number().int().min(1).default(1),
+  availableQty: zod.number().int().min(1).optional(),
+  imageUrl: zod.string().url().optional(),
+  expiresAt: zod.string().datetime().optional(),
+});
+
+export const UpdateWholesaleListingBody = CreateWholesaleListingBody.partial();

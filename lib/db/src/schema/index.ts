@@ -20,3 +20,4 @@ export * from "./orders";
 export * from "./ip-logs";
 export * from "./waitlist";
 export * from "./markets";
+export * from "./wholesale";
