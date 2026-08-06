@@ -1,5 +1,8 @@
-import { useState } from "react";
+import { useState, lazy, Suspense } from "react";
 import { Link, useLocation } from "wouter";
+const LocationPicker = lazy(() =>
+  import("@/components/LocationPicker").then((m) => ({ default: m.LocationPicker })),
+);
 import Layout from "@/components/layout/Layout";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -44,6 +47,8 @@ interface FormState {
   day: string;
   time: string;
   description: string;
+  latitude: number | null;
+  longitude: number | null;
   // Step 2 — Contact & presence
   contactEmail: string;
   phone: string;
@@ -58,6 +63,7 @@ interface FormState {
 
 const INITIAL: FormState = {
   name: "", city: "", region: "FL", address: "", day: "", time: "", description: "",
+  latitude: null, longitude: null,
   contactEmail: "", phone: "", websiteUrl: "", instagramHandle: "",
   facebookUrl: "", twitterHandle: "", logoUrl: "", featuredImageUrl: "", tags: [],
 };
@@ -88,7 +94,15 @@ function StepIndicator({ current, total }: { current: number; total: number }) {
   );
 }
 
-function Step1({ form, set }: { form: FormState; set: (k: keyof FormState, v: string) => void }) {
+function Step1({
+  form,
+  set,
+  setLatLng,
+}: {
+  form: FormState;
+  set: (k: keyof FormState, v: string) => void;
+  setLatLng: (lat: number, lng: number) => void;
+}) {
   return (
     <div className="space-y-4">
       <div>
@@ -139,6 +153,20 @@ function Step1({ form, set }: { form: FormState; set: (k: keyof FormState, v: st
           onChange={(e) => set("description", e.target.value)}
           className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm resize-none focus:outline-none focus:ring-2 focus:ring-ring min-h-[100px]"
         />
+      </div>
+
+      <div>
+        <label className="text-sm font-semibold text-foreground mb-2 block">
+          Pin your exact location
+        </label>
+        <Suspense fallback={<div className="h-[280px] rounded-xl border border-border bg-muted animate-pulse" />}>
+          <LocationPicker
+            onChange={setLatLng}
+            hint={[form.address, form.city, form.region].filter(Boolean).join(" ")}
+            initialLat={form.latitude}
+            initialLng={form.longitude}
+          />
+        </Suspense>
       </div>
     </div>
   );
@@ -261,6 +289,7 @@ export default function MarketRegisterPage() {
   const [done, setDone] = useState(false);
 
   const set = (k: keyof FormState, v: string) => setForm((f) => ({ ...f, [k]: v }));
+  const setLatLng = (lat: number, lng: number) => setForm((f) => ({ ...f, latitude: lat, longitude: lng }));
   const toggleTag = (tag: string) =>
     setForm((f) => ({
       ...f,
@@ -295,6 +324,8 @@ export default function MarketRegisterPage() {
           logoUrl: form.logoUrl.trim() || undefined,
           featuredImageUrl: form.featuredImageUrl.trim() || undefined,
           tags: form.tags.length ? form.tags : undefined,
+          latitude: form.latitude ?? undefined,
+          longitude: form.longitude ?? undefined,
         },
       });
       setDone(true);
@@ -364,7 +395,7 @@ export default function MarketRegisterPage() {
 
         {/* Step content */}
         <div className="rounded-2xl border border-border bg-card p-6 mb-6">
-          {step === 0 && <Step1 form={form} set={set} />}
+          {step === 0 && <Step1 form={form} set={set} setLatLng={setLatLng} />}
           {step === 1 && <Step2 form={form} set={set} toggleTag={toggleTag} />}
           {step === 2 && <Step3 form={form} />}
         </div>

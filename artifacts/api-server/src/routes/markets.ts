@@ -98,6 +98,8 @@ const RegisterMarketBodySchema = z.object({
   logoUrl: z.string().url().optional(),
   featuredImageUrl: z.string().url().optional(),
   tags: z.array(z.string()).optional(),
+  latitude: z.number().optional(),
+  longitude: z.number().optional(),
 });
 
 const UpdateMarketBodySchema = RegisterMarketBodySchema.partial().omit({
@@ -175,6 +177,8 @@ router.post("/markets/register", async (req, res): Promise<void> => {
       logoUrl: data.logoUrl ?? null,
       featuredImageUrl: data.featuredImageUrl ?? null,
       tags: data.tags ?? [],
+      latitude: data.latitude ?? null,
+      longitude: data.longitude ?? null,
       verified: false,
       active: true,
     })

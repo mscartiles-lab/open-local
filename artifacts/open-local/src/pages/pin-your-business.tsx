@@ -6,6 +6,7 @@ import { useSubmitEstablishment } from "@workspace/api-client-react";
 import Layout from "@/components/layout/Layout";
 import { TierPicker } from "@/components/billing/TierPicker";
 import { TIERS, type TierId } from "@/lib/tiers";
+import { LocationPicker } from "@/components/LocationPicker";
 import { MapPin, Store, CheckCircle, Clock, Sparkles, CreditCard, Loader2, Image as ImageIcon, Video } from "lucide-react";
 
 const ESTABLISHMENT_TYPES = [
@@ -55,6 +56,7 @@ export default function PinYourBusiness() {
   const [tier, setTier] = useState<TierId>("middle");
   const [submitted, setSubmitted] = useState(false);
   const [submittedData, setSubmittedData] = useState<{ token: string; name: string } | null>(null);
+  const [pinLatLng, setPinLatLng] = useState<{ lat: number; lng: number } | null>(null);
   const [pricing, setPricing] = useState<BusinessPricing | null>(null);
   const [pricingError, setPricingError] = useState(false);
   const [checkoutLoading, setCheckoutLoading] = useState(false);
@@ -74,11 +76,17 @@ export default function PinYourBusiness() {
   const {
     register,
     handleSubmit,
+    watch,
     formState: { errors },
   } = useForm<FormData>({
     resolver: zodResolver(schema),
     defaultValues: { state: "FL" },
   });
+
+  const watchedAddress = watch("address");
+  const watchedCity = watch("city");
+  const watchedState = watch("state");
+  const locationHint = [watchedAddress, watchedCity, watchedState].filter(Boolean).join(" ");
 
   const onSubmit = async (data: FormData) => {
     const photoUrls = data.photoUrlsRaw
@@ -102,8 +110,8 @@ export default function PinYourBusiness() {
       imageUrl: data.imageUrl || null,
       photoUrls: tier !== "basic" ? photoUrls : null,
       videoUrl: tier === "premium" ? (data.videoUrl || null) : null,
-      latitude: null,
-      longitude: null,
+      latitude: pinLatLng?.lat ?? null,
+      longitude: pinLatLng?.lng ?? null,
       tier,
     };
 
@@ -160,7 +168,7 @@ export default function PinYourBusiness() {
                 Submission received!
               </h1>
               <p className="text-muted-foreground leading-relaxed">
-                Our team reviews submissions within 24 hours. To go live the moment we approve you, set up your listing subscription now.
+                Your business is now live on Open Local! Set up your listing subscription to unlock all features and keep your pin active.
               </p>
             </div>
 
@@ -377,6 +385,19 @@ export default function PinYourBusiness() {
                 />
                 {errors.city && <p className="text-xs text-destructive mt-1">{errors.city.message}</p>}
               </div>
+            </div>
+
+            {/* Draggable map pin */}
+            <div>
+              <label className="block text-sm font-medium text-foreground mb-2">
+                Pin your exact location
+              </label>
+              <LocationPicker
+                onChange={(lat, lng) => setPinLatLng({ lat, lng })}
+                hint={locationHint}
+                initialLat={pinLatLng?.lat}
+                initialLng={pinLatLng?.lng}
+              />
             </div>
           </div>
 

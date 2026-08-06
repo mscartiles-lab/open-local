@@ -663,6 +663,8 @@ export interface RegisterMarketBody {
   logoUrl?: string;
   featuredImageUrl?: string;
   tags?: string[];
+  latitude?: number;
+  longitude?: number;
 }
 
 // ─── Wholesale Exchange ───────────────────────────────────────────────────────
