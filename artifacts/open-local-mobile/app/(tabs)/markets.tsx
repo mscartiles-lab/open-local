@@ -92,6 +92,22 @@ function MarketListCard({
   );
 }
 
+const styles2 = StyleSheet.create({
+  registerBtn: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 5,
+    paddingHorizontal: 12,
+    paddingVertical: 7,
+    borderRadius: 8,
+  },
+  registerBtnText: {
+    color: "#fff",
+    fontFamily: "DMSans_600SemiBold",
+    fontSize: 13,
+  },
+});
+
 const cardStyles = StyleSheet.create({
   card: {
     borderRadius: 14,
@@ -179,10 +195,22 @@ export default function MarketsScreen() {
   return (
     <View style={s.container}>
       <View style={[s.header, { paddingTop: topPad + 12 }]}>
-        <Text style={[s.title, { color: colors.foreground }]}>Markets</Text>
-        <Text style={[s.subtitle, { color: colors.mutedForeground }]}>
-          Florida Farmers Market Directory
-        </Text>
+        <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between" }}>
+          <View>
+            <Text style={[s.title, { color: colors.foreground }]}>Markets</Text>
+            <Text style={[s.subtitle, { color: colors.mutedForeground }]}>
+              Florida Farmers Market Directory
+            </Text>
+          </View>
+          <TouchableOpacity
+            onPress={() => router.push("/market-register")}
+            style={[styles2.registerBtn, { backgroundColor: "#166534" }]}
+            activeOpacity={0.85}
+          >
+            <Feather name="plus" size={14} color="#fff" />
+            <Text style={styles2.registerBtnText}>List yours</Text>
+          </TouchableOpacity>
+        </View>
 
         {/* Search */}
         <View style={[s.searchRow, { backgroundColor: colors.muted }]}>

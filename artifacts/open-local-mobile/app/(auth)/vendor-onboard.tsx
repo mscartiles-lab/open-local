@@ -23,6 +23,7 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import { useAuth } from "@/context/AuthContext";
 import { useColors } from "@/hooks/useColors";
 import { apiFetch, apiUrl } from "@/lib/api";
+import { LocationPickerMap, type PickedLocation } from "@/components/LocationPickerMap";
 import {
   TIERS,
   TIER_ORDER,
@@ -180,6 +181,8 @@ export default function VendorOnboardScreen() {
 
   // Step 5 — Availability
   const [pickupAddress, setPickupAddress] = useState("");
+  const [pickupLat, setPickupLat] = useState<number | null>(null);
+  const [pickupLng, setPickupLng] = useState<number | null>(null);
   const [openDays, setOpenDays] = useState<string[]>([]);
   const [openHours, setOpenHours] = useState("");
   const [howToOrder, setHowToOrder] = useState<string[]>([]);
@@ -393,6 +396,8 @@ export default function VendorOnboardScreen() {
       facebookUrl: null,
       marketsText: marketsText.trim() || null,
       pickupAddress: pickupAddress.trim() || null,
+      latitude: pickupLat ?? null,
+      longitude: pickupLng ?? null,
       openDays: openDays.length ? openDays : null,
       openHours: openHours.trim() || null,
       howToOrder: howToOrder.length ? howToOrder.join(", ") : null,
@@ -423,7 +428,7 @@ export default function VendorOnboardScreen() {
   }, [
     name, category, tagline, description, city, zipCode, established,
     phone, websiteUrl, instagramHandle, marketsText, pickupAddress,
-    openDays, openHours, howToOrder, sessionToken,
+    pickupLat, pickupLng, openDays, openHours, howToOrder, sessionToken,
   ]);
 
   const submitCode = useCallback(async () => {
@@ -1001,6 +1006,22 @@ export default function VendorOnboardScreen() {
                   placeholder="123 NW 2nd Ave, Miami"
                   placeholderTextColor={c.mutedForeground}
                   style={[s.input, { color: c.foreground, borderColor: c.border, backgroundColor: c.muted }]}
+                />
+              </FieldGroup>
+
+              <FieldGroup label="Pin your exact location" hint="Helps shoppers find you on the map.">
+                <LocationPickerMap
+                  onChange={(loc: PickedLocation) => {
+                    setPickupLat(loc.latitude);
+                    setPickupLng(loc.longitude);
+                  }}
+                  hint={pickupAddress || city}
+                  initial={
+                    pickupLat != null && pickupLng != null
+                      ? { latitude: pickupLat, longitude: pickupLng }
+                      : null
+                  }
+                  height={240}
                 />
               </FieldGroup>
 
