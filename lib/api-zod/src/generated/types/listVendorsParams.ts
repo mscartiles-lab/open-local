@@ -11,4 +11,5 @@ export type ListVendorsParams = {
   category?: string;
   location?: string;
   featured?: boolean;
+  marketName?: string;
 };

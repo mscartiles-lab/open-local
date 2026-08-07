@@ -22,6 +22,7 @@ export const ListVendorsQueryParams = zod.object({
   category: zod.coerce.string().optional(),
   location: zod.coerce.string().optional(),
   featured: zod.coerce.boolean().optional(),
+  marketName: zod.coerce.string().optional(),
 });
 
 export const ListVendorsResponseItem = zod.object({

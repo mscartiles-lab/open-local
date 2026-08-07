@@ -14,7 +14,7 @@ import {
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
-import { useGetMarket } from "@/lib/api-client";
+import { useGetMarket, useListVendors } from "@/lib/api-client";
 import { useColors } from "@/hooks/useColors";
 
 export default function MarketDetailScreen() {
@@ -24,6 +24,11 @@ export default function MarketDetailScreen() {
   const router = useRouter();
 
   const { data: market, isLoading, isError } = useGetMarket(slug ?? "");
+
+  const { data: marketVendors, isLoading: vendorsLoading } = useListVendors(
+    market ? { marketName: market.name } : undefined,
+    { query: { enabled: !!market } },
+  );
 
   const bottomPad = Platform.OS === "web" ? 34 : insets.bottom + 16;
 
@@ -161,6 +166,50 @@ export default function MarketDetailScreen() {
             </View>
           )}
 
+          {/* Vendors at this market */}
+          <View>
+            <Text style={[s.sectionTitle, { color: colors.foreground }]}>Vendors at this market</Text>
+            {vendorsLoading ? (
+              <View style={[s.infoCard, { backgroundColor: colors.card, borderColor: colors.border, justifyContent: "center" }]}>
+                <ActivityIndicator color="#166534" size="small" />
+              </View>
+            ) : marketVendors && marketVendors.length > 0 ? (
+              <View style={{ gap: 8 }}>
+                {marketVendors.map((vendor) => (
+                  <TouchableOpacity
+                    key={vendor.id}
+                    style={[s.vendorCard, { backgroundColor: colors.card, borderColor: colors.border }]}
+                    onPress={() => router.push(`/vendor/${vendor.slug}` as never)}
+                    activeOpacity={0.7}
+                  >
+                    {vendor.imageUrl ? (
+                      <Image source={{ uri: vendor.imageUrl }} style={s.vendorThumb} contentFit="cover" />
+                    ) : (
+                      <View style={[s.vendorThumb, { backgroundColor: "#dcfce7", alignItems: "center", justifyContent: "center" }]}>
+                        <Feather name="shopping-bag" size={18} color="#166534" />
+                      </View>
+                    )}
+                    <View style={{ flex: 1 }}>
+                      <Text style={[s.vendorName, { color: colors.foreground }]} numberOfLines={1}>{vendor.name}</Text>
+                      <Text style={[s.vendorCategory, { color: colors.mutedForeground }]} numberOfLines={1}>{vendor.category}</Text>
+                      {(vendor.tagline || vendor.description) ? (
+                        <Text style={[s.vendorTagline, { color: colors.mutedForeground }]} numberOfLines={1}>
+                          {vendor.tagline || vendor.description}
+                        </Text>
+                      ) : null}
+                    </View>
+                    <Feather name="chevron-right" size={16} color={colors.mutedForeground} />
+                  </TouchableOpacity>
+                ))}
+              </View>
+            ) : (
+              <View style={[s.emptyVendors, { backgroundColor: colors.card, borderColor: colors.border }]}>
+                <Feather name="shopping-bag" size={24} color={colors.mutedForeground} />
+                <Text style={[s.emptyVendorText, { color: colors.mutedForeground }]}>No vendors linked yet</Text>
+              </View>
+            )}
+          </View>
+
           {/* Contact actions */}
           <View style={s.actionSection}>
             {market.contactEmail && (
@@ -248,4 +297,17 @@ const styles = (colors: ReturnType<typeof useColors>) =>
     emptyTitle: { fontSize: 16, fontFamily: "DMSans_600SemiBold" },
     retryBtn: { paddingHorizontal: 20, paddingVertical: 10, borderRadius: 10, marginTop: 4 },
     retryText: { color: "#fff", fontFamily: "DMSans_600SemiBold", fontSize: 14 },
+    vendorCard: {
+      borderRadius: 12, borderWidth: 1, padding: 12,
+      flexDirection: "row", alignItems: "center", gap: 12,
+    },
+    vendorThumb: { width: 44, height: 44, borderRadius: 10 },
+    vendorName: { fontSize: 14, fontFamily: "DMSans_600SemiBold", fontWeight: "600" },
+    vendorCategory: { fontSize: 12, fontFamily: "DMSans_400Regular", marginTop: 1 },
+    vendorTagline: { fontSize: 12, fontFamily: "DMSans_400Regular", marginTop: 1 },
+    emptyVendors: {
+      borderRadius: 12, borderWidth: 1, borderStyle: "dashed",
+      padding: 20, alignItems: "center", gap: 8,
+    },
+    emptyVendorText: { fontSize: 13, fontFamily: "DMSans_400Regular" },
   });

@@ -63,6 +63,9 @@ paths:
         - in: query
           name: featured
           schema: { type: boolean }
+        - in: query
+          name: marketName
+          schema: { type: string }
       responses:
         "200":
           description: List of vendors

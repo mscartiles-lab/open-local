@@ -3,6 +3,7 @@ import { useParams, Link } from "wouter";
 import Layout from "@/components/layout/Layout";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
+import { Card, CardContent } from "@/components/ui/card";
 import {
   MapPin,
   Clock,
@@ -18,11 +19,13 @@ import {
   Loader2,
   Tag,
   Phone,
+  Store,
 } from "lucide-react";
 import {
   useGetMarket,
   useClaimMarket,
   useListMarkets,
+  useListVendors,
   getGetMarketQueryKey,
   getListMarketsQueryKey,
 } from "@workspace/api-client-react";
@@ -40,6 +43,11 @@ export default function MarketDetailPage() {
   const { data: market, isLoading, error } = useGetMarket(slug ?? "", {
     query: { enabled: !!slug, queryKey: getGetMarketQueryKey(slug ?? "") },
   });
+
+  const { data: marketVendors, isLoading: vendorsLoading } = useListVendors(
+    market ? { marketName: market.name } : undefined,
+    { query: { enabled: !!market } },
+  );
 
   const claimM = useClaimMarket();
 
@@ -154,6 +162,46 @@ export default function MarketDetailPage() {
         <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
           {/* Main content */}
           <div className="md:col-span-2 space-y-6">
+            {/* Vendors at this market */}
+            <div>
+              <h2 className="font-bold text-foreground text-lg mb-3 flex items-center gap-1.5">
+                <Store className="w-5 h-5" />
+                Vendors at this market
+              </h2>
+              {vendorsLoading ? (
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  {[0, 1, 2, 3].map((n) => <Skeleton key={n} className="h-24 w-full rounded-xl" />)}
+                </div>
+              ) : marketVendors && marketVendors.length > 0 ? (
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  {marketVendors.map((vendor) => (
+                    <Link key={vendor.id} href={`/vendors/${vendor.id}`}>
+                      <Card className="hover:border-primary/40 transition-colors rounded-xl cursor-pointer">
+                        <CardContent className="p-4 flex gap-3 items-center">
+                          <div className="w-12 h-12 rounded-lg overflow-hidden shrink-0 bg-muted flex items-center justify-center">
+                            {vendor.imageUrl ? (
+                              <img src={vendor.imageUrl} alt={vendor.name} className="w-full h-full object-cover" />
+                            ) : (
+                              <Store className="w-5 h-5 text-muted-foreground opacity-40" />
+                            )}
+                          </div>
+                          <div className="min-w-0">
+                            <p className="font-semibold text-sm text-foreground truncate">{vendor.name}</p>
+                            <p className="text-xs text-muted-foreground truncate">{vendor.category}</p>
+                            <p className="text-xs text-muted-foreground mt-0.5 line-clamp-1">{vendor.tagline || vendor.description}</p>
+                          </div>
+                        </CardContent>
+                      </Card>
+                    </Link>
+                  ))}
+                </div>
+              ) : (
+                <div className="rounded-xl border border-dashed border-border bg-muted/30 p-6 text-center">
+                  <Store className="w-8 h-8 text-muted-foreground/30 mx-auto mb-2" />
+                  <p className="text-sm text-muted-foreground">No vendors linked to this market yet.</p>
+                </div>
+              )}
+            </div>
             {/* Schedule */}
             {(market.day || market.time) && (
               <div className="rounded-xl border border-border bg-card p-4 flex gap-3">

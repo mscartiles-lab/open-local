@@ -47,7 +47,7 @@ router.get("/vendors", async (req, res): Promise<void> => {
     return;
   }
 
-  const { search, category, location, featured } = parsed.data;
+  const { search, category, location, featured, marketName } = parsed.data;
   const conditions: ReturnType<typeof and>[] = [notPausedVendorCondition()];
   if (search) {
     conditions.push(
@@ -61,6 +61,7 @@ router.get("/vendors", async (req, res): Promise<void> => {
   if (category) conditions.push(eq(vendorsTable.category, category));
   if (location) conditions.push(eq(vendorsTable.location, location));
   if (featured !== undefined) conditions.push(eq(vendorsTable.featured, featured));
+  if (marketName) conditions.push(ilike(vendorsTable.marketsText, `%${marketName}%`));
 
   const rows = await db
     .select()
