@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, lazy, Suspense } from "react";
 import { Link } from "wouter";
 import Layout from "@/components/layout/Layout";
 import { Input } from "@/components/ui/input";
@@ -23,6 +23,8 @@ import {
   CalendarDays,
   ArrowRight,
   Store,
+  LayoutGrid,
+  Map,
 } from "lucide-react";
 import {
   useListMarkets,
@@ -30,6 +32,9 @@ import {
   type Market,
 } from "@workspace/api-client-react";
 import { cn } from "@/lib/utils";
+
+// Lazy-load the map so Leaflet CSS doesn't block the initial paint
+const MarketsMapView = lazy(() => import("@/components/MarketsMapView"));
 
 const DAYS = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"];
 const REGIONS = ["FL", "GA", "AL", "SC"];
@@ -181,10 +186,13 @@ function MarketCard({ market }: { market: Market }) {
   );
 }
 
+type ViewMode = "list" | "map";
+
 export default function MarketsPage() {
   const [search, setSearch] = useState("");
   const [dayFilter, setDayFilter] = useState("all");
   const [regionFilter, setRegionFilter] = useState("all");
+  const [viewMode, setViewMode] = useState<ViewMode>("list");
 
   const { data: markets = [], isLoading } = useListMarkets(
     {
@@ -231,7 +239,7 @@ export default function MarketsPage() {
       </div>
 
       <div className="container max-w-6xl mx-auto px-4 py-10">
-        {/* Filters */}
+        {/* Filters + view toggle */}
         <div className="flex flex-col sm:flex-row gap-3 mb-8">
           <div className="relative flex-1 min-w-0">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground pointer-events-none" />
@@ -261,13 +269,45 @@ export default function MarketsPage() {
               {REGIONS.map((r) => <SelectItem key={r} value={r}>{r}</SelectItem>)}
             </SelectContent>
           </Select>
+
+          {/* List / Map toggle */}
+          <div className="flex rounded-lg border border-border overflow-hidden shrink-0">
+            <button
+              onClick={() => setViewMode("list")}
+              className={cn(
+                "flex items-center gap-1.5 px-3 py-2 text-sm font-medium transition-colors",
+                viewMode === "list"
+                  ? "bg-primary text-primary-foreground"
+                  : "bg-card text-muted-foreground hover:bg-muted",
+              )}
+            >
+              <LayoutGrid className="w-3.5 h-3.5" />
+              List
+            </button>
+            <button
+              onClick={() => setViewMode("map")}
+              className={cn(
+                "flex items-center gap-1.5 px-3 py-2 text-sm font-medium transition-colors border-l border-border",
+                viewMode === "map"
+                  ? "bg-primary text-primary-foreground"
+                  : "bg-card text-muted-foreground hover:bg-muted",
+              )}
+            >
+              <Map className="w-3.5 h-3.5" />
+              Map
+            </button>
+          </div>
         </div>
 
-        {/* Grid */}
+        {/* Content */}
         {isLoading ? (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
-            {[...Array(6)].map((_, i) => <Skeleton key={i} className="h-80 rounded-2xl" />)}
-          </div>
+          viewMode === "list" ? (
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
+              {[...Array(6)].map((_, i) => <Skeleton key={i} className="h-80 rounded-2xl" />)}
+            </div>
+          ) : (
+            <Skeleton className="h-[520px] rounded-2xl" />
+          )
         ) : markets.length === 0 ? (
           <div className="py-24 text-center">
             <Store className="w-14 h-14 text-muted-foreground/30 mx-auto mb-4" />
@@ -281,6 +321,10 @@ export default function MarketsPage() {
               <Button className="gap-2">Register Your Market <ArrowRight className="w-4 h-4" /></Button>
             </Link>
           </div>
+        ) : viewMode === "map" ? (
+          <Suspense fallback={<Skeleton className="h-[520px] rounded-2xl" />}>
+            <MarketsMapView markets={markets} />
+          </Suspense>
         ) : (
           <>
             <p className="text-sm text-muted-foreground mb-4">

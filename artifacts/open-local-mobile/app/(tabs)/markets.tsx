@@ -1,7 +1,7 @@
 import { useListMarkets } from "@/lib/api-client";
 import { Feather } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
-import React, { useState } from "react";
+import React, { useState, useRef } from "react";
 import {
   ActivityIndicator,
   FlatList,
@@ -27,6 +27,7 @@ const DAYS = [
   { key: "Tuesday", label: "Tue" },
 ] as const;
 
+const FLORIDA_CENTER = { latitude: 27.6, longitude: -82.5 };
 function MarketListCard({
   market,
   colors,
@@ -163,6 +164,97 @@ const cardStyles = StyleSheet.create({
   },
 });
 
+function MarketsMapView({
+  markets,
+  colors,
+  onMarketPress,
+}: {
+  markets: Market[];
+  colors: ReturnType<typeof useColors>;
+  onMarketPress: (market: Market) => void;
+}) {
+  // Web doesn't support react-native-maps — show a placeholder instead
+  if (Platform.OS === "web") {
+    return (
+      <View style={mapStyles.webFallback}>
+        <Feather name="map" size={36} color={colors.mutedForeground} />
+        <Text style={[mapStyles.webFallbackText, { color: colors.mutedForeground }]}>
+          Map view is available in the mobile app
+        </Text>
+      </View>
+    );
+  }
+
+  // Lazy-require so the web bundle never tries to import react-native-maps
+  // eslint-disable-next-line @typescript-eslint/no-require-imports
+  const Maps = require("react-native-maps") as typeof import("react-native-maps");
+  const MapView = Maps.default;
+  const { Marker, Callout } = Maps;
+
+  const mappedMarkets = markets.filter(
+    (m) => m.latitude != null && m.longitude != null,
+  );
+
+  return (
+    <View style={StyleSheet.absoluteFill}>
+      <MapView
+        style={StyleSheet.absoluteFill}
+        initialRegion={{
+          ...FLORIDA_CENTER,
+          latitudeDelta: 4,
+          longitudeDelta: 4,
+        }}
+        showsUserLocation
+        showsMyLocationButton={false}
+        showsCompass={false}
+        toolbarEnabled={false}
+        pitchEnabled={false}
+        rotateEnabled={false}
+      >
+        {mappedMarkets.map((m) => (
+          <Marker
+            key={m.id}
+            coordinate={{ latitude: m.latitude!, longitude: m.longitude! }}
+            onPress={() => onMarketPress(m)}
+          >
+            {/* Custom green pin */}
+            <View style={mapStyles.pin}>
+              <Feather name="map-pin" size={13} color="#fff" />
+            </View>
+
+            <Callout tooltip={false} onPress={() => onMarketPress(m)}>
+              <View style={mapStyles.callout}>
+                <Text style={mapStyles.calloutName} numberOfLines={2}>
+                  {m.name}
+                </Text>
+                <Text style={mapStyles.calloutCity}>
+                  {m.city}, {m.region}
+                </Text>
+                {(m.day || m.time) && (
+                  <Text style={mapStyles.calloutSchedule}>
+                    {[m.day, m.time].filter(Boolean).join(" · ")}
+                  </Text>
+                )}
+                {m.slug && (
+                  <Text style={[mapStyles.calloutLink, { color: MARKET_COLOR }]}>
+                    View Market →
+                  </Text>
+                )}
+              </View>
+            </Callout>
+          </Marker>
+        ))}
+      </MapView>
+
+      {/* Count badge */}
+      <View style={[mapStyles.badge, { backgroundColor: `${colors.card}F0` }]}>
+        <Text style={[mapStyles.badgeText, { color: colors.foreground }]}>
+          {mappedMarkets.length} market{mappedMarkets.length !== 1 ? "s" : ""} on map
+        </Text>
+      </View>
+    </View>
+  );
+}
 export default function MarketsScreen() {
   const colors = useColors();
   const insets = useSafeAreaInsets();
@@ -170,6 +262,7 @@ export default function MarketsScreen() {
   const [search, setSearch] = useState("");
   const [dayFilter, setDayFilter] = useState<string | undefined>(undefined);
   const [refreshing, setRefreshing] = useState(false);
+  const [viewMode, setViewMode] = useState<ViewMode>("list");
 
   const topPad = Platform.OS === "web" ? 67 : insets.top;
   const bottomPad = Platform.OS === "web" ? 34 : insets.bottom + 60;
@@ -190,26 +283,70 @@ export default function MarketsScreen() {
     setRefreshing(false);
   };
 
+  const navigateToMarket = (market: Market) => {
+    if (market.slug) {
+      router.push(`/market/${market.slug}`);
+    }
+  };
+
   const s = styles(colors, topPad, bottomPad);
 
   return (
     <View style={s.container}>
       <View style={[s.header, { paddingTop: topPad + 12 }]}>
-        <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between" }}>
-          <View>
+        <View style={s.titleRow}>
+          <View style={{ flex: 1 }}>
             <Text style={[s.title, { color: colors.foreground }]}>Markets</Text>
             <Text style={[s.subtitle, { color: colors.mutedForeground }]}>
               Florida Farmers Market Directory
             </Text>
           </View>
-          <TouchableOpacity
-            onPress={() => router.push("/market-register")}
-            style={[styles2.registerBtn, { backgroundColor: "#166534" }]}
-            activeOpacity={0.85}
-          >
-            <Feather name="plus" size={14} color="#fff" />
-            <Text style={styles2.registerBtnText}>List yours</Text>
-          </TouchableOpacity>
+
+          {/* Register button + List/Map toggle */}
+          <View style={{ flexDirection: "row", alignItems: "center", gap: 8, marginTop: 4 }}>
+            <TouchableOpacity
+              onPress={() => router.push("/market-register")}
+              style={[styles2.registerBtn, { backgroundColor: "#166534" }]}
+              activeOpacity={0.85}
+            >
+              <Feather name="plus" size={14} color="#fff" />
+              <Text style={styles2.registerBtnText}>List yours</Text>
+            </TouchableOpacity>
+
+            <View style={[s.toggle, { borderColor: colors.border }]}>
+              <TouchableOpacity
+                onPress={() => setViewMode("list")}
+                style={[
+                  s.toggleBtn,
+                  viewMode === "list"
+                    ? { backgroundColor: MARKET_COLOR }
+                    : { backgroundColor: colors.card },
+                ]}
+              >
+                <Feather
+                  name="list"
+                  size={15}
+                  color={viewMode === "list" ? "#fff" : colors.mutedForeground}
+                />
+              </TouchableOpacity>
+              <TouchableOpacity
+                onPress={() => setViewMode("map")}
+                style={[
+                  s.toggleBtn,
+                  { borderLeftWidth: 1, borderLeftColor: colors.border },
+                  viewMode === "map"
+                    ? { backgroundColor: MARKET_COLOR }
+                    : { backgroundColor: colors.card },
+                ]}
+              >
+                <Feather
+                  name="map"
+                  size={15}
+                  color={viewMode === "map" ? "#fff" : colors.mutedForeground}
+                />
+              </TouchableOpacity>
+            </View>
+          </View>
         </View>
 
         {/* Search */}
@@ -265,13 +402,23 @@ export default function MarketsScreen() {
             Could not load markets
           </Text>
           <TouchableOpacity
-            style={[s.retryBtn, { backgroundColor: "#166534" }]}
+            style={[s.retryBtn, { backgroundColor: "#166634" }]}
             onPress={() => refetch()}
           >
             <Text style={s.retryText}>Retry</Text>
           </TouchableOpacity>
         </View>
+      ) : viewMode === "map" ? (
+        /* ── Map mode ── */
+        <View style={{ flex: 1 }}>
+          <MarketsMapView
+            markets={markets ?? []}
+            colors={colors}
+            onMarketPress={navigateToMarket}
+          />
+        </View>
       ) : (
+        /* ── List mode ── */
         <FlatList
           data={markets ?? []}
           keyExtractor={(item: Market) => String(item.id)}
@@ -279,11 +426,7 @@ export default function MarketsScreen() {
             <MarketListCard
               market={item}
               colors={colors}
-              onPress={() =>
-                item.slug
-                  ? router.push(`/market/${item.slug}`)
-                  : undefined
-              }
+              onPress={() => navigateToMarket(item)}
             />
           )}
           contentContainerStyle={{ paddingTop: 12, paddingBottom: bottomPad }}
@@ -324,6 +467,12 @@ const styles = (
       borderBottomColor: colors.border,
       backgroundColor: colors.background,
     },
+    titleRow: {
+      flexDirection: "row",
+      alignItems: "flex-start",
+      marginBottom: 10,
+      gap: 10,
+    },
     title: {
       fontSize: 28,
       fontFamily: "DMSans_700Bold",
@@ -333,7 +482,20 @@ const styles = (
       fontSize: 13,
       fontFamily: "DMSans_400Regular",
       marginTop: 2,
-      marginBottom: 10,
+    },
+    toggle: {
+      flexDirection: "row",
+      borderWidth: 1,
+      borderRadius: 8,
+      overflow: "hidden",
+      alignSelf: "flex-start",
+      marginTop: 4,
+    },
+    toggleBtn: {
+      width: 36,
+      height: 34,
+      alignItems: "center",
+      justifyContent: "center",
     },
     searchRow: {
       flexDirection: "row",
@@ -392,3 +554,83 @@ const styles = (
       fontSize: 14,
     },
   });
+
+const MARKET_COLOR = "#166534";
+
+const mapStyles = StyleSheet.create({
+  pin: {
+    width: 28,
+    height: 28,
+    borderRadius: 14,
+    backgroundColor: MARKET_COLOR,
+    borderWidth: 2.5,
+    borderColor: "#fff",
+    alignItems: "center",
+    justifyContent: "center",
+    shadowColor: "#000",
+    shadowOpacity: 0.25,
+    shadowRadius: 4,
+    shadowOffset: { width: 0, height: 2 },
+    elevation: 4,
+  },
+  callout: {
+    minWidth: 160,
+    maxWidth: 220,
+    padding: 10,
+    gap: 3,
+  },
+  calloutName: {
+    fontSize: 13,
+    fontFamily: "DMSans_600SemiBold",
+    fontWeight: "600",
+    color: "#111",
+  },
+  calloutCity: {
+    fontSize: 11,
+    fontFamily: "DMSans_400Regular",
+    color: "#666",
+  },
+  calloutSchedule: {
+    fontSize: 11,
+    fontFamily: "DMSans_400Regular",
+    color: "#555",
+    marginTop: 1,
+  },
+  calloutLink: {
+    fontSize: 12,
+    fontFamily: "DMSans_600SemiBold",
+    fontWeight: "600",
+    marginTop: 4,
+  },
+  badge: {
+    position: "absolute",
+    bottom: 16,
+    left: 16,
+    borderRadius: 20,
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    shadowColor: "#000",
+    shadowOpacity: 0.12,
+    shadowRadius: 6,
+    shadowOffset: { width: 0, height: 2 },
+    elevation: 3,
+  },
+  badgeText: {
+    fontSize: 12,
+    fontFamily: "DMSans_500Medium",
+    fontWeight: "500",
+  },
+  webFallback: {
+    flex: 1,
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 12,
+  },
+  webFallbackText: {
+    fontSize: 14,
+    fontFamily: "DMSans_400Regular",
+    textAlign: "center",
+  },
+});
+
+type ViewMode = "list" | "map";
