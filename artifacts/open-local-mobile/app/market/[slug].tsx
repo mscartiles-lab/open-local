@@ -14,7 +14,7 @@ import {
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
-import { useGetMarket, useListVendors } from "@/lib/api-client";
+import { useGetMarket, useListVendors, getListVendorsQueryKey } from "@/lib/api-client";
 import { useColors } from "@/hooks/useColors";
 
 export default function MarketDetailScreen() {
@@ -25,9 +25,10 @@ export default function MarketDetailScreen() {
 
   const { data: market, isLoading, isError } = useGetMarket(slug ?? "");
 
+  const vendorParams = market ? { marketName: market.name } : undefined;
   const { data: marketVendors, isLoading: vendorsLoading } = useListVendors(
-    market ? { marketName: market.name } : undefined,
-    { query: { enabled: !!market } },
+    vendorParams,
+    { query: { enabled: !!market, queryKey: getListVendorsQueryKey(vendorParams) } },
   );
 
   const bottomPad = Platform.OS === "web" ? 34 : insets.bottom + 16;

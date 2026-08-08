@@ -36,6 +36,7 @@ import {
   X,
 } from "lucide-react";
 import Layout from "@/components/layout/Layout";
+import { LocationPicker } from "@/components/LocationPicker";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -133,6 +134,8 @@ export default function Submit() {
   const [step, setStep] = useState(1);
   const [showOptionalContact, setShowOptionalContact] = useState(false);
   const [geolocating, setGeolocating] = useState(false);
+  const [pickupLat, setPickupLat] = useState<number | null>(null);
+  const [pickupLng, setPickupLng] = useState<number | null>(null);
   const [isUploading, setIsUploading] = useState(false);
   const [uploadError, setUploadError] = useState<string | null>(null);
   const [verification, setVerification] = useState<VerificationState | null>(
@@ -230,6 +233,8 @@ export default function Submit() {
       openDays: values.openDays?.length ? values.openDays : null,
       openHours: values.openHours || null,
       howToOrder: values.howToOrder?.length ? values.howToOrder.join(", ") : null,
+      latitude: pickupLat ?? null,
+      longitude: pickupLng ?? null,
     };
 
     startVerification.mutate(
@@ -563,6 +568,20 @@ export default function Submit() {
                       {...form.register("pickupAddress")}
                     />
                   </div>
+                </Field>
+
+                {/* Pin exact location */}
+                <Field
+                  label="Pin your exact pickup spot"
+                  hint="Drag the pin or click the map to mark where customers should come. Helps shoppers find you on our map."
+                >
+                  <LocationPicker
+                    hint={form.watch("pickupAddress") || form.watch("location")}
+                    onChange={(lat, lng) => {
+                      setPickupLat(lat);
+                      setPickupLng(lng);
+                    }}
+                  />
                 </Field>
 
                 {/* Days open */}

@@ -28,6 +28,7 @@ import {
   useListVendors,
   getGetMarketQueryKey,
   getListMarketsQueryKey,
+  getListVendorsQueryKey,
 } from "@workspace/api-client-react";
 import { useUser } from "@/context/UserContext";
 import { useQueryClient } from "@tanstack/react-query";
@@ -44,9 +45,10 @@ export default function MarketDetailPage() {
     query: { enabled: !!slug, queryKey: getGetMarketQueryKey(slug ?? "") },
   });
 
+  const vendorParams = market ? { marketName: market.name } : undefined;
   const { data: marketVendors, isLoading: vendorsLoading } = useListVendors(
-    market ? { marketName: market.name } : undefined,
-    { query: { enabled: !!market } },
+    vendorParams,
+    { query: { enabled: !!market, queryKey: getListVendorsQueryKey(vendorParams) } },
   );
 
   const claimM = useClaimMarket();
