@@ -229,6 +229,25 @@ export default function MoreScreen() {
           </>
         )}
 
+        {/* For Businesses section */}
+        <Text style={[s.sectionLabel, { marginTop: 20 }]}>For Businesses</Text>
+        <View style={s.card}>
+          <TouchableOpacity
+            style={s.row}
+            onPress={() => router.push("/business-register" as any)}
+            activeOpacity={0.7}
+          >
+            <View style={[s.iconWrap, { backgroundColor: colors.primary + "18" }]}>
+              <Feather name="map-pin" size={18} color={colors.primary} />
+            </View>
+            <View style={s.rowText}>
+              <Text style={s.rowLabel}>Pin your business</Text>
+              <Text style={s.rowSubtitle}>List your shop, café, or local spot</Text>
+            </View>
+            <Feather name="chevron-right" size={18} color={colors.mutedForeground} />
+          </TouchableOpacity>
+        </View>
+
         <Text style={[s.sectionLabel, { marginTop: 20 }]}>Resources</Text>
         <View style={s.card}>
           {MENU_ITEMS.map((item, i) => (
