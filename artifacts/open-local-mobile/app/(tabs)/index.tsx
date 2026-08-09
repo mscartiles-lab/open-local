@@ -25,7 +25,6 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import Avatar from "@/components/Avatar";
 import { MiniMap, type MapPin } from "@/components/MiniMap";
-import { OnboardingGate } from "@/components/OnboardingModal";
 import { VendorCard } from "@/components/VendorCard";
 import { useAuth } from "@/context/AuthContext";
 import { useColors } from "@/hooks/useColors";
@@ -391,8 +390,6 @@ export default function TheLocalsScreen() {
         bounces
       />
 
-      {/* Welcome popup — shown once to new users */}
-      <OnboardingGate />
     </View>
   );
 }
