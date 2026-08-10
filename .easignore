@@ -33,8 +33,9 @@ artifacts/api-server
 artifacts/open-local
 artifacts/mockup-sandbox
 
-# ── Shared libraries (already vendored into artifacts/open-local-mobile/lib/) ─
-lib
+# ── Root-level shared libraries (already vendored into mobile/lib/) ───────────
+# Use /lib (root-anchored) so artifacts/open-local-mobile/lib/ stays included.
+/lib
 
 # ── Large asset/attachment directories ────────────────────────────────────────
 attached_assets
