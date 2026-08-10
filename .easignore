@@ -1,9 +1,9 @@
 # EAS archive exclusions (git root).
-# IMPORTANT: When .easignore exists, EAS replaces ALL .gitignore rules with this
-# file plus only "node_modules" and ".git" as defaults. Every path normally
-# covered by .gitignore must be explicitly listed here.
+# IMPORTANT: When .easignore exists, EAS replaces ALL .gitignore rules with
+# this file plus only "node_modules" and ".git" as defaults. Every path
+# normally covered by .gitignore must be explicitly listed here too.
 
-# ── Workspace-level gitignored paths (no longer auto-excluded) ────────────────
+# ── Workspace-level gitignored paths (no longer auto-excluded) ───────────────
 .local
 .cache
 tmp
@@ -13,19 +13,30 @@ dist
 *.tsbuildinfo
 out-tsc
 
-# ── pnpm workspace files (prevent pnpm detection; yarn.lock in mobile dir wins) ──
+# ── pnpm workspace files (prevent pnpm detection; yarn.lock in mobile wins) ──
 pnpm-lock.yaml
 pnpm-workspace.yaml
 
-# ── Non-mobile workspace packages (mobile build only needs open-local-mobile/) ──
+# ── Root-level workspace files that would confuse the EAS build worker ────────
+# The root package.json has a preinstall hook that exits 1 for non-pnpm.
+# Using leading / to anchor to root only (not to artifacts/open-local-mobile/).
+/package.json
+/.npmrc
+/tsconfig.base.json
+/tsconfig.json
+/.replit
+/.replitignore
+/replit.md
+
+# ── Non-mobile workspace packages ─────────────────────────────────────────────
 artifacts/api-server
 artifacts/open-local
 artifacts/mockup-sandbox
 
-# ── Shared libraries (already vendored into artifacts/open-local-mobile/lib/) ──
+# ── Shared libraries (already vendored into artifacts/open-local-mobile/lib/) ─
 lib
 
-# ── Large asset/attachment directories not needed for native build ─────────────
+# ── Large asset/attachment directories ────────────────────────────────────────
 attached_assets
 docs
 scripts
