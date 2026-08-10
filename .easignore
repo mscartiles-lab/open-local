@@ -1,17 +1,36 @@
-# Exclude pnpm workspace files so EAS detects yarn (from artifacts/open-local-mobile/yarn.lock)
+# EAS archive exclusions (git root).
+# IMPORTANT: When .easignore exists, EAS replaces ALL .gitignore rules with this
+# file plus only "node_modules" and ".git" as defaults. Every path normally
+# covered by .gitignore must be explicitly listed here.
+
+# ── Workspace-level gitignored paths (no longer auto-excluded) ────────────────
+.local
+.cache
+tmp
+dist
+.expo
+.expo-shared
+*.tsbuildinfo
+out-tsc
+
+# ── pnpm workspace files (prevent pnpm detection; yarn.lock in mobile dir wins) ──
 pnpm-lock.yaml
 pnpm-workspace.yaml
 
-# Exclude all other workspace packages — the mobile build only needs artifacts/open-local-mobile/
-artifacts/api-server/
-artifacts/open-local/
-artifacts/mockup-sandbox/
+# ── Non-mobile workspace packages (mobile build only needs open-local-mobile/) ──
+artifacts/api-server
+artifacts/open-local
+artifacts/mockup-sandbox
 
-# Exclude shared libraries (already vendored into artifacts/open-local-mobile/lib/)
-lib/
+# ── Shared libraries (already vendored into artifacts/open-local-mobile/lib/) ──
+lib
 
-# Exclude agent memory, docs, scripts, and pasted assets — not needed for the build
-.agents/
-attached_assets/
-docs/
-scripts/
+# ── Large asset/attachment directories not needed for native build ─────────────
+attached_assets
+docs
+scripts
+.agents
+
+# ── IDE / editor artefacts ────────────────────────────────────────────────────
+.idea
+.vscode
