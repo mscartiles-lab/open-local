@@ -1,0 +1,30 @@
+# EAS archive exclusions — patterns are relative to the git root
+# This file must live in the Expo app root (same dir as app.json) for EAS to read it.
+
+# Exclude pnpm workspace files so EAS detects yarn (from yarn.lock in this directory)
+pnpm-lock.yaml
+pnpm-workspace.yaml
+
+# Exclude all other workspace packages — mobile build only needs this directory
+artifacts/api-server
+artifacts/open-local
+artifacts/mockup-sandbox
+
+# Exclude shared libraries (api-client already vendored into artifacts/open-local-mobile/lib/)
+lib
+
+# Exclude large asset/attachment directories not needed for native build
+attached_assets
+docs
+scripts
+
+# Exclude agent memory
+.agents
+
+# Exclude the mobile app's own build outputs (Metro bundles, expo export)
+artifacts/open-local-mobile/dist
+artifacts/open-local-mobile/.expo
+artifacts/open-local-mobile/.expo-shared
+
+# Exclude any stray node_modules (belt-and-suspenders, should be gitignored already)
+node_modules
