@@ -45,3 +45,6 @@ scripts
 # ── IDE / editor artefacts ────────────────────────────────────────────────────
 .idea
 .vscode
+
+# ── Replit / EAS CLI local config (not needed on build server) ───────────────
+.config
