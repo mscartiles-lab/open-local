@@ -1,2 +1,17 @@
+# Exclude pnpm workspace files so EAS detects yarn (from artifacts/open-local-mobile/yarn.lock)
 pnpm-lock.yaml
 pnpm-workspace.yaml
+
+# Exclude all other workspace packages — the mobile build only needs artifacts/open-local-mobile/
+artifacts/api-server/
+artifacts/open-local/
+artifacts/mockup-sandbox/
+
+# Exclude shared libraries (already vendored into artifacts/open-local-mobile/lib/)
+lib/
+
+# Exclude agent memory, docs, scripts, and pasted assets — not needed for the build
+.agents/
+attached_assets/
+docs/
+scripts/
