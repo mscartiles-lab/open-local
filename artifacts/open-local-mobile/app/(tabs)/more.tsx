@@ -31,6 +31,20 @@ type MenuItem = {
 
 const MENU_ITEMS: MenuItem[] = [
   {
+    id: "wholesale",
+    icon: "package",
+    label: "Wholesale Exchange",
+    subtitle: "Bulk trade between Florida vendors",
+    route: "/wholesale",
+  },
+  {
+    id: "markets",
+    icon: "map-pin",
+    label: "Market Directory",
+    subtitle: "Florida farmers markets near you",
+    route: "/markets",
+  },
+  {
     id: "messages",
     icon: "message-circle",
     label: "Messages",
