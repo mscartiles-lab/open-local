@@ -1,4 +1,4 @@
-import { useState, useCallback, useEffect, useRef } from "react";
+import { useState, useCallback, useEffect, useRef, useMemo } from "react";
 import { useParams, Link } from "wouter";
 import {
   Loader2,
@@ -55,12 +55,14 @@ import {
   useCreateWholesaleListing,
   useUpdateWholesaleListing,
   useDeleteWholesaleListing,
+  useUpdateMarket,
   getListVendorProductsQueryKey,
   getListMarketsQueryKey,
   getListProductsQueryKey,
   getGetLocalNowFeedQueryKey,
   getGetMarketplaceStatsQueryKey,
   getListWholesaleQueryKey,
+  getGetMarketQueryKey,
   type Vendor,
   type Product,
   type Market,
@@ -80,7 +82,7 @@ import ProductVariationsManager from "@/components/ProductVariationsManager";
 import VisitRequestsPanel from "@/components/VisitRequestsPanel";
 import ProductUploadDialog, { type ListingType } from "@/components/ProductUploadDialog";
 
-type Tab = "analytics" | "inventory" | "store" | "markets" | "wholesale" | "settings";
+type Tab = "analytics" | "inventory" | "store" | "markets" | "wholesale" | "settings" | "my-market";
 
 const SESSION_OTP_KEY = "ol_dashboard_verified";
 
@@ -1332,6 +1334,331 @@ function MarketCard({ market }: { market: Market }) {
   );
 }
 
+// ─── Market manager tab ──────────────────────────────────────────────────────
+
+const MARKET_DAYS = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"];
+
+interface MarketForm {
+  name: string;
+  city: string;
+  region: string;
+  address: string;
+  day: string;
+  time: string;
+  description: string;
+  contactEmail: string;
+  websiteUrl: string;
+  instagramHandle: string;
+  facebookUrl: string;
+  twitterHandle: string;
+  logoUrl: string;
+  featuredImageUrl: string;
+  tags: string; // comma-separated
+}
+
+function marketToForm(m: Market): MarketForm {
+  return {
+    name: m.name ?? "",
+    city: m.city ?? "",
+    region: m.region ?? "",
+    address: m.address ?? "",
+    day: m.day ?? "",
+    time: m.time ?? "",
+    description: m.description ?? "",
+    contactEmail: m.contactEmail ?? "",
+    websiteUrl: m.websiteUrl ?? "",
+    instagramHandle: m.instagramHandle ?? "",
+    facebookUrl: m.facebookUrl ?? "",
+    twitterHandle: m.twitterHandle ?? "",
+    logoUrl: m.logoUrl ?? "",
+    featuredImageUrl: m.featuredImageUrl ?? "",
+    tags: (m.tags ?? []).join(", "),
+  };
+}
+
+function MarketManagerTab({
+  market,
+  onSaved,
+}: {
+  market: Market;
+  onSaved: (updated: Market) => void;
+}) {
+  const { toast } = useToast();
+  const queryClient = useQueryClient();
+  const updateMarket = useUpdateMarket();
+  const [form, setForm] = useState<MarketForm>(() => marketToForm(market));
+
+  // Sync form if the market prop changes (e.g. after a save)
+  useEffect(() => {
+    setForm(marketToForm(market));
+  }, [market.slug]);
+
+  const setF = (k: keyof MarketForm) => (v: string) =>
+    setForm((prev) => ({ ...prev, [k]: v }));
+
+  const handleSave = async () => {
+    try {
+      const tagsArr = form.tags
+        .split(",")
+        .map((t) => t.trim())
+        .filter(Boolean);
+
+      // Helper: send null for cleared optional fields so the PATCH can wipe them;
+      // for required fields we still use undefined to omit when blank.
+      const opt = (v: string) => v.trim() || null;
+
+      const payload: Record<string, unknown> = {
+        // Required — omit rather than send blank
+        name: form.name.trim() || undefined,
+        city: form.city.trim() || undefined,
+        region: form.region.trim() || undefined,
+        // Optional — send null to clear, value to set
+        address: opt(form.address),
+        day: form.day || null,
+        time: opt(form.time),
+        description: opt(form.description),
+        contactEmail: opt(form.contactEmail),
+        websiteUrl: opt(form.websiteUrl),
+        instagramHandle: opt(form.instagramHandle),
+        facebookUrl: opt(form.facebookUrl),
+        twitterHandle: opt(form.twitterHandle),
+        logoUrl: opt(form.logoUrl),
+        featuredImageUrl: opt(form.featuredImageUrl),
+        tags: tagsArr,
+      };
+
+      const marketSlug = market.slug ?? "";
+      const updated = await updateMarket.mutateAsync({
+        slug: marketSlug,
+        data: payload as Partial<{
+          name: string;
+          city: string;
+          region: string;
+          address: string;
+          day: string;
+          time: string;
+          description: string;
+          contactEmail: string;
+          websiteUrl: string;
+          instagramHandle: string;
+          facebookUrl: string;
+          twitterHandle: string;
+          logoUrl: string;
+          featuredImageUrl: string;
+          tags: string[];
+        }>,
+      });
+
+      // Invalidate the market detail queries so the public page refreshes
+      queryClient.invalidateQueries({ queryKey: getGetMarketQueryKey(marketSlug) });
+      queryClient.invalidateQueries({ queryKey: getListMarketsQueryKey() });
+
+      onSaved(updated);
+      toast({ title: "Market updated!", description: "Your listing changes are live." });
+    } catch {
+      toast({
+        title: "Save failed",
+        description: "Please check your inputs and try again.",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const Field = ({
+    label,
+    children,
+    hint,
+  }: {
+    label: string;
+    children: React.ReactNode;
+    hint?: string;
+  }) => (
+    <div>
+      <label className="mb-1 block text-sm font-semibold text-foreground">{label}</label>
+      {hint && <p className="mb-1.5 text-xs text-muted-foreground">{hint}</p>}
+      {children}
+    </div>
+  );
+
+  const SectionHeading = ({
+    icon: Icon,
+    label,
+  }: {
+    icon: React.ElementType;
+    label: string;
+  }) => (
+    <h3 className="flex items-center gap-2 border-b border-border pb-3 mb-5 text-base font-bold text-foreground">
+      <Icon className="h-4 w-4 text-primary" />
+      {label}
+    </h3>
+  );
+
+  const saving = updateMarket.isPending;
+
+  return (
+    <div className="max-w-2xl space-y-10">
+      {/* Market identity header */}
+      <div className="flex items-center gap-4 rounded-xl border border-border bg-muted/40 p-4">
+        {market.logoUrl ? (
+          <img
+            src={market.logoUrl}
+            alt={market.name}
+            className="h-14 w-14 rounded-lg object-cover border border-border shrink-0"
+          />
+        ) : (
+          <div className="flex h-14 w-14 items-center justify-center rounded-lg bg-primary/10 shrink-0">
+            <MapPin className="h-6 w-6 text-primary" />
+          </div>
+        )}
+        <div className="min-w-0">
+          <p className="font-bold text-foreground truncate">{market.name}</p>
+          <p className="text-sm text-muted-foreground">
+            {market.city}, {market.region}
+            {market.day ? ` · ${market.day}` : ""}
+          </p>
+          <Link href={`/markets/${market.slug}`} target="_blank">
+            <span className="inline-flex items-center gap-1 text-xs text-primary hover:underline mt-0.5">
+              <ExternalLink className="h-3 w-3" />
+              View public listing
+            </span>
+          </Link>
+        </div>
+      </div>
+
+      {/* ── Basic info ─────────────────────────────────────── */}
+      <div>
+        <SectionHeading icon={Store} label="Basic Info" />
+        <div className="space-y-5">
+          <Field label="Market name">
+            <Input value={form.name} onChange={(e) => setF("name")(e.target.value)} />
+          </Field>
+          <Field label="Description">
+            <textarea
+              value={form.description}
+              onChange={(e) => setF("description")(e.target.value)}
+              placeholder="Tell shoppers and vendors about your market…"
+              className="flex w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring min-h-[100px]"
+            />
+          </Field>
+          <div className="grid grid-cols-2 gap-4">
+            <Field label="City">
+              <Input value={form.city} onChange={(e) => setF("city")(e.target.value)} placeholder="Tampa" />
+            </Field>
+            <Field label="Region / State">
+              <Input value={form.region} onChange={(e) => setF("region")(e.target.value)} placeholder="FL" />
+            </Field>
+          </div>
+          <Field label="Street address">
+            <Input value={form.address} onChange={(e) => setF("address")(e.target.value)} placeholder="123 Main St" />
+          </Field>
+          <Field label="Tags" hint="Comma-separated keywords (e.g. organic, arts, crafts)">
+            <Input
+              value={form.tags}
+              onChange={(e) => setF("tags")(e.target.value)}
+              placeholder="organic, arts, crafts"
+            />
+          </Field>
+        </div>
+      </div>
+
+      {/* ── Schedule ───────────────────────────────────────── */}
+      <div>
+        <SectionHeading icon={Calendar} label="Schedule" />
+        <div className="grid grid-cols-2 gap-4">
+          <Field label="Day">
+            <select
+              value={form.day}
+              onChange={(e) => setF("day")(e.target.value)}
+              className="w-full px-3 py-2 rounded-md border border-input bg-background text-sm focus:outline-none focus:ring-2 focus:ring-ring"
+            >
+              <option value="">Choose…</option>
+              {MARKET_DAYS.map((d) => (
+                <option key={d} value={d}>
+                  {d}
+                </option>
+              ))}
+            </select>
+          </Field>
+          <Field label="Time" hint="">
+            <Input value={form.time} onChange={(e) => setF("time")(e.target.value)} placeholder="8am – 1pm" />
+          </Field>
+        </div>
+      </div>
+
+      {/* ── Contact & Social ───────────────────────────────── */}
+      <div>
+        <SectionHeading icon={Mail} label="Contact & Social" />
+        <div className="space-y-4">
+          <Field label="Contact email">
+            <Input
+              type="email"
+              value={form.contactEmail}
+              onChange={(e) => setF("contactEmail")(e.target.value)}
+              placeholder="manager@mymarket.com"
+            />
+          </Field>
+          <Field label="Website URL">
+            <Input value={form.websiteUrl} onChange={(e) => setF("websiteUrl")(e.target.value)} placeholder="https://mymarket.com" />
+          </Field>
+          <div className="grid grid-cols-2 gap-4">
+            <Field label="Instagram handle">
+              <Input value={form.instagramHandle} onChange={(e) => setF("instagramHandle")(e.target.value)} placeholder="mymarket" />
+            </Field>
+            <Field label="Facebook URL">
+              <Input value={form.facebookUrl} onChange={(e) => setF("facebookUrl")(e.target.value)} placeholder="https://facebook.com/…" />
+            </Field>
+          </div>
+          <Field label="Twitter / X handle">
+            <Input value={form.twitterHandle} onChange={(e) => setF("twitterHandle")(e.target.value)} placeholder="mymarket" />
+          </Field>
+        </div>
+      </div>
+
+      {/* ── Images ─────────────────────────────────────────── */}
+      <div>
+        <SectionHeading icon={ImageIcon} label="Images" />
+        <div className="space-y-4">
+          <Field label="Logo URL" hint="Square image, at least 200×200px">
+            <Input value={form.logoUrl} onChange={(e) => setF("logoUrl")(e.target.value)} placeholder="https://…" />
+            {form.logoUrl && (
+              <img
+                src={form.logoUrl}
+                alt="Logo preview"
+                className="mt-2 h-16 w-16 rounded-lg object-cover border border-border"
+                onError={(e) => { (e.target as HTMLImageElement).style.display = "none"; }}
+              />
+            )}
+          </Field>
+          <Field label="Banner / featured image URL" hint="Wide image for the market detail page hero">
+            <Input value={form.featuredImageUrl} onChange={(e) => setF("featuredImageUrl")(e.target.value)} placeholder="https://…" />
+            {form.featuredImageUrl && (
+              <img
+                src={form.featuredImageUrl}
+                alt="Banner preview"
+                className="mt-2 w-full h-28 rounded-lg object-cover border border-border"
+                onError={(e) => { (e.target as HTMLImageElement).style.display = "none"; }}
+              />
+            )}
+          </Field>
+        </div>
+      </div>
+
+      <div className="pt-2 border-t border-border">
+        <Button onClick={handleSave} disabled={saving} className="min-w-[140px]">
+          {saving ? (
+            <>
+              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+              Saving…
+            </>
+          ) : (
+            "Save changes"
+          )}
+        </Button>
+      </div>
+    </div>
+  );
+}
+
 // ─── Settings tab ────────────────────────────────────────────────────────────
 
 function SettingsTab({ vendor }: { vendor: Vendor }) {
@@ -1359,6 +1686,9 @@ export default function Dashboard() {
   const [uploadOpen, setUploadOpen] = useState(false);
   const [uploadType, setUploadType] = useState<ListingType>("regular");
 
+  // Managed market state — fetched once after OTP is verified
+  const [managedMarket, setManagedMarket] = useState<Market | null>(null);
+
   // Session-level 2FA: check once per browser session
   const [otpVerified, setOtpVerified] = useState(() => {
     if (typeof window === "undefined") return false;
@@ -1383,6 +1713,19 @@ export default function Dashboard() {
     queryClient.invalidateQueries({ queryKey: getGetLocalNowFeedQueryKey() });
     queryClient.invalidateQueries({ queryKey: getGetMarketplaceStatsQueryKey() });
   }
+
+  // Fetch the market this user manages (if any) once the session is established
+  useEffect(() => {
+    const sessionToken =
+      typeof window !== "undefined" ? window.localStorage.getItem("ol_session") : null;
+    if (!sessionToken) return;
+    fetch("/api/markets/mine", {
+      headers: { Authorization: `Bearer ${sessionToken}` },
+    })
+      .then((r) => (r.ok ? r.json() : null))
+      .then((data: Market | null) => setManagedMarket(data))
+      .catch(() => setManagedMarket(null));
+  }, []);
 
   const openAddProduct = (type: ListingType = "regular") => {
     setUploadType(type);
@@ -1421,14 +1764,20 @@ export default function Dashboard() {
 
   const tier = (user?.tier ?? "basic") as TierId;
 
-  const TABS: { id: Tab; label: string; icon: typeof BarChart3 }[] = [
-    { id: "analytics", label: "Analytics", icon: BarChart3 },
-    { id: "inventory", label: "Inventory", icon: Layers },
-    { id: "store", label: "Store Editor", icon: Store },
-    { id: "markets", label: "Find Markets", icon: MapPin },
-    { id: "wholesale", label: "Wholesale", icon: Box },
-    { id: "settings", label: "Settings", icon: Settings },
-  ];
+  const TABS: { id: Tab; label: string; icon: typeof BarChart3 }[] = useMemo(() => {
+    const base: { id: Tab; label: string; icon: typeof BarChart3 }[] = [
+      { id: "analytics", label: "Analytics", icon: BarChart3 },
+      { id: "inventory", label: "Inventory", icon: Layers },
+      { id: "store", label: "Store Editor", icon: Store },
+      { id: "markets", label: "Find Markets", icon: MapPin },
+      { id: "wholesale", label: "Wholesale", icon: Box },
+      { id: "settings", label: "Settings", icon: Settings },
+    ];
+    if (managedMarket) {
+      base.splice(4, 0, { id: "my-market", label: "My Market", icon: Crown });
+    }
+    return base;
+  }, [managedMarket]);
 
   return (
     <Layout>
@@ -1507,6 +1856,12 @@ export default function Dashboard() {
         )}
         {activeTab === "store" && <StoreEditorTab vendor={vendor} tier={tier} />}
         {activeTab === "markets" && <MarketsTab />}
+        {activeTab === "my-market" && managedMarket && (
+          <MarketManagerTab
+            market={managedMarket}
+            onSaved={(updated) => setManagedMarket(updated)}
+          />
+        )}
         {activeTab === "wholesale" && <WholesaleTab vendorId={vendor.id} />}
         {activeTab === "settings" && <SettingsTab vendor={vendor} />}
       </div>

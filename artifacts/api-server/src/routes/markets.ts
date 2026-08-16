@@ -102,12 +102,23 @@ const RegisterMarketBodySchema = z.object({
   longitude: z.number().optional(),
 });
 
-const UpdateMarketBodySchema = RegisterMarketBodySchema.partial().omit({
-  name: true,
-  contactEmail: true,
-}).extend({
+// Allow null on optional fields so managers can clear them via PATCH
+const UpdateMarketBodySchema = z.object({
   name: z.string().min(2).optional(),
+  city: z.string().min(1).optional(),
+  region: z.string().optional(),
+  address: z.string().nullable().optional(),
+  day: z.string().nullable().optional(),
+  time: z.string().nullable().optional(),
+  description: z.string().nullable().optional(),
   contactEmail: z.string().email().optional(),
+  websiteUrl: z.string().url().nullable().optional().or(z.literal("").transform((): null => null)),
+  instagramHandle: z.string().nullable().optional(),
+  facebookUrl: z.string().url().nullable().optional().or(z.literal("").transform((): null => null)),
+  twitterHandle: z.string().nullable().optional(),
+  logoUrl: z.string().url().nullable().optional().or(z.literal("").transform((): null => null)),
+  featuredImageUrl: z.string().url().nullable().optional().or(z.literal("").transform((): null => null)),
+  tags: z.array(z.string()).optional(),
 });
 
 // ─── GET /api/markets ─────────────────────────────────────────────────────────
@@ -197,6 +208,26 @@ router.post("/markets/register", async (req, res): Promise<void> => {
   res.status(201).json(serializeMarket(market!));
 });
 
+// ─── GET /api/markets/mine ────────────────────────────────────────────────────
+// Registered BEFORE /markets/:slug so Express does not interpret "mine" as a slug.
+
+router.get("/markets/mine", requireAuth, async (req, res): Promise<void> => {
+  const { userId } = req as AuthRequest;
+
+  const [market] = await db
+    .select()
+    .from(marketsTable)
+    .where(eq(marketsTable.managerId, userId))
+    .limit(1);
+
+  if (!market) {
+    res.status(404).json({ error: "No managed market found" });
+    return;
+  }
+
+  res.json(serializeMarket(market));
+});
+
 // ─── GET /api/markets/:slug ───────────────────────────────────────────────────
 
 router.get("/markets/:slug", async (req, res): Promise<void> => {
@@ -238,26 +269,29 @@ router.patch("/markets/:slug", requireAuth, async (req, res): Promise<void> => {
   }
 
   const d = parsed.data;
-  const updates: Partial<typeof marketsTable.$inferInsert> = {};
+
+  // Build the update patch. We use `"key" in d` for nullable fields so that an
+  // explicitly sent null (i.e. the manager cleared the field) is preserved.
+  const updates: Record<string, unknown> = {};
   if (d.name !== undefined) updates.name = d.name;
   if (d.city !== undefined) updates.city = d.city;
   if (d.region !== undefined) updates.region = d.region;
-  if (d.address !== undefined) updates.address = d.address;
-  if (d.day !== undefined) updates.day = d.day;
-  if (d.time !== undefined) updates.time = d.time;
-  if (d.description !== undefined) updates.description = d.description;
+  if ("address" in d) updates.address = d.address ?? null;
+  if ("day" in d) updates.day = d.day ?? null;
+  if ("time" in d) updates.time = d.time ?? null;
+  if ("description" in d) updates.description = d.description ?? null;
   if (d.contactEmail !== undefined) updates.contactEmail = d.contactEmail;
-  if (d.websiteUrl !== undefined) updates.websiteUrl = d.websiteUrl;
-  if (d.instagramHandle !== undefined) updates.instagramHandle = d.instagramHandle;
-  if (d.facebookUrl !== undefined) updates.facebookUrl = d.facebookUrl;
-  if (d.twitterHandle !== undefined) updates.twitterHandle = d.twitterHandle;
-  if (d.logoUrl !== undefined) updates.logoUrl = d.logoUrl;
-  if (d.featuredImageUrl !== undefined) updates.featuredImageUrl = d.featuredImageUrl;
+  if ("websiteUrl" in d) updates.websiteUrl = d.websiteUrl ?? null;
+  if ("instagramHandle" in d) updates.instagramHandle = d.instagramHandle ?? null;
+  if ("facebookUrl" in d) updates.facebookUrl = d.facebookUrl ?? null;
+  if ("twitterHandle" in d) updates.twitterHandle = d.twitterHandle ?? null;
+  if ("logoUrl" in d) updates.logoUrl = d.logoUrl ?? null;
+  if ("featuredImageUrl" in d) updates.featuredImageUrl = d.featuredImageUrl ?? null;
   if (d.tags !== undefined) updates.tags = d.tags;
 
   const [updated] = await db
     .update(marketsTable)
-    .set(updates)
+    .set(updates as Partial<typeof marketsTable.$inferInsert>)
     .where(eq(marketsTable.id, market.id))
     .returning();
 
