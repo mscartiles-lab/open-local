@@ -2,18 +2,19 @@ import { useState, useMemo } from "react";
 import { useSearchLogger } from "@/hooks/use-search-logger";
 import { Link } from "wouter";
 import { motion } from "framer-motion";
-import { MapPin, Search, Store, Filter, Heart, LocateFixed, Loader2, X } from "lucide-react";
+import { MapPin, Search, Store, Filter, Heart, LocateFixed, Loader2, X, Map, List } from "lucide-react";
 import Layout from "@/components/layout/Layout";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Card, CardContent } from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { useListVendors, useListCategories, useListLocations } from "@workspace/api-client-react";
 import { useFavorites } from "@/hooks/use-favorites";
 import { useProximity, haversineMiles, PROXIMITY_PICKS, PROXIMITY_LABELS } from "@/hooks/use-proximity";
+import VendorsMapView from "@/components/VendorsMapView";
 
 export default function Vendors() {
+  const [view, setView] = useState<"list" | "map">("list");
   const [search, setSearch] = useState("");
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
   const [selectedLocation, setSelectedLocation] = useState<string | null>(null);
@@ -48,7 +49,24 @@ export default function Vendors() {
     <Layout>
       <div className="bg-muted border-b border-border py-12">
         <div className="container max-w-6xl mx-auto px-4">
-          <h1 className="text-5xl font-serif font-bold text-foreground mb-4">Florida Producers</h1>
+          <div className="flex items-start justify-between gap-4 mb-4">
+            <h1 className="text-5xl font-serif font-bold text-foreground">Florida Producers</h1>
+            {/* Map / List toggle */}
+            <div className="flex items-center gap-1 bg-background border border-border rounded-xl p-1 shrink-0 mt-1">
+              <button
+                onClick={() => setView("list")}
+                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-semibold transition-colors ${view === "list" ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:text-foreground"}`}
+              >
+                <List className="w-4 h-4" /> List
+              </button>
+              <button
+                onClick={() => setView("map")}
+                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-semibold transition-colors ${view === "map" ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:text-foreground"}`}
+              >
+                <Map className="w-4 h-4" /> Map
+              </button>
+            </div>
+          </div>
           <p className="text-xl text-muted-foreground max-w-2xl font-sans mb-8">
             Discover the independent makers, farmers, and artisans crafting small-batch goods in Florida.
           </p>
@@ -166,7 +184,17 @@ export default function Vendors() {
 
           {/* Main Content */}
           <div className="flex-1">
-            {isLoading ? (
+            {/* Map view */}
+            {view === "map" && (
+              isLoading ? (
+                <Skeleton className="h-[520px] w-full rounded-2xl" />
+              ) : (
+                <VendorsMapView vendors={vendors ?? []} />
+              )
+            )}
+
+            {/* List view */}
+            {view === "list" && (isLoading ? (
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
                 {[...Array(6)].map((_, i) => <Skeleton key={i} className="h-[400px] w-full" />)}
               </div>
@@ -220,7 +248,7 @@ export default function Vendors() {
                   </button>
                 )}
               </div>
-            )}
+            ))}
           </div>
         </div>
       </div>
