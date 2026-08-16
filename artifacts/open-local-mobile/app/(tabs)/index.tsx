@@ -345,7 +345,7 @@ export default function TheLocalsScreen() {
         }
         ListFooterComponent={
           <View style={{ backgroundColor: colors.background }}>
-            {beyondItems.length > 0 && userLocation ? (
+            {beyondItems.length > 0 && filterCenter ? (
               <>
                 <BeyondDivider
                   radius={mapRadius}
