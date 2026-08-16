@@ -74,6 +74,7 @@ import VendorOrdersPanel from "@/components/VendorOrdersPanel";
 import AnalyticsPanel from "@/components/AnalyticsPanel";
 import SupportRequestForm from "@/components/SupportRequestForm";
 import AdditionalLocationsPanel from "@/components/AdditionalLocationsPanel";
+import { LocationPicker } from "@/components/LocationPicker";
 import InventoryCsvTools from "@/components/InventoryCsvTools";
 import ProductVariationsManager from "@/components/ProductVariationsManager";
 import VisitRequestsPanel from "@/components/VisitRequestsPanel";
@@ -581,6 +582,8 @@ function StoreEditorTab({ vendor, tier }: { vendor: Vendor; tier: TierId }) {
   const [pickupAddress, setPickupAddress] = useState(vendor.pickupAddress ?? "");
   const [openHours, setOpenHours] = useState(vendor.openHours ?? "");
   const [howToOrder, setHowToOrder] = useState(vendor.howToOrder ?? "");
+  const [lat, setLat] = useState<number | null>(vendor.latitude ?? null);
+  const [lng, setLng] = useState<number | null>(vendor.longitude ?? null);
   const [saving, setSaving] = useState(false);
 
   // ── Appearance fields (Premium only) ────────────────────────────────────
@@ -634,6 +637,8 @@ function StoreEditorTab({ vendor, tier }: { vendor: Vendor; tier: TierId }) {
         pickupAddress: pickupAddress.trim() || undefined,
         openHours: openHours.trim() || undefined,
         howToOrder: howToOrder.trim() || undefined,
+        latitude: lat,
+        longitude: lng,
       };
       if (isPremium) {
         body.storeCustomizationEnabled = customEnabled;
@@ -730,6 +735,17 @@ function StoreEditorTab({ vendor, tier }: { vendor: Vendor; tier: TierId }) {
           </div>
           <Field label="How to order">
             <Input value={howToOrder} onChange={(e) => setHowToOrder(e.target.value)} placeholder="DM on Instagram, order online, walk-in…" />
+          </Field>
+          <Field label="Map pin location">
+            <p className="mb-2 text-xs text-muted-foreground">
+              Drop a pin so shoppers can find you on the map. Drag to fine-tune.
+            </p>
+            <LocationPicker
+              onChange={(newLat, newLng) => { setLat(newLat); setLng(newLng); }}
+              hint={pickupAddress || location}
+              initialLat={lat}
+              initialLng={lng}
+            />
           </Field>
         </div>
       </div>

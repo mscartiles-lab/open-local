@@ -2,6 +2,7 @@ import { Router, type IRouter } from "express";
 import { eq, and, ilike, or, sql, notExists, gt, isNull } from "drizzle-orm";
 import { db, vendorsTable, productsTable, usersTable, sessionsTable } from "@workspace/db";
 import { isAdminEmail } from "../lib/requireAdmin";
+import { requireAuth, type AuthRequest } from "../lib/requireAuth";
 import { emitEvent } from "../lib/webhooks";
 import { fireWelcome } from "../lib/onboarding";
 import { geocodeVendor } from "../lib/geocode";
@@ -182,7 +183,7 @@ router.get("/vendors/:id", async (req, res): Promise<void> => {
   res.json(GetVendorResponse.parse(row));
 });
 
-router.patch("/vendors/:id", async (req, res): Promise<void> => {
+router.patch("/vendors/:id", requireAuth, async (req, res): Promise<void> => {
   const params = UpdateVendorParams.safeParse(req.params);
   if (!params.success) {
     res.status(400).json({ error: params.error.message });
@@ -193,6 +194,32 @@ router.patch("/vendors/:id", async (req, res): Promise<void> => {
     res.status(400).json({ error: body.error.message });
     return;
   }
+
+  // Resolve the authenticated caller.
+  const userId = (req as AuthRequest).userId;
+  const [caller] = await db.select().from(usersTable).where(eq(usersTable.id, userId));
+  if (!caller) {
+    res.status(401).json({ error: "Not authenticated" });
+    return;
+  }
+
+  // Load the target vendor to verify ownership before mutating.
+  const [existing] = await db
+    .select()
+    .from(vendorsTable)
+    .where(eq(vendorsTable.id, params.data.id));
+  if (!existing) {
+    res.status(404).json({ error: "Vendor not found" });
+    return;
+  }
+
+  const isOwner = existing.contactEmail.toLowerCase() === caller.email.toLowerCase();
+  const isAdmin = caller.role === "admin" || isAdminEmail(caller.email);
+  if (!isOwner && !isAdmin) {
+    res.status(403).json({ error: "Forbidden" });
+    return;
+  }
+
   const [row] = await db
     .update(vendorsTable)
     .set(body.data)
