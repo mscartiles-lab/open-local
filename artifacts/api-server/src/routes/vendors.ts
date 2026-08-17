@@ -289,7 +289,7 @@ router.post("/vendors/geocode-missing", async (req, res): Promise<void> => {
   const missing = await db
     .select({ id: vendorsTable.id, zipCode: vendorsTable.zipCode, location: vendorsTable.location })
     .from(vendorsTable)
-    .where(isNull(vendorsTable.latitude));
+    .where(or(isNull(vendorsTable.latitude), isNull(vendorsTable.longitude)));
 
   let updated = 0;
   let failed = 0;
