@@ -16,8 +16,10 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import { useGetMarket, useListVendors, getListVendorsQueryKey } from "@/lib/api-client";
 import { useColors } from "@/hooks/useColors";
+import { useTranslation } from "react-i18next";
 
 export default function MarketDetailScreen() {
+  const { t } = useTranslation();
   const { slug } = useLocalSearchParams<{ slug: string }>();
   const colors = useColors();
   const insets = useSafeAreaInsets();
@@ -50,7 +52,7 @@ export default function MarketDetailScreen() {
   if (isLoading) {
     return (
       <View style={[s.container, s.center]}>
-        <Stack.Screen options={{ title: "Market" }} />
+        <Stack.Screen options={{ title: t("marketDetail.loadingTitle") }} />
         <ActivityIndicator color="#166534" />
       </View>
     );
@@ -59,11 +61,11 @@ export default function MarketDetailScreen() {
   if (isError || !market) {
     return (
       <View style={[s.container, s.center]}>
-        <Stack.Screen options={{ title: "Not Found" }} />
+        <Stack.Screen options={{ title: t("marketDetail.notFoundTitle") }} />
         <Feather name="map-pin" size={40} color={colors.mutedForeground} />
-        <Text style={[s.emptyTitle, { color: colors.foreground }]}>Market not found</Text>
+        <Text style={[s.emptyTitle, { color: colors.foreground }]}>{t("marketDetail.notFound")}</Text>
         <TouchableOpacity onPress={() => router.back()} style={[s.retryBtn, { backgroundColor: "#166534" }]}>
-          <Text style={s.retryText}>Go back</Text>
+          <Text style={s.retryText}>{t("marketDetail.goBack")}</Text>
         </TouchableOpacity>
       </View>
     );
@@ -71,7 +73,7 @@ export default function MarketDetailScreen() {
 
   return (
     <View style={[s.container, { paddingBottom: bottomPad }]}>
-      <Stack.Screen options={{ title: market.name, headerBackTitle: "Markets" }} />
+      <Stack.Screen options={{ title: market.name, headerBackTitle: t("marketDetail.backLabel") }} />
 
       <ScrollView showsVerticalScrollIndicator={false}>
         {/* Banner */}
@@ -119,7 +121,7 @@ export default function MarketDetailScreen() {
             <View style={[s.infoCard, { backgroundColor: colors.card, borderColor: colors.border }]}>
               <Feather name="calendar" size={18} color="#166534" />
               <View style={{ flex: 1 }}>
-                <Text style={[s.infoLabel, { color: colors.foreground }]}>{market.day ?? "Market day"}</Text>
+                <Text style={[s.infoLabel, { color: colors.foreground }]}>{market.day ?? t("marketDetail.marketDayFallback")}</Text>
                 {market.time && (
                   <Text style={[s.infoValue, { color: colors.mutedForeground }]}>{market.time}</Text>
                 )}
@@ -137,7 +139,7 @@ export default function MarketDetailScreen() {
               <Feather name="map-pin" size={18} color="#166534" />
               <View style={{ flex: 1 }}>
                 <Text style={[s.infoLabel, { color: colors.foreground }]}>{market.address}</Text>
-                <Text style={[s.infoValue, { color: "#166534" }]}>Tap to open in Maps</Text>
+                <Text style={[s.infoValue, { color: "#166534" }]}>{t("marketDetail.openInMaps")}</Text>
               </View>
               <Feather name="external-link" size={14} color={colors.mutedForeground} />
             </TouchableOpacity>
@@ -146,7 +148,7 @@ export default function MarketDetailScreen() {
           {/* Description */}
           {market.description && (
             <View>
-              <Text style={[s.sectionTitle, { color: colors.foreground }]}>About the market</Text>
+              <Text style={[s.sectionTitle, { color: colors.foreground }]}>{t("marketDetail.aboutMarket")}</Text>
               <Text style={[s.description, { color: colors.mutedForeground }]}>
                 {market.description}
               </Text>
@@ -156,7 +158,7 @@ export default function MarketDetailScreen() {
           {/* Tags */}
           {market.tags && market.tags.length > 0 && (
             <View>
-              <Text style={[s.sectionTitle, { color: colors.foreground }]}>Tags</Text>
+              <Text style={[s.sectionTitle, { color: colors.foreground }]}>{t("marketDetail.tags")}</Text>
               <View style={s.tagRow}>
                 {market.tags.map((tag) => (
                   <View key={tag} style={s.tag}>
@@ -169,7 +171,7 @@ export default function MarketDetailScreen() {
 
           {/* Vendors at this market */}
           <View>
-            <Text style={[s.sectionTitle, { color: colors.foreground }]}>Vendors at this market</Text>
+            <Text style={[s.sectionTitle, { color: colors.foreground }]}>{t("marketDetail.vendorsAtMarket")}</Text>
             {vendorsLoading ? (
               <View style={[s.infoCard, { backgroundColor: colors.card, borderColor: colors.border, justifyContent: "center" }]}>
                 <ActivityIndicator color="#166534" size="small" />
@@ -206,7 +208,7 @@ export default function MarketDetailScreen() {
             ) : (
               <View style={[s.emptyVendors, { backgroundColor: colors.card, borderColor: colors.border }]}>
                 <Feather name="shopping-bag" size={24} color={colors.mutedForeground} />
-                <Text style={[s.emptyVendorText, { color: colors.mutedForeground }]}>No vendors linked yet</Text>
+                <Text style={[s.emptyVendorText, { color: colors.mutedForeground }]}>{t("marketDetail.noVendorsLinked")}</Text>
               </View>
             )}
           </View>
@@ -219,7 +221,7 @@ export default function MarketDetailScreen() {
                 onPress={() => openLink(`mailto:${market.contactEmail}?subject=Vendor application — ${market.name}`)}
               >
                 <Feather name="mail" size={18} color="#fff" />
-                <Text style={s.actionBtnText}>Apply as a vendor</Text>
+                <Text style={s.actionBtnText}>{t("marketDetail.applyAsVendor")}</Text>
               </TouchableOpacity>
             )}
 
@@ -229,7 +231,7 @@ export default function MarketDetailScreen() {
                 onPress={() => openLink(market.websiteUrl!)}
               >
                 <Feather name="globe" size={18} color={colors.foreground} />
-                <Text style={[s.actionBtnText, { color: colors.foreground }]}>Visit website</Text>
+                <Text style={[s.actionBtnText, { color: colors.foreground }]}>{t("marketDetail.visitWebsite")}</Text>
               </TouchableOpacity>
             )}
 
@@ -249,7 +251,7 @@ export default function MarketDetailScreen() {
                 onPress={() => openLink(market.facebookUrl!)}
               >
                 <Feather name="facebook" size={18} color={colors.foreground} />
-                <Text style={[s.actionBtnText, { color: colors.foreground }]}>Facebook</Text>
+                <Text style={[s.actionBtnText, { color: colors.foreground }]}>{t("marketDetail.facebook")}</Text>
               </TouchableOpacity>
             )}
           </View>

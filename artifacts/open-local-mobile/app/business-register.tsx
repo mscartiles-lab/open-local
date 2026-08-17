@@ -1,6 +1,7 @@
 import { Feather } from "@expo/vector-icons";
 import { router } from "expo-router";
 import React, { useState } from "react";
+import { useTranslation } from "react-i18next";
 import {
   ActivityIndicator,
   Alert,
@@ -21,20 +22,12 @@ import { useColors } from "@/hooks/useColors";
 import { apiFetch } from "@/lib/api";
 import { TIERS, TIER_ORDER, type TierId } from "@/lib/tiers";
 
-const BUSINESS_TYPES = [
-  "Café",
-  "Restaurant",
-  "Bar / Brewery",
-  "Boutique",
-  "Gallery",
-  "Bookshop",
-  "Bakery",
-  "Farm Stand",
-  "Spa / Wellness",
-  "Fitness",
-  "Market",
-  "Other",
-];
+// Stable keys submitted to the server (English, never change)
+const BUSINESS_TYPE_KEYS = [
+  "Café", "Restaurant", "Bar / Brewery", "Boutique", "Gallery",
+  "Bookshop", "Bakery", "Farm Stand", "Spa / Wellness", "Fitness",
+  "Market", "Other",
+] as const;
 
 type Step = "basics" | "contact" | "tier" | "confirm";
 const STEPS: Step[] = ["basics", "contact", "tier", "confirm"];
@@ -70,6 +63,7 @@ const INITIAL: FormState = {
 };
 
 export default function BusinessRegisterScreen() {
+  const { t } = useTranslation();
   const colors = useColors();
   const [step, setStep] = useState<Step>("basics");
   const [form, setForm] = useState<FormState>(INITIAL);
@@ -128,8 +122,8 @@ export default function BusinessRegisterScreen() {
       setDone(true);
     } catch (e) {
       Alert.alert(
-        "Error",
-        e instanceof Error ? e.message : "Could not submit. Please try again.",
+        t("common.error"),
+        e instanceof Error ? e.message : t("businessRegister.errorSubmit"),
       );
     } finally {
       setSubmitting(false);
@@ -149,18 +143,17 @@ export default function BusinessRegisterScreen() {
             <Feather name="check-circle" size={40} color={c.primary} />
           </View>
           <Text style={[s.doneTitle, { color: c.foreground }]}>
-            You're live!
+            {t("businessRegister.youAreLive")}
           </Text>
           <Text style={[s.doneBody, { color: c.mutedForeground }]}>
-            Your business is now listed on Open Local. Shoppers in your area can
-            find you on the map right away.
+            {t("businessRegister.doneBody")}
           </Text>
           <TouchableOpacity
             style={[s.doneBtn, { backgroundColor: c.primary }]}
             onPress={() => router.replace("/(tabs)" as any)}
             activeOpacity={0.85}
           >
-            <Text style={s.doneBtnText}>Back to home</Text>
+            <Text style={s.doneBtnText}>{t("businessRegister.backToHome")}</Text>
           </TouchableOpacity>
         </View>
       </SafeAreaView>
@@ -182,7 +175,7 @@ export default function BusinessRegisterScreen() {
             <Feather name="chevron-left" size={24} color={c.foreground} />
           </Pressable>
           <Text style={[s.headerTitle, { color: c.foreground }]}>
-            Pin your business
+            {t("businessRegister.title")}
           </Text>
           <Pressable
             onPress={() => router.back()}
@@ -206,7 +199,7 @@ export default function BusinessRegisterScreen() {
           />
         </View>
         <Text style={[s.stepLabel, { color: c.mutedForeground }]}>
-          Step {stepIndex + 1} of {STEPS.length}
+          {t("businessRegister.stepOf", { step: stepIndex + 1, total: STEPS.length })}
         </Text>
 
         <ScrollView
@@ -219,16 +212,16 @@ export default function BusinessRegisterScreen() {
             <View style={{ gap: 18 }}>
               <View>
                 <Text style={[s.h1, { color: c.foreground }]}>
-                  About your business
+                  {t("businessRegister.aboutBusiness")}
                 </Text>
                 <Text style={[s.body, { color: c.mutedForeground, marginTop: 4 }]}>
-                  Tell shoppers what you offer and where to find you.
+                  {t("businessRegister.aboutBusinessBody")}
                 </Text>
               </View>
 
               <View style={s.fieldGap}>
                 <Text style={[s.label, { color: c.foreground }]}>
-                  Business name *
+                  {t("businessRegister.businessName")} *
                 </Text>
                 <TextInput
                   value={form.name}
@@ -249,47 +242,63 @@ export default function BusinessRegisterScreen() {
 
               <View style={s.fieldGap}>
                 <Text style={[s.label, { color: c.foreground }]}>
-                  Category *
+                  {t("businessRegister.category")} *
                 </Text>
                 <ScrollView
                   horizontal
                   showsHorizontalScrollIndicator={false}
                   contentContainerStyle={{ gap: 6 }}
                 >
-                  {BUSINESS_TYPES.map((t) => (
-                    <TouchableOpacity
-                      key={t}
-                      onPress={() => set("type", form.type === t ? "" : t)}
-                      style={[
-                        s.chip,
-                        {
-                          backgroundColor:
-                            form.type === t ? c.primary : c.card,
-                          borderColor:
-                            form.type === t ? c.primary : c.border,
-                        },
-                      ]}
-                      activeOpacity={0.75}
-                    >
-                      <Text
+                  {BUSINESS_TYPE_KEYS.map((bt) => {
+                    const LABEL_MAP: Record<string, string> = {
+                      "Café": t("businessRegister.typeCafe"),
+                      "Restaurant": t("businessRegister.typeRestaurant"),
+                      "Bar / Brewery": t("businessRegister.typeBar"),
+                      "Boutique": t("businessRegister.typeBoutique"),
+                      "Gallery": t("businessRegister.typeGallery"),
+                      "Bookshop": t("businessRegister.typeBookshop"),
+                      "Bakery": t("businessRegister.typeBakery"),
+                      "Farm Stand": t("businessRegister.typeFarmStand"),
+                      "Spa / Wellness": t("businessRegister.typeSpa"),
+                      "Fitness": t("businessRegister.typeFitness"),
+                      "Market": t("businessRegister.typeMarket"),
+                      "Other": t("businessRegister.typeOther"),
+                    };
+                    return (
+                      <TouchableOpacity
+                        key={bt}
+                        onPress={() => set("type", form.type === bt ? "" : bt)}
                         style={[
-                          s.chipText,
+                          s.chip,
                           {
-                            color:
-                              form.type === t ? "#fff" : c.foreground,
+                            backgroundColor:
+                              form.type === bt ? c.primary : c.card,
+                            borderColor:
+                              form.type === bt ? c.primary : c.border,
                           },
                         ]}
+                        activeOpacity={0.75}
                       >
-                        {t}
-                      </Text>
-                    </TouchableOpacity>
-                  ))}
+                        <Text
+                          style={[
+                            s.chipText,
+                            {
+                              color:
+                                form.type === bt ? "#fff" : c.foreground,
+                            },
+                          ]}
+                        >
+                          {LABEL_MAP[bt] ?? bt}
+                        </Text>
+                      </TouchableOpacity>
+                    );
+                  })}
                 </ScrollView>
               </View>
 
               <View style={s.fieldGap}>
                 <Text style={[s.label, { color: c.foreground }]}>
-                  Street address *
+                  {t("businessRegister.streetAddress")} *
                 </Text>
                 <TextInput
                   value={form.address}
@@ -308,7 +317,9 @@ export default function BusinessRegisterScreen() {
               </View>
 
               <View style={s.fieldGap}>
-                <Text style={[s.label, { color: c.foreground }]}>City *</Text>
+                <Text style={[s.label, { color: c.foreground }]}>
+                  {t("businessRegister.city")} *
+                </Text>
                 <TextInput
                   value={form.city}
                   onChangeText={(v) => set("city", v)}
@@ -328,15 +339,15 @@ export default function BusinessRegisterScreen() {
 
               <View style={s.fieldGap}>
                 <Text style={[s.label, { color: c.foreground }]}>
-                  Description *{" "}
+                  {t("businessRegister.description")} *{" "}
                   <Text style={{ color: c.mutedForeground, fontFamily: "DMSans_400Regular" }}>
-                    (min 20 chars)
+                    {t("businessRegister.descriptionHint")}
                   </Text>
                 </Text>
                 <TextInput
                   value={form.description}
                   onChangeText={(v) => set("description", v)}
-                  placeholder="Tell shoppers what makes your business special…"
+                  placeholder={t("businessRegister.descriptionPlaceholder")}
                   placeholderTextColor={c.mutedForeground}
                   multiline
                   numberOfLines={4}
@@ -354,7 +365,7 @@ export default function BusinessRegisterScreen() {
                 {form.description.trim().length > 0 &&
                   form.description.trim().length < 20 && (
                     <Text style={[s.hint, { color: "#dc2626" }]}>
-                      {20 - form.description.trim().length} more characters needed
+                      {t("businessRegister.charsNeeded", { count: 20 - form.description.trim().length })}
                     </Text>
                   )}
               </View>
@@ -362,7 +373,7 @@ export default function BusinessRegisterScreen() {
               {/* Map picker */}
               <View style={s.fieldGap}>
                 <Text style={[s.label, { color: c.foreground }]}>
-                  Pin your location
+                  {t("businessRegister.pinYourLocation")}
                 </Text>
                 <LocationPickerMap
                   onChange={setLatLng}
@@ -383,16 +394,16 @@ export default function BusinessRegisterScreen() {
             <View style={{ gap: 18 }}>
               <View>
                 <Text style={[s.h1, { color: c.foreground }]}>
-                  Contact & links
+                  {t("businessRegister.contactAndLinks")}
                 </Text>
                 <Text style={[s.body, { color: c.mutedForeground, marginTop: 4 }]}>
-                  How should shoppers and Open Local reach you?
+                  {t("businessRegister.contactBody")}
                 </Text>
               </View>
 
               <View style={s.fieldGap}>
                 <Text style={[s.label, { color: c.foreground }]}>
-                  Contact email *
+                  {t("businessRegister.contactEmail")} *
                 </Text>
                 <TextInput
                   value={form.contactEmail}
@@ -413,7 +424,7 @@ export default function BusinessRegisterScreen() {
               </View>
 
               <View style={s.fieldGap}>
-                <Text style={[s.label, { color: c.foreground }]}>Phone</Text>
+                <Text style={[s.label, { color: c.foreground }]}>{t("businessRegister.phone")}</Text>
                 <TextInput
                   value={form.phone}
                   onChangeText={(v) => set("phone", v)}
@@ -432,7 +443,7 @@ export default function BusinessRegisterScreen() {
               </View>
 
               <View style={s.fieldGap}>
-                <Text style={[s.label, { color: c.foreground }]}>Website</Text>
+                <Text style={[s.label, { color: c.foreground }]}>{t("businessRegister.website")}</Text>
                 <TextInput
                   value={form.websiteUrl}
                   onChangeText={(v) => set("websiteUrl", v)}
@@ -453,7 +464,7 @@ export default function BusinessRegisterScreen() {
 
               <View style={s.fieldGap}>
                 <Text style={[s.label, { color: c.foreground }]}>
-                  Instagram handle
+                  {t("businessRegister.instagramHandle")}
                 </Text>
                 <TextInput
                   value={form.instagramHandle}
@@ -479,11 +490,10 @@ export default function BusinessRegisterScreen() {
             <View style={{ gap: 18 }}>
               <View>
                 <Text style={[s.h1, { color: c.foreground }]}>
-                  Choose a plan
+                  {t("businessRegister.choosePlan")}
                 </Text>
                 <Text style={[s.body, { color: c.mutedForeground, marginTop: 4 }]}>
-                  Subscription fees are currently waived — pick the tier that
-                  fits your goals and upgrade anytime.
+                  {t("businessRegister.choosePlanBody")}
                 </Text>
               </View>
 
@@ -496,7 +506,7 @@ export default function BusinessRegisterScreen() {
               >
                 <Feather name="gift" size={18} color="#16a34a" />
                 <Text style={s.waivedText}>
-                  All plans are free while we grow the community. 🎉
+                  {t("businessRegister.allPlansFree")}
                 </Text>
               </View>
 
@@ -580,10 +590,10 @@ export default function BusinessRegisterScreen() {
             <View style={{ gap: 18 }}>
               <View>
                 <Text style={[s.h1, { color: c.foreground }]}>
-                  Review & submit
+                  {t("businessRegister.reviewAndSubmit")}
                 </Text>
                 <Text style={[s.body, { color: c.mutedForeground, marginTop: 4 }]}>
-                  Your business goes live immediately on Open Local.
+                  {t("businessRegister.reviewBody")}
                 </Text>
               </View>
 
@@ -593,25 +603,38 @@ export default function BusinessRegisterScreen() {
                   { backgroundColor: c.card, borderColor: c.border },
                 ]}
               >
-                <Row label="Name" value={form.name} colors={c} />
-                <Row label="Type" value={form.type} colors={c} />
-                <Row label="Address" value={form.address} colors={c} />
-                <Row label="City" value={`${form.city}, FL`} colors={c} />
-                <Row label="Email" value={form.contactEmail} colors={c} />
+                <Row label={t("businessRegister.rowName")} value={form.name} colors={c} />
+                <Row label={t("businessRegister.rowType")} value={({
+                  "Café": t("businessRegister.typeCafe"),
+                  "Restaurant": t("businessRegister.typeRestaurant"),
+                  "Bar / Brewery": t("businessRegister.typeBar"),
+                  "Boutique": t("businessRegister.typeBoutique"),
+                  "Gallery": t("businessRegister.typeGallery"),
+                  "Bookshop": t("businessRegister.typeBookshop"),
+                  "Bakery": t("businessRegister.typeBakery"),
+                  "Farm Stand": t("businessRegister.typeFarmStand"),
+                  "Spa / Wellness": t("businessRegister.typeSpa"),
+                  "Fitness": t("businessRegister.typeFitness"),
+                  "Market": t("businessRegister.typeMarket"),
+                  "Other": t("businessRegister.typeOther"),
+                } as Record<string, string>)[form.type] ?? form.type} colors={c} />
+                <Row label={t("businessRegister.rowAddress")} value={form.address} colors={c} />
+                <Row label={t("businessRegister.rowCity")} value={`${form.city}, FL`} colors={c} />
+                <Row label={t("businessRegister.rowEmail")} value={form.contactEmail} colors={c} />
                 {form.phone ? (
-                  <Row label="Phone" value={form.phone} colors={c} />
+                  <Row label={t("businessRegister.rowPhone")} value={form.phone} colors={c} />
                 ) : null}
                 {form.websiteUrl ? (
-                  <Row label="Website" value={form.websiteUrl} colors={c} />
+                  <Row label={t("businessRegister.rowWebsite")} value={form.websiteUrl} colors={c} />
                 ) : null}
                 <Row
-                  label="Plan"
+                  label={t("businessRegister.rowPlan")}
                   value={TIERS[form.tier].name}
                   colors={c}
                 />
                 {form.latitude != null && form.longitude != null ? (
                   <Row
-                    label="Pin"
+                    label={t("businessRegister.rowPin")}
                     value={`${form.latitude.toFixed(4)}, ${form.longitude.toFixed(4)}`}
                     colors={c}
                   />
@@ -637,7 +660,9 @@ export default function BusinessRegisterScreen() {
               <ActivityIndicator color="#fff" />
             ) : (
               <Text style={s.nextBtnText}>
-                {step === "confirm" ? "List my business" : "Continue"}
+                {step === "confirm"
+                  ? t("businessRegister.listMyBusiness")
+                  : t("businessRegister.continue")}
               </Text>
             )}
           </TouchableOpacity>

@@ -1,6 +1,7 @@
 import { useListVendors } from "@/lib/api-client";
 import { useRouter } from "expo-router";
 import React, { useState } from "react";
+import { useTranslation } from "react-i18next";
 import {
   ActivityIndicator,
   FlatList,
@@ -20,6 +21,7 @@ import { VendorCard } from "@/components/VendorCard";
 import type { Vendor } from "@/lib/api-client";
 
 export default function BrowseScreen() {
+  const { t } = useTranslation();
   const colors = useColors();
   const insets = useSafeAreaInsets();
   const router = useRouter();
@@ -44,7 +46,7 @@ export default function BrowseScreen() {
   return (
     <View style={s.container}>
       <View style={[s.headerWrap, { paddingTop: topPad + 12 }]}>
-        <Text style={s.title}>Browse</Text>
+        <Text style={s.title}>{t("browse.title")}</Text>
         <View style={s.searchRow}>
           <Feather
             name="search"
@@ -54,7 +56,7 @@ export default function BrowseScreen() {
           />
           <TextInput
             style={s.searchInput}
-            placeholder="Search vendors…"
+            placeholder={t("browse.searchPlaceholder")}
             placeholderTextColor={colors.mutedForeground}
             value={search}
             onChangeText={setSearch}
@@ -70,9 +72,9 @@ export default function BrowseScreen() {
         </View>
       ) : isError ? (
         <View style={s.center}>
-          <Text style={s.emptyTitle}>Couldn't load vendors</Text>
+          <Text style={s.emptyTitle}>{t("browse.couldNotLoad")}</Text>
           <TouchableOpacity style={s.retryBtn} onPress={() => refetch()}>
-            <Text style={s.retryText}>Retry</Text>
+            <Text style={s.retryText}>{t("common.retry")}</Text>
           </TouchableOpacity>
         </View>
       ) : (
@@ -91,8 +93,8 @@ export default function BrowseScreen() {
           ListEmptyComponent={
             <View style={s.empty}>
               <Feather name="search" size={36} color={colors.mutedForeground} />
-              <Text style={s.emptyTitle}>No vendors found</Text>
-              <Text style={s.emptySubtitle}>Try a different search term</Text>
+              <Text style={s.emptyTitle}>{t("browse.noVendorsFound")}</Text>
+              <Text style={s.emptySubtitle}>{t("browse.tryDifferentSearch")}</Text>
             </View>
           }
           refreshControl={

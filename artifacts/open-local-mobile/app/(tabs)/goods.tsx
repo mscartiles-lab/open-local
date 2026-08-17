@@ -6,6 +6,7 @@ import { Feather } from "@expo/vector-icons";
 import { Image } from "expo-image";
 import { useRouter } from "expo-router";
 import React, { useMemo, useState } from "react";
+import { useTranslation } from "react-i18next";
 import {
   ActivityIndicator,
   Dimensions,
@@ -25,32 +26,34 @@ import { useColors } from "@/hooks/useColors";
 import { haversineDistanceMiles } from "@/utils/distance";
 import type { Product, Vendor } from "@/lib/api-client";
 
-const LISTING_LABELS: Record<string, string> = {
-  batch_drop: "Just Dropped",
-  surplus: "Surplus",
-  pre_order: "Pre-Order",
-  regular: "",
-};
+type FilterKey = "all" | "batch_drop" | "pre_order" | "surplus" | undefined;
 
-const FILTERS = [
-  { key: undefined, label: "All" },
-  { key: "batch_drop", label: "Dropped" },
-  { key: "pre_order", label: "Pre-Order" },
-  { key: "surplus", label: "Surplus" },
-] as const;
-
-type FilterKey = (typeof FILTERS)[number]["key"];
 
 function formatPrice(cents: number) {
   return `$${(cents / 100).toFixed(2)}`;
 }
 
 export default function GoodsScreen() {
+  const { t } = useTranslation();
   const colors = useColors();
   const insets = useSafeAreaInsets();
   const router = useRouter();
   const [search, setSearch] = useState("");
   const [filter, setFilter] = useState<FilterKey>(undefined);
+
+  const LISTING_LABELS: Record<string, string> = {
+    batch_drop: t("feedProductCard.justDropped"),
+    surplus: t("feedProductCard.surplus"),
+    pre_order: t("feedProductCard.preOrder"),
+    regular: "",
+  };
+
+  const FILTERS = [
+    { key: undefined as FilterKey, label: t("goods.filterAll") },
+    { key: "batch_drop" as FilterKey, label: t("goods.filterDropped") },
+    { key: "pre_order" as FilterKey, label: t("goods.filterPreOrder") },
+    { key: "surplus" as FilterKey, label: t("goods.filterSurplus") },
+  ];
   const [refreshing, setRefreshing] = useState(false);
   const [userLocation, setUserLocation] = useState<{
     latitude: number;
@@ -154,7 +157,7 @@ export default function GoodsScreen() {
           pins={pins}
           radiusMiles={mapRadius}
           height={screenH}
-          emptyHint="No mapped vendors yet"
+          emptyHint={t("goods.noMappedVendors")}
           fullBleed
           showControls
           onUserLocationChange={setUserLocation}
@@ -168,8 +171,8 @@ export default function GoodsScreen() {
       {/* Floating title */}
       <View style={[s.floatHeader, { top: topPad + 8 }]}>
         <View style={s.brandPill}>
-          <Text style={s.wordmark}>Goods</Text>
-          <Text style={s.tagline}>Products from local makers near you</Text>
+          <Text style={s.wordmark}>{t("goods.title")}</Text>
+          <Text style={s.tagline}>{t("goods.subtitle")}</Text>
         </View>
       </View>
 
@@ -207,7 +210,7 @@ export default function GoodsScreen() {
                 />
                 <TextInput
                   style={[s.searchInput, { color: colors.foreground }]}
-                  placeholder="Search goods…"
+                  placeholder={t("goods.searchPlaceholder")}
                   placeholderTextColor={colors.mutedForeground}
                   value={search}
                   onChangeText={setSearch}
@@ -243,11 +246,11 @@ export default function GoodsScreen() {
               {isError && (
                 <View style={s.inlineLoading}>
                   <Text style={[s.emptyTitle, { color: colors.foreground }]}>
-                    Could not load goods
+                    {t("goods.couldNotLoad")}
                   </Text>
                   <TouchableOpacity style={s.retryBtn} onPress={onRefresh}>
                     <Text style={[s.retryText, { color: colors.primaryForeground }]}>
-                      Retry
+                      {t("common.retry")}
                     </Text>
                   </TouchableOpacity>
                 </View>
@@ -260,12 +263,12 @@ export default function GoodsScreen() {
             <View style={s.emptyPanel}>
               <Feather name="shopping-bag" size={36} color={colors.mutedForeground} />
               <Text style={[s.emptyTitle, { color: colors.foreground }]}>
-                {userLocation ? "No goods nearby" : "No goods found"}
+                {userLocation ? t("goods.noGoodsNearby") : t("goods.noGoodsFound")}
               </Text>
               <Text style={[s.emptySubtitle, { color: colors.mutedForeground }]}>
                 {userLocation
-                  ? `Nothing within ${mapRadius} mi — scroll down to see more`
-                  : "Check back as vendors add products"}
+                  ? t("goods.nothingWithinRadius", { radius: mapRadius })
+                  : t("goods.checkBack")}
               </Text>
             </View>
           ) : null
@@ -316,6 +319,13 @@ function ProductCard({
   colors: ReturnType<typeof useColors>;
   onPress: () => void;
 }) {
+  const { t } = useTranslation();
+  const LISTING_LABELS: Record<string, string> = {
+    batch_drop: t("feedProductCard.justDropped"),
+    surplus: t("feedProductCard.surplus"),
+    pre_order: t("feedProductCard.preOrder"),
+    regular: "",
+  };
   const label = LISTING_LABELS[p.listingType] ?? "";
   return (
     <TouchableOpacity
@@ -349,7 +359,7 @@ function ProductCard({
           </Text>
         </View>
         {!p.inStock && (
-          <Text style={productStyles.outOfStock}>Out of stock</Text>
+          <Text style={productStyles.outOfStock}>{t("goods.outOfStock")}</Text>
         )}
       </View>
     </TouchableOpacity>

@@ -2,6 +2,7 @@ import { useListProducts } from "@/lib/api-client";
 import { useRouter } from "expo-router";
 import { Feather } from "@expo/vector-icons";
 import React, { useState } from "react";
+import { useTranslation } from "react-i18next";
 import {
   ActivityIndicator,
   FlatList,
@@ -22,20 +23,21 @@ function formatPrice(cents: number) {
   return `$${(cents / 100).toFixed(2)}`;
 }
 
-const LISTING_TYPES = [
-  { key: "batch_drop", label: "Batch Drop", icon: "zap", color: "#e8520a" },
-  { key: "pre_order", label: "Pre-Order", icon: "clock", color: "#3c6e1a" },
-  { key: "surplus", label: "Surplus", icon: "percent", color: "#c0622f" },
-] as const;
-
-type ListingKey = (typeof LISTING_TYPES)[number]["key"];
+type ListingKey = "batch_drop" | "pre_order" | "surplus";
 
 export default function ListingsScreen() {
+  const { t } = useTranslation();
   const colors = useColors();
   const insets = useSafeAreaInsets();
   const router = useRouter();
   const [activeType, setActiveType] = useState<ListingKey>("batch_drop");
   const [refreshing, setRefreshing] = useState(false);
+
+  const LISTING_TYPES = [
+    { key: "batch_drop" as ListingKey, label: t("listings.tabBatchDrop"), icon: "zap", color: "#e8520a" },
+    { key: "pre_order" as ListingKey, label: t("listings.tabPreOrder"), icon: "clock", color: "#3c6e1a" },
+    { key: "surplus" as ListingKey, label: t("listings.tabSurplus"), icon: "percent", color: "#c0622f" },
+  ];
 
   const topPad = Platform.OS === "web" ? 67 : insets.top;
   const bottomPad = Platform.OS === "web" ? 34 : insets.bottom + 60;
@@ -56,8 +58,8 @@ export default function ListingsScreen() {
   return (
     <View style={s.container}>
       <View style={[s.headerWrap, { paddingTop: topPad + 12 }]}>
-        <Text style={s.title}>Listings</Text>
-        <Text style={s.subtitle}>Special drops, pre-orders & surplus</Text>
+        <Text style={s.title}>{t("listings.title")}</Text>
+        <Text style={s.subtitle}>{t("listings.subtitle")}</Text>
         <View style={s.typeRow}>
           {LISTING_TYPES.map((t) => (
             <TouchableOpacity
@@ -92,9 +94,9 @@ export default function ListingsScreen() {
         </View>
       ) : isError ? (
         <View style={s.center}>
-          <Text style={s.emptyTitle}>Couldn't load listings</Text>
+          <Text style={s.emptyTitle}>{t("listings.couldNotLoad")}</Text>
           <TouchableOpacity style={[s.retryBtn, { backgroundColor: activeConfig.color }]} onPress={() => refetch()}>
-            <Text style={s.retryText}>Retry</Text>
+            <Text style={s.retryText}>{t("common.retry")}</Text>
           </TouchableOpacity>
         </View>
       ) : (
@@ -130,10 +132,10 @@ export default function ListingsScreen() {
                 </View>
                 {item.availableUntil && (
                   <Text style={s.until}>
-                    Until {new Date(item.availableUntil).toLocaleDateString()}
+                    {t("listings.until", { date: new Date(item.availableUntil).toLocaleDateString() })}
                   </Text>
                 )}
-                {!item.inStock && <Text style={s.outOfStock}>Out of stock</Text>}
+                {!item.inStock && <Text style={s.outOfStock}>{t("listings.outOfStock")}</Text>}
               </View>
             </TouchableOpacity>
           )}
@@ -142,8 +144,8 @@ export default function ListingsScreen() {
           ListEmptyComponent={
             <View style={s.empty}>
               <Feather name={activeConfig.icon as any} size={36} color={colors.mutedForeground} />
-              <Text style={s.emptyTitle}>No {activeConfig.label.toLowerCase()} listings</Text>
-              <Text style={s.emptySubtitle}>Check back soon</Text>
+              <Text style={s.emptyTitle}>{t("listings.noListings", { type: activeConfig.label.toLowerCase() })}</Text>
+              <Text style={s.emptySubtitle}>{t("listings.checkBackSoon")}</Text>
             </View>
           }
           refreshControl={

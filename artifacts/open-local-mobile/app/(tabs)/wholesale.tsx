@@ -3,6 +3,7 @@ import { Feather } from "@expo/vector-icons";
 import { Image } from "expo-image";
 import { useRouter } from "expo-router";
 import React, { useMemo, useState } from "react";
+import { useTranslation } from "react-i18next";
 import {
   ActivityIndicator,
   FlatList,
@@ -19,14 +20,6 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useColors } from "@/hooks/useColors";
 import type { WholesaleListing } from "@/lib/api-client";
 
-const CATEGORIES = [
-  { key: undefined as string | undefined, label: "All" },
-  { key: "Farm", label: "Farm" },
-  { key: "Bakery", label: "Bakery" },
-  { key: "Apiary", label: "Apiary" },
-  { key: "Pantry", label: "Pantry" },
-  { key: "Other", label: "Other" },
-] as const;
 
 function formatPrice(price: number | null, unit: string | null) {
   if (price == null) return null;
@@ -42,6 +35,7 @@ function WholesaleListCard({
   colors: ReturnType<typeof useColors>;
   onPress: () => void;
 }) {
+  const { t } = useTranslation();
   const priceStr = formatPrice(listing.pricePerUnit, listing.unit);
   const isExpired = listing.expiresAt ? new Date(listing.expiresAt) < new Date() : false;
 
@@ -73,7 +67,7 @@ function WholesaleListCard({
           )}
           {isExpired && (
             <View style={[cardStyles.badge, { backgroundColor: "#fee2e2" }]}>
-              <Text style={[cardStyles.badgeText, { color: "#991b1b" }]}>Expired</Text>
+              <Text style={[cardStyles.badgeText, { color: "#991b1b" }]}>{t("wholesale.expired")}</Text>
             </View>
           )}
         </View>
@@ -95,7 +89,7 @@ function WholesaleListCard({
           {listing.minOrderQty > 1 && (
             <View style={[cardStyles.minQtyPill, { backgroundColor: colors.muted }]}>
               <Text style={[cardStyles.minQtyText, { color: colors.mutedForeground }]}>
-                Min {listing.minOrderQty}
+                {t("wholesale.minQty", { qty: listing.minOrderQty })}
               </Text>
             </View>
           )}
@@ -188,12 +182,22 @@ const cardStyles = StyleSheet.create({
 });
 
 export default function WholesaleScreen() {
+  const { t } = useTranslation();
   const colors = useColors();
   const insets = useSafeAreaInsets();
   const router = useRouter();
   const [search, setSearch] = useState("");
   const [category, setCategory] = useState<string | undefined>(undefined);
   const [refreshing, setRefreshing] = useState(false);
+
+  const CATEGORIES = [
+    { key: undefined as string | undefined, label: t("wholesale.filterAll") },
+    { key: "Farm", label: t("wholesale.filterFarm") },
+    { key: "Bakery", label: t("wholesale.filterBakery") },
+    { key: "Apiary", label: t("wholesale.filterApiary") },
+    { key: "Pantry", label: t("wholesale.filterPantry") },
+    { key: "Other", label: t("wholesale.filterOther") },
+  ];
 
   const topPad = Platform.OS === "web" ? 67 : insets.top;
   const bottomPad = Platform.OS === "web" ? 34 : insets.bottom + 60;
@@ -221,9 +225,9 @@ export default function WholesaleScreen() {
   return (
     <View style={s.container}>
       <View style={[s.header, { paddingTop: topPad + 12 }]}>
-        <Text style={[s.title, { color: colors.foreground }]}>Wholesale</Text>
+        <Text style={[s.title, { color: colors.foreground }]}>{t("wholesale.title")}</Text>
         <Text style={[s.subtitle, { color: colors.mutedForeground }]}>
-          Bulk trade between Florida vendors
+          {t("wholesale.subtitle")}
         </Text>
 
         {/* Search */}
@@ -231,7 +235,7 @@ export default function WholesaleScreen() {
           <Feather name="search" size={14} color={colors.mutedForeground} style={{ marginRight: 6 }} />
           <TextInput
             style={[s.searchInput, { color: colors.foreground }]}
-            placeholder="Search listings…"
+            placeholder={t("wholesale.searchPlaceholder")}
             placeholderTextColor={colors.mutedForeground}
             value={search}
             onChangeText={setSearch}
@@ -276,13 +280,13 @@ export default function WholesaleScreen() {
       ) : isError ? (
         <View style={s.center}>
           <Text style={[s.emptyTitle, { color: colors.foreground }]}>
-            Could not load listings
+            {t("wholesale.couldNotLoad")}
           </Text>
           <TouchableOpacity
             style={[s.retryBtn, { backgroundColor: "#166534" }]}
             onPress={() => refetch()}
           >
-            <Text style={s.retryText}>Retry</Text>
+            <Text style={s.retryText}>{t("errorFallback.tryAgain")}</Text>
           </TouchableOpacity>
         </View>
       ) : (
@@ -305,12 +309,12 @@ export default function WholesaleScreen() {
             <View style={s.empty}>
               <Feather name="package" size={36} color={colors.mutedForeground} />
               <Text style={[s.emptyTitle, { color: colors.foreground }]}>
-                No listings yet
+                {t("wholesale.noListings")}
               </Text>
               <Text style={[s.emptySubtitle, { color: colors.mutedForeground }]}>
                 {search || category
-                  ? "Try a different search or category"
-                  : "Wholesale listings from Florida vendors will appear here"}
+                  ? t("wholesale.emptySearch")
+                  : t("wholesale.emptyAll")}
               </Text>
             </View>
           }

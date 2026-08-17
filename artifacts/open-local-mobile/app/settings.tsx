@@ -1,6 +1,7 @@
 import { useRouter } from "expo-router";
 import { Feather } from "@expo/vector-icons";
 import React from "react";
+import { useTranslation } from "react-i18next";
 import {
   Alert,
   Platform,
@@ -18,6 +19,7 @@ import { useColors } from "@/hooks/useColors";
 import { useTheme } from "@/context/ThemeContext";
 
 export default function SettingsScreen() {
+  const { t } = useTranslation();
   const colors = useColors();
   const { theme, toggleTheme } = useTheme();
   const insets = useSafeAreaInsets();
@@ -28,9 +30,9 @@ export default function SettingsScreen() {
   const s = styles(colors, topPad);
 
   const handleLogout = () => {
-    Alert.alert("Sign out", "Are you sure you want to sign out?", [
-      { text: "Cancel", style: "cancel" },
-      { text: "Sign out", style: "destructive", onPress: logout },
+    Alert.alert(t("settings.signOutConfirmTitle"), t("settings.signOutConfirmMessage"), [
+      { text: t("settings.signOutConfirmCancel"), style: "cancel" },
+      { text: t("settings.signOutConfirmOk"), style: "destructive", onPress: logout },
     ]);
   };
 
@@ -40,12 +42,12 @@ export default function SettingsScreen() {
         <TouchableOpacity style={s.closeBtn} onPress={() => router.back()}>
           <Feather name="x" size={20} color={colors.foreground} />
         </TouchableOpacity>
-        <Text style={s.title}>Settings</Text>
+        <Text style={s.title}>{t("settings.title")}</Text>
         <View style={{ width: 36 }} />
       </View>
 
       <ScrollView contentContainerStyle={s.content} showsVerticalScrollIndicator={false}>
-        <Text style={s.section}>Appearance</Text>
+        <Text style={s.section}>{t("settings.appearance")}</Text>
         <View style={s.card}>
           <View style={[s.row, s.rowBorderless]}>
             <View style={s.rowLeft}>
@@ -57,9 +59,9 @@ export default function SettingsScreen() {
                 />
               </View>
               <View>
-                <Text style={s.rowLabel}>Dark mode</Text>
+                <Text style={s.rowLabel}>{t("settings.darkMode")}</Text>
                 <Text style={s.rowSub}>
-                  {theme === "dark" ? "Currently on" : "Currently off"}
+                  {theme === "dark" ? t("settings.currentlyOn") : t("settings.currentlyOff")}
                 </Text>
               </View>
             </View>
@@ -74,7 +76,7 @@ export default function SettingsScreen() {
 
         {user && (
           <>
-            <Text style={s.section}>Account</Text>
+            <Text style={s.section}>{t("settings.account")}</Text>
             <View style={s.card}>
               <TouchableOpacity style={[s.row, s.rowBorderless]} onPress={handleLogout} activeOpacity={0.7}>
                 <View style={s.rowLeft}>
@@ -82,8 +84,8 @@ export default function SettingsScreen() {
                     <Feather name="log-out" size={16} color="#dc2626" />
                   </View>
                   <View>
-                    <Text style={[s.rowLabel, { color: "#dc2626" }]}>Sign out</Text>
-                    <Text style={s.rowSub}>Signed in as @{user.username}</Text>
+                    <Text style={[s.rowLabel, { color: "#dc2626" }]}>{t("settings.signOut")}</Text>
+                    <Text style={s.rowSub}>{t("settings.signedInAs", { username: user.username })}</Text>
                   </View>
                 </View>
               </TouchableOpacity>

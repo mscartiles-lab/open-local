@@ -5,6 +5,7 @@ import {
 import { useRouter } from "expo-router";
 import { Feather } from "@expo/vector-icons";
 import React, { useEffect, useMemo, useRef, useState } from "react";
+import { useTranslation } from "react-i18next";
 import { haversineDistanceMiles } from "@/utils/distance";
 import {
   ActivityIndicator,
@@ -42,6 +43,7 @@ type Segment = "all" | "vendors" | "businesses";
 const ESTABLISHMENT_COLOR = "#c0622f";
 
 export default function TheLocalsScreen() {
+  const { t } = useTranslation();
   const colors = useColors();
   const insets = useSafeAreaInsets();
   const router = useRouter();
@@ -184,7 +186,7 @@ export default function TheLocalsScreen() {
           pins={pins}
           radiusMiles={mapRadius}
           height={mapExpanded ? undefined : mapHeight}
-          emptyHint="No mapped locations yet"
+          emptyHint={t("vendors.noMappedLocations")}
           showControls
           fullBleed={mapExpanded}
           onPinPress={(key) => {
@@ -200,21 +202,21 @@ export default function TheLocalsScreen() {
         {/* Brand + profile bar floating over the map */}
         <View style={[s.floatHeader, { top: topPad + 8 }]}>
           <View style={s.brandPill}>
-            <Text style={s.wordmark}>Vendors</Text>
-            <Text style={s.tagline}>Local producers & makers near you</Text>
+            <Text style={s.wordmark}>{t("vendors.title")}</Text>
+            <Text style={s.tagline}>{t("vendors.subtitle")}</Text>
           </View>
           <View style={s.headerActions}>
             <TouchableOpacity
               style={s.gearBtn}
               onPress={() => router.push("/settings")}
-              accessibilityLabel="Settings"
+              accessibilityLabel={t("vendors.accessibilitySettings")}
             >
               <Feather name="settings" size={18} color={colors.foreground} />
             </TouchableOpacity>
             {user ? (
               <TouchableOpacity
                 onPress={() => router.push("/(tabs)/more" as any)}
-                accessibilityLabel="Your profile"
+                accessibilityLabel={t("vendors.accessibilityProfile")}
               >
                 <Avatar seed={user.avatarSeed} style={user.avatarStyle} size={44} />
               </TouchableOpacity>
@@ -223,7 +225,7 @@ export default function TheLocalsScreen() {
                 onPress={() => router.push("/(auth)/signup")}
                 style={s.signInBtn}
               >
-                <Text style={s.signInText}>Sign in</Text>
+                <Text style={s.signInText}>{t("vendors.signIn")}</Text>
               </TouchableOpacity>
             )}
           </View>
@@ -232,7 +234,7 @@ export default function TheLocalsScreen() {
         <TouchableOpacity
           style={[s.expandBtn, mapExpanded && s.expandBtnFull]}
           onPress={mapExpanded ? handleShowList : () => setMapExpanded(true)}
-          accessibilityLabel={mapExpanded ? "Show list" : "Expand map"}
+          accessibilityLabel={mapExpanded ? t("vendors.accessibilityShowList") : t("vendors.accessibilityExpandMap")}
         >
           <Feather
             name={mapExpanded ? "list" : "maximize-2"}
@@ -240,7 +242,7 @@ export default function TheLocalsScreen() {
             color={colors.foreground}
           />
           <Text style={[s.expandBtnText, { color: colors.foreground }]}>
-            {mapExpanded ? "Show list" : "Full map"}
+            {mapExpanded ? t("vendors.showList") : t("vendors.fullMap")}
           </Text>
         </TouchableOpacity>
       </Animated.View>
@@ -282,7 +284,7 @@ export default function TheLocalsScreen() {
                 <Feather name="search" size={14} color={colors.mutedForeground} style={{ marginRight: 6 }} />
                 <TextInput
                   style={[s.searchInput, { color: colors.foreground }]}
-                  placeholder="Search vendors…"
+                  placeholder={t("vendors.searchPlaceholder")}
                   placeholderTextColor={colors.mutedForeground}
                   value={search}
                   onChangeText={setSearch}
@@ -293,9 +295,9 @@ export default function TheLocalsScreen() {
               <View style={s.segmentRow}>
                 {(
                   [
-                    { key: "all", label: "All" },
-                    { key: "vendors", label: "Vendors" },
-                    { key: "businesses", label: "Businesses" },
+                    { key: "all", label: t("vendors.filterAll") },
+                    { key: "vendors", label: t("vendors.filterVendors") },
+                    { key: "businesses", label: t("vendors.filterBusinesses") },
                   ] as { key: Segment; label: string }[]
                 ).map((seg) => (
                   <TouchableOpacity
@@ -323,9 +325,9 @@ export default function TheLocalsScreen() {
 
               {isError && (
                 <View style={s.inlineError}>
-                  <Text style={s.emptyTitle}>Could not load locals</Text>
+                  <Text style={s.emptyTitle}>{t("vendors.errorLoad")}</Text>
                   <TouchableOpacity style={s.retryBtn} onPress={onRefresh}>
-                    <Text style={s.retryText}>Retry</Text>
+                    <Text style={s.retryText}>{t("common.retry")}</Text>
                   </TouchableOpacity>
                 </View>
               )}
@@ -336,9 +338,9 @@ export default function TheLocalsScreen() {
           !isLoading && !isError ? (
             <View style={s.emptyPanel}>
               <Feather name="compass" size={36} color={colors.mutedForeground} />
-              <Text style={s.emptyTitle}>Nothing here yet</Text>
+              <Text style={s.emptyTitle}>{t("vendors.nothingHere")}</Text>
               <Text style={s.emptySubtitle}>
-                Check back as more locals join.
+                {t("vendors.checkBack")}
               </Text>
             </View>
           ) : null

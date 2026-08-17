@@ -2,6 +2,7 @@ import { useListMarkets } from "@/lib/api-client";
 import { Feather } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
 import React, { useState, useRef } from "react";
+import { useTranslation } from "react-i18next";
 import {
   ActivityIndicator,
   FlatList,
@@ -18,14 +19,7 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useColors } from "@/hooks/useColors";
 import type { Market } from "@/lib/api-client";
 
-const DAYS = [
-  { key: undefined as string | undefined, label: "All" },
-  { key: "Saturday", label: "Sat" },
-  { key: "Sunday", label: "Sun" },
-  { key: "Friday", label: "Fri" },
-  { key: "Wednesday", label: "Wed" },
-  { key: "Tuesday", label: "Tue" },
-] as const;
+// DAYS built inside component so labels re-translate on language change
 
 const FLORIDA_CENTER = { latitude: 27.6, longitude: -82.5 };
 function MarketListCard({
@@ -173,13 +167,14 @@ function MarketsMapView({
   colors: ReturnType<typeof useColors>;
   onMarketPress: (market: Market) => void;
 }) {
+  const { t } = useTranslation();
   // Web doesn't support react-native-maps — show a placeholder instead
   if (Platform.OS === "web") {
     return (
       <View style={mapStyles.webFallback}>
         <Feather name="map" size={36} color={colors.mutedForeground} />
         <Text style={[mapStyles.webFallbackText, { color: colors.mutedForeground }]}>
-          Map view is available in the mobile app
+          {t("markets.mapAvailableMobile")}
         </Text>
       </View>
     );
@@ -237,7 +232,7 @@ function MarketsMapView({
                 )}
                 {m.slug && (
                   <Text style={[mapStyles.calloutLink, { color: MARKET_COLOR }]}>
-                    View Market →
+                    {t("markets.viewMarket")}
                   </Text>
                 )}
               </View>
@@ -256,9 +251,19 @@ function MarketsMapView({
   );
 }
 export default function MarketsScreen() {
+  const { t } = useTranslation();
   const colors = useColors();
   const insets = useSafeAreaInsets();
   const router = useRouter();
+
+  const DAYS = [
+    { key: undefined as string | undefined, label: t("markets.filterAll") },
+    { key: "Saturday", label: t("markets.filterSat") },
+    { key: "Sunday", label: t("markets.filterSun") },
+    { key: "Friday", label: t("markets.filterFri") },
+    { key: "Wednesday", label: t("markets.filterWed") },
+    { key: "Tuesday", label: t("markets.filterTue") },
+  ];
   const [search, setSearch] = useState("");
   const [dayFilter, setDayFilter] = useState<string | undefined>(undefined);
   const [refreshing, setRefreshing] = useState(false);
@@ -296,9 +301,9 @@ export default function MarketsScreen() {
       <View style={[s.header, { paddingTop: topPad + 12 }]}>
         <View style={s.titleRow}>
           <View style={{ flex: 1 }}>
-            <Text style={[s.title, { color: colors.foreground }]}>Markets</Text>
+            <Text style={[s.title, { color: colors.foreground }]}>{t("markets.title")}</Text>
             <Text style={[s.subtitle, { color: colors.mutedForeground }]}>
-              Florida Farmers Market Directory
+              {t("markets.subtitle")}
             </Text>
           </View>
 
@@ -310,7 +315,7 @@ export default function MarketsScreen() {
               activeOpacity={0.85}
             >
               <Feather name="plus" size={14} color="#fff" />
-              <Text style={styles2.registerBtnText}>List yours</Text>
+              <Text style={styles2.registerBtnText}>{t("markets.listYours")}</Text>
             </TouchableOpacity>
 
             <View style={[s.toggle, { borderColor: colors.border }]}>
@@ -354,7 +359,7 @@ export default function MarketsScreen() {
           <Feather name="search" size={14} color={colors.mutedForeground} style={{ marginRight: 6 }} />
           <TextInput
             style={[s.searchInput, { color: colors.foreground }]}
-            placeholder="Search by name or city…"
+            placeholder={t("markets.searchPlaceholder")}
             placeholderTextColor={colors.mutedForeground}
             value={search}
             onChangeText={setSearch}
@@ -405,7 +410,7 @@ export default function MarketsScreen() {
             style={[s.retryBtn, { backgroundColor: "#166634" }]}
             onPress={() => refetch()}
           >
-            <Text style={s.retryText}>Retry</Text>
+            <Text style={s.retryText}>{t("common.retry")}</Text>
           </TouchableOpacity>
         </View>
       ) : viewMode === "map" ? (
@@ -438,12 +443,12 @@ export default function MarketsScreen() {
             <View style={s.empty}>
               <Feather name="map-pin" size={36} color={colors.mutedForeground} />
               <Text style={[s.emptyTitle, { color: colors.foreground }]}>
-                No markets found
+                {t("markets.noMarketsFound")}
               </Text>
               <Text style={[s.emptySubtitle, { color: colors.mutedForeground }]}>
                 {search || dayFilter
-                  ? "Try a different search or day filter"
-                  : "Florida farmers market listings will appear here"}
+                  ? t("markets.tryDifferentFilter")
+                  : t("markets.listingsWillAppear")}
               </Text>
             </View>
           }

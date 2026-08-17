@@ -21,12 +21,14 @@ import { MiniMap, type MapPin } from "@/components/MiniMap";
 import { ProductListItem } from "@/components/ProductListItem";
 import { isFavorite, toggleFavorite } from "@/app/(tabs)/favorites";
 import { useAuth } from "@/context/AuthContext";
+import { useTranslation } from "react-i18next";
 
 const BASE = process.env.EXPO_PUBLIC_DOMAIN
   ? `https://${process.env.EXPO_PUBLIC_DOMAIN}`
   : "";
 
 export default function VendorScreen() {
+  const { t } = useTranslation();
   const { slug } = useLocalSearchParams<{ slug: string }>();
   const colors = useColors();
   const insets = useSafeAreaInsets();
@@ -80,10 +82,10 @@ export default function VendorScreen() {
   if (!vendor) {
     return (
       <View style={[s.container, s.center]}>
-        <Text style={s.errorText}>Vendor not found</Text>
+        <Text style={s.errorText}>{t("vendorDetail.notFound")}</Text>
         <TouchableOpacity style={s.backBtn} onPress={() => router.back()}>
           <Feather name="arrow-left" size={18} color={colors.primaryForeground} />
-          <Text style={s.backBtnText}>Go Back</Text>
+          <Text style={s.backBtnText}>{t("vendorDetail.goBack")}</Text>
         </TouchableOpacity>
       </View>
     );
@@ -130,7 +132,7 @@ export default function VendorScreen() {
             {vendor.established > 0 && (
               <>
                 <Text style={s.metaDot}>·</Text>
-                <Text style={s.metaText}>Est. {vendor.established}</Text>
+                <Text style={s.metaText}>{t("vendorDetail.established", { year: vendor.established })}</Text>
               </>
             )}
           </View>
@@ -138,14 +140,14 @@ export default function VendorScreen() {
 
         {vendor.description ? (
           <View style={s.section}>
-            <Text style={s.sectionTitle}>About</Text>
+            <Text style={s.sectionTitle}>{t("vendorDetail.about")}</Text>
             <Text style={s.description}>{vendor.description}</Text>
           </View>
         ) : null}
 
         {vendor.marketsText ? (
           <View style={s.section}>
-            <Text style={s.sectionTitle}>Markets</Text>
+            <Text style={s.sectionTitle}>{t("vendorDetail.marketsTab")}</Text>
             <Text style={s.description}>{vendor.marketsText}</Text>
           </View>
         ) : null}
@@ -168,7 +170,7 @@ export default function VendorScreen() {
               }}
             >
               <Feather name="message-circle" size={15} color="#fff" />
-              <Text style={[s.linkText, { color: "#fff" }]}>Message</Text>
+              <Text style={[s.linkText, { color: "#fff" }]}>{t("vendorDetail.message")}</Text>
             </TouchableOpacity>
           ) : null}
           {vendor.websiteUrl ? (
@@ -177,7 +179,7 @@ export default function VendorScreen() {
               onPress={() => Linking.openURL(vendor.websiteUrl!)}
             >
               <Feather name="globe" size={15} color={colors.primary} />
-              <Text style={s.linkText}>Website</Text>
+              <Text style={s.linkText}>{t("vendorDetail.website")}</Text>
             </TouchableOpacity>
           ) : null}
           {vendor.instagramHandle ? (
@@ -188,7 +190,7 @@ export default function VendorScreen() {
               }
             >
               <Feather name="instagram" size={15} color={colors.primary} />
-              <Text style={s.linkText}>Instagram</Text>
+              <Text style={s.linkText}>{t("vendorDetail.instagram")}</Text>
             </TouchableOpacity>
           ) : null}
           {vendor.phone ? (
@@ -197,14 +199,14 @@ export default function VendorScreen() {
               onPress={() => Linking.openURL(`tel:${vendor.phone}`)}
             >
               <Feather name="phone" size={15} color={colors.primary} />
-              <Text style={s.linkText}>Call</Text>
+              <Text style={s.linkText}>{t("vendorDetail.call")}</Text>
             </TouchableOpacity>
           ) : null}
         </View>
 
         {vendor.latitude != null && vendor.longitude != null ? (
           <View style={s.mapSection}>
-            <Text style={s.sectionTitle}>Location</Text>
+            <Text style={s.sectionTitle}>{t("vendorDetail.location")}</Text>
             <MiniMap
               pins={[{
                 key: `vendor-${vendor.id}`,
@@ -234,9 +236,9 @@ export default function VendorScreen() {
 
         <View style={s.section}>
           <Text style={s.sectionTitle}>
-            Products{" "}
+            {t("vendorDetail.products")}{" "}
             {inStockCount > 0 ? (
-              <Text style={s.stockBadge}>{inStockCount} in stock</Text>
+              <Text style={s.stockBadge}>{inStockCount} {t("vendorDetail.inStock")}</Text>
             ) : null}
           </Text>
           {loadingProducts ? (
@@ -245,7 +247,7 @@ export default function VendorScreen() {
               style={{ marginTop: 16 }}
             />
           ) : (products ?? []).length === 0 ? (
-            <Text style={s.emptyProducts}>No products listed yet.</Text>
+            <Text style={s.emptyProducts}>{t("vendorDetail.noProducts")}</Text>
           ) : (
             <View style={s.productsList}>
               {(products ?? []).map((p) => (

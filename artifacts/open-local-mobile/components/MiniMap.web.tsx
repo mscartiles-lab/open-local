@@ -1,5 +1,6 @@
 import { Feather } from "@expo/vector-icons";
 import React from "react";
+import { useTranslation } from "react-i18next";
 import { StyleSheet, Text, View } from "react-native";
 
 import { useColors } from "@/hooks/useColors";
@@ -33,6 +34,7 @@ export function MiniMap({
   height = 200,
   fullBleed = false,
 }: MiniMapProps) {
+  const { t } = useTranslation();
   const colors = useColors();
 
   return (
@@ -45,11 +47,11 @@ export function MiniMap({
     >
       <Feather name="map" size={28} color={colors.mutedForeground} />
       <Text style={[styles.webText, { color: colors.mutedForeground }]}>
-        Map view available in the iOS/Android app
+        {t("miniMap.webFallback")}
       </Text>
       {pins.length > 0 ? (
         <Text style={[styles.webHint, { color: colors.mutedForeground }]}>
-          {pins.length} location{pins.length !== 1 ? "s" : ""} nearby
+          {t("miniMap.locationsNearby", { count: pins.length })}
         </Text>
       ) : null}
     </View>

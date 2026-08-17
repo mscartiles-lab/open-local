@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef } from "react";
+import { useTranslation } from "react-i18next";
 import {
   View,
   Text,
@@ -48,6 +49,7 @@ function timeAgo(iso: string) {
 }
 
 export default function ConversationScreen() {
+  const { t } = useTranslation();
   const { id } = useLocalSearchParams<{ id: string }>();
   const { user, sessionToken } = useAuth();
   const colors = useColors();
@@ -109,8 +111,8 @@ export default function ConversationScreen() {
   const isShopper = user && detail ? user.id === detail.conversation.shopperUserId : false;
   const otherName = detail
     ? isShopper
-      ? detail.vendor?.name ?? "Vendor"
-      : `@${detail.shopper?.username ?? "user"}`
+      ? detail.vendor?.name ?? t("common.vendorFallback")
+      : `@${detail.shopper?.username ?? t("common.userFallback")}`
     : "";
   const otherImg = detail && isShopper ? detail.vendor?.imageUrl : null;
 
@@ -149,7 +151,7 @@ export default function ConversationScreen() {
           ListEmptyComponent={
             <View style={s.emptyWrap}>
               <Feather name="message-circle" size={32} color={colors.mutedForeground} />
-              <Text style={s.emptyText}>Say hello! 👋</Text>
+              <Text style={s.emptyText}>{t("messages.sayHello")}</Text>
             </View>
           }
           renderItem={({ item: msg }) => {
@@ -174,7 +176,7 @@ export default function ConversationScreen() {
           style={s.input}
           value={draft}
           onChangeText={setDraft}
-          placeholder="Type a message…"
+          placeholder={t("messages.messagePlaceholder")}
           placeholderTextColor={colors.mutedForeground}
           multiline
           maxLength={5000}

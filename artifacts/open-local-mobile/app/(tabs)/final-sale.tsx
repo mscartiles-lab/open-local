@@ -2,6 +2,7 @@ import { useGetLocalNowFeed, useListVendors } from "@/lib/api-client";
 import { Feather } from "@expo/vector-icons";
 import { router } from "expo-router";
 import React, { useMemo, useState } from "react";
+import { useTranslation } from "react-i18next";
 import {
   ActivityIndicator,
   Dimensions,
@@ -21,6 +22,7 @@ import { useColors } from "@/hooks/useColors";
 import type { ProductWithVendor, Vendor } from "@/lib/api-client";
 
 export default function FinalSaleScreen() {
+  const { t } = useTranslation();
   const colors = useColors();
   const insets = useSafeAreaInsets();
   const [userLocation, setUserLocation] = useState<{
@@ -76,7 +78,7 @@ export default function FinalSaleScreen() {
           pins={pins}
           radiusMiles={0.5}
           height={screenH}
-          emptyHint="No surplus vendor locations mapped"
+          emptyHint={t("finalSale.emptyMapHint")}
           fullBleed
           showControls
           onUserLocationChange={setUserLocation}
@@ -94,8 +96,8 @@ export default function FinalSaleScreen() {
               <Feather name="tag" size={16} color="#fff" />
             </View>
             <View>
-              <Text style={s.wordmark}>Final Sale</Text>
-              <Text style={s.tagline}>Market-leftover discounts. Rescue it before it spoils.</Text>
+              <Text style={s.wordmark}>{t("finalSale.title")}</Text>
+              <Text style={s.tagline}>{t("finalSale.subtitle")}</Text>
             </View>
           </View>
         </View>
@@ -114,7 +116,7 @@ export default function FinalSaleScreen() {
             <View style={s.panelHead}>
               <View style={s.grabber} />
               <Text style={s.panelTitle}>
-                {items.length > 0 ? `${items.length} surplus item${items.length !== 1 ? "s" : ""}` : "Surplus items"}
+                {items.length > 0 ? t("finalSale.itemCount", { count: items.length }) : t("finalSale.noSurplusToday")}
               </Text>
               {isLoading && (
                 <View style={s.inline}>
@@ -137,10 +139,10 @@ export default function FinalSaleScreen() {
             <View style={s.emptyPanel}>
               <Feather name="package" size={36} color={colors.mutedForeground} />
               <Text style={[s.emptyTitle, { color: colors.foreground }]}>
-                No surplus today
+                {t("finalSale.noSurplusToday")}
               </Text>
               <Text style={[s.emptySubtitle, { color: colors.mutedForeground }]}>
-                Check back after the next market — vendors post leftovers in the evening.
+                {t("finalSale.checkBackAfter")}
               </Text>
             </View>
           ) : null

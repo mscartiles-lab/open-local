@@ -1,6 +1,7 @@
 import { Feather } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
 import React, { useState } from "react";
+import { useTranslation } from "react-i18next";
 import {
   Linking,
   Platform,
@@ -20,191 +21,16 @@ import { useColors } from "@/hooks/useColors";
 type PermitKind = "none" | "fdacs" | "dbpr";
 
 // ---------------------------------------------------------------------------
-// Quick-reference data
-// ---------------------------------------------------------------------------
-const QUICK_REF: { vendorType: string; permit: PermitKind; agency: string }[] =
-  [
-    { vendorType: "Home baker", permit: "none", agency: "Cottage Food exempt" },
-    {
-      vendorType: "Packaged honey / granola",
-      permit: "none",
-      agency: "Cottage Food exempt",
-    },
-    {
-      vendorType: "Farm with refrigerated items",
-      permit: "fdacs",
-      agency: "FDACS",
-    },
-    { vendorType: "Food truck / hot food", permit: "dbpr", agency: "DBPR" },
-    { vendorType: "Lemonade / smoothies", permit: "dbpr", agency: "DBPR" },
-    {
-      vendorType: "Candles / crafts / jewelry",
-      permit: "none",
-      agency: "None required",
-    },
-  ];
-
-// ---------------------------------------------------------------------------
-// Accordion section data
-// ---------------------------------------------------------------------------
-type AccordionSection = {
-  id: string;
-  icon: React.ComponentProps<typeof Feather>["name"];
-  title: string;
-  items: { heading?: string; lines: string[] }[];
-};
-
-const SECTIONS: AccordionSection[] = [
-  {
-    id: "cottage",
-    icon: "home",
-    title: "Florida Cottage Food Law (\u00a7500.80)",
-    items: [
-      {
-        lines: [
-          "No permit required \u2014 exempt from food safety regulations.",
-          "$250,000 annual gross sales cap.",
-          "Shelf-stable foods only (no refrigeration needed).",
-          "Sell online, at farmers markets, from home, or direct-to-consumer.",
-          "No wholesale or retail store sales.",
-          "Home kitchen only \u2014 no commercial kitchen required.",
-          "Florida sales only.",
-        ],
-      },
-    ],
-  },
-  {
-    id: "allowed",
-    icon: "check-circle",
-    title: "Allowed Cottage Foods",
-    items: [
-      {
-        lines: [
-          "Baked goods (breads, cakes, cookies, pies)",
-          "Jams and jellies (high-acid fruit only)",
-          "Honey and syrups",
-          "Roasted nuts and nut butters",
-          "Granola and dry mixes",
-          "Candy and fudge",
-          "Pasta (dried)",
-          "Dried fruits and vegetables",
-        ],
-      },
-    ],
-  },
-  {
-    id: "prohibited",
-    icon: "x-circle",
-    title: "Prohibited Cottage Foods",
-    items: [
-      {
-        lines: [
-          "Anything requiring refrigeration (TCS foods)",
-          "Meat, poultry, or seafood products",
-          "Cut fruits or vegetables",
-          "Raw sprouts",
-          "Home-canned goods",
-          "Dairy as a standalone product",
-          "Pet food",
-        ],
-      },
-    ],
-  },
-  {
-    id: "labeling",
-    icon: "tag",
-    title: "Required Product Labeling",
-    items: [
-      {
-        lines: [
-          "Seller name and home address",
-          "Product name",
-          "Ingredient list (by weight, descending)",
-          "Net weight or volume",
-          "Allergen warnings (per federal standard)",
-          "Required statement in 10pt contrasting font:\n\u201cMade in a cottage food operation that is not subject to Florida\u2019s food safety regulations.\u201d",
-        ],
-      },
-    ],
-  },
-  {
-    id: "fdacs",
-    icon: "clipboard",
-    title: "FDACS Permit",
-    items: [
-      {
-        heading: "Who needs it",
-        lines: [
-          "Pre-packaged non-cottage foods",
-          "Refrigerated or frozen products",
-          "Wholesale or retail businesses",
-          "Mobile vendors selling packaged goods",
-        ],
-      },
-      {
-        heading: "How to apply",
-        lines: ["Visit foodpermit.fdacs.gov to start your application online."],
-      },
-    ],
-  },
-  {
-    id: "dbpr",
-    icon: "truck",
-    title: "DBPR License",
-    items: [
-      {
-        heading: "Who needs it",
-        lines: [
-          "Ready-to-eat foods served on-site",
-          "Food trucks and mobile kitchens",
-          "Hot food, smoothies, or fresh juice",
-        ],
-      },
-      {
-        heading: "Fee schedule (approximate)",
-        lines: [
-          "1\u20133 days: ~$91",
-          "4\u201330 days: ~$105",
-          "Annual license: ~$456",
-        ],
-      },
-      {
-        heading: "How to apply",
-        lines: [
-          "Visit myfloridalicense.com to apply for a food service license.",
-        ],
-      },
-    ],
-  },
-  {
-    id: "universal",
-    icon: "list",
-    title: "Universal Requirements",
-    items: [
-      {
-        lines: [
-          "Florida sales tax registration \u2014 call 850-488-6800 or visit floridarevenue.com",
-          "Local business license / occupational permit (check your city and county)",
-          "General liability insurance (strongly recommended)",
-          "DBA registration at sunbiz.org if selling under a trade name",
-          "Event-specific permits for markets or fairs (check with organiser)",
-        ],
-      },
-    ],
-  },
-];
-
-// ---------------------------------------------------------------------------
 // Permit badge
 // ---------------------------------------------------------------------------
-function PermitBadge({ kind }: { kind: PermitKind }) {
-  const label =
-    kind === "none" ? "None" : kind === "fdacs" ? "FDACS" : "DBPR";
+function PermitBadge({ kind, label }: { kind: PermitKind; label: string }) {
   const bg =
     kind === "none" ? "#16a34a" : kind === "fdacs" ? "#d97706" : "#dc2626";
+  // FDACS and DBPR are official acronyms; display them as-is
+  const displayLabel = kind === "fdacs" ? "FDACS" : kind === "dbpr" ? "DBPR" : label;
   return (
     <View style={[badge.pill, { backgroundColor: bg }]}>
-      <Text style={badge.text}>{label}</Text>
+      <Text style={badge.text}>{displayLabel}</Text>
     </View>
   );
 }
@@ -225,13 +51,19 @@ const badge = StyleSheet.create({
 });
 
 // ---------------------------------------------------------------------------
-// Accordion card
+// Accordion card — receives already-translated strings
 // ---------------------------------------------------------------------------
+type AccordionGroup = { heading?: string; lines: string[] };
+
 function AccordionCard({
-  section,
+  icon,
+  title,
+  groups,
   colors,
 }: {
-  section: AccordionSection;
+  icon: React.ComponentProps<typeof Feather>["name"];
+  title: string;
+  groups: AccordionGroup[];
   colors: ReturnType<typeof useColors>;
 }) {
   const [open, setOpen] = useState(false);
@@ -245,9 +77,9 @@ function AccordionCard({
         activeOpacity={0.7}
       >
         <View style={s.iconWrap}>
-          <Feather name={section.icon} size={17} color={colors.primary} />
+          <Feather name={icon} size={17} color={colors.primary} />
         </View>
-        <Text style={s.title}>{section.title}</Text>
+        <Text style={s.title}>{title}</Text>
         <Feather
           name={open ? "chevron-up" : "chevron-down"}
           size={18}
@@ -257,14 +89,14 @@ function AccordionCard({
 
       {open && (
         <View style={s.body}>
-          {section.items.map((group, gi) => (
+          {groups.map((group, gi) => (
             <View key={gi} style={gi > 0 ? s.groupGap : undefined}>
               {group.heading ? (
                 <Text style={s.groupHeading}>{group.heading}</Text>
               ) : null}
               {group.lines.map((line, li) => (
                 <View key={li} style={s.bulletRow}>
-                  <Text style={s.bullet}>\u2022</Text>
+                  <Text style={s.bullet}>•</Text>
                   <Text style={s.bulletText}>{line}</Text>
                 </View>
               ))}
@@ -348,12 +180,171 @@ function accordionStyles(colors: ReturnType<typeof useColors>) {
 // Main screen
 // ---------------------------------------------------------------------------
 export default function ComplianceScreen() {
+  const { t } = useTranslation();
   const colors = useColors();
   const insets = useSafeAreaInsets();
   const router = useRouter();
   const topPad = Platform.OS === "web" ? 20 : insets.top;
   const bottomPad = Platform.OS === "web" ? 34 : insets.bottom + 16;
   const s = screenStyles(colors, topPad, bottomPad);
+
+  // ---------------------------------------------------------------------------
+  // Quick-reference table data — all user-visible strings from locale
+  // ---------------------------------------------------------------------------
+  const QUICK_REF: { vendorType: string; permit: PermitKind; agency: string }[] = [
+    { vendorType: t("compliance.quickHomeBaker"),       permit: "none",  agency: t("compliance.quickAgencyCottage") },
+    { vendorType: t("compliance.quickPackagedGoods"),   permit: "none",  agency: t("compliance.quickAgencyCottage") },
+    { vendorType: t("compliance.quickFarmRefrigerated"),permit: "fdacs", agency: "FDACS" },
+    { vendorType: t("compliance.quickFoodTruck"),       permit: "dbpr",  agency: "DBPR" },
+    { vendorType: t("compliance.quickJuiceBar"),        permit: "dbpr",  agency: "DBPR" },
+    { vendorType: t("compliance.quickCrafts"),          permit: "none",  agency: t("compliance.quickAgencyNone") },
+  ];
+
+  // ---------------------------------------------------------------------------
+  // Accordion sections — all text from locale
+  // ---------------------------------------------------------------------------
+  type SectionDef = {
+    id: string;
+    icon: React.ComponentProps<typeof Feather>["name"];
+    title: string;
+    groups: AccordionGroup[];
+  };
+
+  const SECTIONS: SectionDef[] = [
+    {
+      id: "cottage",
+      icon: "home",
+      title: t("compliance.sCottageTitle"),
+      groups: [{
+        lines: [
+          t("compliance.sCottageLine0"),
+          t("compliance.sCottageLine1"),
+          t("compliance.sCottageLine2"),
+          t("compliance.sCottageLine3"),
+          t("compliance.sCottageLine4"),
+          t("compliance.sCottageLine5"),
+          t("compliance.sCottageLine6"),
+        ],
+      }],
+    },
+    {
+      id: "allowed",
+      icon: "check-circle",
+      title: t("compliance.sAllowedTitle"),
+      groups: [{
+        lines: [
+          t("compliance.sAllowedLine0"),
+          t("compliance.sAllowedLine1"),
+          t("compliance.sAllowedLine2"),
+          t("compliance.sAllowedLine3"),
+          t("compliance.sAllowedLine4"),
+          t("compliance.sAllowedLine5"),
+          t("compliance.sAllowedLine6"),
+          t("compliance.sAllowedLine7"),
+        ],
+      }],
+    },
+    {
+      id: "prohibited",
+      icon: "x-circle",
+      title: t("compliance.sProhibitedTitle"),
+      groups: [{
+        lines: [
+          t("compliance.sProhibitedLine0"),
+          t("compliance.sProhibitedLine1"),
+          t("compliance.sProhibitedLine2"),
+          t("compliance.sProhibitedLine3"),
+          t("compliance.sProhibitedLine4"),
+          t("compliance.sProhibitedLine5"),
+          t("compliance.sProhibitedLine6"),
+        ],
+      }],
+    },
+    {
+      id: "labeling",
+      icon: "tag",
+      title: t("compliance.sLabelingTitle"),
+      groups: [{
+        lines: [
+          t("compliance.sLabelingLine0"),
+          t("compliance.sLabelingLine1"),
+          t("compliance.sLabelingLine2"),
+          t("compliance.sLabelingLine3"),
+          t("compliance.sLabelingLine4"),
+          t("compliance.sLabelingLine5"),
+        ],
+      }],
+    },
+    {
+      id: "fdacs",
+      icon: "clipboard",
+      title: t("compliance.sFdacsTitle"),
+      groups: [
+        {
+          heading: t("compliance.sFdacsHead0"),
+          lines: [
+            t("compliance.sFdacsLine0"),
+            t("compliance.sFdacsLine1"),
+            t("compliance.sFdacsLine2"),
+            t("compliance.sFdacsLine3"),
+          ],
+        },
+        {
+          heading: t("compliance.sFdacsHead1"),
+          lines: [t("compliance.sFdacsLine4")],
+        },
+      ],
+    },
+    {
+      id: "dbpr",
+      icon: "truck",
+      title: t("compliance.sDbprTitle"),
+      groups: [
+        {
+          heading: t("compliance.sDbprHead0"),
+          lines: [
+            t("compliance.sDbprLine0"),
+            t("compliance.sDbprLine1"),
+            t("compliance.sDbprLine2"),
+          ],
+        },
+        {
+          heading: t("compliance.sDbprHead1"),
+          lines: [
+            t("compliance.sDbprLine3"),
+            t("compliance.sDbprLine4"),
+            t("compliance.sDbprLine5"),
+          ],
+        },
+        {
+          heading: t("compliance.sDbprHead2"),
+          lines: [t("compliance.sDbprLine6")],
+        },
+      ],
+    },
+    {
+      id: "universal",
+      icon: "list",
+      title: t("compliance.sUniversalTitle"),
+      groups: [{
+        lines: [
+          t("compliance.sUniversalLine0"),
+          t("compliance.sUniversalLine1"),
+          t("compliance.sUniversalLine2"),
+          t("compliance.sUniversalLine3"),
+          t("compliance.sUniversalLine4"),
+        ],
+      }],
+    },
+  ];
+
+  // Official links — labels translated, URLs stay verbatim
+  const LINKS = [
+    { label: t("compliance.linkFdacs"), url: "https://foodpermit.fdacs.gov" },
+    { label: t("compliance.linkDbpr"),  url: "https://www.myfloridalicense.com" },
+    { label: t("compliance.linkSunbiz"),url: "https://dos.myflorida.com/sunbiz" },
+    { label: t("compliance.linkRevenue"),url: "https://floridarevenue.com" },
+  ];
 
   return (
     <View style={s.container}>
@@ -362,7 +353,7 @@ export default function ComplianceScreen() {
         <TouchableOpacity style={s.backBtn} onPress={() => router.back()}>
           <Feather name="arrow-left" size={20} color={colors.foreground} />
         </TouchableOpacity>
-        <Text style={s.headerTitle}>Compliance Info</Text>
+        <Text style={s.headerTitle}>{t("compliance.headerTitle")}</Text>
         <View style={{ width: 36 }} />
       </View>
 
@@ -378,23 +369,23 @@ export default function ComplianceScreen() {
             color="#d97706"
             style={{ marginTop: 1 }}
           />
-          <Text style={s.disclaimerText}>
-            This is a reference summary, not legal advice. Vendors should verify
-            requirements with FDACS, DBPR, and their local county before
-            selling.
-          </Text>
+          <Text style={s.disclaimerText}>{t("compliance.disclaimer")}</Text>
         </View>
 
         {/* Quick reference table */}
-        <Text style={s.sectionLabel}>Quick Reference</Text>
+        <Text style={s.sectionLabel}>{t("compliance.quickReference")}</Text>
         <View style={s.tableCard}>
           {/* Table header */}
           <View style={[s.tableRow, s.tableHeaderRow]}>
             <Text style={[s.tableCell, s.tableHCell, s.col1]}>
-              Vendor Type
+              {t("compliance.colVendorType")}
             </Text>
-            <Text style={[s.tableCell, s.tableHCell, s.col2]}>Permit</Text>
-            <Text style={[s.tableCell, s.tableHCell, s.col3]}>Agency</Text>
+            <Text style={[s.tableCell, s.tableHCell, s.col2]}>
+              {t("compliance.colPermit")}
+            </Text>
+            <Text style={[s.tableCell, s.tableHCell, s.col3]}>
+              {t("compliance.colAgency")}
+            </Text>
           </View>
           {QUICK_REF.map((item, i) => (
             <View
@@ -408,7 +399,7 @@ export default function ComplianceScreen() {
                 {item.vendorType}
               </Text>
               <View style={[s.tableCell, s.col2, s.tableCellCenter]}>
-                <PermitBadge kind={item.permit} />
+                <PermitBadge kind={item.permit} label={t("compliance.permitNone")} />
               </View>
               <Text style={[s.tableCell, s.tableBodyCell, s.col3]}>
                 {item.agency}
@@ -418,35 +409,24 @@ export default function ComplianceScreen() {
         </View>
 
         {/* Accordion sections */}
-        <Text style={s.sectionLabel}>Detailed Guides</Text>
+        <Text style={s.sectionLabel}>{t("compliance.detailedGuides")}</Text>
         {SECTIONS.map((section) => (
-          <AccordionCard key={section.id} section={section} colors={colors} />
+          <AccordionCard
+            key={section.id}
+            icon={section.icon}
+            title={section.title}
+            groups={section.groups}
+            colors={colors}
+          />
         ))}
 
         {/* Official links */}
-        <Text style={s.sectionLabel}>Official Resources</Text>
+        <Text style={s.sectionLabel}>{t("compliance.officialResources")}</Text>
         <View style={s.linksCard}>
-          {[
-            {
-              label: "FDACS Food Permit Portal",
-              url: "https://foodpermit.fdacs.gov",
-            },
-            {
-              label: "DBPR License Application",
-              url: "https://www.myfloridalicense.com",
-            },
-            {
-              label: "Florida Sunbiz (DBA registration)",
-              url: "https://dos.myflorida.com/sunbiz",
-            },
-            {
-              label: "FL Dept. of Revenue (sales tax)",
-              url: "https://floridarevenue.com",
-            },
-          ].map(({ label, url }, i, arr) => (
+          {LINKS.map(({ label, url }, i) => (
             <TouchableOpacity
               key={url}
-              style={[s.linkRow, i < arr.length - 1 && s.linkRowBorder]}
+              style={[s.linkRow, i < LINKS.length - 1 && s.linkRowBorder]}
               onPress={() => Linking.openURL(url)}
               activeOpacity={0.7}
             >
@@ -461,10 +441,7 @@ export default function ComplianceScreen() {
         </View>
 
         {/* Footer */}
-        <Text style={s.footer}>
-          Sources: FL Statute \u00a7500.80 (2025), FDACS, DBPR, UF/IFAS
-          Extension, FL Farmers Market Toolkit
-        </Text>
+        <Text style={s.footer}>{t("compliance.footer")}</Text>
       </ScrollView>
     </View>
   );

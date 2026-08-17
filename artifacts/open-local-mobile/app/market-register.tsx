@@ -1,6 +1,7 @@
 import { Feather } from "@expo/vector-icons";
 import { router } from "expo-router";
 import React, { useState } from "react";
+import { useTranslation } from "react-i18next";
 import {
   ActivityIndicator,
   Alert,
@@ -20,13 +21,13 @@ import { LocationPickerMap, type PickedLocation } from "@/components/LocationPic
 import { useColors } from "@/hooks/useColors";
 import { apiFetch } from "@/lib/api";
 
-const DAYS = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"];
-
-const TAG_OPTIONS = [
+// Stable English keys submitted to the server
+const DAY_KEYS = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"] as const;
+const TAG_KEYS = [
   "Organic", "Dog-Friendly", "Live Music", "Kids Activities",
   "Prepared Foods", "Plants & Flowers", "Artisan Crafts",
   "Year-Round", "Seasonal", "Indoor", "Outdoor",
-];
+] as const;
 
 type Step = "basics" | "contact" | "confirm";
 const STEPS: Step[] = ["basics", "contact", "confirm"];
@@ -56,6 +57,7 @@ const INITIAL: FormState = {
 };
 
 export default function MarketRegisterScreen() {
+  const { t } = useTranslation();
   const colors = useColors();
   const [step, setStep] = useState<Step>("basics");
   const [form, setForm] = useState<FormState>(INITIAL);
@@ -68,7 +70,7 @@ export default function MarketRegisterScreen() {
   const toggleTag = (tag: string) =>
     setForm((f) => ({
       ...f,
-      tags: f.tags.includes(tag) ? f.tags.filter((t) => t !== tag) : [...f.tags, tag],
+      tags: f.tags.includes(tag) ? f.tags.filter((tg) => tg !== tag) : [...f.tags, tag],
     }));
 
   const stepIndex = STEPS.indexOf(step);
@@ -116,7 +118,7 @@ export default function MarketRegisterScreen() {
       });
       setDone(true);
     } catch (e) {
-      Alert.alert("Error", e instanceof Error ? e.message : "Could not submit. Please try again.");
+      Alert.alert(t("common.error"), e instanceof Error ? e.message : t("marketRegister.errorSubmit"));
     } finally {
       setSubmitting(false);
     }
@@ -131,16 +133,16 @@ export default function MarketRegisterScreen() {
           <View style={[s.doneIcon, { backgroundColor: "#16653420" }]}>
             <Feather name="check-circle" size={40} color="#166534" />
           </View>
-          <Text style={[s.doneTitle, { color: c.foreground }]}>You're listed!</Text>
+          <Text style={[s.doneTitle, { color: c.foreground }]}>{t("marketRegister.youAreListed")}</Text>
           <Text style={[s.doneBody, { color: c.mutedForeground }]}>
-            Your market is now live on Open Local. Check your email for a confirmation and your claim link.
+            {t("marketRegister.doneBody")}
           </Text>
           <TouchableOpacity
             style={[s.doneBtn, { backgroundColor: "#166534" }]}
             onPress={() => router.replace("/(tabs)/markets")}
             activeOpacity={0.85}
           >
-            <Text style={s.doneBtnText}>Browse markets</Text>
+            <Text style={s.doneBtnText}>{t("marketRegister.browseMarkets")}</Text>
           </TouchableOpacity>
         </View>
       </SafeAreaView>
@@ -158,7 +160,7 @@ export default function MarketRegisterScreen() {
           <Pressable onPress={goBack} hitSlop={12} style={s.headerBtn}>
             <Feather name="chevron-left" size={24} color={c.foreground} />
           </Pressable>
-          <Text style={[s.headerTitle, { color: c.foreground }]}>List your market</Text>
+          <Text style={[s.headerTitle, { color: c.foreground }]}>{t("marketRegister.title")}</Text>
           <Pressable onPress={() => router.back()} hitSlop={12} style={s.headerBtn}>
             <Feather name="x" size={22} color={c.mutedForeground} />
           </Pressable>
@@ -174,7 +176,7 @@ export default function MarketRegisterScreen() {
           />
         </View>
         <Text style={[s.stepLabel, { color: c.mutedForeground }]}>
-          Step {stepIndex + 1} of {STEPS.length}
+          {t("marketRegister.stepOf", { step: stepIndex + 1, total: STEPS.length })}
         </Text>
 
         <ScrollView
@@ -186,14 +188,14 @@ export default function MarketRegisterScreen() {
           {step === "basics" && (
             <View style={{ gap: 18 }}>
               <View>
-                <Text style={[s.h1, { color: c.foreground }]}>About your market</Text>
+                <Text style={[s.h1, { color: c.foreground }]}>{t("marketRegister.aboutMarket")}</Text>
                 <Text style={[s.body, { color: c.mutedForeground, marginTop: 4 }]}>
-                  Tell shoppers where and when to find you.
+                  {t("marketRegister.aboutMarketBody")}
                 </Text>
               </View>
 
               <View style={s.fieldGap}>
-                <Text style={[s.label, { color: c.foreground }]}>Market name *</Text>
+                <Text style={[s.label, { color: c.foreground }]}>{t("marketRegister.marketName")} *</Text>
                 <TextInput
                   value={form.name}
                   onChangeText={(v) => set("name", v)}
@@ -205,7 +207,7 @@ export default function MarketRegisterScreen() {
               </View>
 
               <View style={s.fieldGap}>
-                <Text style={[s.label, { color: c.foreground }]}>City *</Text>
+                <Text style={[s.label, { color: c.foreground }]}>{t("marketRegister.city")} *</Text>
                 <TextInput
                   value={form.city}
                   onChangeText={(v) => set("city", v)}
@@ -217,7 +219,7 @@ export default function MarketRegisterScreen() {
               </View>
 
               <View style={s.fieldGap}>
-                <Text style={[s.label, { color: c.foreground }]}>Street address</Text>
+                <Text style={[s.label, { color: c.foreground }]}>{t("marketRegister.streetAddress")}</Text>
                 <TextInput
                   value={form.address}
                   onChangeText={(v) => set("address", v)}
@@ -228,13 +230,23 @@ export default function MarketRegisterScreen() {
               </View>
 
               <View style={s.fieldGap}>
-                <Text style={[s.label, { color: c.foreground }]}>Market day</Text>
+                <Text style={[s.label, { color: c.foreground }]}>{t("marketRegister.marketDay")}</Text>
                 <ScrollView
                   horizontal
                   showsHorizontalScrollIndicator={false}
                   contentContainerStyle={{ gap: 6 }}
                 >
-                  {DAYS.map((d) => (
+                  {DAY_KEYS.map((d) => {
+                    const DAY_LABEL_MAP: Record<string, string> = {
+                      "Monday": t("marketRegister.dayMon"),
+                      "Tuesday": t("marketRegister.dayTue"),
+                      "Wednesday": t("marketRegister.dayWed"),
+                      "Thursday": t("marketRegister.dayThu"),
+                      "Friday": t("marketRegister.dayFri"),
+                      "Saturday": t("marketRegister.daySat"),
+                      "Sunday": t("marketRegister.daySun"),
+                    };
+                    return (
                     <TouchableOpacity
                       key={d}
                       onPress={() => set("day", form.day === d ? "" : d)}
@@ -248,15 +260,16 @@ export default function MarketRegisterScreen() {
                       activeOpacity={0.75}
                     >
                       <Text style={[s.chipText, { color: form.day === d ? "#fff" : c.foreground }]}>
-                        {d.slice(0, 3)}
+                        {DAY_LABEL_MAP[d] ?? d.slice(0, 3)}
                       </Text>
                     </TouchableOpacity>
-                  ))}
+                    );
+                  })}
                 </ScrollView>
               </View>
 
               <View style={s.fieldGap}>
-                <Text style={[s.label, { color: c.foreground }]}>Hours</Text>
+                <Text style={[s.label, { color: c.foreground }]}>{t("marketRegister.hours")}</Text>
                 <TextInput
                   value={form.time}
                   onChangeText={(v) => set("time", v)}
@@ -267,11 +280,11 @@ export default function MarketRegisterScreen() {
               </View>
 
               <View style={s.fieldGap}>
-                <Text style={[s.label, { color: c.foreground }]}>Description</Text>
+                <Text style={[s.label, { color: c.foreground }]}>{t("marketRegister.description")}</Text>
                 <TextInput
                   value={form.description}
                   onChangeText={(v) => set("description", v)}
-                  placeholder="Tell shoppers what makes your market special…"
+                  placeholder={t("marketRegister.descriptionPlaceholder")}
                   placeholderTextColor={c.mutedForeground}
                   multiline
                   numberOfLines={4}
@@ -281,10 +294,23 @@ export default function MarketRegisterScreen() {
               </View>
 
               <View style={s.fieldGap}>
-                <Text style={[s.label, { color: c.foreground }]}>Tags</Text>
+                <Text style={[s.label, { color: c.foreground }]}>{t("marketRegister.tags")}</Text>
                 <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 6 }}>
-                  {TAG_OPTIONS.map((tag) => {
+                  {TAG_KEYS.map((tag) => {
                     const on = form.tags.includes(tag);
+                    const TAG_LABEL_MAP: Record<string, string> = {
+                      "Organic": t("marketRegister.tagOrganic"),
+                      "Dog-Friendly": t("marketRegister.tagDogFriendly"),
+                      "Live Music": t("marketRegister.tagLiveMusic"),
+                      "Kids Activities": t("marketRegister.tagKidsActivities"),
+                      "Prepared Foods": t("marketRegister.tagPreparedFoods"),
+                      "Plants & Flowers": t("marketRegister.tagPlantsFlowers"),
+                      "Artisan Crafts": t("marketRegister.tagArtisanCrafts"),
+                      "Year-Round": t("marketRegister.tagYearRound"),
+                      "Seasonal": t("marketRegister.tagSeasonal"),
+                      "Indoor": t("marketRegister.tagIndoor"),
+                      "Outdoor": t("marketRegister.tagOutdoor"),
+                    };
                     return (
                       <TouchableOpacity
                         key={tag}
@@ -298,7 +324,9 @@ export default function MarketRegisterScreen() {
                         ]}
                         activeOpacity={0.75}
                       >
-                        <Text style={[s.chipText, { color: on ? "#fff" : c.foreground }]}>{tag}</Text>
+                        <Text style={[s.chipText, { color: on ? "#fff" : c.foreground }]}>
+                          {TAG_LABEL_MAP[tag] ?? tag}
+                        </Text>
                       </TouchableOpacity>
                     );
                   })}
@@ -307,7 +335,7 @@ export default function MarketRegisterScreen() {
 
               {/* Map picker */}
               <View style={s.fieldGap}>
-                <Text style={[s.label, { color: c.foreground }]}>Pin your location</Text>
+                <Text style={[s.label, { color: c.foreground }]}>{t("marketRegister.pinYourLocation")}</Text>
                 <LocationPickerMap
                   onChange={setLatLng}
                   hint={[form.address, form.city].filter(Boolean).join(" ")}
@@ -326,14 +354,14 @@ export default function MarketRegisterScreen() {
           {step === "contact" && (
             <View style={{ gap: 18 }}>
               <View>
-                <Text style={[s.h1, { color: c.foreground }]}>Contact details</Text>
+                <Text style={[s.h1, { color: c.foreground }]}>{t("marketRegister.contactDetails")}</Text>
                 <Text style={[s.body, { color: c.mutedForeground, marginTop: 4 }]}>
-                  Your confirmation and claim link will be sent to this email.
+                  {t("marketRegister.contactDetailsBody")}
                 </Text>
               </View>
 
               <View style={s.fieldGap}>
-                <Text style={[s.label, { color: c.foreground }]}>Contact email *</Text>
+                <Text style={[s.label, { color: c.foreground }]}>{t("marketRegister.contactEmail")} *</Text>
                 <TextInput
                   value={form.contactEmail}
                   onChangeText={(v) => set("contactEmail", v)}
@@ -346,7 +374,7 @@ export default function MarketRegisterScreen() {
               </View>
 
               <View style={s.fieldGap}>
-                <Text style={[s.label, { color: c.foreground }]}>Phone</Text>
+                <Text style={[s.label, { color: c.foreground }]}>{t("marketRegister.phone")}</Text>
                 <TextInput
                   value={form.phone}
                   onChangeText={(v) => set("phone", v)}
@@ -358,7 +386,7 @@ export default function MarketRegisterScreen() {
               </View>
 
               <View style={s.fieldGap}>
-                <Text style={[s.label, { color: c.foreground }]}>Website</Text>
+                <Text style={[s.label, { color: c.foreground }]}>{t("marketRegister.website")}</Text>
                 <TextInput
                   value={form.websiteUrl}
                   onChangeText={(v) => set("websiteUrl", v)}
@@ -371,7 +399,7 @@ export default function MarketRegisterScreen() {
               </View>
 
               <View style={s.fieldGap}>
-                <Text style={[s.label, { color: c.foreground }]}>Instagram handle</Text>
+                <Text style={[s.label, { color: c.foreground }]}>{t("marketRegister.instagramHandle")}</Text>
                 <TextInput
                   value={form.instagramHandle}
                   onChangeText={(v) => set("instagramHandle", v)}
@@ -383,7 +411,7 @@ export default function MarketRegisterScreen() {
               </View>
 
               <View style={s.fieldGap}>
-                <Text style={[s.label, { color: c.foreground }]}>Logo URL (optional)</Text>
+                <Text style={[s.label, { color: c.foreground }]}>{t("marketRegister.logoUrl")}</Text>
                 <TextInput
                   value={form.logoUrl}
                   onChangeText={(v) => set("logoUrl", v)}
@@ -401,23 +429,31 @@ export default function MarketRegisterScreen() {
           {step === "confirm" && (
             <View style={{ gap: 18 }}>
               <View>
-                <Text style={[s.h1, { color: c.foreground }]}>Review & submit</Text>
+                <Text style={[s.h1, { color: c.foreground }]}>{t("marketRegister.reviewAndSubmit")}</Text>
                 <Text style={[s.body, { color: c.mutedForeground, marginTop: 4 }]}>
-                  Your market goes live immediately. You'll also get an email with a link to claim and manage your listing.
+                  {t("marketRegister.reviewBody")}
                 </Text>
               </View>
 
               <View style={[s.reviewCard, { backgroundColor: c.card, borderColor: c.border }]}>
-                <Row label="Name" value={form.name} colors={c} />
-                <Row label="City" value={form.city} colors={c} />
-                {form.address ? <Row label="Address" value={form.address} colors={c} /> : null}
-                {form.day ? <Row label="Day" value={form.day} colors={c} /> : null}
-                {form.time ? <Row label="Hours" value={form.time} colors={c} /> : null}
-                <Row label="Email" value={form.contactEmail} colors={c} />
-                {form.phone ? <Row label="Phone" value={form.phone} colors={c} /> : null}
+                <Row label={t("marketRegister.rowName")} value={form.name} colors={c} />
+                <Row label={t("marketRegister.rowCity")} value={form.city} colors={c} />
+                {form.address ? <Row label={t("marketRegister.rowAddress")} value={form.address} colors={c} /> : null}
+                {form.day ? <Row label={t("marketRegister.rowDay")} value={({
+                    "Monday": t("marketRegister.dayMon"),
+                    "Tuesday": t("marketRegister.dayTue"),
+                    "Wednesday": t("marketRegister.dayWed"),
+                    "Thursday": t("marketRegister.dayThu"),
+                    "Friday": t("marketRegister.dayFri"),
+                    "Saturday": t("marketRegister.daySat"),
+                    "Sunday": t("marketRegister.daySun"),
+                  } as Record<string, string>)[form.day] ?? form.day} colors={c} /> : null}
+                {form.time ? <Row label={t("marketRegister.rowHours")} value={form.time} colors={c} /> : null}
+                <Row label={t("marketRegister.rowEmail")} value={form.contactEmail} colors={c} />
+                {form.phone ? <Row label={t("marketRegister.rowPhone")} value={form.phone} colors={c} /> : null}
                 {form.latitude != null && form.longitude != null ? (
                   <Row
-                    label="Pin"
+                    label={t("marketRegister.rowPin")}
                     value={`${form.latitude.toFixed(4)}, ${form.longitude.toFixed(4)}`}
                     colors={c}
                   />
@@ -439,7 +475,7 @@ export default function MarketRegisterScreen() {
             {submitting
               ? <ActivityIndicator color="#fff" />
               : <Text style={s.nextBtnText}>
-                  {step === "confirm" ? "List my market" : "Continue"}
+                  {step === "confirm" ? t("marketRegister.listMyMarket") : t("marketRegister.continue")}
                 </Text>}
           </TouchableOpacity>
         </ScrollView>

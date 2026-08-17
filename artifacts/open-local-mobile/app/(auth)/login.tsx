@@ -17,6 +17,7 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import { useAuth, type AppUser } from "@/context/AuthContext";
 import { useColors } from "@/hooks/useColors";
 import { apiFetch } from "@/lib/api";
+import { useTranslation } from "react-i18next";
 
 type Step = "email" | "verify";
 
@@ -32,6 +33,7 @@ interface LoginVerifyResponse {
 }
 
 export default function LoginScreen() {
+  const { t } = useTranslation();
   const colors = useColors();
   const { setSession } = useAuth();
 
@@ -57,7 +59,7 @@ export default function LoginScreen() {
       setDevCode(data.devCode ?? null);
       setStep("verify");
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Something went wrong.");
+      setError(err instanceof Error ? err.message : t("login.errorGeneric"));
     } finally {
       setSubmitting(false);
     }
@@ -75,7 +77,7 @@ export default function LoginScreen() {
       await setSession(data.sessionToken, data.user);
       router.replace("/(tabs)");
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Something went wrong.");
+      setError(err instanceof Error ? err.message : t("login.errorGeneric"));
     } finally {
       setSubmitting(false);
     }
@@ -111,12 +113,12 @@ export default function LoginScreen() {
           </View>
 
           <Text style={[styles.h1, { color: colors.foreground }]}>
-            {step === "email" ? "Welcome back" : "Enter your code"}
+            {step === "email" ? t("login.welcomeBack") : t("login.enterCode")}
           </Text>
           <Text style={[styles.sub, { color: colors.mutedForeground }]}>
             {step === "email"
-              ? "Enter the email you signed up with and we'll send you a login code."
-              : `We sent a 6-digit code to ${email}. It expires in 10 minutes.`}
+              ? t("login.emailBody")
+              : t("login.verifyBody", { email })}
           </Text>
 
           {/* Email step */}
@@ -169,7 +171,7 @@ export default function LoginScreen() {
               />
               <Pressable onPress={resendCode}>
                 <Text style={[styles.linkText, { color: colors.primary }]}>
-                  Resend code
+                  {t("login.resendCode")}
                 </Text>
               </Pressable>
             </View>
@@ -192,7 +194,7 @@ export default function LoginScreen() {
               <ActivityIndicator color="#fff" />
             ) : (
               <Text style={styles.primaryBtnText}>
-                {step === "email" ? "Send code" : "Sign in"}
+                {step === "email" ? t("login.sendCode") : t("login.verifyCode")}
               </Text>
             )}
           </Pressable>
@@ -200,11 +202,11 @@ export default function LoginScreen() {
           {/* Switch to sign up */}
           <View style={styles.switchRow}>
             <Text style={[styles.switchText, { color: colors.mutedForeground }]}>
-              Don't have an account?{" "}
+              {t("login.noAccount")}{" "}
             </Text>
             <Pressable onPress={() => router.replace("/(auth)/signup" as any)}>
               <Text style={[styles.switchLink, { color: colors.primary }]}>
-                Sign up
+                {t("login.signUp")}
               </Text>
             </Pressable>
           </View>

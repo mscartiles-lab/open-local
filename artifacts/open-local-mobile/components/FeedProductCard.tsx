@@ -1,4 +1,5 @@
 import React from "react";
+import { useTranslation } from "react-i18next";
 import {
   StyleSheet,
   Text,
@@ -14,22 +15,22 @@ function formatPrice(cents: number): string {
   return `$${(cents / 100).toFixed(2)}`;
 }
 
-const LISTING_LABELS: Record<string, string> = {
-  batch_drop: "Just Dropped",
-  surplus: "Surplus",
-  pre_order: "Pre-Order",
-  regular: "",
-};
-
 interface Props {
   item: ProductWithVendor;
   onPress: () => void;
 }
 
 export function FeedProductCard({ item, onPress }: Props) {
+  const { t } = useTranslation();
   const colors = useColors();
   const s = styles(colors);
 
+  const LISTING_LABELS: Record<string, string> = {
+    batch_drop: t("feedProductCard.justDropped"),
+    surplus: t("feedProductCard.surplus"),
+    pre_order: t("feedProductCard.preOrder"),
+    regular: "",
+  };
   const label = LISTING_LABELS[item.listingType] ?? "";
   const hasDiscount =
     item.originalPriceCents != null && item.originalPriceCents > item.priceCents;
@@ -64,7 +65,7 @@ export function FeedProductCard({ item, onPress }: Props) {
           <Text style={s.unit}>/{item.unit}</Text>
         </View>
         {!item.inStock && (
-          <Text style={s.outOfStock}>Out of stock</Text>
+          <Text style={s.outOfStock}>{t("feedProductCard.outOfStock")}</Text>
         )}
       </View>
     </TouchableOpacity>

@@ -21,6 +21,7 @@ import { useAuth, type AppUser } from "@/context/AuthContext";
 import { useColors } from "@/hooks/useColors";
 import { apiFetch } from "@/lib/api";
 import { AVATAR_STYLES, type AvatarStyle } from "@/lib/unlockCatalog";
+import { useTranslation } from "react-i18next";
 
 type Step = "role" | "profile" | "avatar" | "email" | "verify";
 
@@ -39,6 +40,7 @@ interface VerifyResponse {
 }
 
 export default function SignupScreen() {
+  const { t } = useTranslation();
   const colors = useColors();
   const { setSession } = useAuth();
   const params = useLocalSearchParams<{ role?: string }>();
@@ -95,8 +97,8 @@ export default function SignupScreen() {
       const { status } = await Location.requestForegroundPermissionsAsync();
       if (status !== "granted") {
         Alert.alert(
-          "Location permission",
-          "Allow location to auto-fill your ZIP, or enter it manually.",
+          t("signup.locationPermissionTitle"),
+          t("signup.locationPermissionMessage"),
         );
         return;
       }
@@ -136,7 +138,7 @@ export default function SignupScreen() {
       setDevCode(res.devFallback ? res.devCode : null);
       setStep("verify");
     } catch (e) {
-      setError(e instanceof Error ? e.message : "Could not send code");
+      setError(e instanceof Error ? e.message : t("signup.errorSendCode"));
     } finally {
       setSubmitting(false);
     }
@@ -151,9 +153,9 @@ export default function SignupScreen() {
         body: JSON.stringify({ verificationId }),
       });
       setDevCode(res.devFallback ? res.devCode : null);
-      Alert.alert("Code resent", "Check your email for a new 6-digit code.");
+      Alert.alert(t("signup.codeResentTitle"), t("signup.codeResentBody"));
     } catch (e) {
-      setError(e instanceof Error ? e.message : "Could not resend code");
+      setError(e instanceof Error ? e.message : t("signup.errorResendCode"));
     } finally {
       setSubmitting(false);
     }
@@ -175,7 +177,7 @@ export default function SignupScreen() {
         router.replace("/");
       }
     } catch (e) {
-      setError(e instanceof Error ? e.message : "Invalid code");
+      setError(e instanceof Error ? e.message : t("signup.errorInvalidCode"));
     } finally {
       setSubmitting(false);
     }
@@ -228,7 +230,7 @@ export default function SignupScreen() {
             <Feather name="chevron-left" size={24} color={colors.foreground} />
           </Pressable>
           <Text style={[styles.headerTitle, { color: colors.foreground }]}>
-            {step === "verify" ? "Verify email" : "Join Open Local"}
+            {step === "verify" ? t("signup.stepCode") : t("signup.title")}
           </Text>
           <Pressable onPress={() => router.back()} hitSlop={12}>
             <Feather name="x" size={22} color={colors.mutedForeground} />
@@ -242,20 +244,20 @@ export default function SignupScreen() {
           {step === "role" && (
             <View style={{ gap: 14 }}>
               <Text style={[styles.h1, { color: colors.foreground }]}>
-                I'm joining as a…
+                {t("signup.stepRole")}
               </Text>
               <RoleChip
                 active={role === "shopper"}
                 onPress={() => setRole("shopper")}
-                title="Shopper"
-                body="Discover local makers, save favorites, earn avatar unlocks"
+                title={t("signup.roleShopper")}
+                body={t("signup.roleShopperBody")}
                 colors={colors}
               />
               <RoleChip
                 active={role === "vendor"}
                 onPress={() => setRole("vendor")}
-                title="Vendor / Business"
-                body="List products, run pre-orders & batch drops"
+                title={t("signup.roleVendor")}
+                body={t("signup.roleVendorBody")}
                 colors={colors}
               />
             </View>
@@ -264,7 +266,7 @@ export default function SignupScreen() {
           {step === "profile" && (
             <View style={{ gap: 16 }}>
               <Text style={[styles.h1, { color: colors.foreground }]}>
-                Pick a username
+                {t("signup.stepUsername")}
               </Text>
               <View>
                 <TextInput
@@ -299,17 +301,17 @@ export default function SignupScreen() {
                   ]}
                 >
                   {checkingUsername
-                    ? "Checking…"
+                    ? t("signup.usernameChecking")
                     : usernameAvailable === true
-                      ? "✓ Available"
+                      ? t("signup.usernameAvailable")
                       : usernameAvailable === false
-                        ? "Already taken"
-                        : "3–24 letters, numbers, underscores"}
+                        ? t("signup.usernameTaken")
+                        : t("signup.usernameFormat")}
                 </Text>
               </View>
 
               <Text style={[styles.label, { color: colors.foreground }]}>
-                ZIP code (optional)
+                {t("signup.zipLabel")}
               </Text>
               <View style={{ flexDirection: "row", gap: 8 }}>
                 <TextInput
@@ -350,7 +352,7 @@ export default function SignupScreen() {
           {step === "avatar" && (
             <View style={{ gap: 16 }}>
               <Text style={[styles.h1, { color: colors.foreground }]}>
-                Pick your look
+                {t("signup.stepAvatar")}
               </Text>
               <View style={styles.avatarGrid}>
                 {AVATAR_STYLES.map((s) => (
@@ -376,10 +378,10 @@ export default function SignupScreen() {
           {step === "email" && (
             <View style={{ gap: 16 }}>
               <Text style={[styles.h1, { color: colors.foreground }]}>
-                What's your email?
+                {t("signup.stepEmail")}
               </Text>
               <Text style={[styles.body, { color: colors.mutedForeground }]}>
-                We'll send a 6-digit code to verify it.
+                {t("signup.emailBody")}
               </Text>
               <TextInput
                 value={email}
@@ -404,10 +406,10 @@ export default function SignupScreen() {
           {step === "verify" && (
             <View style={{ gap: 16 }}>
               <Text style={[styles.h1, { color: colors.foreground }]}>
-                Enter the code
+                {t("signup.stepCode")}
               </Text>
               <Text style={[styles.body, { color: colors.mutedForeground }]}>
-                We sent a 6-digit code to {email}. It expires in 10 minutes.
+                {t("signup.verifyBody", { email })}
               </Text>
               {devCode ? (
                 <View
@@ -417,7 +419,7 @@ export default function SignupScreen() {
                   ]}
                 >
                   <Text style={[styles.label, { color: colors.foreground }]}>
-                    Demo mode — your code is {devCode}
+                    {t("signup.devCodeLabel", { code: devCode })}
                   </Text>
                 </View>
               ) : null}
@@ -442,7 +444,7 @@ export default function SignupScreen() {
               />
               <Pressable onPress={resendCode} disabled={submitting}>
                 <Text style={[styles.linkText, { color: colors.primary }]}>
-                  Resend code
+                  {t("signup.resendCode")}
                 </Text>
               </Pressable>
             </View>
@@ -472,10 +474,10 @@ export default function SignupScreen() {
             ) : (
               <Text style={styles.primaryBtnText}>
                 {step === "email"
-                  ? "Send code"
+                  ? t("signup.sendCode")
                   : step === "verify"
-                    ? "Verify & continue"
-                    : "Continue"}
+                    ? t("signup.verifyAndContinue")
+                    : t("signup.continue")}
               </Text>
             )}
           </Pressable>

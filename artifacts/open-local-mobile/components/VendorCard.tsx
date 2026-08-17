@@ -1,4 +1,5 @@
 import React from "react";
+import { useTranslation } from "react-i18next";
 import {
   StyleSheet,
   Text,
@@ -17,6 +18,7 @@ interface Props {
 }
 
 export function VendorCard({ vendor, onPress, rightAction }: Props) {
+  const { t } = useTranslation();
   const colors = useColors();
   const s = styles(colors);
 
@@ -36,7 +38,7 @@ export function VendorCard({ vendor, onPress, rightAction }: Props) {
           </Text>
           {vendor.featured && (
             <View style={s.featuredBadge}>
-              <Text style={s.featuredText}>Featured</Text>
+              <Text style={s.featuredText}>{t("vendorCard.featured")}</Text>
             </View>
           )}
         </View>

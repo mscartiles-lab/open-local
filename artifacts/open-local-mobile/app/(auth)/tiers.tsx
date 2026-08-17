@@ -1,6 +1,7 @@
 import { Feather } from "@expo/vector-icons";
 import { router } from "expo-router";
 import React, { useState } from "react";
+import { useTranslation } from "react-i18next";
 import {
   Pressable,
   ScrollView,
@@ -14,6 +15,7 @@ import { useColors } from "@/hooks/useColors";
 import { TIERS, TIER_ORDER } from "@/lib/tiers";
 
 export default function TiersScreen() {
+  const { t } = useTranslation();
   const colors = useColors();
   const [selected, setSelected] = useState<string>("middle");
 
@@ -24,7 +26,7 @@ export default function TiersScreen() {
     >
       <View style={styles.header}>
         <Text style={[styles.headerTitle, { color: colors.foreground }]}>
-          Vendor plans
+          {t("tiers.headerTitle")}
         </Text>
         <Pressable onPress={() => router.back()} hitSlop={12}>
           <Feather name="x" size={22} color={colors.mutedForeground} />
@@ -39,16 +41,14 @@ export default function TiersScreen() {
             <Feather name="gift" size={20} color="#16a34a" />
           </View>
           <View style={{ flex: 1 }}>
-            <Text style={styles.waivedTitle}>Subscription fees are waived 🎉</Text>
-            <Text style={styles.waivedBody}>
-              Enjoy full access to Open Local completely free while we grow our community. We'll give you plenty of heads-up before anything changes.
-            </Text>
+            <Text style={styles.waivedTitle}>{t("tiers.waivedTitle")}</Text>
+            <Text style={styles.waivedBody}>{t("tiers.waivedBody")}</Text>
           </View>
         </View>
 
         {/* Plans overview — informational */}
         <Text style={[styles.sectionLabel, { color: colors.mutedForeground }]}>
-          Plans preview — no payment needed right now
+          {t("tiers.plansPreview")}
         </Text>
 
         {TIER_ORDER.map((id) => {
@@ -70,7 +70,7 @@ export default function TiersScreen() {
             >
               {featured ? (
                 <View style={[styles.popularBadge, { backgroundColor: colors.primary }]}>
-                  <Text style={styles.popularText}>Most popular</Text>
+                  <Text style={styles.popularText}>{t("tiers.mostPopular")}</Text>
                 </View>
               ) : null}
               <Text style={[styles.tierName, { color: colors.foreground }]}>
@@ -82,7 +82,7 @@ export default function TiersScreen() {
               <Text style={[styles.tierPrice, { color: colors.foreground }]}>
                 ${tier.priceMonthly.toFixed(2)}
                 <Text style={[styles.tierPriceUnit, { color: colors.mutedForeground }]}>
-                  {" / mo"}
+                  {t("tiers.perMonth")}
                 </Text>
               </Text>
               <View style={{ gap: 8, marginTop: 12 }}>
@@ -104,15 +104,17 @@ export default function TiersScreen() {
           style={[styles.cta, { backgroundColor: colors.primary }]}
         >
           <Feather name="arrow-right" size={18} color="#fff" />
-          <Text style={styles.ctaText}>Continue — set up my listing</Text>
+          <Text style={styles.ctaText}>{t("tiers.continueSetup")}</Text>
         </Pressable>
 
         <Pressable onPress={() => router.replace("/(tabs)")} style={{ alignSelf: "center" }}>
-          <Text style={[styles.skipText, { color: colors.mutedForeground }]}>Skip for now</Text>
+          <Text style={[styles.skipText, { color: colors.mutedForeground }]}>
+            {t("tiers.skipForNow")}
+          </Text>
         </Pressable>
 
         <Text style={[styles.fineprint, { color: colors.mutedForeground }]}>
-          You'll get an email before subscriptions go live. No surprise charges.
+          {t("tiers.fineprint")}
         </Text>
       </ScrollView>
     </SafeAreaView>

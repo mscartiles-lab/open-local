@@ -1,6 +1,7 @@
 import { Feather } from "@expo/vector-icons";
 import * as Location from "expo-location";
 import React, { useEffect, useRef, useState } from "react";
+import { useTranslation } from "react-i18next";
 import {
   ActivityIndicator,
   Platform,
@@ -43,7 +44,6 @@ interface MiniMapProps {
 
 const FLORIDA_CENTER = { latitude: 27.9944024, longitude: -81.7602544 };
 const QUICK_PICKS = [0.5, 1, 2, 5] as const;
-const QUICK_PICK_LABELS: Record<number, string> = { 0.5: "½ mi", 1: "1 mi", 2: "2 mi", 5: "5 mi" };
 
 function deltaForRadius(miles: number) {
   return latDeltaForMiles(miles);
@@ -61,6 +61,7 @@ export function MiniMap({
   onRadiusChange,
   onMapCenterChange,
 }: MiniMapProps) {
+  const { t } = useTranslation();
   const colors = useColors();
   const [permission, requestPermission] = Location.useForegroundPermissions();
   const [userLocation, setUserLocation] = useState<{
@@ -189,11 +190,11 @@ export function MiniMap({
       >
         <Feather name="map" size={28} color={colors.mutedForeground} />
         <Text style={[styles.webText, { color: colors.mutedForeground }]}>
-          Map view available in the iOS/Android app
+          {t("miniMap.webFallback")}
         </Text>
         {pins.length > 0 && (
           <Text style={[styles.webHint, { color: colors.mutedForeground }]}>
-            {pins.length} location{pins.length !== 1 ? "s" : ""} nearby
+            {t("miniMap.locationsNearby", { count: pins.length })}
           </Text>
         )}
       </View>
@@ -224,6 +225,14 @@ export function MiniMap({
           ) <= radius,
       )
     : pins;
+
+  // Radius label map — built inside render so t() is available
+  const QUICK_PICK_LABELS: Record<number, string> = {
+    0.5: t("miniMap.radiusHalf"),
+    1: t("miniMap.radius1"),
+    2: t("miniMap.radius2"),
+    5: t("miniMap.radius5"),
+  };
 
   return (
     <View
@@ -324,7 +333,7 @@ export function MiniMap({
                           { color: pin.color ?? colors.primary },
                         ]}
                       >
-                        {distMi} mi away
+                        {t("miniMap.distAway", { dist: distMi })}
                       </Text>
                     ) : null}
                     {onPinPress ? (
@@ -334,7 +343,7 @@ export function MiniMap({
                           { color: pin.color ?? colors.primary },
                         ]}
                       >
-                        Tap to open →
+                        {t("miniMap.tapToOpen")}
                       </Text>
                     ) : null}
                   </View>
@@ -353,7 +362,7 @@ export function MiniMap({
           <View style={styles.legendRow}>
             <View style={[styles.legendDot, { backgroundColor: "#e8520a" }]} />
             <Text style={[styles.legendLabel, { color: colors.foreground }]}>
-              Vendors
+              {t("miniMap.legendVendors")}
             </Text>
           </View>
           <View style={styles.legendRow}>
@@ -365,7 +374,7 @@ export function MiniMap({
               ]}
             />
             <Text style={[styles.legendLabel, { color: colors.foreground }]}>
-              Businesses
+              {t("miniMap.legendBusinesses")}
             </Text>
           </View>
         </View>
@@ -391,8 +400,8 @@ export function MiniMap({
             </View>
             <Text style={[styles.countText, { color: colors.foreground }]}>
               {userLocation
-                ? `${visiblePins.length} place${visiblePins.length !== 1 ? "s" : ""} within ${radius} mi`
-                : `${pins.length} place${pins.length !== 1 ? "s" : ""} on the map`}
+                ? t("miniMap.placesWithin", { count: visiblePins.length, radius })
+                : t("miniMap.placesOnMap", { count: pins.length })}
             </Text>
           </View>
 
@@ -406,10 +415,10 @@ export function MiniMap({
               <Text
                 style={[styles.radiusLabel, { color: colors.mutedForeground }]}
               >
-                Radius
+                {t("miniMap.radius")}
               </Text>
               <Text style={[styles.radiusValue, { color: colors.primary }]}>
-                {radius} mi
+                {t("miniMap.radiusMi", { radius })}
               </Text>
             </View>
             <View style={styles.radiusBtns}>
@@ -466,6 +475,7 @@ export function MiniMap({
         ]}
         onPress={locationGranted ? locateUser : requestPermission}
         disabled={locating}
+        accessibilityLabel={locationGranted ? t("miniMap.recenter") : t("miniMap.enableLocation")}
       >
         {locating ? (
           <ActivityIndicator size="small" color={colors.primary} />
@@ -488,7 +498,7 @@ export function MiniMap({
           <Text
             style={[styles.locationPillText, { color: colors.foreground }]}
           >
-            Enable location
+            {t("miniMap.enableLocation")}
           </Text>
         </TouchableOpacity>
       )}

@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from "react";
+import { useTranslation } from "react-i18next";
 import {
   View,
   Text,
@@ -40,6 +41,7 @@ function timeAgo(iso: string) {
 }
 
 export default function MessagesScreen() {
+  const { t } = useTranslation();
   const { user, sessionToken } = useAuth();
   const colors = useColors();
   const insets = useSafeAreaInsets();
@@ -63,14 +65,14 @@ export default function MessagesScreen() {
     return (
       <View style={[s.container, s.center]}>
         <Feather name="message-circle" size={40} color={colors.mutedForeground} />
-        <Text style={s.emptyTitle}>Sign in to view messages</Text>
+        <Text style={s.emptyTitle}>{t("messages.signInToView")}</Text>
       </View>
     );
   }
 
   const renderItem = ({ item: conv }: { item: ConvSummary }) => {
     const isShopper = user.id === conv.shopperUserId;
-    const name = isShopper ? conv.vendor?.name ?? "Vendor" : `@${conv.shopper?.username ?? "user"}`;
+    const name = isShopper ? conv.vendor?.name ?? t("common.vendorFallback") : `@${conv.shopper?.username ?? t("common.userFallback")}`;
     const img = isShopper ? conv.vendor?.imageUrl : null;
     const hasUnread = conv.unreadCount > 0;
 
@@ -103,11 +105,11 @@ export default function MessagesScreen() {
           </View>
           {conv.lastMessage ? (
             <Text style={[s.rowPreview, hasUnread && s.rowPreviewBold]} numberOfLines={1}>
-              {conv.lastMessage.senderUserId === user.id ? "You: " : ""}
+              {conv.lastMessage.senderUserId === user.id ? t("messages.youPrefix") : ""}
               {conv.lastMessage.body}
             </Text>
           ) : (
-            <Text style={s.rowPreviewEmpty}>No messages yet</Text>
+            <Text style={s.rowPreviewEmpty}>{t("messages.noMessages")}</Text>
           )}
         </View>
       </TouchableOpacity>
@@ -117,7 +119,7 @@ export default function MessagesScreen() {
   return (
     <View style={s.container}>
       <View style={s.header}>
-        <Text style={s.headerTitle}>Messages</Text>
+        <Text style={s.headerTitle}>{t("messages.title")}</Text>
       </View>
       {loading ? (
         <View style={s.center}>
@@ -126,8 +128,8 @@ export default function MessagesScreen() {
       ) : convs.length === 0 ? (
         <View style={s.center}>
           <Feather name="message-circle" size={40} color={colors.mutedForeground} />
-          <Text style={s.emptyTitle}>No conversations yet</Text>
-          <Text style={s.emptyBody}>Visit a vendor and tap "Message" to start one.</Text>
+          <Text style={s.emptyTitle}>{t("messages.noConversations")}</Text>
+          <Text style={s.emptyBody}>{t("messages.startByVisiting")}</Text>
         </View>
       ) : (
         <FlatList

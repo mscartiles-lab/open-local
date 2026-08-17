@@ -2,6 +2,7 @@ import { Feather } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
 import { Linking } from "react-native";
 import React from "react";
+import { useTranslation } from "react-i18next";
 import {
   Alert,
   Platform,
@@ -29,52 +30,10 @@ type MenuItem = {
   route: string;
 };
 
-const MENU_ITEMS: MenuItem[] = [
-  {
-    id: "wholesale",
-    icon: "package",
-    label: "Wholesale Exchange",
-    subtitle: "Bulk trade between Florida vendors",
-    route: "/wholesale",
-  },
-  {
-    id: "markets",
-    icon: "map-pin",
-    label: "Market Directory",
-    subtitle: "Florida farmers markets near you",
-    route: "/markets",
-  },
-  {
-    id: "messages",
-    icon: "message-circle",
-    label: "Messages",
-    subtitle: "Direct messages with vendors",
-    route: "/messages",
-  },
-  {
-    id: "about",
-    icon: "info",
-    label: "About",
-    subtitle: "Our story and mission",
-    route: "/about",
-  },
-  {
-    id: "compliance",
-    icon: "file-text",
-    label: "Compliance Info",
-    subtitle: "Florida vendor permits and requirements",
-    route: "/compliance",
-  },
-  {
-    id: "settings",
-    icon: "settings",
-    label: "Settings",
-    subtitle: "Appearance and preferences",
-    route: "/settings",
-  },
-];
+// MENU_ITEMS built inside component so labels re-translate on language change
 
 export default function MoreScreen() {
+  const { t } = useTranslation();
   const colors = useColors();
   const insets = useSafeAreaInsets();
   const router = useRouter();
@@ -83,10 +42,20 @@ export default function MoreScreen() {
   const bottomPad = Platform.OS === "web" ? 34 : insets.bottom + 60;
   const s = styles(colors, topPad, bottomPad);
 
+  const MENU_ITEMS: MenuItem[] = [
+    { id: "wholesale", icon: "package", label: t("more.wholesale"), subtitle: t("more.wholesaleSubtitle"), route: "/wholesale" },
+    { id: "markets", icon: "map-pin", label: t("more.marketDirectory"), subtitle: t("more.marketDirectorySubtitle"), route: "/markets" },
+    { id: "messages", icon: "message-circle", label: t("more.messages"), subtitle: t("more.messagesSubtitle"), route: "/messages" },
+    { id: "about", icon: "info", label: t("more.about"), subtitle: t("more.aboutSubtitle"), route: "/about" },
+    { id: "compliance", icon: "file-text", label: t("more.compliance"), subtitle: t("more.complianceSubtitle"), route: "/compliance" },
+    { id: "settings", icon: "settings", label: t("more.settings"), subtitle: t("more.settingsSubtitle"), route: "/settings" },
+    { id: "language", icon: "globe", label: t("more.language"), subtitle: t("more.languageSubtitle"), route: "/language-picker" },
+  ];
+
   const handleLogout = () => {
-    Alert.alert("Sign out", "Are you sure you want to sign out?", [
-      { text: "Cancel", style: "cancel" },
-      { text: "Sign out", style: "destructive", onPress: logout },
+    Alert.alert(t("more.signOutConfirmTitle"), t("more.signOutConfirmMessage"), [
+      { text: t("more.signOutConfirmCancel"), style: "cancel" },
+      { text: t("more.signOutConfirmOk"), style: "destructive", onPress: logout },
     ]);
   };
 
@@ -97,12 +66,12 @@ export default function MoreScreen() {
         contentContainerStyle={s.content}
         showsVerticalScrollIndicator={false}
       >
-        <Text style={s.pageTitle}>More</Text>
+        <Text style={s.pageTitle}>{t("more.title")}</Text>
 
         {/* Account section */}
         {user ? (
           <>
-            <Text style={s.sectionLabel}>Account</Text>
+            <Text style={s.sectionLabel}>{t("more.account")}</Text>
             <View style={s.card}>
               <View style={[s.row, s.rowBorder]}>
                 <Avatar
@@ -136,7 +105,7 @@ export default function MoreScreen() {
                       },
                     ]}
                   >
-                    {user.role === "vendor" ? "Vendor" : "Shopper"}
+                    {user.role === "vendor" ? t("more.roleVendor") : t("more.roleShopper")}
                   </Text>
                 </View>
               </View>
@@ -151,8 +120,8 @@ export default function MoreScreen() {
                   <Feather name="star" size={18} color={colors.primary} />
                 </View>
                 <View style={s.rowText}>
-                  <Text style={s.rowLabel}>Rewards</Text>
-                  <Text style={s.rowSubtitle}>Avatar unlocks &amp; visit badges</Text>
+                  <Text style={s.rowLabel}>{t("more.rewards")}</Text>
+                  <Text style={s.rowSubtitle}>{t("more.rewardsSoon")}</Text>
                 </View>
                 <Feather name="external-link" size={16} color={colors.mutedForeground} />
               </TouchableOpacity>
@@ -169,8 +138,8 @@ export default function MoreScreen() {
                       <Feather name="layout" size={18} color={colors.primary} />
                     </View>
                     <View style={s.rowText}>
-                      <Text style={s.rowLabel}>My Dashboard</Text>
-                      <Text style={s.rowSubtitle}>Manage products, analytics &amp; store</Text>
+                      <Text style={s.rowLabel}>{t("more.myDashboard")}</Text>
+                      <Text style={s.rowSubtitle}>{t("more.myDashboardSubtitle")}</Text>
                     </View>
                     <Feather name="external-link" size={16} color={colors.mutedForeground} />
                   </TouchableOpacity>
@@ -183,8 +152,8 @@ export default function MoreScreen() {
                       <Feather name="credit-card" size={18} color={colors.primary} />
                     </View>
                     <View style={s.rowText}>
-                      <Text style={s.rowLabel}>Billing &amp; Plan</Text>
-                      <Text style={s.rowSubtitle}>Manage your subscription</Text>
+                      <Text style={s.rowLabel}>{t("more.billingPlan")}</Text>
+                      <Text style={s.rowSubtitle}>{t("more.billingPlanSubtitle")}</Text>
                     </View>
                     <Feather name="external-link" size={16} color={colors.mutedForeground} />
                   </TouchableOpacity>
@@ -201,7 +170,7 @@ export default function MoreScreen() {
                 </View>
                 <View style={s.rowText}>
                   <Text style={[s.rowLabel, { color: "#dc2626" }]}>
-                    Sign out
+                    {t("more.signOut")}
                   </Text>
                 </View>
               </TouchableOpacity>
@@ -209,7 +178,7 @@ export default function MoreScreen() {
           </>
         ) : (
           <>
-            <Text style={s.sectionLabel}>Account</Text>
+            <Text style={s.sectionLabel}>{t("more.account")}</Text>
             <View style={s.card}>
               <TouchableOpacity
                 style={[s.row, s.rowBorder]}
@@ -220,8 +189,8 @@ export default function MoreScreen() {
                   <Feather name="user-plus" size={18} color={colors.primary} />
                 </View>
                 <View style={s.rowText}>
-                  <Text style={s.rowLabel}>Join Open Local</Text>
-                  <Text style={s.rowSubtitle}>Create a free account</Text>
+                  <Text style={s.rowLabel}>{t("more.joinOpenLocal")}</Text>
+                  <Text style={s.rowSubtitle}>{t("more.joinOpenLocalSubtitle")}</Text>
                 </View>
                 <Feather name="chevron-right" size={18} color={colors.mutedForeground} />
               </TouchableOpacity>
@@ -234,8 +203,8 @@ export default function MoreScreen() {
                   <Feather name="log-in" size={18} color={colors.primary} />
                 </View>
                 <View style={s.rowText}>
-                  <Text style={s.rowLabel}>Sign in</Text>
-                  <Text style={s.rowSubtitle}>Already have an account?</Text>
+                  <Text style={s.rowLabel}>{t("more.signIn")}</Text>
+                  <Text style={s.rowSubtitle}>{t("more.signInSubtitle")}</Text>
                 </View>
                 <Feather name="chevron-right" size={18} color={colors.mutedForeground} />
               </TouchableOpacity>
@@ -244,7 +213,7 @@ export default function MoreScreen() {
         )}
 
         {/* For Businesses section */}
-        <Text style={[s.sectionLabel, { marginTop: 20 }]}>For Businesses</Text>
+        <Text style={[s.sectionLabel, { marginTop: 20 }]}>{t("more.forBusinesses")}</Text>
         <View style={s.card}>
           <TouchableOpacity
             style={s.row}
@@ -255,20 +224,20 @@ export default function MoreScreen() {
               <Feather name="map-pin" size={18} color={colors.primary} />
             </View>
             <View style={s.rowText}>
-              <Text style={s.rowLabel}>Pin your business</Text>
-              <Text style={s.rowSubtitle}>List your shop, café, or local spot</Text>
+              <Text style={s.rowLabel}>{t("more.pinYourBusiness")}</Text>
+              <Text style={s.rowSubtitle}>{t("more.pinYourBusinessSubtitle")}</Text>
             </View>
             <Feather name="chevron-right" size={18} color={colors.mutedForeground} />
           </TouchableOpacity>
         </View>
 
-        <Text style={[s.sectionLabel, { marginTop: 20 }]}>Resources</Text>
+        <Text style={[s.sectionLabel, { marginTop: 20 }]}>{t("more.sectionResources")}</Text>
         <View style={s.card}>
           {MENU_ITEMS.map((item, i) => (
             <TouchableOpacity
               key={item.id}
               style={[s.row, i < MENU_ITEMS.length - 1 && s.rowBorder]}
-              onPress={() => router.push(item.route as any)}
+              onPress={() => router.push(item.id === "language" ? "/language-picker" as any : item.route as any)}
               activeOpacity={0.7}
             >
               <View style={s.iconWrap}>

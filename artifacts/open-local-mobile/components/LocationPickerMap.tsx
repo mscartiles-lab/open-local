@@ -6,6 +6,7 @@
 import { Feather } from "@expo/vector-icons";
 import * as Location from "expo-location";
 import React, { useRef, useState } from "react";
+import { useTranslation } from "react-i18next";
 import {
   ActivityIndicator,
   Platform,
@@ -49,6 +50,7 @@ async function geocodeHint(query: string): Promise<PickedLocation | null> {
 }
 
 export function LocationPickerMap({ onChange, hint, initial, height = 260 }: Props) {
+  const { t } = useTranslation();
   const colors = useColors();
   const [position, setPosition] = useState<PickedLocation | null>(initial ?? null);
   const [locating, setLocating] = useState(false);
@@ -101,7 +103,7 @@ export function LocationPickerMap({ onChange, hint, initial, height = 260 }: Pro
       <View style={[styles.webCard, { backgroundColor: colors.muted, borderColor: colors.border, height }]}>
         <Feather name="map-pin" size={24} color={colors.mutedForeground} />
         <Text style={[styles.webText, { color: colors.mutedForeground }]}>
-          Map pin available in the iOS/Android app
+          {t("locationPicker.webFallback")}
         </Text>
         {position && (
           <Text style={[styles.webCoords, { color: colors.primary }]}>
@@ -135,7 +137,7 @@ export function LocationPickerMap({ onChange, hint, initial, height = 260 }: Pro
             ? <ActivityIndicator size="small" color={colors.primary} />
             : <Feather name="navigation" size={14} color={colors.primary} />}
           <Text style={[styles.toolBtnText, { color: colors.foreground }]}>
-            {locating ? "Locating…" : "Use my location"}
+            {locating ? t("locationPicker.locating") : t("locationPicker.useMyLocation")}
           </Text>
         </TouchableOpacity>
 
@@ -150,7 +152,7 @@ export function LocationPickerMap({ onChange, hint, initial, height = 260 }: Pro
               ? <ActivityIndicator size="small" color={colors.primary} />
               : <Feather name="search" size={14} color={colors.primary} />}
             <Text style={[styles.toolBtnText, { color: colors.foreground }]}>
-              {geocoding ? "Finding…" : "Find on map"}
+              {geocoding ? t("locationPicker.finding") : t("locationPicker.findOnMap")}
             </Text>
           </TouchableOpacity>
         )}
@@ -190,7 +192,7 @@ export function LocationPickerMap({ onChange, hint, initial, height = 260 }: Pro
           <View style={styles.hint} pointerEvents="none">
             <View style={[styles.hintBubble, { backgroundColor: colors.card }]}>
               <Text style={[styles.hintText, { color: colors.mutedForeground }]}>
-                Tap map or press "Find on map" to drop a pin
+                {t("locationPicker.tapToDropPin")}
               </Text>
             </View>
           </View>
@@ -205,7 +207,7 @@ export function LocationPickerMap({ onChange, hint, initial, height = 260 }: Pro
       )}
 
       <Text style={[styles.help, { color: colors.mutedForeground }]}>
-        Tap the map or drag the pin to set your exact location.
+        {t("locationPicker.dragToSet")}
       </Text>
     </View>
   );

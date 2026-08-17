@@ -1,6 +1,7 @@
 import { Feather } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
 import React from "react";
+import { useTranslation } from "react-i18next";
 import {
   Platform,
   ScrollView,
@@ -13,35 +14,24 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import { useColors } from "@/hooks/useColors";
 
-const PARAGRAPHS: { text: string; bold?: boolean }[] = [
-  {
-    text: "Some of the best things you'll ever taste, wear, or bring into your home weren't made in a factory or shipped across the country. They were grown in a backyard garden, baked in a home kitchen, or handcrafted by someone in your own neighborhood who poured real care into every single one. The problem has never been that these makers don't exist \u2014 it's that they've been nearly impossible to find.",
-  },
-  { text: "Open Local was built to change that.", bold: true },
-  {
-    text: "We\u2019re a hyperlocal marketplace that connects shoppers directly with the farmers, vendors, and makers who live and work in their community. No algorithms pushing big brands to the top. No middlemen taking cuts. Just a direct line between you and the people behind the product \u2014 wherever you are.",
-  },
-  {
-    text: "Whether you\u2019re in the heart of a city, a quiet suburb, or a small town with more talent than anyone realizes, Open Local is designed to surface what\u2019s already around you. Pull up the app and discover the honey producer two miles away, the ceramic artist who sells at your weekend farmers market, the cottage baker who makes the best sourdough you\u2019ve ever had. These aren\u2019t just purchases \u2014 they\u2019re connections to real people doing what they love, right where you live.",
-  },
-  {
-    text: "Shopping local has always mattered. It keeps money circulating in your community, supports independent livelihoods, and puts you in touch with the kind of quality and care that mass production simply can\u2019t replicate. But \u201cshop local\u201d only works when people can actually find who to shop from. That\u2019s the gap Open Local closes.",
-  },
-  {
-    text: "For vendors, Open Local is a launchpad. Whether you\u2019re a cottage food baker just getting started, a farmer looking to reach more customers beyond the market, or an established maker ready to grow \u2014 Open Local gives you a storefront, visibility, and a community of shoppers who are actively looking for exactly what you make.",
-  },
-  {
-    text: "For shoppers, it\u2019s the easiest way to put your dollars where your values are \u2014 not just when it\u2019s convenient, but every time.",
-  },
-];
-
 export default function AboutScreen() {
+  const { t } = useTranslation();
   const colors = useColors();
   const insets = useSafeAreaInsets();
   const router = useRouter();
   const topPad = Platform.OS === "web" ? 20 : insets.top;
   const bottomPad = Platform.OS === "web" ? 34 : insets.bottom + 16;
   const s = styles(colors, topPad, bottomPad);
+
+  const paragraphs: { text: string; bold?: boolean }[] = [
+    { text: t("about.p1") },
+    { text: t("about.p2"), bold: true },
+    { text: t("about.p3") },
+    { text: t("about.p4") },
+    { text: t("about.p5") },
+    { text: t("about.p6") },
+    { text: t("about.p7") },
+  ];
 
   return (
     <View style={s.container}>
@@ -50,7 +40,7 @@ export default function AboutScreen() {
         <TouchableOpacity style={s.backBtn} onPress={() => router.back()}>
           <Feather name="arrow-left" size={20} color={colors.foreground} />
         </TouchableOpacity>
-        <Text style={s.headerTitle}>About</Text>
+        <Text style={s.headerTitle}>{t("about.headerTitle")}</Text>
         <View style={{ width: 36 }} />
       </View>
 
@@ -64,23 +54,20 @@ export default function AboutScreen() {
             <Feather name="map-pin" size={22} color={colors.primaryForeground} />
           </View>
           <Text style={s.brandName}>Open Local</Text>
-          <Text style={s.brandTagline}>Local Sourcing and Experiences</Text>
+          <Text style={s.brandTagline}>{t("about.tagline")}</Text>
         </View>
 
         {/* Body paragraphs */}
         <View style={s.body}>
-          {PARAGRAPHS.map((p, i) => (
-            <Text
-              key={i}
-              style={[s.para, p.bold && s.paraBold]}
-            >
+          {paragraphs.map((p, i) => (
+            <Text key={i} style={[s.para, p.bold && s.paraBold]}>
               {p.text}
             </Text>
           ))}
         </View>
 
         {/* Closer */}
-        <Text style={s.closer}>Open Local. Shop the community around you.</Text>
+        <Text style={s.closer}>{t("about.closer")}</Text>
       </ScrollView>
     </View>
   );

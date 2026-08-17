@@ -11,8 +11,10 @@ import {
 
 import { useAuth } from "@/context/AuthContext";
 import { useColors } from "@/hooks/useColors";
+import { useTranslation } from "react-i18next";
 
 export function OnboardingGate() {
+  const { t } = useTranslation();
   const { loading, user } = useAuth();
   const colors = useColors();
   const [dismissed, setDismissed] = useState(false);
@@ -48,13 +50,13 @@ export function OnboardingGate() {
             <Feather name="map-pin" size={28} color="#fff" />
           </View>
           <Text style={[styles.title, { color: colors.foreground }]}>
-            Welcome to Open Local
+            {t("onboarding.welcome")}
           </Text>
           <Text style={[styles.tagline, { color: colors.mutedForeground }]}>
-            Local Sourcing and Experiences
+            {t("onboarding.tagline")}
           </Text>
           <Text style={[styles.body, { color: colors.mutedForeground }]}>
-            How will you use Open Local?
+            {t("onboarding.question")}
           </Text>
 
           <Pressable
@@ -68,10 +70,10 @@ export function OnboardingGate() {
             </View>
             <View style={{ flex: 1 }}>
               <Text style={[styles.choiceTitle, { color: colors.foreground }]}>
-                I'm a shopper
+                {t("onboarding.iAmShopper")}
               </Text>
               <Text style={[styles.choiceBody, { color: colors.mutedForeground }]}>
-                Discover local makers, batch drops & events
+                {t("signup.roleShopperBody")}
               </Text>
             </View>
             <Feather name="chevron-right" size={20} color={colors.mutedForeground} />
@@ -86,10 +88,10 @@ export function OnboardingGate() {
             </View>
             <View style={{ flex: 1 }}>
               <Text style={[styles.choiceTitle, { color: colors.foreground }]}>
-                I'm a vendor or business
+                {t("onboarding.iAmVendor")}
               </Text>
               <Text style={[styles.choiceBody, { color: colors.mutedForeground }]}>
-                List products, run pre-orders, reach locals
+                {t("signup.roleVendorBody")}
               </Text>
             </View>
             <Feather name="chevron-right" size={20} color={colors.mutedForeground} />
@@ -98,16 +100,16 @@ export function OnboardingGate() {
           {/* Sign-in link */}
           <Pressable onPress={handleSignIn} style={styles.signInRow}>
             <Text style={[styles.signInText, { color: colors.mutedForeground }]}>
-              Already have an account?{" "}
+              {t("onboarding.alreadyHaveAccount")}{" "}
             </Text>
             <Text style={[styles.signInLink, { color: colors.primary }]}>
-              Sign in
+              {t("onboarding.signIn")}
             </Text>
           </Pressable>
 
           <Pressable onPress={handleSkip} style={styles.skip}>
             <Text style={[styles.skipText, { color: colors.mutedForeground }]}>
-              Maybe later
+              {t("onboarding.maybeLater")}
             </Text>
           </Pressable>
         </View>
