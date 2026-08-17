@@ -8,6 +8,7 @@ import { useToast } from "@/hooks/use-toast";
 import { cn } from "@/lib/utils";
 import { useCreateProduct } from "@workspace/api-client-react";
 import { TIER_PHOTO_LIMIT, TIER_VIDEO_LIMIT, type TierId } from "@/lib/tiers";
+import { useTranslation } from "react-i18next";
 
 export type ListingType = "regular" | "batch_drop" | "surplus" | "pre_order";
 
@@ -49,16 +50,17 @@ async function uploadFile(file: File): Promise<string> {
   return `/api/storage${objectPath}`;
 }
 
-const LISTING_TYPES: { value: ListingType; label: string; description: string; color: string }[] = [
-  { value: "regular", label: "Regular", description: "Standard item always on your storefront.", color: "bg-stone-100 text-stone-700 border-stone-200" },
-  { value: "batch_drop", label: "Batch drop", description: "Fresh release — shows up in Local Near Me Now.", color: "bg-amber-100 text-amber-800 border-amber-200" },
-  { value: "surplus", label: "Surplus", description: "End-of-market discount. Requires original price.", color: "bg-emerald-100 text-emerald-800 border-emerald-200" },
-  { value: "pre_order", label: "Pre-order", description: "Reserve for upcoming market pickup.", color: "bg-sky-100 text-sky-800 border-sky-200" },
-];
-
 export default function ProductUploadDialog({ open, vendorId, vendorCategory, tier, defaultType = "regular", onClose, onCreated }: Props) {
+  const { t } = useTranslation();
   const { toast } = useToast();
   const createProduct = useCreateProduct();
+
+  const LISTING_TYPES: { value: ListingType; label: string; description: string; color: string }[] = [
+    { value: "regular", label: t("productUpload.typeRegularLabel"), description: t("productUpload.typeRegularDesc"), color: "bg-stone-100 text-stone-700 border-stone-200" },
+    { value: "batch_drop", label: t("productUpload.typeBatchDropLabel"), description: t("productUpload.typeBatchDropDesc"), color: "bg-amber-100 text-amber-800 border-amber-200" },
+    { value: "surplus", label: t("productUpload.typeSurplusLabel"), description: t("productUpload.typeSurplusDesc"), color: "bg-emerald-100 text-emerald-800 border-emerald-200" },
+    { value: "pre_order", label: t("productUpload.typePreOrderLabel"), description: t("productUpload.typePreOrderDesc"), color: "bg-sky-100 text-sky-800 border-sky-200" },
+  ];
 
   const [listingType, setListingType] = useState<ListingType>(defaultType);
   const [name, setName] = useState("");
@@ -102,14 +104,14 @@ export default function ProductUploadDialog({ open, vendorId, vendorCategory, ti
 
   function validate(): boolean {
     const e: Record<string, string> = {};
-    if (!name.trim() || name.trim().length < 2) e.name = "Name is required (min 2 chars)";
-    if (!description.trim() || description.trim().length < 10) e.description = "Description too short (min 10 chars)";
+    if (!name.trim() || name.trim().length < 2) e.name = t("productUpload.errorNameRequired");
+    if (!description.trim() || description.trim().length < 10) e.description = t("productUpload.errorDescriptionShort");
     const price = parseFloat(priceDollars);
-    if (isNaN(price) || price <= 0) e.price = "Price must be a positive number";
-    if (!unit.trim()) e.unit = "Unit is required (e.g. loaf, bag, lb, item)";
+    if (isNaN(price) || price <= 0) e.price = t("productUpload.errorPricePositive");
+    if (!unit.trim()) e.unit = t("productUpload.errorUnitRequired");
     if (listingType === "surplus") {
       const orig = parseFloat(originalPriceDollars);
-      if (isNaN(orig) || orig <= 0) e.originalPrice = "Original price is required for surplus";
+      if (isNaN(orig) || orig <= 0) e.originalPrice = t("productUpload.errorOriginalPriceRequired");
     }
     setErrors(e);
     return Object.keys(e).length === 0;
@@ -132,9 +134,9 @@ export default function ProductUploadDialog({ open, vendorId, vendorCategory, ti
             updatedMedia[i] = { ...updatedMedia[i], uploading: false, url };
             setMedia([...updatedMedia]);
           } catch {
-            updatedMedia[i] = { ...updatedMedia[i], uploading: false, error: "Upload failed" };
+            updatedMedia[i] = { ...updatedMedia[i], uploading: false, error: t("productUpload.uploadFailed") };
             setMedia([...updatedMedia]);
-            toast({ title: `Failed to upload ${m.file.name}`, variant: "destructive" });
+            toast({ title: t("productUpload.toastFailedToUpload", { fileName: m.file.name }), variant: "destructive" });
             setSubmitting(false);
             return;
           }
@@ -169,20 +171,26 @@ export default function ProductUploadDialog({ open, vendorId, vendorCategory, ti
         {
           onSuccess: () => {
             toast({
-              title: listingType === "batch_drop" ? "Batch is live!" : listingType === "surplus" ? "Surplus listed" : listingType === "pre_order" ? "Pre-order open" : "Product added",
-              description: `${name.trim()} is now visible on your storefront.`,
+              title: listingType === "batch_drop"
+                ? t("productUpload.toastBatchLive")
+                : listingType === "surplus"
+                ? t("productUpload.toastSurplusListed")
+                : listingType === "pre_order"
+                ? t("productUpload.toastPreOrderOpen")
+                : t("productUpload.toastProductAdded"),
+              description: t("productUpload.toastVisibleOnStorefront", { name: name.trim() }),
             });
             handleClose();
             onCreated();
           },
           onError: (err) => {
-            toast({ title: "Couldn't save product", description: (err as Error).message, variant: "destructive" });
+            toast({ title: t("productUpload.toastCouldntSave"), description: (err as Error).message, variant: "destructive" });
           },
           onSettled: () => setSubmitting(false),
         },
       );
     } catch (err) {
-      toast({ title: "Something went wrong", description: (err as Error).message, variant: "destructive" });
+      toast({ title: t("productUpload.toastSomethingWentWrong"), description: (err as Error).message, variant: "destructive" });
       setSubmitting(false);
     }
   }
@@ -200,14 +208,14 @@ export default function ProductUploadDialog({ open, vendorId, vendorCategory, ti
     <Dialog open={open} onOpenChange={(o) => !o && handleClose()}>
       <DialogContent className="max-w-2xl max-h-[92vh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle className="font-serif text-2xl">Add a product</DialogTitle>
-          <DialogDescription>Fill in the details below. Photos make a big difference.</DialogDescription>
+          <DialogTitle className="font-serif text-2xl">{t("productUpload.dialogTitle")}</DialogTitle>
+          <DialogDescription>{t("productUpload.dialogDescription")}</DialogDescription>
         </DialogHeader>
 
         <div className="space-y-6 pt-2">
           {/* Listing type */}
           <div>
-            <label className="mb-2 block text-sm font-semibold text-foreground">Listing type</label>
+            <label className="mb-2 block text-sm font-semibold text-foreground">{t("productUpload.listingTypeLabel")}</label>
             <div className="grid grid-cols-2 gap-2">
               {LISTING_TYPES.map((lt) => (
                 <button
@@ -230,11 +238,17 @@ export default function ProductUploadDialog({ open, vendorId, vendorCategory, ti
 
           {/* Name */}
           <div>
-            <label className="mb-1.5 block text-sm font-semibold">Product name *</label>
+            <label className="mb-1.5 block text-sm font-semibold">{t("productUpload.nameLabel")}</label>
             <Input
               value={name}
               onChange={(e) => setName(e.target.value)}
-              placeholder={listingType === "batch_drop" ? "Sourdough miche" : listingType === "surplus" ? "Sunday market pastry box" : "Whole-grain bread"}
+              placeholder={
+                listingType === "batch_drop"
+                  ? t("productUpload.namePlaceholderBatchDrop")
+                  : listingType === "surplus"
+                  ? t("productUpload.namePlaceholderSurplus")
+                  : t("productUpload.namePlaceholderDefault")
+              }
               className={cn(errors.name && "border-destructive")}
               autoFocus
             />
@@ -243,11 +257,11 @@ export default function ProductUploadDialog({ open, vendorId, vendorCategory, ti
 
           {/* Description */}
           <div>
-            <label className="mb-1.5 block text-sm font-semibold">Description *</label>
+            <label className="mb-1.5 block text-sm font-semibold">{t("productUpload.descriptionLabel")}</label>
             <Textarea
               value={description}
               onChange={(e) => setDescription(e.target.value)}
-              placeholder="What is it, how is it made, who is it for? A couple sentences goes a long way."
+              placeholder={t("productUpload.descriptionPlaceholder")}
               className={cn("min-h-[80px]", errors.description && "border-destructive")}
             />
             {errors.description && <p className="mt-1 text-xs text-destructive">{errors.description}</p>}
@@ -257,7 +271,7 @@ export default function ProductUploadDialog({ open, vendorId, vendorCategory, ti
           <div className="grid grid-cols-3 gap-3">
             <div className={listingType === "surplus" ? "" : "col-span-2"}>
               <label className="mb-1.5 block text-sm font-semibold">
-                {listingType === "surplus" ? "Sale price ($) *" : "Price ($) *"}
+                {listingType === "surplus" ? t("productUpload.salePriceLabel") : t("productUpload.priceLabel")}
               </label>
               <Input
                 type="number"
@@ -272,7 +286,7 @@ export default function ProductUploadDialog({ open, vendorId, vendorCategory, ti
             </div>
             {listingType === "surplus" && (
               <div>
-                <label className="mb-1.5 block text-sm font-semibold">Original ($) *</label>
+                <label className="mb-1.5 block text-sm font-semibold">{t("productUpload.originalPriceLabel")}</label>
                 <Input
                   type="number"
                   min="0.01"
@@ -286,11 +300,11 @@ export default function ProductUploadDialog({ open, vendorId, vendorCategory, ti
               </div>
             )}
             <div>
-              <label className="mb-1.5 block text-sm font-semibold">Unit *</label>
+              <label className="mb-1.5 block text-sm font-semibold">{t("productUpload.unitLabel")}</label>
               <Input
                 value={unit}
                 onChange={(e) => setUnit(e.target.value)}
-                placeholder="loaf, bag, lb…"
+                placeholder={t("productUpload.unitPlaceholder")}
                 className={cn(errors.unit && "border-destructive")}
               />
               {errors.unit && <p className="mt-1 text-xs text-destructive">{errors.unit}</p>}
@@ -301,7 +315,7 @@ export default function ProductUploadDialog({ open, vendorId, vendorCategory, ti
           {listingType === "pre_order" && (
             <div className="grid grid-cols-2 gap-3 rounded-lg bg-sky-50 border border-sky-200 p-4">
               <div>
-                <label className="mb-1.5 block text-sm font-semibold text-sky-900">Available until</label>
+                <label className="mb-1.5 block text-sm font-semibold text-sky-900">{t("productUpload.availableUntilLabel")}</label>
                 <Input
                   type="datetime-local"
                   value={availableUntil}
@@ -310,11 +324,11 @@ export default function ProductUploadDialog({ open, vendorId, vendorCategory, ti
                 />
               </div>
               <div>
-                <label className="mb-1.5 block text-sm font-semibold text-sky-900">Pickup note</label>
+                <label className="mb-1.5 block text-sm font-semibold text-sky-900">{t("productUpload.pickupNoteLabel")}</label>
                 <Input
                   value={pickupNote}
                   onChange={(e) => setPickupNote(e.target.value)}
-                  placeholder="Pick up Saturday at the market"
+                  placeholder={t("productUpload.pickupNotePlaceholder")}
                   className="bg-white"
                 />
               </div>
@@ -325,9 +339,9 @@ export default function ProductUploadDialog({ open, vendorId, vendorCategory, ti
           <div>
             <div className="mb-2 flex items-center justify-between">
               <label className="text-sm font-semibold">
-                Photos{" "}
+                {t("productUpload.photosLabel")}{" "}
                 <span className="font-normal text-muted-foreground">
-                  ({photos.length}/{photoLimit} · {tier} plan)
+                  ({photos.length}/{photoLimit} · {tier} {t("productUpload.planSuffix")})
                 </span>
               </label>
               {photos.length < photoLimit && (
@@ -337,7 +351,7 @@ export default function ProductUploadDialog({ open, vendorId, vendorCategory, ti
                   className="flex items-center gap-1.5 text-xs font-semibold text-primary hover:underline"
                 >
                   <Plus className="h-3.5 w-3.5" />
-                  Add photo
+                  {t("productUpload.addPhotoButton")}
                 </button>
               )}
             </div>
@@ -358,12 +372,12 @@ export default function ProductUploadDialog({ open, vendorId, vendorCategory, ti
               >
                 <ImageIcon className="h-8 w-8 text-muted-foreground" />
                 <div>
-                  <p className="text-sm font-semibold text-foreground">Add photos</p>
-                  <p className="text-xs text-muted-foreground">Up to {photoLimit} photo{photoLimit !== 1 ? "s" : ""} on your {tier} plan</p>
+                  <p className="text-sm font-semibold text-foreground">{t("productUpload.addPhotosEmptyTitle")}</p>
+                  <p className="text-xs text-muted-foreground">{t("productUpload.addPhotosEmptyHint", { count: photoLimit, tier })}</p>
                 </div>
                 <span className="inline-flex items-center gap-1.5 rounded-md bg-primary px-3 py-1.5 text-xs font-semibold text-white">
                   <Upload className="h-3.5 w-3.5" />
-                  Choose photos
+                  {t("productUpload.choosePhotosButton")}
                 </span>
               </button>
             ) : (
@@ -373,7 +387,7 @@ export default function ProductUploadDialog({ open, vendorId, vendorCategory, ti
                     <img src={m.preview} alt="" className="h-full w-full rounded-lg object-cover border border-border" />
                     {i === 0 && (
                       <span className="absolute top-1.5 left-1.5 rounded-full bg-primary px-1.5 py-0.5 text-[10px] font-bold text-white">
-                        Cover
+                        {t("productUpload.coverBadge")}
                       </span>
                     )}
                     {m.uploading && (
@@ -402,7 +416,7 @@ export default function ProductUploadDialog({ open, vendorId, vendorCategory, ti
                     className="aspect-square flex flex-col items-center justify-center gap-1 rounded-lg border border-dashed border-border bg-muted text-muted-foreground hover:bg-muted/70 transition"
                   >
                     <Plus className="h-5 w-5" />
-                    <span className="text-[10px]">Add</span>
+                    <span className="text-[10px]">{t("productUpload.addPhotoThumbnailButton")}</span>
                   </button>
                 )}
               </div>
@@ -414,7 +428,7 @@ export default function ProductUploadDialog({ open, vendorId, vendorCategory, ti
             <div>
               <div className="mb-2 flex items-center justify-between">
                 <label className="text-sm font-semibold">
-                  Video{" "}
+                  {t("productUpload.videoLabel")}{" "}
                   <span className="font-normal text-muted-foreground">
                     ({videos.length}/{videoLimit})
                   </span>
@@ -435,8 +449,8 @@ export default function ProductUploadDialog({ open, vendorId, vendorCategory, ti
                 >
                   <Video className="h-7 w-7 text-muted-foreground" />
                   <div className="text-left">
-                    <p className="text-sm font-semibold text-foreground">Add a short video</p>
-                    <p className="text-xs text-muted-foreground">Show your process or the finished product</p>
+                    <p className="text-sm font-semibold text-foreground">{t("productUpload.addVideoTitle")}</p>
+                    <p className="text-xs text-muted-foreground">{t("productUpload.addVideoHint")}</p>
                   </div>
                 </button>
               ) : (
@@ -458,18 +472,18 @@ export default function ProductUploadDialog({ open, vendorId, vendorCategory, ti
 
           {videoLimit === 0 && (
             <div className="rounded-lg bg-muted px-4 py-3 text-sm text-muted-foreground">
-              📹 Video uploads available on Standard and Premium plans.
+              📹 {t("productUpload.videoUpgradeHint")}
             </div>
           )}
 
           {/* Actions */}
           <div className="flex justify-end gap-3 pt-2 border-t border-border">
             <Button type="button" variant="ghost" onClick={handleClose} disabled={submitting}>
-              Cancel
+              {t("productUpload.cancelButton")}
             </Button>
             <Button onClick={handleSubmit} disabled={submitting || createProduct.isPending}>
               {(submitting || createProduct.isPending) && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-              {submitting ? "Uploading…" : "Save product"}
+              {submitting ? t("productUpload.uploadingButton") : t("productUpload.saveButton")}
             </Button>
           </div>
         </div>

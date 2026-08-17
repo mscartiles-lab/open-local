@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Switch } from "@/components/ui/switch";
 import { useToast } from "@/hooks/use-toast";
+import { useTranslation } from "react-i18next";
 
 const SESSION_KEY = "ol_session";
 
@@ -26,6 +27,7 @@ interface Variation {
 
 export default function ProductVariationsManager({ productId }: { productId: number }) {
   const { toast } = useToast();
+  const { t } = useTranslation();
   const [open, setOpen] = useState(false);
   const [variations, setVariations] = useState<Variation[] | null>(null);
   const [loading, setLoading] = useState(false);
@@ -68,7 +70,7 @@ export default function ProductVariationsManager({ productId }: { productId: num
       setNewSku("");
       await load();
     } catch (e) {
-      toast({ variant: "destructive", title: "Couldn't add variation", description: (e as Error).message });
+      toast({ variant: "destructive", title: t("variations.addError"), description: (e as Error).message });
     } finally {
       setBusy(false);
     }
@@ -106,7 +108,7 @@ export default function ProductVariationsManager({ productId }: { productId: num
         className="flex items-center gap-1.5 text-xs font-semibold text-muted-foreground hover:text-foreground"
       >
         <Layers className="h-3.5 w-3.5" />
-        Variations {variations && variations.length > 0 ? `(${variations.length})` : ""}
+        {t("variations.sectionTitle")} {variations && variations.length > 0 ? `(${variations.length})` : ""}
         {open ? <ChevronUp className="h-3.5 w-3.5" /> : <ChevronDown className="h-3.5 w-3.5" />}
       </button>
       {open && (
@@ -123,7 +125,14 @@ export default function ProductVariationsManager({ productId }: { productId: num
                       <span className="text-muted-foreground">${(v.priceCents / 100).toFixed(2)}</span>
                       {v.sku && <span className="text-xs text-muted-foreground font-mono">{v.sku}</span>}
                       <Switch checked={v.inStock} onCheckedChange={() => toggleStock(v)} disabled={busy} />
-                      <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => removeVariation(v.id)} disabled={busy}>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="h-6 w-6"
+                        onClick={() => removeVariation(v.id)}
+                        disabled={busy}
+                        title={t("variations.remove")}
+                      >
                         <Trash2 className="h-3.5 w-3.5 text-destructive" />
                       </Button>
                     </div>
@@ -132,13 +141,13 @@ export default function ProductVariationsManager({ productId }: { productId: num
               )}
               <div className="flex flex-wrap items-center gap-2 pt-1">
                 <Input
-                  placeholder="Size / flavor"
+                  placeholder={t("variations.namePlaceholder")}
                   value={newName}
                   onChange={(e) => setNewName(e.target.value)}
                   className="h-8 w-32 text-sm"
                 />
                 <Input
-                  placeholder="Price"
+                  placeholder={t("variations.pricePlaceholder")}
                   type="number"
                   step="0.01"
                   value={newPrice}
@@ -146,13 +155,13 @@ export default function ProductVariationsManager({ productId }: { productId: num
                   className="h-8 w-24 text-sm"
                 />
                 <Input
-                  placeholder="SKU (optional)"
+                  placeholder={t("variations.skuPlaceholder")}
                   value={newSku}
                   onChange={(e) => setNewSku(e.target.value)}
                   className="h-8 w-28 text-sm"
                 />
                 <Button size="sm" variant="outline" onClick={addVariation} disabled={busy || !newName.trim() || !newPrice}>
-                  <Plus className="h-3.5 w-3.5 mr-1" /> Add
+                  <Plus className="h-3.5 w-3.5 mr-1" /> {t("variations.add")}
                 </Button>
               </div>
             </>

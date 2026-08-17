@@ -6,6 +6,7 @@ import { useToast } from "@/hooks/use-toast";
 import { useUser } from "@/context/UserContext";
 import StarRating from "@/components/StarRating";
 import Avatar from "@/components/Avatar";
+import { useTranslation } from "react-i18next";
 
 const SESSION_KEY = "ol_session";
 
@@ -26,6 +27,7 @@ function authHeaders(extra?: Record<string, string>) {
 }
 
 export default function VendorReviews({ vendorId }: { vendorId: number }) {
+  const { t } = useTranslation();
   const { user } = useUser();
   const { toast } = useToast();
   const [reviews, setReviews] = useState<Review[]>([]);
@@ -46,7 +48,7 @@ export default function VendorReviews({ vendorId }: { vendorId: number }) {
       setReviewCount(data.reviewCount);
       setAverageRating(data.averageRating);
     } catch (e) {
-      toast({ variant: "destructive", title: "Couldn't load reviews", description: (e as Error).message });
+      toast({ variant: "destructive", title: t("reviews.loadError"), description: (e as Error).message });
     } finally {
       setLoading(false);
     }
@@ -58,7 +60,7 @@ export default function VendorReviews({ vendorId }: { vendorId: number }) {
 
   const submit = async () => {
     if (rating < 1) {
-      toast({ variant: "destructive", title: "Pick a star rating first" });
+      toast({ variant: "destructive", title: t("reviews.ratingPrompt") });
       return;
     }
     setSubmitting(true);
@@ -74,10 +76,10 @@ export default function VendorReviews({ vendorId }: { vendorId: number }) {
       }
       setRating(0);
       setComment("");
-      toast({ title: "Review posted" });
+      toast({ title: t("reviews.posted") });
       await load();
     } catch (e) {
-      toast({ variant: "destructive", title: "Couldn't post review", description: (e as Error).message });
+      toast({ variant: "destructive", title: t("reviews.postError"), description: (e as Error).message });
     } finally {
       setSubmitting(false);
     }
@@ -87,10 +89,10 @@ export default function VendorReviews({ vendorId }: { vendorId: number }) {
     try {
       const r = await fetch(`/api/reviews/${id}`, { method: "DELETE", headers: authHeaders() });
       if (!r.ok && r.status !== 204) throw new Error(`HTTP ${r.status}`);
-      toast({ title: "Review deleted" });
+      toast({ title: t("reviews.deleted") });
       await load();
     } catch (e) {
-      toast({ variant: "destructive", title: "Couldn't delete review", description: (e as Error).message });
+      toast({ variant: "destructive", title: t("reviews.deleteError"), description: (e as Error).message });
     }
   };
 
@@ -99,23 +101,23 @@ export default function VendorReviews({ vendorId }: { vendorId: number }) {
       <div className="flex items-center gap-4">
         <StarRating rating={averageRating} size={24} />
         <div className="text-sm text-muted-foreground">
-          {averageRating > 0 ? averageRating.toFixed(1) : "No ratings yet"} · {reviewCount} review{reviewCount === 1 ? "" : "s"}
+          {averageRating > 0 ? averageRating.toFixed(1) : t("reviews.noRatings")} · {t("reviews.reviewCount", { count: reviewCount })}
         </div>
       </div>
 
       {user && !myReview && (
         <div className="border border-border rounded-xl p-6 bg-muted/40 space-y-3">
-          <h4 className="font-semibold text-sm">Leave a review</h4>
+          <h4 className="font-semibold text-sm">{t("reviews.leave")}</h4>
           <StarRating rating={rating} size={28} interactive onChange={setRating} />
           <Textarea
-            placeholder="Share your experience (optional)"
+            placeholder={t("reviews.placeholder")}
             value={comment}
             onChange={(e) => setComment(e.target.value)}
             maxLength={2000}
           />
           <Button size="sm" onClick={submit} disabled={submitting}>
             {submitting ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : null}
-            Post review
+            {t("reviews.post")}
           </Button>
         </div>
       )}
@@ -123,7 +125,7 @@ export default function VendorReviews({ vendorId }: { vendorId: number }) {
       {loading ? (
         <div className="flex justify-center py-8"><Loader2 className="w-6 h-6 animate-spin text-muted-foreground" /></div>
       ) : reviews.length === 0 ? (
-        <p className="text-sm text-muted-foreground">No reviews yet. Be the first to share your experience!</p>
+        <p className="text-sm text-muted-foreground">{t("reviews.empty")}</p>
       ) : (
         <div className="space-y-6">
           {reviews.map((r) => (
@@ -134,7 +136,7 @@ export default function VendorReviews({ vendorId }: { vendorId: number }) {
                   <span className="font-semibold text-sm">@{r.username}</span>
                   {r.verified && (
                     <span className="inline-flex items-center gap-1 text-xs text-emerald-700 bg-emerald-50 border border-emerald-200 px-1.5 py-0.5 rounded-full">
-                      <BadgeCheck className="w-3 h-3" /> Verified visit
+                      <BadgeCheck className="w-3 h-3" /> {t("reviews.verified")}
                     </span>
                   )}
                   <span className="text-xs text-muted-foreground">{new Date(r.createdAt).toLocaleDateString()}</span>

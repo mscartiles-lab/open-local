@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { Link } from "wouter";
 import { Loader2, Trash2, MapPin, ExternalLink, BarChart3 } from "lucide-react";
+import { useTranslation } from "react-i18next";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
@@ -47,6 +48,7 @@ const STATUS_BADGES: Record<string, string> = {
 };
 
 export default function EstablishmentsAdminTab() {
+  const { t } = useTranslation();
   const { toast } = useToast();
   const [rows, setRows] = useState<AdminEstablishment[] | null>(null);
   const [loading, setLoading] = useState(true);
@@ -59,7 +61,7 @@ export default function EstablishmentsAdminTab() {
     try {
       const r = await fetch("/api/admin/establishments", { headers: authHeaders() });
       if (r.status === 401 || r.status === 403) {
-        setError("Admin access required. Make sure you're signed in with an admin account.");
+        setError(t("admin.adminAccessRequired"));
         setRows(null);
         return;
       }
@@ -83,10 +85,10 @@ export default function EstablishmentsAdminTab() {
         body: JSON.stringify({ status }),
       });
       if (!r.ok) throw new Error(`HTTP ${r.status}`);
-      toast({ title: `Marked ${status}` });
+      toast({ title: t("admin.estabMarked", { status }) });
       await reload();
     } catch (e) {
-      toast({ variant: "destructive", title: "Failed to update", description: (e as Error).message });
+      toast({ variant: "destructive", title: t("admin.estabUpdateFailed"), description: (e as Error).message });
     } finally {
       setBusyId(null);
     }
@@ -97,10 +99,10 @@ export default function EstablishmentsAdminTab() {
     try {
       const r = await fetch(`/api/admin/establishments/${id}`, { method: "DELETE", headers: authHeaders() });
       if (!r.ok) throw new Error(`HTTP ${r.status}`);
-      toast({ title: "Business deleted" });
+      toast({ title: t("admin.estabDeleted") });
       await reload();
     } catch (e) {
-      toast({ variant: "destructive", title: "Failed to delete", description: (e as Error).message });
+      toast({ variant: "destructive", title: t("admin.estabDeleteFailed"), description: (e as Error).message });
     } finally {
       setBusyId(null);
     }
@@ -122,13 +124,13 @@ export default function EstablishmentsAdminTab() {
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead>Business</TableHead>
-                  <TableHead>Type</TableHead>
-                  <TableHead>Location</TableHead>
-                  <TableHead>Tier</TableHead>
-                  <TableHead>Status</TableHead>
-                  <TableHead>Submitted</TableHead>
-                  <TableHead className="text-right">Actions</TableHead>
+                  <TableHead>{t("admin.estabColBusiness")}</TableHead>
+                  <TableHead>{t("admin.estabColType")}</TableHead>
+                  <TableHead>{t("admin.colLocation")}</TableHead>
+                  <TableHead>{t("admin.estabColTier")}</TableHead>
+                  <TableHead>{t("admin.estabColStatus")}</TableHead>
+                  <TableHead>{t("admin.estabColSubmitted")}</TableHead>
+                  <TableHead className="text-right">{t("admin.colActions")}</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -150,8 +152,8 @@ export default function EstablishmentsAdminTab() {
                     <TableCell>
                       <span className="capitalize text-sm">
                         {e.tier}
-                        {!e.stripeSubscriptionId && <span className="text-muted-foreground"> (unpaid)</span>}
-                        {e.isTrial && <span className="ml-1 text-xs text-emerald-700">trial</span>}
+                        {!e.stripeSubscriptionId && <span className="text-muted-foreground"> ({t("admin.userUnpaid")})</span>}
+                        {e.isTrial && <span className="ml-1 text-xs text-emerald-700">{t("admin.estabTrial")}</span>}
                       </span>
                     </TableCell>
                     <TableCell>
@@ -164,9 +166,9 @@ export default function EstablishmentsAdminTab() {
                           <SelectValue />
                         </SelectTrigger>
                         <SelectContent>
-                          <SelectItem value="pending">Pending</SelectItem>
-                          <SelectItem value="active">Active</SelectItem>
-                          <SelectItem value="rejected">Rejected</SelectItem>
+                          <SelectItem value="pending">{t("admin.estabStatusPending")}</SelectItem>
+                          <SelectItem value="active">{t("admin.estabStatusActive")}</SelectItem>
+                          <SelectItem value="rejected">{t("admin.estabStatusRejected")}</SelectItem>
                         </SelectContent>
                       </Select>
                     </TableCell>
@@ -176,7 +178,7 @@ export default function EstablishmentsAdminTab() {
                     <TableCell className="text-right">
                       <div className="flex items-center justify-end gap-1">
                         <Link href={`/business-dashboard/${e.id}`}>
-                          <Button variant="ghost" size="icon" title="Analytics dashboard">
+                          <Button variant="ghost" size="icon" title={t("admin.estabAnalyticsDashboard")}>
                             <BarChart3 className="w-4 h-4" />
                           </Button>
                         </Link>
@@ -193,14 +195,14 @@ export default function EstablishmentsAdminTab() {
                           </AlertDialogTrigger>
                           <AlertDialogContent>
                             <AlertDialogHeader>
-                              <AlertDialogTitle>Delete {e.name}?</AlertDialogTitle>
+                              <AlertDialogTitle>{t("admin.deleteEstabTitle", { name: e.name })}</AlertDialogTitle>
                               <AlertDialogDescription>
-                                This will permanently remove this business from the map. This action cannot be undone.
+                                {t("admin.deleteEstabWarning")}
                               </AlertDialogDescription>
                             </AlertDialogHeader>
                             <AlertDialogFooter>
-                              <AlertDialogCancel>Cancel</AlertDialogCancel>
-                              <AlertDialogAction onClick={() => remove(e.id)} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">Delete</AlertDialogAction>
+                              <AlertDialogCancel>{t("admin.cancel")}</AlertDialogCancel>
+                              <AlertDialogAction onClick={() => remove(e.id)} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">{t("admin.delete")}</AlertDialogAction>
                             </AlertDialogFooter>
                           </AlertDialogContent>
                         </AlertDialog>
@@ -212,7 +214,7 @@ export default function EstablishmentsAdminTab() {
             </Table>
           </div>
         ) : (
-          <div className="text-center py-12 text-muted-foreground">No business submissions yet.</div>
+          <div className="text-center py-12 text-muted-foreground">{t("admin.noEstablishments")}</div>
         )}
       </CardContent>
     </Card>

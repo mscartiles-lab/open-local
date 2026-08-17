@@ -4,12 +4,12 @@ import { useUser } from "@/context/UserContext";
 import { Loader2, CheckCircle, Store, Gift, Sparkles } from "lucide-react";
 import { Link } from "wouter";
 import { TIERS, TIER_ORDER, type TierId } from "@/lib/tiers";
-
-const WAIVED_NOTICE = "Subscription fees are currently being waived while we grow our community. Enjoy full access to Open Local completely free until further notice — we'll give you plenty of heads-up before anything changes.";
+import { useTranslation } from "react-i18next";
 
 export default function Billing() {
   const { user, isLoading } = useUser();
   const [selected, setSelected] = useState<TierId>("middle");
+  const { t } = useTranslation();
 
   if (isLoading) {
     return (
@@ -25,10 +25,10 @@ export default function Billing() {
     return (
       <Layout>
         <div className="max-w-md mx-auto py-20 text-center px-4">
-          <h1 className="text-3xl font-serif font-bold mb-3">Sign in to view plans</h1>
-          <p className="text-muted-foreground mb-6">You need an Open Local account to view vendor plans.</p>
+          <h1 className="text-3xl font-serif font-bold mb-3">{t("billing.signInTitle")}</h1>
+          <p className="text-muted-foreground mb-6">{t("billing.signInDescription")}</p>
           <Link href="/" className="inline-block bg-primary text-primary-foreground px-6 py-3 rounded-xl font-semibold hover:bg-primary/90 transition-colors">
-            Back home
+            {t("billing.backHome")}
           </Link>
         </div>
       </Layout>
@@ -40,10 +40,10 @@ export default function Billing() {
       <Layout>
         <div className="max-w-md mx-auto py-20 text-center px-4">
           <Store className="w-12 h-12 text-muted-foreground mx-auto mb-4" />
-          <h1 className="text-3xl font-serif font-bold mb-3">Vendor accounts only</h1>
+          <h1 className="text-3xl font-serif font-bold mb-3">{t("billing.vendorOnlyTitle")}</h1>
           <p className="text-muted-foreground mb-6">
-            Billing is for vendors selling on Open Local. To list your business on the map instead, head to{" "}
-            <Link href="/pin-your-business" className="text-primary underline">Pin Your Business</Link>.
+            {t("billing.vendorOnlyDescription")}{" "}
+            <Link href="/pin-your-business" className="text-primary underline">{t("billing.pinYourBusiness")}</Link>.
           </p>
         </div>
       </Layout>
@@ -54,8 +54,8 @@ export default function Billing() {
     <Layout>
       <div className="max-w-4xl mx-auto px-4 py-12">
         <div className="mb-10">
-          <h1 className="text-4xl font-serif font-bold text-foreground mb-2">Vendor plans</h1>
-          <p className="text-muted-foreground">Everything included while we build our community together.</p>
+          <h1 className="text-4xl font-serif font-bold text-foreground mb-2">{t("billing.title")}</h1>
+          <p className="text-muted-foreground">{t("billing.subtitle")}</p>
         </div>
 
         {/* Waived notice banner */}
@@ -64,17 +64,17 @@ export default function Billing() {
             <Gift className="w-5 h-5 text-green-700" />
           </div>
           <div>
-            <p className="font-semibold text-green-900 mb-1">Subscription fees are currently waived 🎉</p>
-            <p className="text-sm text-green-800 leading-relaxed">{WAIVED_NOTICE}</p>
+            <p className="font-semibold text-green-900 mb-1">{t("billing.waivedTitle")}</p>
+            <p className="text-sm text-green-800 leading-relaxed">{t("billing.waivedNotice")}</p>
           </div>
         </div>
 
         {/* Tier comparison — informational only */}
         <div className="mb-4 flex items-center gap-2">
           <Sparkles className="w-4 h-4 text-primary" />
-          <span className="text-xs font-bold uppercase tracking-wider text-primary">Plans overview</span>
+          <span className="text-xs font-bold uppercase tracking-wider text-primary">{t("billing.plansOverview")}</span>
         </div>
-        <p className="text-sm text-muted-foreground mb-6">Here's a preview of the plans we'll offer once subscriptions open. Your tier will be set to <strong>Standard</strong> in the meantime so you get pre-orders and everything you need to sell.</p>
+        <p className="text-sm text-muted-foreground mb-6">{t("billing.plansPreviewBefore")}<strong>Standard</strong>{t("billing.plansPreviewAfter")}</p>
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
           {TIER_ORDER.map((id) => {
@@ -92,13 +92,13 @@ export default function Billing() {
               >
                 {featured && (
                   <span className="inline-block text-xs font-bold uppercase tracking-wider text-primary bg-primary/10 px-2 py-0.5 rounded-full mb-2">
-                    Most popular
+                    {t("billing.mostPopular")}
                   </span>
                 )}
                 <div className="font-serif text-xl font-bold text-foreground mb-0.5">{tier.name}</div>
                 <div className="text-xs text-muted-foreground mb-3">{tier.tagline}</div>
                 <div className="text-2xl font-bold text-foreground mb-4">
-                  ${tier.priceMonthly.toFixed(2)}<span className="text-sm font-normal text-muted-foreground"> / mo</span>
+                  ${tier.priceMonthly.toFixed(2)}<span className="text-sm font-normal text-muted-foreground"> {t("billing.month")}</span>
                 </div>
                 <ul className="space-y-2">
                   {tier.features.map((f) => (
@@ -114,7 +114,7 @@ export default function Billing() {
         </div>
 
         <p className="text-center text-xs text-muted-foreground">
-          No action needed — you have free access right now. We'll notify you by email before subscriptions go live.
+          {t("billing.freeAccessNotice")}
         </p>
       </div>
     </Layout>

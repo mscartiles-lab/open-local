@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import { useUser } from "@/context/UserContext";
 import { Link } from "wouter";
 import { cn } from "@/lib/utils";
+import { useTranslation } from "react-i18next";
 
 const SESSION_KEY = "ol_session";
 
@@ -33,22 +34,23 @@ interface MyOrder {
   vendorSlug: string;
 }
 
-const STATUS_META = {
-  paid: { label: "Paid", icon: CheckCircle2, className: "text-emerald-600 bg-emerald-50 border-emerald-200" },
-  pending: { label: "Pending", icon: Clock, className: "text-amber-600 bg-amber-50 border-amber-200" },
-  refunded: { label: "Refunded", icon: RefreshCcw, className: "text-muted-foreground bg-muted border-border" },
-  cancelled: { label: "Cancelled", icon: XCircle, className: "text-muted-foreground bg-muted border-border" },
-};
-
 function formatCents(cents: number) {
   return `$${(cents / 100).toFixed(2)}`;
 }
 
 export default function OrdersPage() {
+  const { t } = useTranslation();
   const { user, openOnboarding } = useUser();
   const [, setLocation] = useLocation();
   const [orders, setOrders] = useState<MyOrder[] | null>(null);
   const [loading, setLoading] = useState(true);
+
+  const STATUS_META = {
+    paid: { label: t("orders.paid"), icon: CheckCircle2, className: "text-emerald-600 bg-emerald-50 border-emerald-200" },
+    pending: { label: t("orders.pending"), icon: Clock, className: "text-amber-600 bg-amber-50 border-amber-200" },
+    refunded: { label: t("orders.refunded"), icon: RefreshCcw, className: "text-muted-foreground bg-muted border-border" },
+    cancelled: { label: t("orders.cancelled"), icon: XCircle, className: "text-muted-foreground bg-muted border-border" },
+  };
 
   // Show success toast if redirected back from Stripe
   const [successShown, setSuccessShown] = useState(false);
@@ -77,9 +79,9 @@ export default function OrdersPage() {
       <Layout>
         <div className="container max-w-2xl mx-auto px-4 py-24 text-center">
           <ShoppingBag className="w-16 h-16 mx-auto text-muted-foreground opacity-30 mb-6" />
-          <h1 className="text-3xl font-serif font-bold mb-3">Your orders</h1>
-          <p className="text-muted-foreground mb-6">Sign in to see your order history.</p>
-          <Button onClick={openOnboarding}>Sign in</Button>
+          <h1 className="text-3xl font-serif font-bold mb-3">{t("orders.title")}</h1>
+          <p className="text-muted-foreground mb-6">{t("orders.signInDescription")}</p>
+          <Button onClick={openOnboarding}>{t("common.signIn")}</Button>
         </div>
       </Layout>
     );
@@ -90,7 +92,7 @@ export default function OrdersPage() {
       <div className="container max-w-4xl mx-auto px-4 py-12">
         <div className="flex items-center gap-3 mb-8">
           <ShoppingBag className="w-7 h-7 text-primary" />
-          <h1 className="text-3xl font-serif font-bold">Your orders</h1>
+          <h1 className="text-3xl font-serif font-bold">{t("orders.title")}</h1>
         </div>
 
         {/* Success banner */}
@@ -98,8 +100,8 @@ export default function OrdersPage() {
           <div className="mb-6 flex items-start gap-3 rounded-lg border border-emerald-200 bg-emerald-50 p-4 text-emerald-800">
             <CheckCircle2 className="w-5 h-5 mt-0.5 shrink-0" />
             <div>
-              <p className="font-semibold">Payment confirmed!</p>
-              <p className="text-sm">Your order is below. The vendor will have your item ready at pickup.</p>
+              <p className="font-semibold">{t("orders.paymentConfirmed")}</p>
+              <p className="text-sm">{t("orders.paymentConfirmedDetail")}</p>
             </div>
           </div>
         )}
@@ -111,8 +113,8 @@ export default function OrdersPage() {
         ) : !orders || orders.length === 0 ? (
           <div className="flex flex-col items-center gap-4 py-20 text-muted-foreground">
             <Package className="w-12 h-12 opacity-30" />
-            <p className="text-lg">No orders yet.</p>
-            <Button variant="outline" onClick={() => setLocation("/products")}>Browse listings</Button>
+            <p className="text-lg">{t("orders.noOrders")}</p>
+            <Button variant="outline" onClick={() => setLocation("/products")}>{t("orders.browseListings")}</Button>
           </div>
         ) : (
           <div className="space-y-4">
@@ -141,20 +143,20 @@ export default function OrdersPage() {
                             {o.productName}
                           </Link>
                           <p className="text-sm text-muted-foreground mt-0.5">
-                            from{" "}
+                            {t("orders.from")}{" "}
                             <Link href={`/vendors/${o.vendorId}`} className="hover:text-primary transition-colors">
                               {o.vendorName}
                             </Link>
                           </p>
                           {o.quantity > 1 && (
-                            <p className="text-xs text-muted-foreground mt-1">Quantity: {o.quantity}</p>
+                            <p className="text-xs text-muted-foreground mt-1">{t("orders.quantity")} {o.quantity}</p>
                           )}
                           {o.pickupNote && (
                             <p className="text-xs text-muted-foreground mt-1 italic">{o.pickupNote}</p>
                           )}
                           {o.availableUntil && (
                             <p className="text-xs text-muted-foreground mt-1">
-                              Pickup by: {new Date(o.availableUntil).toLocaleDateString()}
+                              {t("orders.pickupBy")} {new Date(o.availableUntil).toLocaleDateString()}
                             </p>
                           )}
                         </div>

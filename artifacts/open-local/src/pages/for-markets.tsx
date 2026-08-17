@@ -1,7 +1,10 @@
 import { Check, X, Link2, Send, Rocket, Store, Bell, MapPin, MessageCircle, Star, Package, TrendingUp, Award, Users, ArrowRight, Zap } from "lucide-react";
 import { Link } from "wouter";
+import { useTranslation } from "react-i18next";
 
 export default function ForMarkets() {
+  const { t } = useTranslation();
+
   function scrollTo(id: string) {
     document.getElementById(id)?.scrollIntoView({ behavior: "smooth", block: "start" });
   }
@@ -21,7 +24,7 @@ export default function ForMarkets() {
               href="/invite"
               className="px-5 py-2.5 bg-[#3c4a26] text-white rounded-lg font-semibold text-sm hover:bg-[#2d3a1d] transition-colors no-underline"
             >
-              Get the Invite Link →
+              {t("forMarkets.ctaInvite")} →
             </Link>
           </div>
         </div>
@@ -34,18 +37,18 @@ export default function ForMarkets() {
             <div>
               <div className="inline-flex items-center gap-2 bg-[#8fb339]/20 border border-[#8fb339]/40 rounded-full px-4 py-1.5 text-[#a8d044] text-sm font-semibold mb-8 tracking-wide">
                 <Award className="w-3.5 h-3.5" />
-                For Farmers Market Managers
+                {t("forMarkets.badge")}
               </div>
 
               <h1 className="font-['Playfair_Display'] text-5xl lg:text-6xl font-bold leading-[1.1] mb-6">
-                The Market That Looks Out for Its Vendors Wins.
+                {t("forMarkets.heroTitle")}
               </h1>
 
               <p className="text-lg text-gray-300 mb-4 leading-relaxed">
-                Open Local gives every vendor in your market a free digital storefront — so they sell more at market through pre-orders and location exposure, stay loyal to yours, and bring new shoppers through your gates.
+                {t("forMarkets.heroDescription")}
               </p>
               <p className="text-base text-[#8fb339] font-medium mb-10">
-                Zero cost to you. Zero admin work. One shared link.
+                {t("forMarkets.heroSubtext")}
               </p>
 
               <div className="flex flex-col sm:flex-row gap-4">
@@ -53,14 +56,14 @@ export default function ForMarkets() {
                   href="/invite"
                   className="inline-flex items-center justify-center gap-2 px-8 py-4 bg-[#8fb339] text-white rounded-lg font-bold text-base hover:bg-[#7a9a2f] transition-all shadow-lg no-underline"
                 >
-                  Get the Invite Link
+                  {t("forMarkets.ctaInvite")}
                   <ArrowRight className="w-5 h-5" />
                 </Link>
                 <Link
                   href="/markets/register"
                   className="inline-flex items-center justify-center gap-2 px-8 py-4 border border-white/25 text-white/90 rounded-lg font-medium hover:bg-white/10 transition-colors no-underline"
                 >
-                  List Your Market →
+                  {t("forMarkets.ctaList")}
                 </Link>
               </div>
             </div>
@@ -70,7 +73,7 @@ export default function ForMarkets() {
               <div className="rounded-2xl overflow-hidden shadow-2xl ring-1 ring-white/10">
                 <img
                   src="/market-hero.jpg"
-                  alt="Vibrant farmers market aerial view"
+                  alt={t("forMarkets.heroImageAlt")}
                   className="w-full h-[420px] object-cover"
                 />
                 <div className="absolute inset-0 bg-gradient-to-t from-[#1c2a10]/50 to-transparent rounded-2xl" />
@@ -81,17 +84,17 @@ export default function ForMarkets() {
                 <div className="flex items-center gap-3 mb-3">
                   <div className="w-10 h-10 bg-gradient-to-br from-amber-400 to-amber-600 rounded-xl flex items-center justify-center text-xl">🍯</div>
                   <div>
-                    <div className="font-bold text-sm leading-tight">Sunrise Honey</div>
-                    <div className="text-xs text-[#8fb339] font-medium">● Online now</div>
+                    <div className="font-bold text-sm leading-tight">{t("forMarkets.sampleVendorName")}</div>
+                    <div className="text-xs text-[#8fb339] font-medium">{t("forMarkets.sampleOnlineStatus")}</div>
                   </div>
                 </div>
-                <div className="text-xs text-gray-500">14 followers · 3 new orders this week</div>
+                <div className="text-xs text-gray-500">{t("forMarkets.sampleVendorStats")}</div>
               </div>
 
               {/* Floating card — vendor permanence */}
               <div className="hidden lg:block absolute -top-4 -right-4 bg-white text-[#1a1a1a] p-4 rounded-2xl shadow-2xl w-52 border border-gray-100">
-                <div className="text-xs font-semibold text-[#8fb339] uppercase tracking-wider mb-1">Theirs for life</div>
-                <div className="text-sm font-bold text-[#1a1a1a] leading-snug">Profile stays with the vendor — not the market</div>
+                <div className="text-xs font-semibold text-[#8fb339] uppercase tracking-wider mb-1">{t("forMarkets.vendorPermanenceLabel")}</div>
+                <div className="text-sm font-bold text-[#1a1a1a] leading-snug">{t("forMarkets.vendorPermanenceDescription")}</div>
               </div>
             </div>
           </div>
@@ -103,10 +106,10 @@ export default function ForMarkets() {
         <div className="max-w-6xl mx-auto px-6 lg:px-8">
           <div className="text-center mb-14">
             <h2 className="font-['Playfair_Display'] text-4xl lg:text-5xl font-bold text-[#1a1a1a] mb-4">
-              What Your Market Gains
+              {t("forMarkets.gainsTitle")}
             </h2>
             <p className="text-xl text-gray-500 max-w-xl mx-auto">
-              This isn't just a tool for your vendors. It's a competitive edge for your market.
+              {t("forMarkets.gainsSubtitle")}
             </p>
           </div>
 
@@ -114,23 +117,23 @@ export default function ForMarkets() {
             {[
               {
                 icon: TrendingUp,
-                title: "Higher vendor retention",
-                body: "Vendors who earn more — even between markets — are far more likely to renew their stall season after season. Open Local puts money in their pocket, and that loyalty flows back to you.",
+                title: t("forMarkets.gains1Title"),
+                body: t("forMarkets.gains1Body"),
               },
               {
                 icon: Users,
-                title: "More foot traffic on market days",
-                body: "When shoppers discover a vendor online, they come to the market to meet them. Open Local turns digital browsing into in-person visits — bringing new faces through your gates every week.",
+                title: t("forMarkets.gains2Title"),
+                body: t("forMarkets.gains2Body"),
               },
               {
                 icon: Award,
-                title: "Stand out from competing markets",
-                body: "When vendors choose which markets to commit to, the one that actively supports their growth wins. Offering Open Local is a concrete perk that sets your market apart.",
+                title: t("forMarkets.gains3Title"),
+                body: t("forMarkets.gains3Body"),
               },
               {
                 icon: Zap,
-                title: "Zero effort on your end",
-                body: "You share one link or QR code. That's it. Vendors sign themselves up, build their own profiles, and manage their own storefronts. You get all the upside with none of the admin overhead.",
+                title: t("forMarkets.gains4Title"),
+                body: t("forMarkets.gains4Body"),
               },
             ].map((item, i) => (
               <div key={i} className="flex gap-5 p-8 rounded-2xl bg-[#f9f6f0] border border-[#3c4a26]/10 hover:border-[#8fb339]/40 transition-colors">
@@ -152,25 +155,25 @@ export default function ForMarkets() {
         <div className="max-w-6xl mx-auto px-6 lg:px-8">
           <div className="text-center mb-12">
             <h2 className="font-['Playfair_Display'] text-4xl font-bold text-[#1a1a1a] mb-4">
-              Your vendors are invisible 5 days a week.
+              {t("forMarkets.problemHeadline")}
             </h2>
             <p className="text-lg text-gray-500 max-w-2xl mx-auto">
-              A market that runs Saturday morning is still competing for shopper loyalty every day of the week — and right now, your vendors have no presence for any of it.
+              {t("forMarkets.problemDescription")}
             </p>
           </div>
 
           <div className="grid md:grid-cols-2 gap-6 max-w-4xl mx-auto">
             <div className="bg-white/70 border border-gray-200 rounded-2xl p-8">
               <div className="inline-flex items-center gap-2 px-3 py-1.5 bg-gray-100 rounded-full text-sm font-semibold text-gray-500 mb-6">
-                <X className="w-3.5 h-3.5" /> Without Open Local
+                <X className="w-3.5 h-3.5" /> {t("forMarkets.withoutOpenLocal")}
               </div>
               <ul className="space-y-4">
                 {[
-                  "Vendors only exist on market day",
-                  "A shopper forgets a vendor — they never come back",
-                  "Vendors who struggle financially drop out mid-season",
-                  "Competing markets with more perks poach your best vendors",
-                  "No way to showcase your market online between events",
+                  t("forMarkets.withoutItem1"),
+                  t("forMarkets.withoutItem2"),
+                  t("forMarkets.withoutItem3"),
+                  t("forMarkets.withoutItem4"),
+                  t("forMarkets.withoutItem5"),
                 ].map((item, i) => (
                   <li key={i} className="flex items-start gap-3 text-gray-600">
                     <X className="w-4 h-4 text-red-400 mt-1 flex-shrink-0" />
@@ -182,15 +185,15 @@ export default function ForMarkets() {
 
             <div className="bg-gradient-to-br from-[#8fb339]/10 to-[#3c4a26]/5 border-2 border-[#8fb339]/30 rounded-2xl p-8">
               <div className="inline-flex items-center gap-2 px-3 py-1.5 bg-[#8fb339]/20 rounded-full text-sm font-semibold text-[#3c4a26] mb-6">
-                <Check className="w-3.5 h-3.5" /> With Open Local
+                <Check className="w-3.5 h-3.5" /> {t("forMarkets.withOpenLocal")}
               </div>
               <ul className="space-y-4">
                 {[
-                  "Every vendor is findable and shoppable every day",
-                  "Shoppers follow their favorite vendors and come back",
-                  "Vendors earn more — they stay in your market longer",
-                  "You offer something competing markets don't",
-                  "Your market shows up on Open Local — free promotion",
+                  t("forMarkets.withItem1"),
+                  t("forMarkets.withItem2"),
+                  t("forMarkets.withItem3"),
+                  t("forMarkets.withItem4"),
+                  t("forMarkets.withItem5"),
                 ].map((item, i) => (
                   <li key={i} className="flex items-start gap-3">
                     <Check className="w-4 h-4 text-[#8fb339] mt-1 flex-shrink-0" />
@@ -208,10 +211,10 @@ export default function ForMarkets() {
         <div className="max-w-6xl mx-auto px-6 lg:px-8">
           <div className="text-center mb-14">
             <h2 className="font-['Playfair_Display'] text-4xl font-bold text-[#1a1a1a] mb-4">
-              Your part takes 60 seconds.
+              {t("forMarkets.howTitle")}
             </h2>
             <p className="text-lg text-gray-500 max-w-xl mx-auto">
-              After that, vendors do the rest themselves. No tech setup, no ongoing work for you.
+              {t("forMarkets.setupHelp")}
             </p>
           </div>
 
@@ -220,23 +223,23 @@ export default function ForMarkets() {
               {
                 icon: Link2,
                 step: "1",
-                time: "Day 1, 60 seconds",
-                title: "Get the Open Local invite link",
-                description: "We give you a QR code and URL to share. Vendors sign up independently — they own their profile for life, and list your market as one of the places they sell.",
+                time: t("forMarkets.setup1Time"),
+                title: t("forMarkets.setup1Title"),
+                description: t("forMarkets.setup1Description"),
               },
               {
                 icon: Send,
                 step: "2",
-                time: "Day 1, however you like",
-                title: "Share it once",
-                description: "Post it in your vendor Facebook group, print it on your check-in sheet, or drop it in your vendor newsletter. Done. No follow-up required.",
+                time: t("forMarkets.setup2Time"),
+                title: t("forMarkets.setup2Title"),
+                description: t("forMarkets.setup2Description"),
               },
               {
                 icon: Rocket,
                 step: "3",
-                time: "Within days",
-                title: "Watch your vendors launch",
-                description: "Each vendor creates their profile in about 5 minutes — for free. They list your market, their schedule, and their products. Shoppers can find them instantly.",
+                time: t("forMarkets.setup3Time"),
+                title: t("forMarkets.setup3Title"),
+                description: t("forMarkets.setup3Description"),
               },
             ].map((item, i) => (
               <div key={i} className="relative bg-[#f9f6f0] rounded-2xl p-8 border border-[#3c4a26]/10">
@@ -260,24 +263,24 @@ export default function ForMarkets() {
         <div className="max-w-6xl mx-auto px-6 lg:px-8">
           <div className="text-center mb-14">
             <div className="inline-flex items-center gap-2 bg-[#3c4a26]/10 rounded-full px-4 py-1.5 text-[#3c4a26] text-sm font-semibold mb-5">
-              The perk you're handing them
+              {t("forMarkets.perkHeadline")}
             </div>
             <h2 className="font-['Playfair_Display'] text-4xl font-bold text-[#1a1a1a] mb-4">
-              What every vendor gets — free.
+              {t("forMarkets.getTitle")}
             </h2>
             <p className="text-lg text-gray-500 max-w-xl mx-auto">
-              You don't pay a cent. They don't pay a cent. And they get a full digital business presence they couldn't build on their own.
+              {t("forMarkets.perkDescription")}
             </p>
           </div>
 
           <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-5">
             {[
-              { icon: Store, title: "Permanent storefront", description: "Their own page with photos, story, product catalog, and market schedule — searchable on Google." },
-              { icon: Bell, title: "Fresh batch alerts", description: '"Just pulled 40 sourdough loaves" — followers are notified instantly, driving pre-market anticipation.' },
-              { icon: MapPin, title: "Market listings", description: "Shoppers see exactly which markets each vendor attends and when — and get directions." },
-              { icon: MessageCircle, title: "Direct messaging", description: "Customers reach out before market day to reserve items or ask questions. No more missed sales." },
-              { icon: Star, title: "Reviews & reputation", description: "Verified reviews travel with each vendor. Great vendors earn loyalty that transcends any single market." },
-              { icon: Package, title: "Pre-orders", description: "Regulars reserve items before they sell out. Vendors sell more, shoppers get guaranteed access." },
+              { icon: Store, title: t("forMarkets.benefit1Title"), description: t("forMarkets.benefit1Description") },
+              { icon: Bell, title: t("forMarkets.benefit2Title"), description: t("forMarkets.benefit2Description") },
+              { icon: MapPin, title: t("forMarkets.benefit3Title"), description: t("forMarkets.benefit3Description") },
+              { icon: MessageCircle, title: t("forMarkets.benefit4Title"), description: t("forMarkets.benefit4Description") },
+              { icon: Star, title: t("forMarkets.benefit5Title"), description: t("forMarkets.benefit5Description") },
+              { icon: Package, title: t("forMarkets.benefit6Title"), description: t("forMarkets.benefit6Description") },
             ].map((item, i) => (
               <div key={i} className="bg-white rounded-xl p-6 border border-gray-200 hover:shadow-md hover:border-[#8fb339]/40 transition-all">
                 <div className="w-11 h-11 bg-gradient-to-br from-[#8fb339] to-[#3c4a26] rounded-lg flex items-center justify-center mb-4 text-white">
@@ -296,10 +299,10 @@ export default function ForMarkets() {
         <div className="max-w-5xl mx-auto px-6 lg:px-8">
           <div className="grid grid-cols-2 lg:grid-cols-4 gap-8 text-center">
             {[
-              { number: "1,200+", label: "Active Florida vendors" },
-              { number: "48", label: "Markets on platform" },
-              { number: "100%", label: "Free for vendors & markets" },
-              { number: "< 5 min", label: "Vendor setup time" },
+              { number: "1,200+", label: t("forMarkets.stat1Label") },
+              { number: "48", label: t("forMarkets.stat2Label") },
+              { number: "100%", label: t("forMarkets.stat3Label") },
+              { number: "< 5 min", label: t("forMarkets.stat4Label") },
             ].map((s, i) => (
               <div key={i}>
                 <div className="text-3xl sm:text-4xl font-bold font-['Playfair_Display'] text-[#8fb339] mb-1">{s.number}</div>
@@ -321,15 +324,15 @@ export default function ForMarkets() {
             </div>
 
             <blockquote className="font-['Playfair_Display'] text-xl text-[#1a1a1a] leading-relaxed mb-3 mt-4">
-              "I printed the QR code on our vendor check-in sheet for two Saturdays. By the end of the month, 34 of our 40 vendors had live profiles. Three vendors told me they'd had their best revenue month ever — and two of them specifically said they were staying with us next season because of it."
+              "{t("forMarkets.testimonialBlockquote")}"
             </blockquote>
-            <p className="text-[#8fb339] font-semibold text-sm mb-6">The part that got me? I spent maybe 20 minutes on this total.</p>
+            <p className="text-[#8fb339] font-semibold text-sm mb-6">{t("forMarkets.testimonialQuote")}</p>
 
             <div className="flex items-center gap-4">
               <div className="w-12 h-12 bg-gradient-to-br from-[#8fb339] to-[#3c4a26] rounded-full flex items-center justify-center text-white font-bold">SM</div>
               <div>
-                <div className="font-bold text-[#1a1a1a] text-sm">Sarah M.</div>
-                <div className="text-gray-500 text-sm">Market Manager · Pinellas Growers Market</div>
+                <div className="font-bold text-[#1a1a1a] text-sm">{t("forMarkets.testimonialName")}</div>
+                <div className="text-gray-500 text-sm">{t("forMarkets.testimonialRole")}</div>
               </div>
             </div>
           </div>
@@ -343,24 +346,24 @@ export default function ForMarkets() {
         </div>
         <div className="max-w-3xl mx-auto px-6 lg:px-8 text-center relative z-10">
           <h2 className="font-['Playfair_Display'] text-4xl lg:text-5xl font-bold mb-5 leading-tight">
-            Your vendors work hard on market day. Give them something that works for them every day.
+            {t("forMarkets.finalCtaHeadline")}
           </h2>
           <p className="text-lg text-gray-300 mb-10 leading-relaxed">
-            It costs you nothing. Takes 60 seconds to set up. And the markets that offer this are already seeing stronger vendor retention and more foot traffic.
+            {t("forMarkets.finalCtaDescription")}
           </p>
 
           <Link
             href="/invite"
             className="inline-flex items-center gap-3 px-10 py-5 bg-[#8fb339] text-white rounded-xl font-bold text-lg hover:bg-[#7a9a2f] transition-all shadow-2xl no-underline mb-6"
           >
-            Get the Invite Link
+            {t("forMarkets.ctaInvite")}
             <ArrowRight className="w-5 h-5" />
           </Link>
 
           <div className="flex flex-wrap justify-center gap-6 text-sm text-gray-400 mt-6">
-            {["Free for you", "Free for vendors", "No account required", "Works for any market size"].map((t) => (
-              <span key={t} className="flex items-center gap-1.5">
-                <Check className="w-4 h-4 text-[#8fb339]" /> {t}
+            {[t("forMarkets.ctaLabel1"), t("forMarkets.ctaLabel2"), t("forMarkets.ctaLabel3"), t("forMarkets.ctaLabel4")].map((label) => (
+              <span key={label} className="flex items-center gap-1.5">
+                <Check className="w-4 h-4 text-[#8fb339]" /> {label}
               </span>
             ))}
           </div>
@@ -369,7 +372,7 @@ export default function ForMarkets() {
 
       {/* ── Footer ─────────────────────────────────────────────── */}
       <footer className="py-8 bg-[#1c2a10] text-gray-500 text-center text-sm">
-        © 2025 Open Local · Florida's marketplace for local producers
+        {t("forMarkets.footerCopy")}
       </footer>
     </div>
   );

@@ -1,4 +1,5 @@
 import { useState, useMemo } from "react";
+import { useTranslation } from "react-i18next";
 import { useSearchLogger } from "@/hooks/use-search-logger";
 import { Link } from "wouter";
 import { motion } from "framer-motion";
@@ -14,6 +15,7 @@ import { useProximity, haversineMiles, PROXIMITY_PICKS, PROXIMITY_LABELS } from 
 import VendorsMapView from "@/components/VendorsMapView";
 
 export default function Vendors() {
+  const { t } = useTranslation();
   const [view, setView] = useState<"list" | "map">("list");
   const [search, setSearch] = useState("");
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
@@ -50,31 +52,31 @@ export default function Vendors() {
       <div className="bg-muted border-b border-border py-12">
         <div className="container max-w-6xl mx-auto px-4">
           <div className="flex items-start justify-between gap-4 mb-4">
-            <h1 className="text-5xl font-serif font-bold text-foreground">Florida Producers</h1>
+            <h1 className="text-5xl font-serif font-bold text-foreground">{t("vendors.title")}</h1>
             {/* Map / List toggle */}
             <div className="flex items-center gap-1 bg-background border border-border rounded-xl p-1 shrink-0 mt-1">
               <button
                 onClick={() => setView("list")}
                 className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-semibold transition-colors ${view === "list" ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:text-foreground"}`}
               >
-                <List className="w-4 h-4" /> List
+                <List className="w-4 h-4" /> {t("common.list")}
               </button>
               <button
                 onClick={() => setView("map")}
                 className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-semibold transition-colors ${view === "map" ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:text-foreground"}`}
               >
-                <Map className="w-4 h-4" /> Map
+                <Map className="w-4 h-4" /> {t("common.map")}
               </button>
             </div>
           </div>
           <p className="text-xl text-muted-foreground max-w-2xl font-sans mb-8">
-            Discover the independent makers, farmers, and artisans crafting small-batch goods in Florida.
+            {t("vendors.subtitle")}
           </p>
           <div className="relative max-w-2xl">
             <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground pointer-events-none" />
             <input
               type="search"
-              placeholder="Search by vendor name…"
+              placeholder={t("vendors.searchPlaceholder")}
               value={search}
               onChange={(e) => setSearch(e.target.value)}
               className="w-full h-12 pl-12 pr-4 rounded-xl border border-border bg-background text-base shadow-sm focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary transition"
@@ -98,17 +100,17 @@ export default function Vendors() {
             {/* Near Me */}
             <div className="space-y-3">
               <h3 className="font-serif font-bold text-lg flex items-center gap-2">
-                <LocateFixed className="w-4 h-4" /> Near Me
+                <LocateFixed className="w-4 h-4" /> {t("common.nearMe")}
               </h3>
               {!userPos ? (
                 <Button variant="outline" size="sm" className="w-full gap-2" onClick={locate} disabled={locating}>
-                  {locating ? <><Loader2 className="w-4 h-4 animate-spin" /> Locating…</> : <><LocateFixed className="w-4 h-4" /> Use my location</>}
+                  {locating ? <><Loader2 className="w-4 h-4 animate-spin" /> {t("common.locating")}</> : <><LocateFixed className="w-4 h-4" /> {t("common.useMyLocation")}</>}
                 </Button>
               ) : (
                 <div className="space-y-2">
                   <div className="flex items-center justify-between text-xs text-muted-foreground">
-                    <span className="font-semibold uppercase tracking-wide">Radius</span>
-                    <button onClick={clear} className="hover:text-foreground flex items-center gap-1"><X className="w-3 h-3" /> Clear</button>
+                    <span className="font-semibold uppercase tracking-wide">{t("vendors.radius")}</span>
+                    <button onClick={clear} className="hover:text-foreground flex items-center gap-1"><X className="w-3 h-3" /> {t("vendors.clearLocation")}</button>
                   </div>
                   <div className="flex gap-1.5">
                     {PROXIMITY_PICKS.map((r) => (
@@ -121,7 +123,7 @@ export default function Vendors() {
                       </button>
                     ))}
                   </div>
-                  <p className="text-xs text-muted-foreground">{inRadius.length} within {PROXIMITY_LABELS[radius]}</p>
+                  <p className="text-xs text-muted-foreground">{t("vendors.withinMi", { n: inRadius.length })}</p>
                 </div>
               )}
               {locationError && <p className="text-xs text-amber-600">{locationError}</p>}
@@ -130,7 +132,7 @@ export default function Vendors() {
             {categories && categories.vendorCategories.length > 0 && (
               <div className="space-y-4">
                 <h3 className="font-serif font-bold text-lg flex items-center gap-2">
-                  <Filter className="w-4 h-4" /> Category
+                  <Filter className="w-4 h-4" /> {t("common.category")}
                 </h3>
                 <div className="flex flex-wrap gap-2">
                   <Badge 
@@ -138,7 +140,7 @@ export default function Vendors() {
                     className="cursor-pointer px-4 py-1.5 text-sm rounded-xl"
                     onClick={() => setSelectedCategory(null)}
                   >
-                    All
+                    {t("common.all")}
                   </Badge>
                   {categories.vendorCategories.map((c) => (
                     <Badge 
@@ -157,7 +159,7 @@ export default function Vendors() {
             {locations && locations.length > 0 && (
               <div className="space-y-4">
                 <h3 className="font-serif font-bold text-lg flex items-center gap-2">
-                  <MapPin className="w-4 h-4" /> Location
+                  <MapPin className="w-4 h-4" /> {t("common.location")}
                 </h3>
                 <div className="flex flex-wrap gap-2">
                   <Badge 
@@ -165,7 +167,7 @@ export default function Vendors() {
                     className="cursor-pointer px-4 py-1.5 text-sm rounded-xl"
                     onClick={() => setSelectedLocation(null)}
                   >
-                    All
+                    {t("common.all")}
                   </Badge>
                   {locations.map((l) => (
                     <Badge 
@@ -212,7 +214,7 @@ export default function Vendors() {
                   <div className="flex items-center gap-4 py-2">
                     <div className="flex-1 h-px bg-border" />
                     <span className="text-xs font-semibold text-muted-foreground uppercase tracking-widest whitespace-nowrap">
-                      Beyond {PROXIMITY_LABELS[radius]} · {beyond.length} more
+                      {t("vendors.beyondMi", { n: PROXIMITY_LABELS[radius], count: beyond.length })}
                     </span>
                     <div className="flex-1 h-px bg-border" />
                   </div>
@@ -229,22 +231,22 @@ export default function Vendors() {
                 {userPos && inRadius.length === 0 && (
                   <div className="text-center py-8 text-muted-foreground">
                     <MapPin className="w-8 h-8 mx-auto mb-2 opacity-30" />
-                    <p className="text-sm">No producers within {PROXIMITY_LABELS[radius]}.</p>
-                    <p className="text-xs mt-1">Showing all {beyond.length} results below.</p>
+                    <p className="text-sm">{t("vendors.noWithinMi", { n: PROXIMITY_LABELS[radius] })}</p>
+                    <p className="text-xs mt-1">{t("vendors.showingAll", { n: beyond.length })}</p>
                   </div>
                 )}
               </div>
             ) : (
               <div className="text-center py-20 bg-muted/50 border border-border">
                 <Store className="w-12 h-12 text-muted-foreground mx-auto mb-4 opacity-50" />
-                <h3 className="text-xl font-serif font-bold text-foreground mb-2">No producers found</h3>
-                <p className="text-muted-foreground">Try adjusting your filters or search query.</p>
+                <h3 className="text-xl font-serif font-bold text-foreground mb-2">{t("vendors.noProducers")}</h3>
+                <p className="text-muted-foreground">{t("vendors.noProducersHint")}</p>
                 {(search || selectedCategory || selectedLocation) && (
                   <button 
                     onClick={() => { setSearch(""); setSelectedCategory(null); setSelectedLocation(null); }}
                     className="mt-4 text-primary hover:underline font-medium"
                   >
-                    Clear all filters
+                    {t("common.clearAllFilters")}
                   </button>
                 )}
               </div>

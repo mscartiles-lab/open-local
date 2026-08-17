@@ -2,9 +2,11 @@ import { LifeBuoy } from "lucide-react";
 import SupportRequestForm from "@/components/SupportRequestForm";
 import { useUser } from "@/context/UserContext";
 import { Button } from "@/components/ui/button";
+import { useTranslation } from "react-i18next";
 
 export default function SupportPage() {
   const { user, isLoading, openOnboarding } = useUser();
+  const { t } = useTranslation();
 
   return (
     <div className="container max-w-2xl mx-auto px-4 py-12">
@@ -14,33 +16,31 @@ export default function SupportPage() {
         </div>
         <div>
           <h1 className="font-serif text-3xl font-bold tracking-tight text-foreground">
-            Contact support
+            {t("support.title")}
           </h1>
           <p className="mt-1 text-muted-foreground">
-            Need a hand with your account, an order, or a listing? Send us a
-            note and we'll get back to you within 24 hours.
+            {t("support.description")}
           </p>
         </div>
       </div>
 
       <div className="rounded-2xl border border-border bg-card p-6 shadow-sm">
         {isLoading ? (
-          <p className="text-sm text-muted-foreground">Loading…</p>
+          <p className="text-sm text-muted-foreground">{t("common.loading")}</p>
         ) : user ? (
           <SupportRequestForm />
         ) : (
           <div className="space-y-4 text-center">
             <p className="text-sm text-muted-foreground">
-              Please sign in so we can match your request to your account.
+              {t("support.signInPrompt")}
             </p>
-            <Button onClick={openOnboarding}>Sign in to continue</Button>
+            <Button onClick={openOnboarding}>{t("support.signIn")}</Button>
           </div>
         )}
       </div>
 
       <p className="mt-6 text-xs text-muted-foreground">
-        Already have a reference number? Reply directly to the email we sent
-        when you opened the ticket and we'll pick up the thread.
+        {t("support.reference")}
       </p>
     </div>
   );

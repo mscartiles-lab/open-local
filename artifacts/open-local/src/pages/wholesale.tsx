@@ -44,13 +44,14 @@ import { useUser } from "@/context/UserContext";
 import { useQueryClient } from "@tanstack/react-query";
 import { useToast } from "@/hooks/use-toast";
 import { cn } from "@/lib/utils";
+import { useTranslation } from "react-i18next";
 
 // ─── Categories ──────────────────────────────────────────────────────────────
 
-const CATEGORIES = [
+const CATEGORY_IDS = [
   "Bakery", "Farm", "Apiary", "Brewery", "Crafts",
   "Pantry", "Butcher", "Florist", "Coffee", "Other",
-];
+] as const;
 
 const UNITS = ["lb", "oz", "kg", "case", "flat", "dozen", "bundle", "bag", "each", "gallon", "pint", "quart"];
 
@@ -93,6 +94,7 @@ function WholesaleCard({
   onEdit?: () => void;
   onDelete?: () => void;
 }) {
+  const { t } = useTranslation();
   const isExpired = listing.expiresAt ? new Date(listing.expiresAt) < new Date() : false;
 
   return (
@@ -124,13 +126,13 @@ function WholesaleCard({
           )}
           {isExpired && (
             <span className="text-[11px] font-semibold bg-red-100 text-red-600 px-2 py-0.5 rounded-full">
-              Expired
+              {t("wholesale.expired")}
             </span>
           )}
           {listing.expiresAt && !isExpired && (
             <span className="inline-flex items-center gap-1 text-[11px] text-muted-foreground">
               <Clock className="w-3 h-3" />
-              Until {new Date(listing.expiresAt).toLocaleDateString()}
+              {t("wholesale.until", { date: new Date(listing.expiresAt).toLocaleDateString() })}
             </span>
           )}
         </div>
@@ -158,12 +160,12 @@ function WholesaleCard({
           )}
           {listing.minOrderQty > 1 && (
             <span className="text-xs text-muted-foreground bg-muted px-2 py-0.5 rounded-full">
-              Min {listing.minOrderQty} {listing.unit || "units"}
+              {t("wholesale.minUnits", { n: listing.minOrderQty, unit: listing.unit || "units" })}
             </span>
           )}
           {listing.availableQty != null && (
             <span className="text-xs text-muted-foreground">
-              {listing.availableQty} available
+              {t("wholesale.available", { n: listing.availableQty })}
             </span>
           )}
         </div>
@@ -189,14 +191,14 @@ function WholesaleCard({
               <button
                 onClick={onEdit}
                 className="p-1.5 rounded-lg hover:bg-muted transition-colors text-muted-foreground hover:text-foreground"
-                title="Edit listing"
+                title={t("wholesale.editListing")}
               >
                 <Pencil className="w-3.5 h-3.5" />
               </button>
               <button
                 onClick={onDelete}
                 className="p-1.5 rounded-lg hover:bg-destructive/10 transition-colors text-muted-foreground hover:text-destructive"
-                title="Delete listing"
+                title={t("wholesale.deleteListing")}
               >
                 <Trash2 className="w-3.5 h-3.5" />
               </button>
@@ -204,7 +206,7 @@ function WholesaleCard({
           ) : (
             <Link href={`/vendors/${listing.vendorId}`}>
               <Button variant="outline" size="sm" className="h-7 text-xs gap-1">
-                Contact <ExternalLink className="w-3 h-3" />
+                {t("wholesale.contact")} <ExternalLink className="w-3 h-3" />
               </Button>
             </Link>
           )}
@@ -227,6 +229,7 @@ function ListingModal({
 }) {
   const queryClient = useQueryClient();
   const { toast } = useToast();
+  const { t } = useTranslation();
   const [form, setForm] = useState<ListingForm>(() =>
     editing
       ? {
@@ -288,15 +291,15 @@ function ListingModal({
     try {
       if (editing) {
         await update.mutateAsync({ id: editing.id, data: payload });
-        toast({ title: "Listing updated" });
+        toast({ title: t("wholesale.listingUpdated") });
       } else {
         await create.mutateAsync({ data: payload });
-        toast({ title: "Listing posted!" });
+        toast({ title: t("wholesale.listingPosted") });
       }
       queryClient.invalidateQueries({ queryKey: getListWholesaleQueryKey() });
       onClose();
     } catch {
-      toast({ title: "Something went wrong", variant: "destructive" });
+      toast({ title: t("wholesale.somethingWentWrong"), variant: "destructive" });
     }
   };
 
@@ -304,23 +307,23 @@ function ListingModal({
     <Dialog open={open} onOpenChange={(v) => !v && onClose()}>
       <DialogContent className="max-w-lg max-h-[90vh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle>{editing ? "Edit listing" : "Post a wholesale listing"}</DialogTitle>
+          <DialogTitle>{editing ? t("wholesale.formTitleEdit") : t("wholesale.formTitle")}</DialogTitle>
         </DialogHeader>
 
         <div className="space-y-4 py-2">
           <div>
-            <label className="text-sm font-semibold text-foreground mb-1.5 block">Title *</label>
+            <label className="text-sm font-semibold text-foreground mb-1.5 block">{t("wholesale.fieldTitle")} *</label>
             <Input
-              placeholder="e.g. Bulk wildflower honey — 5-gallon buckets"
+              placeholder={t("wholesale.titlePlaceholder")}
               value={form.title}
               onChange={(e) => set("title")(e.target.value)}
             />
           </div>
 
           <div>
-            <label className="text-sm font-semibold text-foreground mb-1.5 block">Description</label>
+            <label className="text-sm font-semibold text-foreground mb-1.5 block">{t("wholesale.fieldDescription")}</label>
             <textarea
-              placeholder="Describe the product, harvest details, minimum order requirements…"
+              placeholder={t("wholesale.descriptionPlaceholder")}
               value={form.description}
               onChange={(e) => set("description")(e.target.value)}
               className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm resize-none focus:outline-none focus:ring-2 focus:ring-ring min-h-[80px]"
@@ -329,18 +332,18 @@ function ListingModal({
 
           <div className="grid grid-cols-2 gap-3">
             <div>
-              <label className="text-sm font-semibold text-foreground mb-1.5 block">Category</label>
+              <label className="text-sm font-semibold text-foreground mb-1.5 block">{t("wholesale.fieldCategory")}</label>
               <Select value={form.category} onValueChange={set("category")}>
-                <SelectTrigger><SelectValue placeholder="Choose…" /></SelectTrigger>
+                <SelectTrigger><SelectValue placeholder={t("wholesale.choosePlaceholder")} /></SelectTrigger>
                 <SelectContent>
-                  {CATEGORIES.map((c) => <SelectItem key={c} value={c}>{c}</SelectItem>)}
+                  {CATEGORY_IDS.map((c) => <SelectItem key={c} value={c}>{t(`wholesale.cat${c}`)}</SelectItem>)}
                 </SelectContent>
               </Select>
             </div>
             <div>
-              <label className="text-sm font-semibold text-foreground mb-1.5 block">Unit</label>
+              <label className="text-sm font-semibold text-foreground mb-1.5 block">{t("wholesale.fieldUnit")}</label>
               <Select value={form.unit} onValueChange={set("unit")}>
-                <SelectTrigger><SelectValue placeholder="lb, case…" /></SelectTrigger>
+                <SelectTrigger><SelectValue placeholder={t("wholesale.unitPlaceholder")} /></SelectTrigger>
                 <SelectContent>
                   {UNITS.map((u) => <SelectItem key={u} value={u}>{u}</SelectItem>)}
                 </SelectContent>
@@ -350,7 +353,7 @@ function ListingModal({
 
           <div className="grid grid-cols-3 gap-3">
             <div>
-              <label className="text-sm font-semibold text-foreground mb-1.5 block">Price / unit</label>
+              <label className="text-sm font-semibold text-foreground mb-1.5 block">{t("wholesale.fieldPrice")}</label>
               <Input
                 type="number"
                 placeholder="0.00"
@@ -361,7 +364,7 @@ function ListingModal({
               />
             </div>
             <div>
-              <label className="text-sm font-semibold text-foreground mb-1.5 block">Min order</label>
+              <label className="text-sm font-semibold text-foreground mb-1.5 block">{t("wholesale.fieldMinOrder")}</label>
               <Input
                 type="number"
                 placeholder="1"
@@ -371,7 +374,7 @@ function ListingModal({
               />
             </div>
             <div>
-              <label className="text-sm font-semibold text-foreground mb-1.5 block">Available qty</label>
+              <label className="text-sm font-semibold text-foreground mb-1.5 block">{t("wholesale.fieldAvailableQty")}</label>
               <Input
                 type="number"
                 placeholder="—"
@@ -384,7 +387,7 @@ function ListingModal({
 
           <div className="grid grid-cols-2 gap-3">
             <div>
-              <label className="text-sm font-semibold text-foreground mb-1.5 block">Image URL</label>
+              <label className="text-sm font-semibold text-foreground mb-1.5 block">{t("wholesale.fieldImageUrl")}</label>
               <Input
                 placeholder="https://…"
                 value={form.imageUrl}
@@ -392,7 +395,7 @@ function ListingModal({
               />
             </div>
             <div>
-              <label className="text-sm font-semibold text-foreground mb-1.5 block">Expires on</label>
+              <label className="text-sm font-semibold text-foreground mb-1.5 block">{t("wholesale.fieldExpiresOn")}</label>
               <Input
                 type="date"
                 value={form.expiresAt}
@@ -403,10 +406,10 @@ function ListingModal({
         </div>
 
         <DialogFooter>
-          <Button variant="outline" onClick={onClose} disabled={saving}>Cancel</Button>
+          <Button variant="outline" onClick={onClose} disabled={saving}>{t("common.cancel")}</Button>
           <Button onClick={handleSubmit} disabled={saving || !form.title.trim()}>
             {saving && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-            {editing ? "Save changes" : "Post listing"}
+            {editing ? t("wholesale.saveChanges") : t("wholesale.postListingBtn")}
           </Button>
         </DialogFooter>
       </DialogContent>
@@ -420,6 +423,7 @@ export default function WholesalePage() {
   const { user } = useUser();
   const { toast } = useToast();
   const queryClient = useQueryClient();
+  const { t } = useTranslation();
 
   const [search, setSearch] = useState("");
   const [categoryFilter, setCategoryFilter] = useState("all");
@@ -451,13 +455,13 @@ export default function WholesalePage() {
   }, [listings]);
 
   const handleDelete = async (id: number) => {
-    if (!confirm("Remove this listing?")) return;
+    if (!confirm(t("wholesale.removeTitle"))) return;
     try {
       await deleteM.mutateAsync({ id });
       queryClient.invalidateQueries({ queryKey: getListWholesaleQueryKey() });
-      toast({ title: "Listing removed" });
+      toast({ title: t("wholesale.removed") });
     } catch {
-      toast({ title: "Could not remove listing", variant: "destructive" });
+      toast({ title: t("wholesale.removeFailed"), variant: "destructive" });
     }
   };
 
@@ -473,18 +477,18 @@ export default function WholesalePage() {
           <div className="flex items-center gap-2 mb-4 flex-wrap">
             <span className="inline-flex items-center gap-1.5 bg-amber-500 text-white text-xs font-bold px-3 py-1 rounded-full uppercase tracking-wider">
               <Box className="w-3 h-3" />
-              B2B Exchange
+              {t("wholesale.badge")}
             </span>
             <span className="inline-flex items-center gap-1.5 bg-white/10 text-white/80 text-xs font-semibold px-3 py-1 rounded-full">
-              Vendors only
+              {t("wholesale.vendorsOnly")}
             </span>
           </div>
 
           <h1 className="text-5xl font-serif font-bold text-white mb-3">
-            Wholesale Exchange
+            {t("wholesale.title")}
           </h1>
           <p className="text-green-200 text-lg max-w-xl font-sans mb-8">
-            Buy and sell in bulk with fellow Florida producers. Source ingredients, trade surplus, and build supplier relationships — vendor to vendor.
+            {t("wholesale.subtitle")}
           </p>
 
           <div className="flex flex-col sm:flex-row gap-3">
@@ -494,13 +498,13 @@ export default function WholesalePage() {
                 className="gap-2 bg-amber-500 hover:bg-amber-400 text-white font-bold px-6"
               >
                 <Plus className="w-4 h-4" />
-                Post a Listing
+                {t("wholesale.postListing")}
               </Button>
             ) : (
               <Link href="/submit">
                 <Button className="gap-2 bg-amber-500 hover:bg-amber-400 text-white font-bold px-6">
                   <Plus className="w-4 h-4" />
-                  List your business to post
+                  {t("wholesale.listYourBusiness")}
                   <ArrowRight className="w-4 h-4" />
                 </Button>
               </Link>
@@ -515,7 +519,7 @@ export default function WholesalePage() {
           <div className="relative flex-1 min-w-0">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground pointer-events-none" />
             <Input
-              placeholder="Search wholesale listings…"
+              placeholder={t("wholesale.searchPlaceholder")}
               value={search}
               onChange={(e) => setSearch(e.target.value)}
               className="pl-9"
@@ -524,21 +528,21 @@ export default function WholesalePage() {
           <Select value={categoryFilter} onValueChange={setCategoryFilter}>
             <SelectTrigger className="w-full sm:w-44">
               <Tag className="w-3.5 h-3.5 mr-1.5 text-muted-foreground" />
-              <SelectValue placeholder="Category" />
+              <SelectValue placeholder={t("wholesale.filterCategory")} />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="all">All categories</SelectItem>
+              <SelectItem value="all">{t("wholesale.allCategories")}</SelectItem>
               {categories.map((c) => <SelectItem key={c} value={c}>{c}</SelectItem>)}
             </SelectContent>
           </Select>
           <Select value={sortBy} onValueChange={setSortBy}>
             <SelectTrigger className="w-full sm:w-44">
-              <SelectValue placeholder="Sort" />
+              <SelectValue placeholder={t("wholesale.filterSort")} />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="newest">Newest first</SelectItem>
-              <SelectItem value="price_asc">Price: low → high</SelectItem>
-              <SelectItem value="price_desc">Price: high → low</SelectItem>
+              <SelectItem value="newest">{t("wholesale.sortNewest")}</SelectItem>
+              <SelectItem value="price_asc">{t("wholesale.sortPriceAsc")}</SelectItem>
+              <SelectItem value="price_desc">{t("wholesale.sortPriceDesc")}</SelectItem>
             </SelectContent>
           </Select>
         </div>
@@ -551,22 +555,22 @@ export default function WholesalePage() {
         ) : sorted.length === 0 ? (
           <div className="py-24 text-center">
             <Package className="w-14 h-14 text-muted-foreground/30 mx-auto mb-4" />
-            <h3 className="font-semibold text-foreground text-lg mb-2">No wholesale listings yet</h3>
+            <h3 className="font-semibold text-foreground text-lg mb-2">{t("wholesale.emptyTitle")}</h3>
             <p className="text-muted-foreground text-sm max-w-xs mx-auto mb-6">
               {search || categoryFilter !== "all"
-                ? "No listings match your filters. Try adjusting your search."
-                : "Be the first to post a wholesale listing and connect with other Florida producers."}
+                ? t("wholesale.emptyFiltered")
+                : t("wholesale.emptyNoListings")}
             </p>
             {user && (
               <Button onClick={openCreate} className="gap-2">
-                <Plus className="w-4 h-4" /> Post the first listing
+                <Plus className="w-4 h-4" /> {t("wholesale.postFirstListing")}
               </Button>
             )}
           </div>
         ) : (
           <>
             <p className="text-sm text-muted-foreground mb-4">
-              {sorted.length} listing{sorted.length !== 1 ? "s" : ""}
+              {t("wholesale.listingCount", { count: sorted.length })}
             </p>
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
               {sorted.map((l) => (
@@ -587,14 +591,14 @@ export default function WholesalePage() {
           "flex flex-col sm:flex-row items-start sm:items-center gap-4",
         )}>
           <div className="flex-1">
-            <p className="font-semibold text-[#1a1a1a] text-sm">How does it work?</p>
+            <p className="font-semibold text-[#1a1a1a] text-sm">{t("wholesale.infoBannerTitle")}</p>
             <p className="text-xs text-muted-foreground mt-0.5 leading-relaxed">
-              Wholesale listings connect vendors directly. When you see something you need, click "Contact" to visit the vendor's profile and reach out via their listed contact info or through Open Local messages.
+              {t("wholesale.infoBanner")}
             </p>
           </div>
           <Link href="/vendors">
             <Button variant="outline" size="sm" className="whitespace-nowrap gap-1.5">
-              Browse all vendors <ArrowRight className="w-3.5 h-3.5" />
+              {t("wholesale.browseVendors")} <ArrowRight className="w-3.5 h-3.5" />
             </Button>
           </Link>
         </div>

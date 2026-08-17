@@ -1,5 +1,6 @@
 import { useState, lazy, Suspense } from "react";
 import { Link, useLocation } from "wouter";
+import { useTranslation } from "react-i18next";
 const LocationPicker = lazy(() =>
   import("@/components/LocationPicker").then((m) => ({ default: m.LocationPicker })),
 );
@@ -103,10 +104,11 @@ function Step1({
   set: (k: keyof FormState, v: string) => void;
   setLatLng: (lat: number, lng: number) => void;
 }) {
+  const { t } = useTranslation();
   return (
     <div className="space-y-4">
       <div>
-        <label className="text-sm font-semibold text-foreground mb-1.5 block">Market name *</label>
+        <label className="text-sm font-semibold text-foreground mb-1.5 block">{t("marketRegister.fieldMarketName")} *</label>
         <Input
           placeholder="e.g. Sarasota Farmers Market"
           value={form.name}
@@ -115,11 +117,11 @@ function Step1({
       </div>
       <div className="grid grid-cols-2 gap-3">
         <div>
-          <label className="text-sm font-semibold text-foreground mb-1.5 block">City *</label>
+          <label className="text-sm font-semibold text-foreground mb-1.5 block">{t("marketRegister.fieldCity")} *</label>
           <Input placeholder="Sarasota" value={form.city} onChange={(e) => set("city", e.target.value)} />
         </div>
         <div>
-          <label className="text-sm font-semibold text-foreground mb-1.5 block">State</label>
+          <label className="text-sm font-semibold text-foreground mb-1.5 block">{t("marketRegister.fieldState")}</label>
           <Select value={form.region} onValueChange={(v) => set("region", v)}>
             <SelectTrigger><SelectValue /></SelectTrigger>
             <SelectContent>{STATES.map((s) => <SelectItem key={s} value={s}>{s}</SelectItem>)}</SelectContent>
@@ -127,12 +129,12 @@ function Step1({
         </div>
       </div>
       <div>
-        <label className="text-sm font-semibold text-foreground mb-1.5 block">Address</label>
+        <label className="text-sm font-semibold text-foreground mb-1.5 block">{t("marketRegister.fieldAddress")}</label>
         <Input placeholder="5360 Gulf of Mexico Dr, Longboat Key, FL 34228" value={form.address} onChange={(e) => set("address", e.target.value)} />
       </div>
       <div className="grid grid-cols-2 gap-3">
         <div>
-          <label className="text-sm font-semibold text-foreground mb-1.5 block">Day of week</label>
+          <label className="text-sm font-semibold text-foreground mb-1.5 block">{t("marketRegister.fieldDay")}</label>
           <Select value={form.day} onValueChange={(v) => set("day", v)}>
             <SelectTrigger><SelectValue placeholder="Choose…" /></SelectTrigger>
             <SelectContent>
@@ -141,12 +143,12 @@ function Step1({
           </Select>
         </div>
         <div>
-          <label className="text-sm font-semibold text-foreground mb-1.5 block">Hours</label>
+          <label className="text-sm font-semibold text-foreground mb-1.5 block">{t("marketRegister.fieldHours")}</label>
           <Input placeholder="8am – 1pm" value={form.time} onChange={(e) => set("time", e.target.value)} />
         </div>
       </div>
       <div>
-        <label className="text-sm font-semibold text-foreground mb-1.5 block">Description</label>
+        <label className="text-sm font-semibold text-foreground mb-1.5 block">{t("marketRegister.fieldDescription")}</label>
         <textarea
           placeholder="Tell shoppers what makes your market special — the vibe, what vendors you have, any regular events…"
           value={form.description}
@@ -181,46 +183,47 @@ function Step2({
   set: (k: keyof FormState, v: string) => void;
   toggleTag: (tag: string) => void;
 }) {
+  const { t } = useTranslation();
   return (
     <div className="space-y-4">
       <div className="grid grid-cols-2 gap-3">
         <div>
-          <label className="text-sm font-semibold text-foreground mb-1.5 block">Contact email *</label>
+          <label className="text-sm font-semibold text-foreground mb-1.5 block">{t("marketRegister.fieldEmail")} *</label>
           <Input type="email" placeholder="manager@yourmarket.com" value={form.contactEmail} onChange={(e) => set("contactEmail", e.target.value)} />
         </div>
         <div>
-          <label className="text-sm font-semibold text-foreground mb-1.5 block">Phone</label>
+          <label className="text-sm font-semibold text-foreground mb-1.5 block">{t("marketRegister.fieldPhone")}</label>
           <Input type="tel" placeholder="(941) 555-0100" value={form.phone} onChange={(e) => set("phone", e.target.value)} />
         </div>
       </div>
       <div>
-        <label className="text-sm font-semibold text-foreground mb-1.5 block">Website</label>
+        <label className="text-sm font-semibold text-foreground mb-1.5 block">{t("marketRegister.fieldWebsite")}</label>
         <Input type="url" placeholder="https://yourmarket.com" value={form.websiteUrl} onChange={(e) => set("websiteUrl", e.target.value)} />
       </div>
       <div className="grid grid-cols-2 gap-3">
         <div>
-          <label className="text-sm font-semibold text-foreground mb-1.5 block">Instagram handle</label>
+          <label className="text-sm font-semibold text-foreground mb-1.5 block">{t("marketRegister.fieldInstagram")}</label>
           <Input placeholder="sarasotafarmersmarket" value={form.instagramHandle} onChange={(e) => set("instagramHandle", e.target.value)} />
         </div>
         <div>
-          <label className="text-sm font-semibold text-foreground mb-1.5 block">Facebook URL</label>
+          <label className="text-sm font-semibold text-foreground mb-1.5 block">{t("marketRegister.fieldFacebook")}</label>
           <Input type="url" placeholder="https://facebook.com/…" value={form.facebookUrl} onChange={(e) => set("facebookUrl", e.target.value)} />
         </div>
       </div>
       <div className="grid grid-cols-2 gap-3">
         <div>
-          <label className="text-sm font-semibold text-foreground mb-1.5 block">Logo URL</label>
+          <label className="text-sm font-semibold text-foreground mb-1.5 block">{t("marketRegister.fieldLogo")}</label>
           <Input type="url" placeholder="https://…/logo.png" value={form.logoUrl} onChange={(e) => set("logoUrl", e.target.value)} />
         </div>
         <div>
-          <label className="text-sm font-semibold text-foreground mb-1.5 block">Banner image URL</label>
+          <label className="text-sm font-semibold text-foreground mb-1.5 block">{t("marketRegister.fieldBanner")}</label>
           <Input type="url" placeholder="https://…/banner.jpg" value={form.featuredImageUrl} onChange={(e) => set("featuredImageUrl", e.target.value)} />
         </div>
       </div>
       <div>
         <label className="text-sm font-semibold text-foreground mb-2 block flex items-center gap-1.5">
           <Tag className="w-3.5 h-3.5" />
-          Tags — select all that apply
+          {t("marketRegister.fieldTags")}
         </label>
         <div className="flex flex-wrap gap-2">
           {TAG_OPTIONS.map((tag) => (
@@ -245,13 +248,14 @@ function Step2({
 }
 
 function Step3({ form }: { form: FormState }) {
+  const { t } = useTranslation();
   const rows: [string, string][] = [
-    ["Market name", form.name],
+    [t("marketRegister.fieldMarketName"), form.name],
     ["Location", [form.city, form.region].filter(Boolean).join(", ")],
-    ...(form.address ? [["Address", form.address] as [string, string]] : []),
+    ...(form.address ? [[t("marketRegister.fieldAddress"), form.address] as [string, string]] : []),
     ...(form.day ? [["Day", [form.day, form.time].filter(Boolean).join(" · ")] as [string, string]] : []),
-    ["Contact email", form.contactEmail],
-    ...(form.websiteUrl ? [["Website", form.websiteUrl] as [string, string]] : []),
+    [t("marketRegister.fieldEmail"), form.contactEmail],
+    ...(form.websiteUrl ? [[t("marketRegister.fieldWebsite"), form.websiteUrl] as [string, string]] : []),
     ...(form.instagramHandle ? [["Instagram", `@${form.instagramHandle}`] as [string, string]] : []),
     ...(form.tags.length ? [["Tags", form.tags.join(", ")] as [string, string]] : []),
   ];
@@ -259,7 +263,7 @@ function Step3({ form }: { form: FormState }) {
   return (
     <div className="space-y-5">
       <p className="text-sm text-muted-foreground">
-        Please review your listing details before submitting. We'll send a confirmation to your contact email within 1–2 business days.
+        {t("marketRegister.reviewNotice")}
       </p>
 
       <div className="rounded-xl border border-border overflow-hidden">
@@ -273,7 +277,7 @@ function Step3({ form }: { form: FormState }) {
 
       {form.description && (
         <div className="rounded-xl border border-border p-4">
-          <p className="text-xs font-semibold text-muted-foreground mb-1.5">Description</p>
+          <p className="text-xs font-semibold text-muted-foreground mb-1.5">{t("marketRegister.fieldDescription")}</p>
           <p className="text-sm text-foreground leading-relaxed">{form.description}</p>
         </div>
       )}
@@ -282,6 +286,7 @@ function Step3({ form }: { form: FormState }) {
 }
 
 export default function MarketRegisterPage() {
+  const { t } = useTranslation();
   const [, navigate] = useLocation();
   const { toast } = useToast();
   const [step, setStep] = useState(0);
@@ -330,7 +335,7 @@ export default function MarketRegisterPage() {
       });
       setDone(true);
     } catch {
-      toast({ title: "Something went wrong. Please try again.", variant: "destructive" });
+      toast({ title: t("marketRegister.error"), variant: "destructive" });
     }
   };
 
@@ -343,20 +348,20 @@ export default function MarketRegisterPage() {
               <CheckCircle2 className="w-10 h-10 text-green-600" />
             </div>
             <div>
-              <h1 className="font-serif text-3xl font-bold text-foreground mb-2">You're in the queue!</h1>
+              <h1 className="font-serif text-3xl font-bold text-foreground mb-2">{t("marketRegister.success")}</h1>
               <p className="text-muted-foreground leading-relaxed">
-                We've received your listing for <strong>{form.name}</strong>. We'll review it within 1–2 business days and send next steps to <strong>{form.contactEmail}</strong>.
+                {t("marketRegister.successDescription", { name: form.name, email: form.contactEmail })}
               </p>
             </div>
             <div className="flex flex-col sm:flex-row gap-3 justify-center">
               <Link href="/markets">
                 <Button variant="outline" className="gap-2">
-                  <MapPin className="w-4 h-4" /> Browse markets
+                  <MapPin className="w-4 h-4" /> {t("marketRegister.browseMarkets")}
                 </Button>
               </Link>
               <Link href="/">
                 <Button className="gap-2">
-                  <Store className="w-4 h-4" /> Back to home
+                  <Store className="w-4 h-4" /> {t("marketRegister.backToHome")}
                 </Button>
               </Link>
             </div>
@@ -366,7 +371,11 @@ export default function MarketRegisterPage() {
     );
   }
 
-  const STEP_LABELS = ["Market basics", "Contact & presence", "Confirm & submit"];
+  const STEP_LABELS = [
+    t("marketRegister.stepBasics"),
+    t("marketRegister.stepContact"),
+    t("marketRegister.stepConfirm"),
+  ];
 
   return (
     <Layout>
@@ -374,14 +383,14 @@ export default function MarketRegisterPage() {
         {/* Back to directory */}
         <Link href="/markets" className="inline-flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground transition-colors mb-8">
           <ArrowLeft className="w-4 h-4" />
-          Back to market directory
+          {t("marketRegister.backToDirectory")}
         </Link>
 
         {/* Header */}
         <div className="mb-8">
-          <h1 className="font-serif text-3xl font-bold text-foreground mb-1.5">Register your market</h1>
+          <h1 className="font-serif text-3xl font-bold text-foreground mb-1.5">{t("marketRegister.title")}</h1>
           <p className="text-muted-foreground text-sm">
-            Get your farmers market listed on Open Local for free. It takes about 3 minutes.
+            {t("marketRegister.description")}
           </p>
         </div>
 
@@ -408,7 +417,7 @@ export default function MarketRegisterPage() {
             className="gap-2"
           >
             <ArrowLeft className="w-4 h-4" />
-            {step === 0 ? "Cancel" : "Back"}
+            {step === 0 ? t("common.cancel") : t("common.back")}
           </Button>
 
           {step < 2 ? (
@@ -417,7 +426,7 @@ export default function MarketRegisterPage() {
               disabled={!canProceed}
               className="gap-2"
             >
-              Continue
+              {t("common.continue")}
               <ChevronRight className="w-4 h-4" />
             </Button>
           ) : (
@@ -427,7 +436,7 @@ export default function MarketRegisterPage() {
               className="gap-2"
             >
               {submitting && <Loader2 className="w-4 h-4 animate-spin" />}
-              {submitting ? "Submitting…" : "Submit listing"}
+              {submitting ? t("marketRegister.submitting") : t("marketRegister.submitBtn")}
               {!submitting && <ArrowRight className="w-4 h-4" />}
             </Button>
           )}

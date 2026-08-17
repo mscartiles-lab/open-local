@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { Loader2, Shield, Search, X, RefreshCw } from "lucide-react";
+import { useTranslation } from "react-i18next";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -62,6 +63,7 @@ function timeAgo(iso: string) {
 }
 
 export default function IpLogsAdminTab() {
+  const { t } = useTranslation();
   const [view, setView] = useState<"log" | "summary">("summary");
   const [rows, setRows] = useState<IpLog[] | null>(null);
   const [summary, setSummary] = useState<IpSummaryRow[] | null>(null);
@@ -104,7 +106,7 @@ export default function IpLogsAdminTab() {
       <div className="flex items-center justify-between gap-4 flex-wrap">
         <div className="flex items-center gap-2">
           <Shield className="h-5 w-5 text-primary" />
-          <h2 className="font-serif text-xl font-bold text-foreground">IP Access Logs</h2>
+          <h2 className="font-serif text-xl font-bold text-foreground">{t("admin.ipAccessLogs")}</h2>
         </div>
         <div className="flex gap-2">
           <Button
@@ -112,14 +114,14 @@ export default function IpLogsAdminTab() {
             variant={view === "summary" ? "default" : "outline"}
             onClick={() => setView("summary")}
           >
-            24h Summary
+            {t("admin.ip24hSummary")}
           </Button>
           <Button
             size="sm"
             variant={view === "log" ? "default" : "outline"}
             onClick={() => setView("log")}
           >
-            Event Log
+            {t("admin.ipEventLog")}
           </Button>
           <Button size="sm" variant="ghost" onClick={() => view === "summary" ? fetchSummary() : fetchLog()}>
             <RefreshCw className="h-3.5 w-3.5" />
@@ -135,7 +137,7 @@ export default function IpLogsAdminTab() {
             className="flex gap-2"
           >
             <Input
-              placeholder="Filter by IP…"
+              placeholder={t("admin.ipFilterByIp")}
               value={draftIp}
               onChange={(e) => setDraftIp(e.target.value)}
               className="w-44 h-8 text-sm"
@@ -151,17 +153,17 @@ export default function IpLogsAdminTab() {
           </form>
           <Select value={filterEvent} onValueChange={setFilterEvent}>
             <SelectTrigger className="h-8 w-44 text-sm">
-              <SelectValue placeholder="Event type" />
+              <SelectValue placeholder={t("admin.ipEventType")} />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="all">All events</SelectItem>
-              <SelectItem value="visit">Visits</SelectItem>
-              <SelectItem value="login_attempt">Login attempt</SelectItem>
-              <SelectItem value="login_success">Login success</SelectItem>
-              <SelectItem value="login_failure">Login failure</SelectItem>
-              <SelectItem value="signup_attempt">Signup attempt</SelectItem>
-              <SelectItem value="signup_success">Signup success</SelectItem>
-              <SelectItem value="signup_failure">Signup failure</SelectItem>
+              <SelectItem value="all">{t("admin.ipAllEvents")}</SelectItem>
+              <SelectItem value="visit">{t("admin.ipVisits")}</SelectItem>
+              <SelectItem value="login_attempt">{t("admin.ipLoginAttempt")}</SelectItem>
+              <SelectItem value="login_success">{t("admin.ipLoginSuccess")}</SelectItem>
+              <SelectItem value="login_failure">{t("admin.ipLoginFailure")}</SelectItem>
+              <SelectItem value="signup_attempt">{t("admin.ipSignupAttempt")}</SelectItem>
+              <SelectItem value="signup_success">{t("admin.ipSignupSuccess")}</SelectItem>
+              <SelectItem value="signup_failure">{t("admin.ipSignupFailure")}</SelectItem>
             </SelectContent>
           </Select>
         </div>
@@ -170,17 +172,17 @@ export default function IpLogsAdminTab() {
       {loading ? (
         <div className="flex items-center gap-2 py-12 justify-center text-muted-foreground">
           <Loader2 className="h-5 w-5 animate-spin" />
-          <span className="text-sm">Loading…</span>
+          <span className="text-sm">{t("admin.loading")}</span>
         </div>
       ) : view === "summary" ? (
         <div className="rounded-xl border border-border overflow-hidden">
           <Table>
             <TableHeader>
               <TableRow>
-                <TableHead>IP Address</TableHead>
-                <TableHead className="text-right">Requests (24h)</TableHead>
-                <TableHead className="text-right">Auth Events</TableHead>
-                <TableHead>Last Seen</TableHead>
+                <TableHead>{t("admin.ipColIpAddress")}</TableHead>
+                <TableHead className="text-right">{t("admin.ipColRequests24h")}</TableHead>
+                <TableHead className="text-right">{t("admin.ipColAuthEvents")}</TableHead>
+                <TableHead>{t("admin.ipColLastSeen")}</TableHead>
                 <TableHead />
               </TableRow>
             </TableHeader>
@@ -188,7 +190,7 @@ export default function IpLogsAdminTab() {
               {(summary ?? []).length === 0 ? (
                 <TableRow>
                   <TableCell colSpan={5} className="text-center text-muted-foreground py-10 text-sm">
-                    No requests recorded in the last 24 hours
+                    {t("admin.ipNoRequests24h")}
                   </TableCell>
                 </TableRow>
               ) : (
@@ -211,7 +213,7 @@ export default function IpLogsAdminTab() {
                         className="h-7 text-xs"
                         onClick={() => { setDraftIp(row.ip); setFilterIp(row.ip); setView("log"); }}
                       >
-                        View log
+                        {t("admin.ipViewLog")}
                       </Button>
                     </TableCell>
                   </TableRow>
@@ -225,19 +227,19 @@ export default function IpLogsAdminTab() {
           <Table>
             <TableHeader>
               <TableRow>
-                <TableHead>Time</TableHead>
-                <TableHead>IP Address</TableHead>
-                <TableHead>Event</TableHead>
-                <TableHead>Path</TableHead>
-                <TableHead>Status</TableHead>
-                <TableHead>User ID</TableHead>
+                <TableHead>{t("admin.ipColTime")}</TableHead>
+                <TableHead>{t("admin.ipColIpAddress")}</TableHead>
+                <TableHead>{t("admin.ipColEvent")}</TableHead>
+                <TableHead>{t("admin.ipColPath")}</TableHead>
+                <TableHead>{t("admin.ipColStatus")}</TableHead>
+                <TableHead>{t("admin.ipColUserId")}</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
               {(rows ?? []).length === 0 ? (
                 <TableRow>
                   <TableCell colSpan={6} className="text-center text-muted-foreground py-10 text-sm">
-                    No records found
+                    {t("admin.ipNoRecords")}
                   </TableCell>
                 </TableRow>
               ) : (

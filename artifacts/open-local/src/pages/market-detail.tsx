@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { useParams, Link } from "wouter";
+import { useTranslation } from "react-i18next";
 import Layout from "@/components/layout/Layout";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -35,6 +36,7 @@ import { useQueryClient } from "@tanstack/react-query";
 import { useToast } from "@/hooks/use-toast";
 
 export default function MarketDetailPage() {
+  const { t } = useTranslation();
   const { slug } = useParams<{ slug: string }>();
   const { user } = useUser();
   const { toast } = useToast();
@@ -87,11 +89,11 @@ export default function MarketDetailPage() {
       <Layout>
         <div className="container max-w-4xl mx-auto px-4 py-20 text-center">
           <MapPin className="w-14 h-14 text-muted-foreground/30 mx-auto mb-4" />
-          <h1 className="font-serif text-3xl font-bold mb-2">Market not found</h1>
-          <p className="text-muted-foreground mb-6">This market listing doesn't exist or may have been removed.</p>
+          <h1 className="font-serif text-3xl font-bold mb-2">{t("marketDetail.notFound")}</h1>
+          <p className="text-muted-foreground mb-6">{t("marketDetail.notFoundDescription")}</p>
           <Link href="/markets">
             <Button variant="outline" className="gap-2">
-              <ArrowLeft className="w-4 h-4" /> Back to directory
+              <ArrowLeft className="w-4 h-4" /> {t("marketDetail.backToDirectory")}
             </Button>
           </Link>
         </div>
@@ -127,7 +129,7 @@ export default function MarketDetailPage() {
         {/* Back */}
         <Link href="/markets" className="inline-flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground transition-colors mb-6">
           <ArrowLeft className="w-4 h-4" />
-          Back to directory
+          {t("marketDetail.backToDirectory")}
         </Link>
 
         {/* Identity row */}
@@ -150,7 +152,7 @@ export default function MarketDetailPage() {
               {market.verified && (
                 <span className="inline-flex items-center gap-1 text-xs font-semibold text-green-700 bg-green-50 border border-green-200 px-2 py-0.5 rounded-full">
                   <ShieldCheck className="w-3 h-3" />
-                  Verified
+                  {t("common.verified")}
                 </span>
               )}
             </div>
@@ -168,7 +170,7 @@ export default function MarketDetailPage() {
             <div>
               <h2 className="font-bold text-foreground text-lg mb-3 flex items-center gap-1.5">
                 <Store className="w-5 h-5" />
-                Vendors at this market
+                {t("marketDetail.vendorsAtMarket")}
               </h2>
               {vendorsLoading ? (
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
@@ -200,7 +202,7 @@ export default function MarketDetailPage() {
               ) : (
                 <div className="rounded-xl border border-dashed border-border bg-muted/30 p-6 text-center">
                   <Store className="w-8 h-8 text-muted-foreground/30 mx-auto mb-2" />
-                  <p className="text-sm text-muted-foreground">No vendors linked to this market yet.</p>
+                  <p className="text-sm text-muted-foreground">{t("marketDetail.noVendors")}</p>
                 </div>
               )}
             </div>
@@ -228,7 +230,7 @@ export default function MarketDetailPage() {
                       rel="noopener noreferrer"
                       className="text-xs text-primary hover:underline mt-1 inline-block"
                     >
-                      Open in Google Maps →
+                      {t("marketDetail.openInMaps")}
                     </a>
                   )}
                 </div>
@@ -238,7 +240,7 @@ export default function MarketDetailPage() {
             {/* Description */}
             {market.description && (
               <div>
-                <h2 className="font-bold text-foreground text-lg mb-2">About the market</h2>
+                <h2 className="font-bold text-foreground text-lg mb-2">{t("marketDetail.aboutMarket")}</h2>
                 <p className="text-muted-foreground leading-relaxed text-sm whitespace-pre-wrap">
                   {market.description}
                 </p>
@@ -250,7 +252,7 @@ export default function MarketDetailPage() {
               <div>
                 <h2 className="font-bold text-foreground text-base mb-2 flex items-center gap-1.5">
                   <Tag className="w-4 h-4" />
-                  About this market
+                  {t("marketDetail.aboutThisMarket")}
                 </h2>
                 <div className="flex flex-wrap gap-2">
                   {market.tags.map((tag: string) => (
@@ -268,9 +270,9 @@ export default function MarketDetailPage() {
             {/* Claim listing */}
             {!isClaimed && user && !isManager && (
               <div className="rounded-xl border border-dashed border-border bg-muted/40 p-5">
-                <p className="font-semibold text-foreground text-sm mb-1">Is this your market?</p>
+                <p className="font-semibold text-foreground text-sm mb-1">{t("marketDetail.isYourMarket")}</p>
                 <p className="text-xs text-muted-foreground mb-4">
-                  Claim this listing to manage your market's details on Open Local.
+                  {t("marketDetail.claimDescription")}
                 </p>
                 <Button
                   onClick={handleClaim}
@@ -280,19 +282,19 @@ export default function MarketDetailPage() {
                   className="gap-2"
                 >
                   {claiming && <Loader2 className="w-3.5 h-3.5 animate-spin" />}
-                  Claim this listing
+                  {t("marketDetail.claimListing")}
                 </Button>
               </div>
             )}
 
             {!isClaimed && !user && (
               <div className="rounded-xl border border-dashed border-border bg-muted/40 p-5">
-                <p className="font-semibold text-foreground text-sm mb-1">Is this your market?</p>
+                <p className="font-semibold text-foreground text-sm mb-1">{t("marketDetail.isYourMarket")}</p>
                 <p className="text-xs text-muted-foreground mb-3">
-                  Sign in to claim this listing and manage your market profile.
+                  {t("marketDetail.signInToClaim")}
                 </p>
                 <Link href="/submit">
-                  <Button variant="outline" size="sm">Sign in to claim</Button>
+                  <Button variant="outline" size="sm">{t("marketDetail.signInToClaimBtn")}</Button>
                 </Link>
               </div>
             )}
@@ -306,14 +308,14 @@ export default function MarketDetailPage() {
                 <Users className="w-5 h-5 text-primary shrink-0" />
                 <div>
                   <p className="text-xl font-bold text-foreground">{market.vendorCount}</p>
-                  <p className="text-xs text-muted-foreground">Vendors</p>
+                  <p className="text-xs text-muted-foreground">{t("marketDetail.vendors")}</p>
                 </div>
               </div>
             )}
 
             {/* Contact */}
             <div className="rounded-xl border border-border bg-card p-4 space-y-3">
-              <h3 className="font-semibold text-foreground text-sm">Contact & links</h3>
+              <h3 className="font-semibold text-foreground text-sm">{t("marketDetail.contactLinks")}</h3>
 
               {market.contactEmail && (
                 <a
@@ -333,7 +335,7 @@ export default function MarketDetailPage() {
                   className="flex items-center gap-2 text-sm text-foreground hover:text-primary transition-colors"
                 >
                   <Globe className="w-4 h-4 text-muted-foreground shrink-0" />
-                  Website
+                  {t("common.website")}
                 </a>
               )}
 
@@ -357,7 +359,7 @@ export default function MarketDetailPage() {
                   className="flex items-center gap-2 text-sm text-foreground hover:text-primary transition-colors"
                 >
                   <Facebook className="w-4 h-4 text-muted-foreground shrink-0" />
-                  Facebook
+                  {t("common.facebook")}
                 </a>
               )}
 
@@ -379,7 +381,7 @@ export default function MarketDetailPage() {
               <a href={`mailto:${market.contactEmail}?subject=Vendor application — ${market.name}`}>
                 <Button className="w-full gap-2">
                   <Mail className="w-4 h-4" />
-                  Apply as a vendor
+                  {t("marketDetail.applyAsVendor")}
                 </Button>
               </a>
             )}
@@ -388,7 +390,7 @@ export default function MarketDetailPage() {
               <a href={market.websiteUrl} target="_blank" rel="noopener noreferrer">
                 <Button variant="outline" className="w-full gap-2">
                   <Globe className="w-4 h-4" />
-                  Visit website
+                  {t("marketDetail.visitWebsite")}
                 </Button>
               </a>
             )}

@@ -1,6 +1,7 @@
 import { useState, useRef, useCallback, useEffect } from "react";
 import { Copy, Check, ExternalLink, ChevronDown, Smartphone, RotateCcw } from "lucide-react";
 import { useListVendors } from "@workspace/api-client-react";
+import { useTranslation } from "react-i18next";
 
 type DevicePreset = {
   id: string;
@@ -31,6 +32,7 @@ export default function SimulatorPage() {
   const [deviceOpen, setDeviceOpen] = useState(false);
   const iframeRef = useRef<HTMLIFrameElement>(null);
   const [key, setKey] = useState(0);
+  const { t } = useTranslation();
 
   const { data: vendors } = useListVendors();
 
@@ -82,7 +84,7 @@ export default function SimulatorPage() {
         <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
           <Smartphone size={17} color="#8ca45a" />
           <span style={{ fontWeight: 700, fontSize: 15, letterSpacing: "-0.3px" }}>
-            Storefront Preview
+            {t("simulator.title")}
           </span>
           <span style={{ color: "rgba(255,255,255,0.3)", fontSize: 13 }}>— Open Local</span>
         </div>
@@ -179,7 +181,7 @@ export default function SimulatorPage() {
             }}
           >
             <RotateCcw size={13} />
-            Reload
+            {t("simulator.reload")}
           </button>
         </div>
       </header>
@@ -199,7 +201,7 @@ export default function SimulatorPage() {
         >
           <div style={{ padding: "16px 14px 8px" }}>
             <p style={{ fontSize: 10, fontWeight: 700, letterSpacing: "0.1em", textTransform: "uppercase", color: "rgba(255,255,255,0.35)", marginBottom: 8 }}>
-              Storefront
+              {t("simulator.storefront")}
             </p>
             {vendors?.map((v) => (
               <button
@@ -265,7 +267,7 @@ export default function SimulatorPage() {
             >
               <div style={{ flex: 1, minWidth: 0 }}>
                 <p style={{ fontSize: 10, color: "rgba(255,255,255,0.35)", marginBottom: 2, textTransform: "uppercase", letterSpacing: "0.08em", fontWeight: 600 }}>
-                  Your storefront link — share with customers
+                  {t("simulator.share")}
                 </p>
                 <p style={{ fontSize: 13, color: "rgba(255,255,255,0.7)", fontFamily: "monospace", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
                   {publicUrl}
@@ -285,7 +287,7 @@ export default function SimulatorPage() {
                 }}
               >
                 {copied ? <Check size={13} /> : <Copy size={13} />}
-                {copied ? "Copied!" : "Copy link"}
+                {copied ? t("common.copied") : t("common.copy")}
               </button>
               <a
                 href={previewUrl}
@@ -300,7 +302,7 @@ export default function SimulatorPage() {
                 }}
               >
                 <ExternalLink size={13} />
-                Open
+                {t("common.open")}
               </a>
             </div>
           )}
@@ -430,7 +432,7 @@ export default function SimulatorPage() {
 
           {/* Caption */}
           <p style={{ fontSize: 12, color: "rgba(255,255,255,0.2)", textAlign: "center" }}>
-            Live preview — click to interact · {device.width}×{device.height}px
+            {t("simulator.caption", { width: device.width, height: device.height })}
           </p>
         </main>
       </div>

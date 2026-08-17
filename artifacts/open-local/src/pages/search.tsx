@@ -7,6 +7,7 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useSearchLogger } from "@/hooks/use-search-logger";
+import { useTranslation } from "react-i18next";
 
 function formatPrice(cents: number) {
   return `$${(cents / 100).toFixed(2)}`;
@@ -17,6 +18,7 @@ export default function SearchPage() {
   const [, setLocation] = useLocation();
   const params = new URLSearchParams(searchString);
   const q = params.get("q")?.trim() ?? "";
+  const { t } = useTranslation();
 
   const [draft, setDraft] = useState(q);
   useEffect(() => { setDraft(q); }, [q]);
@@ -42,8 +44,8 @@ export default function SearchPage() {
   return (
     <Layout>
       <div className="container max-w-6xl mx-auto px-4 py-10">
-        <h1 className="font-serif text-4xl md:text-5xl text-foreground mb-2">Search</h1>
-        <p className="text-muted-foreground mb-6">Find local vendors and goods by keyword.</p>
+        <h1 className="font-serif text-4xl md:text-5xl text-foreground mb-2">{t("search.title")}</h1>
+        <p className="text-muted-foreground mb-6">{t("search.description")}</p>
 
         <form onSubmit={submit} className="flex gap-2 max-w-2xl mb-10">
           <div className="relative flex-1">
@@ -52,19 +54,19 @@ export default function SearchPage() {
               autoFocus
               value={draft}
               onChange={(e) => setDraft(e.target.value)}
-              placeholder="Try ‘sourdough’, ‘honey’, ‘ceramic’, ‘Tampa’…"
+              placeholder={t("search.placeholder")}
               className="pl-9 h-12 text-base"
             />
           </div>
           <Button type="submit" className="h-12 px-6 bg-primary text-primary-foreground hover:bg-primary/90">
-            Search
+            {t("search.title")}
           </Button>
         </form>
 
         {!enabled && (
           <div className="text-center py-16 text-muted-foreground">
             <SearchIcon className="w-10 h-10 mx-auto mb-3 opacity-40" />
-            <p>Type something above to search across vendors and goods.</p>
+            <p>{t("search.typeAbove")}</p>
           </div>
         )}
 
@@ -72,15 +74,14 @@ export default function SearchPage() {
           <>
             <p className="text-sm text-muted-foreground mb-6">
               {(vendorsLoading || productsLoading)
-                ? "Searching…"
-                : `${totalResults} result${totalResults === 1 ? "" : "s"} for `}
-              {!(vendorsLoading || productsLoading) && <span className="font-semibold text-foreground">"{q}"</span>}
+                ? t("search.searching")
+                : t("search.results", { n: totalResults, q })}
             </p>
 
             <section className="mb-12">
               <div className="flex items-center gap-2 mb-4">
                 <Store className="w-5 h-5 text-primary" />
-                <h2 className="font-serif text-2xl text-foreground">Vendors</h2>
+                <h2 className="font-serif text-2xl text-foreground">{t("search.vendors")}</h2>
                 {!vendorsLoading && vendors && (
                   <span className="text-sm text-muted-foreground">({vendors.length})</span>
                 )}
@@ -115,14 +116,14 @@ export default function SearchPage() {
                   ))}
                 </div>
               ) : (
-                <p className="text-sm text-muted-foreground py-4">No vendors match "{q}".</p>
+                <p className="text-sm text-muted-foreground py-4">{t("search.noVendors", { q })}</p>
               )}
             </section>
 
             <section>
               <div className="flex items-center gap-2 mb-4">
                 <ShoppingBag className="w-5 h-5 text-primary" />
-                <h2 className="font-serif text-2xl text-foreground">Goods</h2>
+                <h2 className="font-serif text-2xl text-foreground">{t("search.goods")}</h2>
                 {!productsLoading && products && (
                   <span className="text-sm text-muted-foreground">({products.length})</span>
                 )}
@@ -154,7 +155,7 @@ export default function SearchPage() {
                   ))}
                 </div>
               ) : (
-                <p className="text-sm text-muted-foreground py-4">No goods match "{q}".</p>
+                <p className="text-sm text-muted-foreground py-4">{t("search.noGoods", { q })}</p>
               )}
             </section>
           </>

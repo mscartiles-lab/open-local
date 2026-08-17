@@ -1,4 +1,5 @@
 import { useState, useMemo, useRef, useEffect } from "react";
+import { useTranslation } from "react-i18next";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
@@ -124,6 +125,7 @@ type VerificationState = {
 };
 
 export default function Submit() {
+  const { t } = useTranslation();
   const [, setLocation] = useLocation();
   const { toast } = useToast();
   const queryClient = useQueryClient();
@@ -258,9 +260,8 @@ export default function Submit() {
         onError: () => {
           toast({
             variant: "destructive",
-            title: "Couldn't send verification email",
-            description:
-              "Please double-check the email and try again in a moment.",
+            title: t("submit.couldntSendCode"),
+            description: t("submit.checkEmailRetry"),
           });
         },
       },
@@ -280,9 +281,8 @@ export default function Submit() {
             queryKey: getListVendorsQueryKey(),
           });
           toast({
-            title: "You're on Open Local",
-            description:
-              "Your business is published. Welcome to your dashboard.",
+            title: t("submit.successToast"),
+            description: t("submit.successDescription"),
           });
           setLocation(`/dashboard/${vendor.slug}`);
         },
@@ -311,15 +311,15 @@ export default function Submit() {
             devCode: data.devCode,
           });
           toast({
-            title: "New code sent",
-            description: `Check ${data.email} for a fresh 6-digit code.`,
+            title: t("submit.newCodeSent"),
+            description: t("submit.checkEmail", { email: data.email }),
           });
         },
         onError: () => {
           toast({
             variant: "destructive",
-            title: "Couldn't resend",
-            description: "Please try again in a moment.",
+            title: t("submit.couldntResend"),
+            description: t("submit.tryAgainMoment"),
           });
         },
       },
@@ -332,13 +332,13 @@ export default function Submit() {
         <div className="container max-w-3xl mx-auto px-4 py-10 md:py-14">
           <div className="text-center">
             <p className="text-sm tracking-[0.2em] uppercase text-primary font-semibold mb-3">
-              Four quick steps
+              {t("submit.stepsTitle")}
             </p>
             <h1 className="text-4xl md:text-5xl font-serif font-bold text-foreground mb-3">
-              Onboard your business
+              {t("submit.heroTitle")}
             </h1>
             <p className="text-lg text-muted-foreground max-w-xl mx-auto">
-              Get set up in 2–3 minutes. Free to join.
+              {t("submit.heroDescription")}
             </p>
           </div>
 
@@ -358,8 +358,8 @@ export default function Submit() {
             {step === 1 && (<>
               <StepHeader
                 eyebrow="Step 1"
-                title="What do you make?"
-                subtitle="Pick the category that fits best — you can always change it later."
+                title={t("submit.step1Title")}
+                subtitle={t("submit.step1Description")}
               />
               <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-3 md:gap-4 mt-8">
                 {categories.map(({ name, icon: Icon }) => {
@@ -394,19 +394,19 @@ export default function Submit() {
                 })}
               </div>
               <p className="text-sm text-muted-foreground text-center mt-6">
-                Tap a category to continue.
+                {t("submit.step1Hint")}
               </p>
             </>)}
             {step === 2 && (<>
               <StepHeader
                 eyebrow="Step 2"
-                title="Tell us about your business"
-                subtitle="A few quick details so people know what you're about."
+                title={t("submit.step2Title")}
+                subtitle={t("submit.step2Description")}
               />
 
               <div className="mt-8 space-y-6">
                 <Field
-                  label="Business name"
+                  label={t("submit.fieldName")}
                   required
                   error={form.formState.errors.name?.message}
                 >
@@ -418,32 +418,32 @@ export default function Submit() {
                 </Field>
 
                 <Field
-                  label="One-line tagline"
+                  label={t("submit.fieldTagline")}
                   required
                   hint="What you make, in a sentence."
                   error={form.formState.errors.tagline?.message}
                 >
                   <Input
-                    placeholder="Sourdough and Cuban-style breads from a Miami garage bakery."
+                    placeholder={t("submit.fieldTaglinePlaceholder")}
                     {...form.register("tagline")}
                   />
                 </Field>
 
                 <Field
-                  label="Short story"
+                  label={t("submit.fieldStory")}
                   required
                   hint="A couple of sentences about who you are and how you make it."
                   error={form.formState.errors.description?.message}
                 >
                   <Textarea
-                    placeholder="A two-baker shop turning out naturally leavened miches and guava cream cheese danishes. We mill some of our own flour from Florida-grown grains."
+                    placeholder={t("submit.fieldStoryPlaceholder")}
                     className="min-h-[140px]"
                     {...form.register("description")}
                   />
                 </Field>
 
                 <Field
-                  label="City"
+                  label={t("submit.fieldCity")}
                   required
                   error={form.formState.errors.location?.message}
                 >
@@ -488,7 +488,7 @@ export default function Submit() {
                     <div className="flex items-center gap-2">
                       <div className="relative flex-1">
                         <Input
-                          placeholder="ZIP code (optional)"
+                          placeholder={t("submit.fieldZip")}
                           {...form.register("zipCode")}
                           className="font-mono"
                         />
@@ -531,7 +531,7 @@ export default function Submit() {
                         ) : (
                           <MapPin className="h-4 w-4" />
                         )}
-                        <span className="ml-1.5">Use my location</span>
+                        <span className="ml-1.5">{t("submit.useMyLocation")}</span>
                       </Button>
                     </div>
                   </div>
@@ -543,21 +543,21 @@ export default function Submit() {
               <NavRow
                 onBack={prevStep}
                 onNext={nextStep}
-                nextLabel="Continue"
+                nextLabel={t("common.continue")}
                 disabled={false}
               />
             </>)}
             {step === 3 && (<>
               <StepHeader
                 eyebrow="Step 3 of 4"
-                title="Availability & ordering"
-                subtitle="Help customers find you and know how to buy. All fields are optional — fill in what applies."
+                title={t("submit.step3Title")}
+                subtitle={t("submit.step3Description")}
               />
 
               <div className="mt-8 space-y-8">
                 {/* Pickup location */}
                 <Field
-                  label="Pickup or selling location"
+                  label={t("submit.fieldPickupAddress")}
                   hint="Where do customers pick up orders? E.g. 'Our garage at 123 Mango Lane, Miami' or 'Wynwood Saturday Market, booth #12'."
                 >
                   <div className="relative">
@@ -572,7 +572,7 @@ export default function Submit() {
 
                 {/* Pin exact location */}
                 <Field
-                  label="Pin your exact pickup spot"
+                  label={t("submit.pinExactSpot")}
                   hint="Drag the pin or click the map to mark where customers should come. Helps shoppers find you on our map."
                 >
                   <LocationPicker
@@ -586,7 +586,7 @@ export default function Submit() {
 
                 {/* Days open */}
                 <Field
-                  label="Days you're available"
+                  label={t("submit.fieldDays")}
                   hint="Pick every day that applies."
                 >
                   <div className="flex flex-wrap gap-2 mt-1">
@@ -620,7 +620,7 @@ export default function Submit() {
 
                 {/* Hours */}
                 <Field
-                  label="Hours you're open"
+                  label={t("submit.fieldHours")}
                   hint="E.g. 'Saturdays 8 am – 1 pm' or 'Tuesday–Friday by appointment'."
                 >
                   <div className="relative">
@@ -635,7 +635,7 @@ export default function Submit() {
 
                 {/* How to order */}
                 <Field
-                  label="How do customers order?"
+                  label={t("submit.fieldHowToOrder")}
                   hint="Select everything that applies — we'll show this on your profile."
                 >
                   <div className="flex flex-col gap-2 mt-1">
@@ -693,10 +693,10 @@ export default function Submit() {
                 <div className="flex items-center justify-between gap-3">
                   <Button type="button" variant="ghost" onClick={prevStep}>
                     <ArrowLeft className="mr-2 h-4 w-4" />
-                    Back
+                    {t("submit.back")}
                   </Button>
                   <Button type="button" onClick={nextStep} className="px-6">
-                    Continue
+                    {t("common.continue")}
                     <ArrowRight className="ml-2 h-4 w-4" />
                   </Button>
                 </div>
@@ -723,13 +723,13 @@ export default function Submit() {
             {step === 4 && (<>
               <StepHeader
                 eyebrow="Step 4 of 4"
-                title="How can people reach you?"
+                title={t("submit.step4Title")}
                 subtitle="Just an email is enough. Add a cover photo and socials if you'd like."
               />
 
               <div className="mt-8 space-y-6">
                 <Field
-                  label="Email"
+                  label={t("submit.fieldEmail")}
                   required
                   hint="Shown on your public profile so people can reach out."
                   error={form.formState.errors.contactEmail?.message}
@@ -962,8 +962,8 @@ export default function Submit() {
                 onNext={publish}
                 nextLabel={
                   startVerification.isPending
-                    ? "Sending code..."
-                    : "Verify email & publish"
+                    ? t("dashboard.sendingCode")
+                    : t("submit.publish")
                 }
                 nextIcon={
                   startVerification.isPending ? (
@@ -1119,6 +1119,7 @@ function VerifyStep({
   isVerifying: boolean;
   isResending: boolean;
 }) {
+  const { t } = useTranslation();
   const inputRef = useRef<HTMLInputElement | null>(null);
 
   useEffect(() => {
@@ -1170,7 +1171,7 @@ function VerifyStep({
               : "border-border focus:border-primary focus:ring-primary/30",
           )}
           placeholder="······"
-          aria-label="Six-digit verification code"
+          aria-label={t("dashboard.enterCode")}
         />
         {error && (
           <p className="mt-2 text-center text-sm text-destructive">{error}</p>
@@ -1200,7 +1201,7 @@ function VerifyStep({
             disabled={isResending}
             className="font-semibold text-primary hover:underline disabled:opacity-50"
           >
-            {isResending ? "Sending..." : "Send a new code"}
+            {isResending ? t("dashboard.sendingCode") : "Send a new code"}
           </button>
         </div>
       </div>
@@ -1216,7 +1217,7 @@ function VerifyStep({
           disabled={code.length !== 6 || isVerifying}
           className="px-6"
         >
-          {isVerifying ? "Verifying..." : "Verify & publish"}
+          {isVerifying ? t("dashboard.verifying") : t("submit.publish")}
           {isVerifying ? (
             <Loader2 className="ml-2 h-4 w-4 animate-spin" />
           ) : (
@@ -1241,11 +1242,12 @@ function NavRow({
   nextIcon?: React.ReactNode;
   disabled?: boolean;
 }) {
+  const { t } = useTranslation();
   return (
     <div className="mt-10 flex items-center justify-between gap-3 border-t border-border pt-6">
       <Button type="button" variant="ghost" onClick={onBack}>
         <ArrowLeft className="mr-2 h-4 w-4" />
-        Back
+        {t("submit.back")}
       </Button>
       <Button type="button" onClick={onNext} disabled={disabled} className="px-6">
         {nextLabel}

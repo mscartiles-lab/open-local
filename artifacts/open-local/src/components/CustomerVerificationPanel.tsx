@@ -1,4 +1,5 @@
 import { useEffect, useState, useRef } from "react";
+import { useTranslation } from "react-i18next";
 import { Loader2, Check, X, Inbox, UserCheck, History, Search, CheckCircle2, Clock, XCircle } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -36,6 +37,7 @@ function PendingTab({
   vendorId: number;
   onUpdate: () => void;
 }) {
+  const { t } = useTranslation();
   const { toast } = useToast();
   const [pending, setPending] = useState<VisitRow[] | null>(null);
   const [loading, setLoading] = useState(true);
@@ -49,7 +51,7 @@ function PendingTab({
       const data = await r.json();
       setPending(data.pending);
     } catch (e) {
-      toast({ variant: "destructive", title: "Couldn't load requests", description: (e as Error).message });
+      toast({ variant: "destructive", title: t("verification.errorLoadRequests"), description: (e as Error).message });
     } finally {
       setLoading(false);
     }
@@ -70,16 +72,16 @@ function PendingTab({
       setPending((p) => p?.filter((req) => req.id !== id) ?? null);
       onUpdate();
       toast({
-        title: action === "approve" ? "Visit approved" : "Request rejected",
+        title: action === "approve" ? t("verification.visitApproved") : t("verification.requestRejected"),
         description:
           action === "approve"
             ? data.newlyUnlockedForShopper?.length
-              ? `Visit credited — they unlocked ${data.newlyUnlockedForShopper.length} new reward${data.newlyUnlockedForShopper.length === 1 ? "" : "s"}!`
-              : "Visit credited."
-            : "Request dismissed.",
+              ? t("verification.visitCreditedUnlocked", { count: data.newlyUnlockedForShopper.length })
+              : t("verification.visitCredited")
+            : t("verification.requestDismissed"),
       });
     } catch (e) {
-      toast({ variant: "destructive", title: "Couldn't update", description: (e as Error).message });
+      toast({ variant: "destructive", title: t("verification.errorUpdate"), description: (e as Error).message });
     } finally {
       setBusyIds((s) => { const n = new Set(s); n.delete(id); return n; });
     }
@@ -97,7 +99,7 @@ function PendingTab({
     return (
       <div className="flex flex-col items-center gap-2 py-10 text-muted-foreground">
         <Inbox className="w-8 h-8 opacity-40" />
-        <p className="text-sm">No pending visit requests right now.</p>
+        <p className="text-sm">{t("verification.noPending")}</p>
       </div>
     );
   }
@@ -112,15 +114,15 @@ function PendingTab({
             <div className="flex-1 min-w-0">
               <p className="font-semibold text-sm truncate">@{p.username}</p>
               <p className="text-xs text-muted-foreground">
-                requested {new Date(p.requestedAt).toLocaleString()}
+                {t("verification.requested")} {new Date(p.requestedAt).toLocaleString()}
               </p>
             </div>
             <Button size="sm" variant="outline" disabled={busy} onClick={() => decide(p.id, "reject")} className="gap-1">
-              <X className="w-4 h-4" /> Reject
+              <X className="w-4 h-4" /> {t("verification.reject")}
             </Button>
             <Button size="sm" disabled={busy} onClick={() => decide(p.id, "approve")} className="gap-1">
               {busy ? <Loader2 className="w-4 h-4 animate-spin" /> : <Check className="w-4 h-4" />}
-              Approve
+              {t("verification.approve")}
             </Button>
           </li>
         );
@@ -131,6 +133,7 @@ function PendingTab({
 
 // ── Verify tab ────────────────────────────────────────────────────────────────
 function VerifyTab({ vendorId, onUpdate }: { vendorId: number; onUpdate: () => void }) {
+  const { t } = useTranslation();
   const { toast } = useToast();
   const [username, setUsername] = useState("");
   const [busy, setBusy] = useState(false);
@@ -152,14 +155,14 @@ function VerifyTab({ vendorId, onUpdate }: { vendorId: number; onUpdate: () => v
       setUsername("");
       onUpdate();
       toast({
-        title: `@${data.username} verified`,
+        title: t("verification.userVerified", { username: data.username }),
         description: data.newlyUnlocked?.length
-          ? `Visit credited — they unlocked ${data.newlyUnlocked.length} new reward${data.newlyUnlocked.length === 1 ? "" : "s"}!`
-          : "Visit credited. They've been verified as a customer.",
+          ? t("verification.visitCreditedUnlocked", { count: data.newlyUnlocked.length })
+          : t("verification.visitCreditedCustomer"),
       });
       inputRef.current?.focus();
     } catch (e) {
-      toast({ variant: "destructive", title: "Verification failed", description: (e as Error).message });
+      toast({ variant: "destructive", title: t("verification.errorVerification"), description: (e as Error).message });
     } finally {
       setBusy(false);
     }
@@ -168,7 +171,7 @@ function VerifyTab({ vendorId, onUpdate }: { vendorId: number; onUpdate: () => v
   return (
     <div className="py-4 space-y-5">
       <p className="text-sm text-muted-foreground">
-        Enter a shopper's username to directly grant them a verified visit credit — no request needed on their end.
+        {t("verification.verifyDescription")}
       </p>
 
       <form onSubmit={handleVerify} className="flex gap-2">
@@ -178,7 +181,7 @@ function VerifyTab({ vendorId, onUpdate }: { vendorId: number; onUpdate: () => v
             ref={inputRef}
             value={username}
             onChange={(e) => setUsername(e.target.value)}
-            placeholder="shopperusername"
+            placeholder={t("verification.usernamePlaceholder")}
             className="pl-7"
             disabled={busy}
             autoComplete="off"
@@ -187,15 +190,15 @@ function VerifyTab({ vendorId, onUpdate }: { vendorId: number; onUpdate: () => v
         </div>
         <Button type="submit" disabled={busy || !username.trim()} className="gap-2 shrink-0">
           {busy ? <Loader2 className="w-4 h-4 animate-spin" /> : <UserCheck className="w-4 h-4" />}
-          Verify
+          {t("verification.verify")}
         </Button>
       </form>
 
       <div className="rounded-lg bg-muted/40 p-4 text-xs text-muted-foreground space-y-1">
-        <p className="font-semibold text-foreground text-sm">How this works</p>
-        <p>• The shopper shows you their Open Local username at your stall or market table.</p>
-        <p>• You enter it here and hit Verify — they instantly get visit credit.</p>
-        <p>• Each unique shop visit counts once toward their rewards unlocks.</p>
+        <p className="font-semibold text-foreground text-sm">{t("verification.howItWorks")}</p>
+        <p>{t("verification.step1")}</p>
+        <p>{t("verification.step2")}</p>
+        <p>{t("verification.step3")}</p>
       </div>
     </div>
   );
@@ -203,12 +206,13 @@ function VerifyTab({ vendorId, onUpdate }: { vendorId: number; onUpdate: () => v
 
 // ── History tab ───────────────────────────────────────────────────────────────
 const STATUS_META = {
-  approved: { label: "Approved", icon: CheckCircle2, className: "text-emerald-600" },
-  pending: { label: "Pending", icon: Clock, className: "text-amber-500" },
-  rejected: { label: "Rejected", icon: XCircle, className: "text-muted-foreground" },
+  approved: { labelKey: "verification.statusApproved", icon: CheckCircle2, className: "text-emerald-600" },
+  pending: { labelKey: "verification.statusPending", icon: Clock, className: "text-amber-500" },
+  rejected: { labelKey: "verification.statusRejected", icon: XCircle, className: "text-muted-foreground" },
 };
 
 function HistoryTab({ vendorId }: { vendorId: number }) {
+  const { t } = useTranslation();
   const { toast } = useToast();
   const [visits, setVisits] = useState<VisitRow[] | null>(null);
   const [loading, setLoading] = useState(true);
@@ -224,7 +228,7 @@ function HistoryTab({ vendorId }: { vendorId: number }) {
       const data = await r.json();
       setVisits(data.visits);
     } catch (e) {
-      toast({ variant: "destructive", title: "Couldn't load history", description: (e as Error).message });
+      toast({ variant: "destructive", title: t("verification.errorLoadHistory"), description: (e as Error).message });
     } finally {
       setLoading(false);
     }
@@ -236,11 +240,11 @@ function HistoryTab({ vendorId }: { vendorId: number }) {
     !search.trim() || v.username.toLowerCase().includes(search.trim().toLowerCase().replace(/^@/, "")),
   );
 
-  const filters: { key: typeof filter; label: string }[] = [
-    { key: "all", label: "All" },
-    { key: "approved", label: "Approved" },
-    { key: "pending", label: "Pending" },
-    { key: "rejected", label: "Rejected" },
+  const filters: { key: typeof filter; labelKey: string }[] = [
+    { key: "all", labelKey: "verification.filterAll" },
+    { key: "approved", labelKey: "verification.filterApproved" },
+    { key: "pending", labelKey: "verification.filterPending" },
+    { key: "rejected", labelKey: "verification.filterRejected" },
   ];
 
   return (
@@ -251,7 +255,7 @@ function HistoryTab({ vendorId }: { vendorId: number }) {
           <Input
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            placeholder="Search by username…"
+            placeholder={t("verification.searchPlaceholder")}
             className="pl-9"
           />
         </div>
@@ -264,7 +268,7 @@ function HistoryTab({ vendorId }: { vendorId: number }) {
               onClick={() => setFilter(f.key)}
               className="text-xs"
             >
-              {f.label}
+              {t(f.labelKey)}
             </Button>
           ))}
         </div>
@@ -277,7 +281,7 @@ function HistoryTab({ vendorId }: { vendorId: number }) {
       ) : visible.length === 0 ? (
         <div className="flex flex-col items-center gap-2 py-8 text-muted-foreground">
           <History className="w-8 h-8 opacity-40" />
-          <p className="text-sm">{search ? "No matches for that username." : "No visit records yet."}</p>
+          <p className="text-sm">{search ? t("verification.noMatches") : t("verification.noRecords")}</p>
         </div>
       ) : (
         <ul className="divide-y divide-border">
@@ -291,12 +295,12 @@ function HistoryTab({ vendorId }: { vendorId: number }) {
                   <p className="font-semibold text-sm truncate">@{v.username}</p>
                   <p className="text-xs text-muted-foreground">
                     {new Date(v.requestedAt).toLocaleDateString()}
-                    {v.decidedAt ? ` · decided ${new Date(v.decidedAt).toLocaleDateString()}` : ""}
+                    {v.decidedAt ? ` · ${t("verification.decided")} ${new Date(v.decidedAt).toLocaleDateString()}` : ""}
                   </p>
                 </div>
                 <span className={cn("flex items-center gap-1 text-xs font-medium", meta.className)}>
                   <StatusIcon className="w-3.5 h-3.5" />
-                  {meta.label}
+                  {t(meta.labelKey)}
                 </span>
               </li>
             );
@@ -309,6 +313,7 @@ function HistoryTab({ vendorId }: { vendorId: number }) {
 
 // ── Main panel ────────────────────────────────────────────────────────────────
 export default function CustomerVerificationPanel({ vendorId }: { vendorId: number }) {
+  const { t } = useTranslation();
   const [tab, setTab] = useState<Tab>("pending");
   const [pendingCount, setPendingCount] = useState<number | null>(null);
   const [historyKey, setHistoryKey] = useState(0);
@@ -325,25 +330,25 @@ export default function CustomerVerificationPanel({ vendorId }: { vendorId: numb
 
   const handleUpdate = () => setHistoryKey((k) => k + 1);
 
-  const tabs: { key: Tab; label: string; icon: typeof Inbox }[] = [
-    { key: "pending", label: "Pending", icon: Inbox },
-    { key: "verify", label: "Verify customer", icon: UserCheck },
-    { key: "history", label: "History", icon: History },
+  const tabs: { key: Tab; labelKey: string; icon: typeof Inbox }[] = [
+    { key: "pending", labelKey: "verification.tabPending", icon: Inbox },
+    { key: "verify", labelKey: "verification.tabVerify", icon: UserCheck },
+    { key: "history", labelKey: "verification.tabHistory", icon: History },
   ];
 
   return (
     <Card>
       <CardContent className="p-6">
         <div className="flex items-center justify-between mb-5">
-          <h2 className="font-serif text-xl font-bold">Customer verification</h2>
+          <h2 className="font-serif text-xl font-bold">{t("verification.title")}</h2>
           <p className="text-xs text-muted-foreground hidden sm:block">
-            Shoppers earn rewards when you verify their visit.
+            {t("verification.subtitle")}
           </p>
         </div>
 
         {/* Tab bar */}
         <div className="flex gap-1 border-b border-border mb-4">
-          {tabs.map(({ key, label, icon: Icon }) => (
+          {tabs.map(({ key, labelKey, icon: Icon }) => (
             <button
               key={key}
               onClick={() => setTab(key)}
@@ -355,7 +360,7 @@ export default function CustomerVerificationPanel({ vendorId }: { vendorId: numb
               )}
             >
               <Icon className="w-4 h-4" />
-              {label}
+              {t(labelKey)}
               {key === "pending" && pendingCount != null && pendingCount > 0 && (
                 <span className="ml-0.5 text-[10px] bg-primary text-primary-foreground rounded-full px-1.5 py-px font-semibold leading-none">
                   {pendingCount}

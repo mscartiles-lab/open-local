@@ -4,6 +4,7 @@ import { MessageCircle, Send, ArrowLeft, Store } from "lucide-react";
 import Layout from "@/components/layout/Layout";
 import { useUser } from "@/context/UserContext";
 import Avatar from "@/components/Avatar";
+import { useTranslation } from "react-i18next";
 
 const API = import.meta.env.BASE_URL?.replace(/\/$/, "") || "";
 
@@ -43,17 +44,8 @@ type ConvDetail = {
   messages: Msg[];
 };
 
-function timeAgo(iso: string) {
-  const diff = Date.now() - new Date(iso).getTime();
-  const mins = Math.floor(diff / 60000);
-  if (mins < 1) return "just now";
-  if (mins < 60) return `${mins}m ago`;
-  const hrs = Math.floor(mins / 60);
-  if (hrs < 24) return `${hrs}h ago`;
-  return `${Math.floor(hrs / 24)}d ago`;
-}
-
 export default function Messages() {
+  const { t } = useTranslation();
   const { user } = useUser();
   const [convs, setConvs] = useState<ConvSummary[]>([]);
   const [loading, setLoading] = useState(true);
@@ -62,6 +54,16 @@ export default function Messages() {
   const [draft, setDraft] = useState("");
   const [sending, setSending] = useState(false);
   const bottomRef = useRef<HTMLDivElement>(null);
+
+  function timeAgo(iso: string) {
+    const diff = Date.now() - new Date(iso).getTime();
+    const mins = Math.floor(diff / 60000);
+    if (mins < 1) return t("messages.justNow");
+    if (mins < 60) return t("messages.minutesAgo", { n: mins });
+    const hrs = Math.floor(mins / 60);
+    if (hrs < 24) return t("messages.hoursAgo", { n: hrs });
+    return t("messages.daysAgo", { n: Math.floor(hrs / 24) });
+  }
 
   // Load conversation list
   useEffect(() => {
@@ -124,8 +126,8 @@ export default function Messages() {
       <Layout>
         <div className="container max-w-lg mx-auto px-4 py-24 text-center">
           <MessageCircle className="w-12 h-12 mx-auto text-muted-foreground mb-4" />
-          <h2 className="text-2xl font-serif font-bold mb-2">Sign in to view messages</h2>
-          <p className="text-muted-foreground">Your conversations with vendors will appear here.</p>
+          <h2 className="text-2xl font-serif font-bold mb-2">{t("messages.signInTitle")}</h2>
+          <p className="text-muted-foreground">{t("messages.signInDescription")}</p>
         </div>
       </Layout>
     );
@@ -145,15 +147,15 @@ export default function Messages() {
           {/* Left panel — conversation list */}
           <div className={`w-full md:w-80 flex-shrink-0 border-r border-border flex flex-col ${activeId !== null ? "hidden md:flex" : "flex"}`}>
             <div className="px-5 py-4 border-b border-border">
-              <h1 className="text-xl font-serif font-bold">Messages</h1>
-              <p className="text-xs text-muted-foreground mt-0.5">Your conversations</p>
+              <h1 className="text-xl font-serif font-bold">{t("messages.title")}</h1>
+              <p className="text-xs text-muted-foreground mt-0.5">{t("messages.conversations")}</p>
             </div>
             {loading ? (
-              <div className="flex-1 flex items-center justify-center text-muted-foreground text-sm">Loading…</div>
+              <div className="flex-1 flex items-center justify-center text-muted-foreground text-sm">{t("common.loading")}</div>
             ) : convs.length === 0 ? (
               <div className="flex-1 flex flex-col items-center justify-center gap-3 px-6 text-center text-muted-foreground">
                 <MessageCircle className="w-10 h-10 opacity-30" />
-                <p className="text-sm">No conversations yet.<br />Visit a vendor page to start one.</p>
+                <p className="text-sm">{t("messages.noConversations")}</p>
               </div>
             ) : (
               <ul className="flex-1 overflow-y-auto divide-y divide-border">
@@ -188,11 +190,11 @@ export default function Messages() {
                         </div>
                         {conv.lastMessage ? (
                           <p className={`text-xs truncate ${conv.unreadCount > 0 ? "text-foreground font-medium" : "text-muted-foreground"}`}>
-                            {conv.lastMessage.senderUserId === user.id ? "You: " : ""}
+                            {conv.lastMessage.senderUserId === user.id ? t("messages.you") : ""}
                             {conv.lastMessage.body}
                           </p>
                         ) : (
-                          <p className="text-xs text-muted-foreground italic">No messages yet</p>
+                          <p className="text-xs text-muted-foreground italic">{t("messages.noMessages")}</p>
                         )}
                       </div>
                     </button>
@@ -207,7 +209,7 @@ export default function Messages() {
             {detail === null ? (
               <div className="flex-1 flex flex-col items-center justify-center gap-3 text-muted-foreground">
                 <MessageCircle className="w-12 h-12 opacity-20" />
-                <p className="text-sm">Select a conversation to read messages</p>
+                <p className="text-sm">{t("messages.selectConversation")}</p>
               </div>
             ) : (
               <>
@@ -232,14 +234,14 @@ export default function Messages() {
                         <p className="font-semibold text-sm truncate">{detail.vendor?.name}</p>
                         {detail.vendor?.slug && (
                           <Link href={`/vendors/${detail.conversation.vendorId}`} className="text-xs text-primary hover:underline">
-                            View vendor page →
+                            {t("messages.viewVendorPage")}
                           </Link>
                         )}
                       </>
                     ) : (
                       <>
                         <p className="font-semibold text-sm">@{detail.shopper?.username}</p>
-                        <p className="text-xs text-muted-foreground">Shopper</p>
+                        <p className="text-xs text-muted-foreground">{t("messages.roleShopper")}</p>
                       </>
                     )}
                   </div>
@@ -249,7 +251,7 @@ export default function Messages() {
                 <div className="flex-1 overflow-y-auto px-4 py-4 space-y-3">
                   {detail.messages.length === 0 && (
                     <p className="text-center text-sm text-muted-foreground py-8">
-                      No messages yet. Say hello! 👋
+                      {t("messages.sayHello")}
                     </p>
                   )}
                   {detail.messages.map((msg) => {
@@ -297,7 +299,7 @@ export default function Messages() {
                       onKeyDown={(e) => {
                         if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); sendMessage(); }
                       }}
-                      placeholder="Type a message…"
+                      placeholder={t("messages.messagePlaceholder")}
                       rows={1}
                       className="flex-1 resize-none rounded-xl border border-border bg-secondary/30 px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-primary/40 focus:bg-background placeholder:text-muted-foreground max-h-32 overflow-y-auto"
                       style={{ minHeight: "42px" }}
@@ -310,7 +312,7 @@ export default function Messages() {
                       <Send className="w-4 h-4" />
                     </button>
                   </form>
-                  <p className="text-[10px] text-muted-foreground mt-1.5 px-1">Press Enter to send · Shift+Enter for new line</p>
+                  <p className="text-[10px] text-muted-foreground mt-1.5 px-1">{t("messages.pressEnter")}</p>
                 </div>
               </>
             )}

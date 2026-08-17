@@ -7,6 +7,7 @@ import { useToast } from "@/hooks/use-toast";
 import { useUser } from "@/context/UserContext";
 import Avatar from "@/components/Avatar";
 import { UNLOCK_CATALOG, type UnlockDef } from "@/lib/unlockCatalog";
+import { useTranslation } from "react-i18next";
 
 const SESSION_KEY = "ol_session";
 
@@ -17,6 +18,7 @@ interface MeData {
 }
 
 export default function Rewards() {
+  const { t } = useTranslation();
   const { user, openOnboarding } = useUser();
   const { toast } = useToast();
   const [me, setMe] = useState<MeData | null>(null);
@@ -37,7 +39,7 @@ export default function Rewards() {
       if (!r.ok) throw new Error(`HTTP ${r.status}`);
       setMe(await r.json());
     } catch (e) {
-      toast({ variant: "destructive", title: "Couldn't load rewards", description: (e as Error).message });
+      toast({ variant: "destructive", title: t("rewards.loadError"), description: (e as Error).message });
     } finally {
       setLoading(false);
     }
@@ -62,7 +64,7 @@ export default function Rewards() {
       const data = await r.json();
       setMe((prev) => prev ? { ...prev, equipped: data.equipped } : prev);
     } catch (e) {
-      toast({ variant: "destructive", title: "Couldn't save", description: (e as Error).message });
+      toast({ variant: "destructive", title: t("rewards.saveError"), description: (e as Error).message });
       setMe((prev) => prev ? { ...prev, equipped: me.equipped } : prev);
     } finally {
       setSaving(false);
@@ -74,11 +76,11 @@ export default function Rewards() {
       <Layout>
         <div className="container max-w-3xl mx-auto px-4 py-20 text-center">
           <Sparkles className="w-12 h-12 mx-auto text-primary mb-4" />
-          <h1 className="text-3xl font-serif font-bold mb-2">Earn rewards for shopping local</h1>
+          <h1 className="text-3xl font-serif font-bold mb-2">{t("rewards.title")}</h1>
           <p className="text-muted-foreground mb-6">
-            Sign in to start earning avatar unlocks every time you visit a verified local shop.
+            {t("rewards.tip")}
           </p>
-          <Button onClick={openOnboarding}>Join Open Local</Button>
+          <Button onClick={openOnboarding}>{t("rewards.join")}</Button>
         </div>
       </Layout>
     );
@@ -101,7 +103,7 @@ export default function Rewards() {
               Verified visits to <span className="font-semibold text-foreground">{me?.uniqueVendorCount ?? 0}</span> local shops · {me?.unlocks.length ?? 0} of {UNLOCK_CATALOG.length} unlocks earned
             </p>
             <p className="text-xs text-muted-foreground mt-2">
-              Tip: visit a shop's page on the map and tap "Check in here" while you're there to earn credit.
+              {t("rewards.tip")}
             </p>
           </div>
         </div>
@@ -150,6 +152,7 @@ function RewardCard({
   onToggle: () => void;
   disabled: boolean;
 }) {
+  const { t } = useTranslation();
   return (
     <Card className={`transition-all ${earned ? "" : "opacity-60"} ${equipped ? "ring-2 ring-primary" : ""}`}>
       <CardContent className="p-4 text-center">
@@ -176,10 +179,10 @@ function RewardCard({
               onClick={onToggle}
               disabled={disabled}
             >
-              {equipped ? "Equipped" : "Equip"}
+              {equipped ? t("rewards.equipped") : t("rewards.equip")}
             </Button>
           ) : (
-            <div className="text-xs text-emerald-700 font-medium">Earned</div>
+            <div className="text-xs text-emerald-700 font-medium">{t("rewards.earned")}</div>
           )
         ) : (
           <div className="text-xs text-muted-foreground">{unlock.threshold} visit{unlock.threshold === 1 ? "" : "s"}</div>

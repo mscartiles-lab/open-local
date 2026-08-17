@@ -3,6 +3,7 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { Tag, Plus, Trash2, Loader2, BarChart3 } from "lucide-react";
+import { useTranslation } from "react-i18next";
 import Layout from "@/components/layout/Layout";
 import UsersAdminTab from "@/components/admin/UsersAdminTab";
 import EstablishmentsAdminTab from "@/components/admin/EstablishmentsAdminTab";
@@ -81,6 +82,7 @@ const productSchema = z.object({
 });
 
 export default function Admin() {
+  const { t } = useTranslation();
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const [isAddProductOpen, setIsAddProductOpen] = useState(false);
@@ -130,9 +132,12 @@ export default function Admin() {
       {
         onSuccess: () => {
           invalidateAll();
-          toast({ title: "Vendor updated", description: `Vendor is now ${!currentStatus ? 'featured' : 'unfeatured'}.` });
+          toast({
+            title: t("admin.vendorUpdated"),
+            description: !currentStatus ? t("admin.vendorFeatured") : t("admin.vendorUnfeatured"),
+          });
         },
-        onError: () => toast({ variant: "destructive", title: "Error updating vendor" })
+        onError: () => toast({ variant: "destructive", title: t("admin.errorUpdatingVendor") })
       }
     );
   };
@@ -143,9 +148,9 @@ export default function Admin() {
       {
         onSuccess: () => {
           invalidateAll();
-          toast({ title: "Vendor deleted" });
+          toast({ title: t("admin.vendorDeleted") });
         },
-        onError: () => toast({ variant: "destructive", title: "Error deleting vendor" })
+        onError: () => toast({ variant: "destructive", title: t("admin.errorDeletingVendor") })
       }
     );
   };
@@ -156,9 +161,12 @@ export default function Admin() {
       {
         onSuccess: () => {
           invalidateAll();
-          toast({ title: "Product updated", description: `Product is now ${!currentStatus ? 'featured' : 'unfeatured'}.` });
+          toast({
+            title: t("admin.productUpdated"),
+            description: !currentStatus ? t("admin.productFeatured") : t("admin.productUnfeatured"),
+          });
         },
-        onError: () => toast({ variant: "destructive", title: "Error updating product" })
+        onError: () => toast({ variant: "destructive", title: t("admin.errorUpdatingProduct") })
       }
     );
   };
@@ -169,9 +177,12 @@ export default function Admin() {
       {
         onSuccess: () => {
           invalidateAll();
-          toast({ title: "Product updated", description: `Product is now ${!currentStatus ? 'in stock' : 'out of stock'}.` });
+          toast({
+            title: t("admin.productUpdated"),
+            description: !currentStatus ? t("admin.productInStock") : t("admin.productOutOfStock"),
+          });
         },
-        onError: () => toast({ variant: "destructive", title: "Error updating product" })
+        onError: () => toast({ variant: "destructive", title: t("admin.errorUpdatingProduct") })
       }
     );
   };
@@ -182,9 +193,9 @@ export default function Admin() {
       {
         onSuccess: () => {
           invalidateAll();
-          toast({ title: "Product deleted" });
+          toast({ title: t("admin.productDeleted") });
         },
-        onError: () => toast({ variant: "destructive", title: "Error deleting product" })
+        onError: () => toast({ variant: "destructive", title: t("admin.errorDeletingProduct") })
       }
     );
   };
@@ -223,11 +234,11 @@ export default function Admin() {
       {
         onSuccess: () => {
           invalidateAll();
-          toast({ title: "Product created" });
+          toast({ title: t("admin.productCreated") });
           setIsAddProductOpen(false);
           productForm.reset();
         },
-        onError: () => toast({ variant: "destructive", title: "Error creating product" })
+        onError: () => toast({ variant: "destructive", title: t("admin.errorCreatingProduct") })
       }
     );
   };
@@ -238,9 +249,9 @@ export default function Admin() {
         <div className="container max-w-6xl mx-auto px-4">
           <div className="flex items-start justify-between gap-4">
             <div>
-              <h1 className="text-4xl font-serif font-bold text-foreground mb-2">Marketplace Admin</h1>
+              <h1 className="text-4xl font-serif font-bold text-foreground mb-2">{t("admin.pageTitle")}</h1>
               <p className="text-lg text-muted-foreground font-sans">
-                Manage producers, products, and curation.
+                {t("admin.manageDescription")}
               </p>
             </div>
             <div className="flex gap-2 flex-wrap">
@@ -249,14 +260,14 @@ export default function Admin() {
                 className="inline-flex items-center gap-2 bg-amber-600 text-white px-4 py-2.5 rounded-md text-sm font-semibold hover:bg-amber-700 transition-colors mt-1 flex-shrink-0"
               >
                 <BarChart3 className="w-4 h-4" />
-                Demand Signals
+                {t("admin.demandSignals")}
               </a>
               <a
                 href="/master-list"
                 className="inline-flex items-center gap-2 bg-primary text-primary-foreground px-4 py-2.5 rounded-md text-sm font-semibold hover:bg-primary/90 transition-colors mt-1 flex-shrink-0"
               >
                 <Tag className="w-4 h-4" />
-                Master Product List
+                {t("admin.masterProductList")}
               </a>
             </div>
           </div>
@@ -266,14 +277,14 @@ export default function Admin() {
       <div className="container max-w-6xl mx-auto px-4 pb-24">
         <Tabs defaultValue="vendors" className="w-full">
           <TabsList className="mb-8 flex-wrap h-auto">
-            <TabsTrigger value="vendors" className="text-lg px-8">Producers</TabsTrigger>
-            <TabsTrigger value="products" className="text-lg px-8">Products</TabsTrigger>
-            <TabsTrigger value="establishments" className="text-lg px-8">Businesses</TabsTrigger>
-            <TabsTrigger value="users" className="text-lg px-8">Users</TabsTrigger>
-            <TabsTrigger value="support" className="text-lg px-8">Support</TabsTrigger>
-            <TabsTrigger value="certifications" className="text-lg px-8">Certifications</TabsTrigger>
-            <TabsTrigger value="ip-logs" className="text-lg px-8">IP Logs</TabsTrigger>
-            <TabsTrigger value="invites" className="text-lg px-8">Invites</TabsTrigger>
+            <TabsTrigger value="vendors" className="text-lg px-8">{t("admin.tabProducers")}</TabsTrigger>
+            <TabsTrigger value="products" className="text-lg px-8">{t("admin.tabProducts")}</TabsTrigger>
+            <TabsTrigger value="establishments" className="text-lg px-8">{t("admin.tabBusinesses")}</TabsTrigger>
+            <TabsTrigger value="users" className="text-lg px-8">{t("admin.tabUsers")}</TabsTrigger>
+            <TabsTrigger value="support" className="text-lg px-8">{t("admin.tabSupport")}</TabsTrigger>
+            <TabsTrigger value="certifications" className="text-lg px-8">{t("admin.tabCertifications")}</TabsTrigger>
+            <TabsTrigger value="ip-logs" className="text-lg px-8">{t("admin.tabIpLogs")}</TabsTrigger>
+            <TabsTrigger value="invites" className="text-lg px-8">{t("admin.tabInvites")}</TabsTrigger>
           </TabsList>
 
           <TabsContent value="establishments" className="space-y-6">
@@ -303,7 +314,7 @@ export default function Admin() {
           <TabsContent value="vendors" className="space-y-6">
             <Card>
               <CardHeader>
-                <CardTitle>All Producers</CardTitle>
+                <CardTitle>{t("admin.allProducers")}</CardTitle>
               </CardHeader>
               <CardContent>
                 {vendorsLoading ? (
@@ -313,11 +324,11 @@ export default function Admin() {
                     <Table>
                       <TableHeader>
                         <TableRow>
-                          <TableHead>Name</TableHead>
-                          <TableHead>Category</TableHead>
-                          <TableHead>Location</TableHead>
-                          <TableHead>Featured</TableHead>
-                          <TableHead className="text-right">Actions</TableHead>
+                          <TableHead>{t("admin.colName")}</TableHead>
+                          <TableHead>{t("admin.colCategory")}</TableHead>
+                          <TableHead>{t("admin.colLocation")}</TableHead>
+                          <TableHead>{t("admin.colFeatured")}</TableHead>
+                          <TableHead className="text-right">{t("admin.colActions")}</TableHead>
                         </TableRow>
                       </TableHeader>
                       <TableBody>
@@ -329,9 +340,9 @@ export default function Admin() {
                                 {vendor.flaggedForFollowup && (
                                   <span
                                     className="text-[10px] font-semibold uppercase tracking-wide px-2 py-0.5 rounded bg-amber-100 text-amber-800"
-                                    title="No products 7 days after signup"
+                                    title={t("admin.noProductsAlert")}
                                   >
-                                    Needs follow-up
+                                    {t("admin.needsFollowup")}
                                   </span>
                                 )}
                               </div>
@@ -354,15 +365,15 @@ export default function Admin() {
                                 </AlertDialogTrigger>
                                 <AlertDialogContent>
                                   <AlertDialogHeader>
-                                    <AlertDialogTitle>Delete {vendor.name}?</AlertDialogTitle>
+                                    <AlertDialogTitle>{t("admin.deleteVendorTitle", { name: vendor.name })}</AlertDialogTitle>
                                     <AlertDialogDescription>
-                                      This will permanently delete this producer and all of their products. This action cannot be undone.
+                                      {t("admin.deleteVendorWarning")}
                                     </AlertDialogDescription>
                                   </AlertDialogHeader>
                                   <AlertDialogFooter>
-                                    <AlertDialogCancel>Cancel</AlertDialogCancel>
+                                    <AlertDialogCancel>{t("admin.cancel")}</AlertDialogCancel>
                                     <AlertDialogAction onClick={() => handleDeleteVendor(vendor.id)} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
-                                      Delete
+                                      {t("admin.delete")}
                                     </AlertDialogAction>
                                   </AlertDialogFooter>
                                 </AlertDialogContent>
@@ -374,7 +385,7 @@ export default function Admin() {
                     </Table>
                   </div>
                 ) : (
-                  <div className="text-center py-12 text-muted-foreground">No producers found.</div>
+                  <div className="text-center py-12 text-muted-foreground">{t("admin.noProducers")}</div>
                 )}
               </CardContent>
             </Card>
@@ -382,18 +393,18 @@ export default function Admin() {
 
           <TabsContent value="products" className="space-y-6">
             <div className="flex justify-between items-center mb-6">
-              <h2 className="text-2xl font-serif font-bold">All Products</h2>
+              <h2 className="text-2xl font-serif font-bold">{t("admin.allProducts")}</h2>
               <Dialog open={isAddProductOpen} onOpenChange={setIsAddProductOpen}>
                 <DialogTrigger asChild>
                   <Button className="gap-2">
-                    <Plus className="w-4 h-4" /> Add Product
+                    <Plus className="w-4 h-4" /> {t("admin.addProduct")}
                   </Button>
                 </DialogTrigger>
                 <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
                   <DialogHeader>
-                    <DialogTitle>Add New Product</DialogTitle>
+                    <DialogTitle>{t("admin.addNewProduct")}</DialogTitle>
                     <DialogDescription>
-                      Create a new product listing for a vendor.
+                      {t("admin.createProductDescription")}
                     </DialogDescription>
                   </DialogHeader>
                   <Form {...productForm}>
@@ -404,11 +415,11 @@ export default function Admin() {
                           name="vendorId"
                           render={({ field }) => (
                             <FormItem>
-                              <FormLabel>Producer</FormLabel>
+                              <FormLabel>{t("admin.fieldProducer")}</FormLabel>
                               <Select onValueChange={(val) => field.onChange(Number(val))} defaultValue={field.value ? String(field.value) : undefined}>
                                 <FormControl>
                                   <SelectTrigger>
-                                    <SelectValue placeholder="Select a producer" />
+                                    <SelectValue placeholder={t("admin.selectProducer")} />
                                   </SelectTrigger>
                                 </FormControl>
                                 <SelectContent>
@@ -426,9 +437,9 @@ export default function Admin() {
                           name="name"
                           render={({ field }) => (
                             <FormItem>
-                              <FormLabel>Product Name</FormLabel>
+                              <FormLabel>{t("admin.fieldProductName")}</FormLabel>
                               <FormControl>
-                                <Input placeholder="Sourdough Loaf" {...field} />
+                                <Input placeholder={t("admin.placeholderProductName")} {...field} />
                               </FormControl>
                               <FormMessage />
                             </FormItem>
@@ -439,9 +450,9 @@ export default function Admin() {
                           name="category"
                           render={({ field }) => (
                             <FormItem>
-                              <FormLabel>Category</FormLabel>
+                              <FormLabel>{t("admin.fieldCategory")}</FormLabel>
                               <FormControl>
-                                <Input placeholder="Bread" {...field} />
+                                <Input placeholder={t("admin.placeholderCategory")} {...field} />
                               </FormControl>
                               <FormMessage />
                             </FormItem>
@@ -453,7 +464,7 @@ export default function Admin() {
                             name="priceDollars"
                             render={({ field }) => (
                               <FormItem>
-                                <FormLabel>Price ($)</FormLabel>
+                                <FormLabel>{t("admin.fieldPrice")}</FormLabel>
                                 <FormControl>
                                   <Input type="number" step="0.01" min="0" placeholder="8.50" {...field} />
                                 </FormControl>
@@ -466,9 +477,9 @@ export default function Admin() {
                             name="unit"
                             render={({ field }) => (
                               <FormItem>
-                                <FormLabel>Unit</FormLabel>
+                                <FormLabel>{t("admin.fieldUnit")}</FormLabel>
                                 <FormControl>
-                                  <Input placeholder="loaf" {...field} />
+                                  <Input placeholder={t("admin.placeholderUnit")} {...field} />
                                 </FormControl>
                                 <FormMessage />
                               </FormItem>
@@ -482,9 +493,9 @@ export default function Admin() {
                         name="description"
                         render={({ field }) => (
                           <FormItem>
-                            <FormLabel>Description</FormLabel>
+                            <FormLabel>{t("admin.fieldDescription")}</FormLabel>
                             <FormControl>
-                              <Textarea placeholder="Naturally leavened..." {...field} />
+                              <Textarea placeholder={t("admin.placeholderDescription")} {...field} />
                             </FormControl>
                             <FormMessage />
                           </FormItem>
@@ -496,7 +507,7 @@ export default function Admin() {
                         name="imageUrl"
                         render={({ field }) => (
                           <FormItem>
-                            <FormLabel>Image URL (Optional)</FormLabel>
+                            <FormLabel>{t("admin.fieldImageUrl")}</FormLabel>
                             <FormControl>
                               <Input placeholder="https://..." {...field} />
                             </FormControl>
@@ -506,7 +517,7 @@ export default function Admin() {
                       />
 
                       <div className="space-y-4 pt-4 border-t border-border">
-                        <h4 className="font-serif font-bold text-lg">Listing Type</h4>
+                        <h4 className="font-serif font-bold text-lg">{t("admin.fieldListingType")}</h4>
                         <FormField
                           control={productForm.control}
                           name="listingType"
@@ -515,14 +526,14 @@ export default function Admin() {
                               <Select onValueChange={field.onChange} defaultValue={field.value}>
                                 <FormControl>
                                   <SelectTrigger>
-                                    <SelectValue placeholder="Select a listing type" />
+                                    <SelectValue placeholder={t("admin.selectListingType")} />
                                   </SelectTrigger>
                                 </FormControl>
                                 <SelectContent>
-                                  <SelectItem value="regular">Regular</SelectItem>
-                                  <SelectItem value="batch_drop">Batch Drop</SelectItem>
-                                  <SelectItem value="surplus">Market Surplus</SelectItem>
-                                  <SelectItem value="pre_order">Pre-Order</SelectItem>
+                                  <SelectItem value="regular">{t("admin.listingRegular")}</SelectItem>
+                                  <SelectItem value="batch_drop">{t("admin.listingBatchDrop")}</SelectItem>
+                                  <SelectItem value="surplus">{t("admin.listingMarketSurplus")}</SelectItem>
+                                  <SelectItem value="pre_order">{t("admin.listingPreOrder")}</SelectItem>
                                 </SelectContent>
                               </Select>
                               <FormMessage />
@@ -536,7 +547,7 @@ export default function Admin() {
                             name="originalPriceDollars"
                             render={({ field }) => (
                               <FormItem>
-                                <FormLabel>Original Price ($)</FormLabel>
+                                <FormLabel>{t("admin.fieldOriginalPrice")}</FormLabel>
                                 <FormControl>
                                   <Input type="number" step="0.01" min="0" placeholder="12.00" {...field} />
                                 </FormControl>
@@ -553,7 +564,7 @@ export default function Admin() {
                               name="availableUntil"
                               render={({ field }) => (
                                 <FormItem>
-                                  <FormLabel>Available Until</FormLabel>
+                                  <FormLabel>{t("admin.fieldAvailableUntil")}</FormLabel>
                                   <FormControl>
                                     <Input type="datetime-local" {...field} />
                                   </FormControl>
@@ -566,7 +577,7 @@ export default function Admin() {
                               name="pickupNote"
                               render={({ field }) => (
                                 <FormItem>
-                                  <FormLabel>Pickup Note</FormLabel>
+                                  <FormLabel>{t("admin.fieldPickupNote")}</FormLabel>
                                   <FormControl>
                                     <Input placeholder="Pickup Saturday 9AM-1PM at farmer's market..." {...field} />
                                   </FormControl>
@@ -585,7 +596,7 @@ export default function Admin() {
                           render={({ field }) => (
                             <FormItem className="flex flex-row items-center justify-between rounded-lg border p-4 w-full">
                               <div className="space-y-0.5">
-                                <FormLabel className="text-base">In Stock</FormLabel>
+                                <FormLabel className="text-base">{t("admin.fieldInStock")}</FormLabel>
                               </div>
                               <FormControl>
                                 <Switch checked={field.value} onCheckedChange={field.onChange} />
@@ -599,7 +610,7 @@ export default function Admin() {
                           render={({ field }) => (
                             <FormItem className="flex flex-row items-center justify-between rounded-lg border p-4 w-full">
                               <div className="space-y-0.5">
-                                <FormLabel className="text-base">Featured</FormLabel>
+                                <FormLabel className="text-base">{t("admin.fieldFeatured")}</FormLabel>
                               </div>
                               <FormControl>
                                 <Switch checked={field.value} onCheckedChange={field.onChange} />
@@ -611,7 +622,7 @@ export default function Admin() {
 
                       <Button type="submit" className="w-full" disabled={createProduct.isPending}>
                         {createProduct.isPending && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
-                        Save Product
+                        {t("admin.saveProduct")}
                       </Button>
                     </form>
                   </Form>
@@ -628,13 +639,13 @@ export default function Admin() {
                     <Table>
                       <TableHeader>
                         <TableRow>
-                          <TableHead>Product</TableHead>
-                          <TableHead>Producer</TableHead>
-                          <TableHead>Price</TableHead>
-                          <TableHead>Type</TableHead>
-                          <TableHead>In Stock</TableHead>
-                          <TableHead>Featured</TableHead>
-                          <TableHead className="text-right">Actions</TableHead>
+                          <TableHead>{t("admin.colProduct")}</TableHead>
+                          <TableHead>{t("admin.colProducer")}</TableHead>
+                          <TableHead>{t("admin.colPrice")}</TableHead>
+                          <TableHead>{t("admin.colType")}</TableHead>
+                          <TableHead>{t("admin.colInStock")}</TableHead>
+                          <TableHead>{t("admin.colFeatured")}</TableHead>
+                          <TableHead className="text-right">{t("admin.colActions")}</TableHead>
                         </TableRow>
                       </TableHeader>
                       <TableBody>
@@ -667,15 +678,15 @@ export default function Admin() {
                                 </AlertDialogTrigger>
                                 <AlertDialogContent>
                                   <AlertDialogHeader>
-                                    <AlertDialogTitle>Delete {product.name}?</AlertDialogTitle>
+                                    <AlertDialogTitle>{t("admin.deleteProductTitle", { name: product.name })}</AlertDialogTitle>
                                     <AlertDialogDescription>
-                                      This will permanently delete this product. This action cannot be undone.
+                                      {t("admin.deleteProductWarning")}
                                     </AlertDialogDescription>
                                   </AlertDialogHeader>
                                   <AlertDialogFooter>
-                                    <AlertDialogCancel>Cancel</AlertDialogCancel>
+                                    <AlertDialogCancel>{t("admin.cancel")}</AlertDialogCancel>
                                     <AlertDialogAction onClick={() => handleDeleteProduct(product.id)} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
-                                      Delete
+                                      {t("admin.delete")}
                                     </AlertDialogAction>
                                   </AlertDialogFooter>
                                 </AlertDialogContent>
@@ -687,7 +698,7 @@ export default function Admin() {
                     </Table>
                   </div>
                 ) : (
-                  <div className="text-center py-12 text-muted-foreground">No products found.</div>
+                  <div className="text-center py-12 text-muted-foreground">{t("admin.noProducts")}</div>
                 )}
               </CardContent>
             </Card>

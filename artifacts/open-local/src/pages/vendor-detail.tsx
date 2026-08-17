@@ -14,6 +14,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import VendorReviews from "@/components/VendorReviews";
 import VendorCertifications, { VendorCertificationBadges } from "@/components/VendorCertifications";
 import { cn } from "@/lib/utils";
+import { useTranslation } from "react-i18next";
 
 const THEME_PRESETS: Record<string, { color: string; font: string; layout: string }> = {
   rustic:  { color: "#7C4D1E", font: "serif",       layout: "grid" },
@@ -40,6 +41,7 @@ export default function VendorDetail() {
   const id = Number(params.id);
   const [, setLocation] = useLocation();
   const { user } = useUser();
+  const { t } = useTranslation();
 
   const { isFavoriteVendor, toggleVendor, isFavoriteProduct, toggleProduct } = useFavorites();
 
@@ -125,20 +127,20 @@ export default function VendorDetail() {
                       </div>
                       <div className="flex items-center gap-2">
                         <Clock className="w-4 h-4" />
-                        Est. {vendor.established}
+                        {t("vendorDetail.established", { year: vendor.established })}
                       </div>
                       {vendor.websiteUrl && (
                         <div className="flex items-center gap-2">
                           <Globe className="w-4 h-4" />
                           <a href={vendor.websiteUrl} target="_blank" rel="noopener noreferrer" className="hover:text-primary hover:underline">
-                            Website
+                            {t("common.website")}
                           </a>
                         </div>
                       )}
                       <div className="flex items-center gap-2">
                         <Mail className="w-4 h-4" />
                         <a href={`mailto:${vendor.contactEmail}`} className="hover:text-primary hover:underline">
-                          Contact
+                          {t("common.contact")}
                         </a>
                       </div>
                     </div>
@@ -157,7 +159,7 @@ export default function VendorDetail() {
                       className="flex items-center gap-2 px-4 py-2 rounded-xl border border-border bg-secondary/50 text-sm font-semibold hover:bg-primary hover:text-primary-foreground hover:border-primary transition-all"
                     >
                       <MessageCircle className="w-4 h-4" />
-                      Message vendor
+                      {t("vendorDetail.messageVendor")}
                     </button>
                   )}
                 </div>
@@ -169,11 +171,11 @@ export default function VendorDetail() {
                 {/* Where to find us */}
                 {(vendor.marketsText || vendor.phone || vendor.instagramHandle || vendor.facebookUrl) && (
                   <div className="mt-12 p-6 bg-muted border border-border">
-                    <h3 className="font-serif font-bold text-xl mb-4">Where to find us</h3>
+                    <h3 className="font-serif font-bold text-xl mb-4">{t("vendorDetail.whereToFind")}</h3>
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                       {vendor.marketsText && (
                         <div>
-                          <h4 className="text-sm font-bold uppercase tracking-widest text-muted-foreground mb-3">Markets</h4>
+                          <h4 className="text-sm font-bold uppercase tracking-widest text-muted-foreground mb-3">{t("vendorDetail.markets")}</h4>
                           <ul className="space-y-2 text-sm">
                             {vendor.marketsText.split(',').map((market, idx) => (
                               <li key={idx} className="flex items-start gap-2">
@@ -185,7 +187,7 @@ export default function VendorDetail() {
                         </div>
                       )}
                       <div className="space-y-4">
-                        <h4 className="text-sm font-bold uppercase tracking-widest text-muted-foreground mb-3">Connect</h4>
+                        <h4 className="text-sm font-bold uppercase tracking-widest text-muted-foreground mb-3">{t("vendorDetail.connect")}</h4>
                         {vendor.phone && (
                           <a href={`tel:${vendor.phone}`} className="flex items-center gap-3 text-sm hover:text-primary transition-colors">
                             <Phone className="w-4 h-4" /> {vendor.phone}
@@ -198,7 +200,7 @@ export default function VendorDetail() {
                         )}
                         {vendor.facebookUrl && (
                           <a href={vendor.facebookUrl} target="_blank" rel="noopener noreferrer" className="flex items-center gap-3 text-sm hover:text-primary transition-colors">
-                            <Facebook className="w-4 h-4" /> Facebook
+                            <Facebook className="w-4 h-4" /> {t("common.facebook")}
                           </a>
                         )}
                       </div>
@@ -213,9 +215,9 @@ export default function VendorDetail() {
           <div className="container max-w-6xl mx-auto px-4 pb-24">
             <Tabs defaultValue="products" className="w-full">
               <TabsList className="mb-8">
-                <TabsTrigger value="products">Goods</TabsTrigger>
-                <TabsTrigger value="reviews">Reviews</TabsTrigger>
-                <TabsTrigger value="certifications">Certifications</TabsTrigger>
+                <TabsTrigger value="products">{t("vendorDetail.goods")}</TabsTrigger>
+                <TabsTrigger value="reviews">{t("vendorDetail.reviews")}</TabsTrigger>
+                <TabsTrigger value="certifications">{t("vendorDetail.certifications")}</TabsTrigger>
               </TabsList>
 
               <TabsContent value="reviews">
@@ -264,22 +266,22 @@ export default function VendorDetail() {
                           )}
                           {product.listingType === "batch_drop" && (
                             <div className="absolute top-2 left-2 bg-amber-100 text-amber-900 text-[10px] px-2 py-1 uppercase tracking-wider font-bold border border-amber-200">
-                              Fresh Batch
+                              {t("common.freshBatch")}
                             </div>
                           )}
                           {product.listingType === "surplus" && (
                             <div className="absolute top-2 left-2 bg-amber-100 text-amber-900 text-[10px] px-2 py-1 uppercase tracking-wider font-bold border border-amber-200">
-                              Market Surplus
+                              {t("common.marketSurplus")}
                             </div>
                           )}
                           {product.listingType === "pre_order" && (
                             <div className="absolute top-2 left-2 bg-blue-50 text-blue-900 text-[10px] px-2 py-1 uppercase tracking-wider font-bold border border-blue-200">
-                              Pre-Order
+                              {t("common.preOrder")}
                             </div>
                           )}
                           {!product.inStock && (
                             <div className="absolute bottom-2 right-2 bg-background/90 text-foreground text-xs px-2 py-1 uppercase tracking-wider font-bold">
-                              Sold Out
+                              {t("common.soldOut")}
                             </div>
                           )}
                         </div>
@@ -304,8 +306,8 @@ export default function VendorDetail() {
             ) : (
               <div className="text-center py-20 bg-muted/50 border border-border">
                 <Tag className="w-12 h-12 text-muted-foreground mx-auto mb-4 opacity-50" />
-                <h3 className="text-lg font-serif font-bold text-foreground mb-2">No goods listed</h3>
-                <p className="text-muted-foreground">This producer hasn't added any products yet.</p>
+                <h3 className="text-lg font-serif font-bold text-foreground mb-2">{t("vendorDetail.noGoods")}</h3>
+                <p className="text-muted-foreground">{t("vendorDetail.noGoodsDescription")}</p>
               </div>
             )}
               </TabsContent>

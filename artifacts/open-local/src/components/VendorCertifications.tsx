@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { useTranslation } from "react-i18next";
 import { BadgeCheck, Loader2 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 
@@ -9,6 +10,7 @@ interface Certification {
 }
 
 export default function VendorCertifications({ vendorId }: { vendorId: number }) {
+  const { t } = useTranslation();
   const { toast } = useToast();
   const [certifications, setCertifications] = useState<Certification[]>([]);
   const [loading, setLoading] = useState(true);
@@ -22,7 +24,7 @@ export default function VendorCertifications({ vendorId }: { vendorId: number })
         const data = await r.json();
         if (active) setCertifications(data.certifications);
       } catch (e) {
-        if (active) toast({ variant: "destructive", title: "Couldn't load certifications", description: (e as Error).message });
+        if (active) toast({ variant: "destructive", title: t("certifications.loadError"), description: (e as Error).message });
       } finally {
         if (active) setLoading(false);
       }
@@ -35,7 +37,7 @@ export default function VendorCertifications({ vendorId }: { vendorId: number })
   }
 
   if (certifications.length === 0) {
-    return <p className="text-sm text-muted-foreground">This producer hasn't earned any certifications yet.</p>;
+    return <p className="text-sm text-muted-foreground">{t("certifications.noItems")}</p>;
   }
 
   return (

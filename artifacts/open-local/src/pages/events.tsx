@@ -1,5 +1,6 @@
 import { useState, useMemo } from "react";
 import { motion, AnimatePresence } from "framer-motion";
+import { useTranslation } from "react-i18next";
 import { useListEvents, useCreateEvent, getListEventsQueryKey } from "@workspace/api-client-react";
 import { useSearchLogger } from "@/hooks/use-search-logger";
 import Layout from "@/components/layout/Layout";
@@ -81,25 +82,27 @@ const CATEGORY_COLORS: Record<string, string> = {
   "Fundraiser":        "bg-amber-100 text-amber-800",
 };
 
-const formSchema = z.object({
-  title: z.string().min(5, "Title must be at least 5 characters"),
-  description: z.string().min(20, "Please describe your event (min 20 chars)"),
-  category: z.string().min(1, "Please select a category"),
-  venueName: z.string().min(2, "Venue name is required"),
-  address: z.string().min(5, "Address is required"),
-  city: z.string().min(2, "City is required"),
-  state: z.string().length(2, "Please select a state"),
-  startsAt: z.string().min(1, "Start date & time is required"),
-  endsAt: z.string().optional(),
-  isFree: z.boolean().default(true),
-  priceDollars: z.coerce.number().min(0).optional(),
-  ticketUrl: z.string().url("Must be a valid URL").optional().or(z.literal("")),
-  imageUrl: z.string().url("Must be a valid URL").optional().or(z.literal("")),
-  organizerName: z.string().min(2, "Organizer name is required"),
-  organizerEmail: z.string().email("Valid email required"),
-});
+function makeFormSchema(t: (key: string) => string) {
+  return z.object({
+    title: z.string().min(5, t("events.validationTitle")),
+    description: z.string().min(20, t("events.validationDescription")),
+    category: z.string().min(1, t("events.validationCategory")),
+    venueName: z.string().min(2, t("events.validationVenue")),
+    address: z.string().min(5, t("events.validationAddress")),
+    city: z.string().min(2, t("events.validationCity")),
+    state: z.string().length(2, t("events.validationState")),
+    startsAt: z.string().min(1, t("events.validationStartsAt")),
+    endsAt: z.string().optional(),
+    isFree: z.boolean().default(true),
+    priceDollars: z.coerce.number().min(0).optional(),
+    ticketUrl: z.string().url(t("events.validationUrl")).optional().or(z.literal("")),
+    imageUrl: z.string().url(t("events.validationUrl")).optional().or(z.literal("")),
+    organizerName: z.string().min(2, t("events.validationOrganizerName")),
+    organizerEmail: z.string().email(t("events.validationEmail")),
+  });
+}
 
-type FormValues = z.infer<typeof formSchema>;
+type FormValues = z.infer<ReturnType<typeof makeFormSchema>>;
 
 function formatEventDate(startsAt: string, endsAt?: string | null) {
   const start = new Date(startsAt);
@@ -113,20 +116,20 @@ function formatEventDate(startsAt: string, endsAt?: string | null) {
   return { date: dateStr, time: startTime };
 }
 
-function getDayLabel(startsAt: string) {
+function getDayLabel(startsAt: string, t: (key: string, opts?: Record<string, unknown>) => string) {
   const start = new Date(startsAt);
   const now = new Date();
   const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
   const tomorrow = new Date(today); tomorrow.setDate(today.getDate() + 1);
   const eventDay = new Date(start.getFullYear(), start.getMonth(), start.getDate());
-  if (eventDay.getTime() === today.getTime()) return "Today";
-  if (eventDay.getTime() === tomorrow.getTime()) return "Tomorrow";
+  if (eventDay.getTime() === today.getTime()) return t("common.today");
+  if (eventDay.getTime() === tomorrow.getTime()) return t("events.tomorrow");
   const diffDays = Math.ceil((eventDay.getTime() - today.getTime()) / 86400000);
-  if (diffDays > 0 && diffDays <= 7) return `In ${diffDays} days`;
+  if (diffDays > 0 && diffDays <= 7) return t("events.inDays", { n: diffDays });
   return null;
 }
 
-function EventCard({ event, index }: {
+function EventCard({ event, index, t }: {
   event: {
     id: number; title: string; description: string; category: string;
     venueName: string; city: string; state: string; startsAt: string;
@@ -135,9 +138,10 @@ function EventCard({ event, index }: {
     featured: boolean;
   };
   index: number;
+  t: (key: string, opts?: Record<string, unknown>) => string;
 }) {
   const { date, time } = formatEventDate(event.startsAt, event.endsAt);
-  const dayLabel = getDayLabel(event.startsAt);
+  const dayLabel = getDayLabel(event.startsAt, t);
   const catColor = CATEGORY_COLORS[event.category] ?? "bg-gray-100 text-gray-700";
   const isPast = new Date(event.startsAt) < new Date();
 
@@ -163,7 +167,7 @@ function EventCard({ event, index }: {
         <div className="absolute top-3 left-3 flex gap-2">
           {event.featured && (
             <span className="inline-flex items-center gap-1 bg-amber-400 text-amber-950 text-xs font-bold px-2.5 py-1 rounded-full">
-              <Star className="w-3 h-3" /> Featured
+              <Star className="w-3 h-3" /> {t("common.featured")}
             </span>
           )}
           {dayLabel && (
@@ -173,13 +177,13 @@ function EventCard({ event, index }: {
           )}
           {isPast && (
             <span className="bg-muted/80 text-muted-foreground text-xs font-medium px-2.5 py-1 rounded-full">
-              Past event
+              {t("events.pastEvent")}
             </span>
           )}
         </div>
         <div className="absolute top-3 right-3">
           <span className={`text-xs font-semibold px-2.5 py-1 rounded-full ${event.isFree ? "bg-emerald-100 text-emerald-800" : "bg-background/90 text-foreground"}`}>
-            {event.isFree ? "Free" : event.priceCents ? `$${(event.priceCents / 100).toFixed(0)}` : "Paid"}
+            {event.isFree ? t("common.free") : event.priceCents ? `$${(event.priceCents / 100).toFixed(0)}` : t("common.paid")}
           </span>
         </div>
       </div>
@@ -212,7 +216,7 @@ function EventCard({ event, index }: {
           </div>
           <div className="flex items-center gap-2">
             <Users className="w-3.5 h-3.5 flex-shrink-0" />
-            <span>by {event.organizerName}</span>
+            <span>{t("events.by", { name: event.organizerName })}</span>
           </div>
         </div>
 
@@ -224,7 +228,7 @@ function EventCard({ event, index }: {
             className="inline-flex items-center gap-1.5 text-xs font-semibold text-primary hover:underline"
           >
             <Ticket className="w-3.5 h-3.5" />
-            Get tickets
+            {t("events.getTickets")}
             <ExternalLink className="w-3 h-3" />
           </a>
         )}
@@ -234,6 +238,7 @@ function EventCard({ event, index }: {
 }
 
 export default function Events() {
+  const { t } = useTranslation();
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
@@ -253,7 +258,7 @@ export default function Events() {
   const createEvent = useCreateEvent();
 
   const form = useForm<FormValues>({
-    resolver: zodResolver(formSchema),
+    resolver: zodResolver(makeFormSchema(t)),
     defaultValues: {
       title: "", description: "", category: "", venueName: "",
       address: "", city: "", state: "FL", startsAt: "", endsAt: "",
@@ -289,17 +294,19 @@ export default function Events() {
       {
         onSuccess: () => {
           queryClient.invalidateQueries({ queryKey: getListEventsQueryKey() });
-          toast({ title: "Event submitted!", description: "Your event is now live on the board." });
+          toast({ title: t("events.toastSubmitted"), description: t("events.toastSubmittedDescription") });
           setSubmitOpen(false);
           form.reset();
         },
-        onError: () => toast({ variant: "destructive", title: "Failed to submit event" }),
+        onError: () => toast({ variant: "destructive", title: t("events.toastSubmitFailed") }),
       },
     );
   };
 
   const featured = useMemo(() => (events ?? []).filter((e) => e.featured), [events]);
   const rest = useMemo(() => (events ?? []).filter((e) => !e.featured), [events]);
+
+  const n = (events ?? []).length;
 
   return (
     <Layout>
@@ -309,12 +316,12 @@ export default function Events() {
         <div className="relative container max-w-6xl mx-auto px-4 py-14">
           <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-6">
             <div>
-              <p className="text-xs font-bold uppercase tracking-widest text-primary-foreground/60 mb-3">Community Events</p>
+              <p className="text-xs font-bold uppercase tracking-widest text-primary-foreground/60 mb-3">{t("events.title")}</p>
               <h1 className="text-5xl font-serif font-bold text-primary-foreground leading-tight">
-                What's happening<br />near you
+                {t("events.subtitle")}
               </h1>
               <p className="text-primary-foreground/75 mt-3 max-w-lg font-sans text-lg">
-                Local markets, live music, pop-up shops, festivals, workshops — all in one place.
+                {t("events.description")}
               </p>
             </div>
             <Button
@@ -323,7 +330,7 @@ export default function Events() {
               className="flex-shrink-0 self-start sm:self-auto font-semibold"
             >
               <Plus className="w-4 h-4 mr-2" />
-              Submit an event
+              {t("events.submitEvent")}
             </Button>
           </div>
         </div>
@@ -335,7 +342,7 @@ export default function Events() {
           <div className="relative flex-1">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground pointer-events-none" />
             <Input
-              placeholder="Search events, venues, organizers…"
+              placeholder={t("events.searchPlaceholder")}
               value={search}
               onChange={(e) => setSearch(e.target.value)}
               className="pl-9"
@@ -344,23 +351,23 @@ export default function Events() {
           <Select value={categoryFilter} onValueChange={setCategoryFilter}>
             <SelectTrigger className="w-full sm:w-48">
               <Tag className="w-3.5 h-3.5 mr-1.5 text-muted-foreground" />
-              <SelectValue placeholder="Category" />
+              <SelectValue placeholder={t("events.allCategories")} />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="all">All categories</SelectItem>
+              <SelectItem value="all">{t("events.allCategories")}</SelectItem>
               {CATEGORIES.map((c) => <SelectItem key={c} value={c}>{c}</SelectItem>)}
             </SelectContent>
           </Select>
           <div className="flex gap-1 bg-muted border border-border rounded-lg p-1 flex-shrink-0">
-            {(["upcoming", "all"] as const).map((t) => (
+            {(["upcoming", "all"] as const).map((tab) => (
               <button
-                key={t}
-                onClick={() => setTimeFilter(t)}
+                key={tab}
+                onClick={() => setTimeFilter(tab)}
                 className={`px-3 py-1.5 rounded-md text-sm font-medium transition-colors capitalize ${
-                  timeFilter === t ? "bg-background text-foreground shadow-sm" : "text-muted-foreground hover:text-foreground"
+                  timeFilter === tab ? "bg-background text-foreground shadow-sm" : "text-muted-foreground hover:text-foreground"
                 }`}
               >
-                {t === "upcoming" ? "Upcoming" : "All events"}
+                {tab === "upcoming" ? t("events.upcoming") : t("events.allEvents")}
               </button>
             ))}
           </div>
@@ -368,7 +375,7 @@ export default function Events() {
 
         {/* Results count */}
         <p className="text-sm text-muted-foreground mb-6">
-          {isLoading ? "Loading…" : `${(events ?? []).length} event${(events ?? []).length !== 1 ? "s" : ""}`}
+          {isLoading ? t("common.loading") : t("events.eventCount", { n })}
         </p>
 
         {/* Loading */}
@@ -389,10 +396,10 @@ export default function Events() {
         {!isLoading && (events ?? []).length === 0 && (
           <div className="text-center py-24 text-muted-foreground">
             <CalendarDays className="w-12 h-12 mx-auto mb-4 opacity-25" />
-            <p className="text-lg font-medium">No events found.</p>
-            <p className="text-sm mt-1">Be the first to add one to the board.</p>
+            <p className="text-lg font-medium">{t("events.noEvents")}</p>
+            <p className="text-sm mt-1">{t("events.noEventsHint")}</p>
             <Button className="mt-6" onClick={() => setSubmitOpen(true)}>
-              <Plus className="w-4 h-4 mr-2" /> Submit an event
+              <Plus className="w-4 h-4 mr-2" /> {t("events.submitEvent")}
             </Button>
           </div>
         )}
@@ -402,11 +409,11 @@ export default function Events() {
           <div className="mb-10">
             <div className="flex items-center gap-2 mb-4">
               <Star className="w-4 h-4 text-amber-500 fill-amber-400" />
-              <h2 className="text-sm font-bold uppercase tracking-widest text-muted-foreground">Featured Events</h2>
+              <h2 className="text-sm font-bold uppercase tracking-widest text-muted-foreground">{t("events.featuredEvents")}</h2>
             </div>
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
               <AnimatePresence>
-                {featured.map((event, i) => <EventCard key={event.id} event={event} index={i} />)}
+                {featured.map((event, i) => <EventCard key={event.id} event={event} index={i} t={t} />)}
               </AnimatePresence>
             </div>
           </div>
@@ -416,11 +423,11 @@ export default function Events() {
         {!isLoading && rest.length > 0 && (
           <div>
             {featured.length > 0 && (
-              <h2 className="text-sm font-bold uppercase tracking-widest text-muted-foreground mb-4">All Events</h2>
+              <h2 className="text-sm font-bold uppercase tracking-widest text-muted-foreground mb-4">{t("events.allEvents")}</h2>
             )}
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
               <AnimatePresence>
-                {rest.map((event, i) => <EventCard key={event.id} event={event} index={i} />)}
+                {rest.map((event, i) => <EventCard key={event.id} event={event} index={i} t={t} />)}
               </AnimatePresence>
             </div>
           </div>
@@ -431,9 +438,9 @@ export default function Events() {
       <Dialog open={submitOpen} onOpenChange={setSubmitOpen}>
         <DialogContent className="max-w-lg max-h-[90vh] overflow-y-auto">
           <DialogHeader>
-            <DialogTitle className="font-serif text-2xl">Submit a Community Event</DialogTitle>
+            <DialogTitle className="font-serif text-2xl">{t("events.formTitle")}</DialogTitle>
             <DialogDescription>
-              Share a local gathering, market, show, or workshop with the community.
+              {t("events.formSubtitle")}
             </DialogDescription>
           </DialogHeader>
 
@@ -442,8 +449,8 @@ export default function Events() {
               {/* Title */}
               <FormField control={form.control} name="title" render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Event title</FormLabel>
-                  <FormControl><Input placeholder="Sunday Farmers Market at Riverside Park" {...field} /></FormControl>
+                  <FormLabel>{t("events.fieldTitle")}</FormLabel>
+                  <FormControl><Input placeholder={t("events.fieldTitlePlaceholder")} {...field} /></FormControl>
                   <FormMessage />
                 </FormItem>
               )} />
@@ -451,8 +458,8 @@ export default function Events() {
               {/* Description */}
               <FormField control={form.control} name="description" render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Description</FormLabel>
-                  <FormControl><Textarea placeholder="Tell people what to expect…" rows={3} {...field} /></FormControl>
+                  <FormLabel>{t("events.fieldDescription")}</FormLabel>
+                  <FormControl><Textarea placeholder={t("events.fieldDescriptionPlaceholder")} rows={3} {...field} /></FormControl>
                   <FormMessage />
                 </FormItem>
               )} />
@@ -460,9 +467,9 @@ export default function Events() {
               {/* Category */}
               <FormField control={form.control} name="category" render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Category</FormLabel>
+                  <FormLabel>{t("events.fieldCategory")}</FormLabel>
                   <Select onValueChange={field.onChange} value={field.value}>
-                    <FormControl><SelectTrigger><SelectValue placeholder="Select category" /></SelectTrigger></FormControl>
+                    <FormControl><SelectTrigger><SelectValue placeholder={t("events.fieldCategoryPlaceholder")} /></SelectTrigger></FormControl>
                     <SelectContent>
                       {CATEGORIES.map((c) => <SelectItem key={c} value={c}>{c}</SelectItem>)}
                     </SelectContent>
@@ -475,14 +482,14 @@ export default function Events() {
               <div className="grid grid-cols-2 gap-3">
                 <FormField control={form.control} name="startsAt" render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Start date & time</FormLabel>
+                    <FormLabel>{t("events.fieldStartDateTime")}</FormLabel>
                     <FormControl><Input type="datetime-local" {...field} /></FormControl>
                     <FormMessage />
                   </FormItem>
                 )} />
                 <FormField control={form.control} name="endsAt" render={({ field }) => (
                   <FormItem>
-                    <FormLabel>End time (optional)</FormLabel>
+                    <FormLabel>{t("events.fieldEndTime")}</FormLabel>
                     <FormControl><Input type="datetime-local" {...field} /></FormControl>
                     <FormMessage />
                   </FormItem>
@@ -492,16 +499,16 @@ export default function Events() {
               {/* Venue */}
               <FormField control={form.control} name="venueName" render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Venue name</FormLabel>
-                  <FormControl><Input placeholder="Riverside Park Pavilion" {...field} /></FormControl>
+                  <FormLabel>{t("events.fieldVenue")}</FormLabel>
+                  <FormControl><Input placeholder={t("events.fieldVenuePlaceholder")} {...field} /></FormControl>
                   <FormMessage />
                 </FormItem>
               )} />
 
               <FormField control={form.control} name="address" render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Address</FormLabel>
-                  <FormControl><Input placeholder="123 Main St" {...field} /></FormControl>
+                  <FormLabel>{t("events.fieldAddress")}</FormLabel>
+                  <FormControl><Input placeholder={t("events.fieldAddressPlaceholder")} {...field} /></FormControl>
                   <FormMessage />
                 </FormItem>
               )} />
@@ -509,14 +516,14 @@ export default function Events() {
               <div className="grid grid-cols-2 gap-3">
                 <FormField control={form.control} name="city" render={({ field }) => (
                   <FormItem>
-                    <FormLabel>City</FormLabel>
-                    <FormControl><Input placeholder="Tampa" {...field} /></FormControl>
+                    <FormLabel>{t("events.fieldCity")}</FormLabel>
+                    <FormControl><Input placeholder={t("events.fieldCityPlaceholder")} {...field} /></FormControl>
                     <FormMessage />
                   </FormItem>
                 )} />
                 <FormField control={form.control} name="state" render={({ field }) => (
                   <FormItem>
-                    <FormLabel>State</FormLabel>
+                    <FormLabel>{t("events.fieldState")}</FormLabel>
                     <Select onValueChange={field.onChange} value={field.value}>
                       <FormControl><SelectTrigger><SelectValue placeholder="FL" /></SelectTrigger></FormControl>
                       <SelectContent>
@@ -533,7 +540,7 @@ export default function Events() {
                 <FormField control={form.control} name="isFree" render={({ field }) => (
                   <FormItem className="flex items-center justify-between">
                     <div>
-                      <FormLabel className="text-base">Free admission</FormLabel>
+                      <FormLabel className="text-base">{t("events.fieldFreeAdmission")}</FormLabel>
                     </div>
                     <FormControl><Switch checked={field.value} onCheckedChange={field.onChange} /></FormControl>
                   </FormItem>
@@ -542,7 +549,7 @@ export default function Events() {
                 {!watchIsFree && (
                   <FormField control={form.control} name="priceDollars" render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Ticket price ($)</FormLabel>
+                      <FormLabel>{t("events.fieldTicketPrice")}</FormLabel>
                       <FormControl><Input type="number" step="0.01" min="0" placeholder="15.00" {...field} /></FormControl>
                       <FormMessage />
                     </FormItem>
@@ -551,7 +558,7 @@ export default function Events() {
 
                 <FormField control={form.control} name="ticketUrl" render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Ticket / RSVP link (optional)</FormLabel>
+                    <FormLabel>{t("events.fieldTicketUrl")}</FormLabel>
                     <FormControl><Input placeholder="https://eventbrite.com/..." {...field} /></FormControl>
                     <FormMessage />
                   </FormItem>
@@ -561,7 +568,7 @@ export default function Events() {
               {/* Image */}
               <FormField control={form.control} name="imageUrl" render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Event image URL (optional)</FormLabel>
+                  <FormLabel>{t("events.fieldImageUrl")}</FormLabel>
                   <FormControl><Input placeholder="https://..." {...field} /></FormControl>
                   <FormMessage />
                 </FormItem>
@@ -571,14 +578,14 @@ export default function Events() {
               <div className="grid grid-cols-2 gap-3">
                 <FormField control={form.control} name="organizerName" render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Organizer name</FormLabel>
-                    <FormControl><Input placeholder="Open Local Community" {...field} /></FormControl>
+                    <FormLabel>{t("events.fieldOrganizerName")}</FormLabel>
+                    <FormControl><Input placeholder={t("events.fieldOrganizerNamePlaceholder")} {...field} /></FormControl>
                     <FormMessage />
                   </FormItem>
                 )} />
                 <FormField control={form.control} name="organizerEmail" render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Contact email</FormLabel>
+                    <FormLabel>{t("events.fieldContactEmail")}</FormLabel>
                     <FormControl><Input type="email" placeholder="hello@example.com" {...field} /></FormControl>
                     <FormMessage />
                   </FormItem>
@@ -586,7 +593,7 @@ export default function Events() {
               </div>
 
               <Button type="submit" className="w-full" disabled={createEvent.isPending}>
-                {createEvent.isPending ? "Submitting…" : "Submit Event"}
+                {createEvent.isPending ? t("events.submitting") : t("events.submitEventBtn")}
               </Button>
             </form>
           </Form>

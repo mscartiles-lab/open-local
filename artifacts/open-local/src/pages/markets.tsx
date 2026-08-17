@@ -1,5 +1,6 @@
 import { useState, lazy, Suspense } from "react";
 import { Link } from "wouter";
+import { useTranslation } from "react-i18next";
 import Layout from "@/components/layout/Layout";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -40,6 +41,7 @@ const DAYS = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"
 const REGIONS = ["FL", "GA", "AL", "SC"];
 
 function MarketCard({ market }: { market: Market }) {
+  const { t } = useTranslation();
   const detailHref = market.slug ? `/markets/${market.slug}` : null;
 
   return (
@@ -143,7 +145,7 @@ function MarketCard({ market }: { market: Market }) {
                 className="inline-flex items-center gap-1 text-[11px] text-primary hover:underline"
               >
                 <Mail className="h-3 w-3" />
-                Apply
+                {t("common.apply")}
               </a>
             )}
           </div>
@@ -151,7 +153,7 @@ function MarketCard({ market }: { market: Market }) {
           {detailHref ? (
             <Link href={detailHref}>
               <Button variant="outline" size="sm" className="h-7 text-xs gap-1">
-                View Market <ArrowRight className="w-3 h-3" />
+                {t("markets.viewMarket")} <ArrowRight className="w-3 h-3" />
               </Button>
             </Link>
           ) : (
@@ -189,6 +191,7 @@ function MarketCard({ market }: { market: Market }) {
 type ViewMode = "list" | "map";
 
 export default function MarketsPage() {
+  const { t } = useTranslation();
   const [search, setSearch] = useState("");
   const [dayFilter, setDayFilter] = useState("all");
   const [regionFilter, setRegionFilter] = useState("all");
@@ -219,18 +222,18 @@ export default function MarketsPage() {
         <div className="relative container max-w-6xl mx-auto px-4 py-14">
           <div className="inline-flex items-center gap-1.5 bg-amber-500/20 border border-amber-500/30 text-amber-300 text-xs font-bold px-3 py-1 rounded-full uppercase tracking-wider mb-5">
             <MapPin className="w-3 h-3" />
-            Florida Farmers Markets
+            {t("markets.title")}
           </div>
           <h1 className="text-5xl font-serif font-bold text-white mb-3">
-            Farmers Market Directory
+            {t("markets.subtitle")}
           </h1>
           <p className="text-green-200 text-lg max-w-xl mb-8 leading-relaxed">
-            Find a farmers market near you — browse by day, city, or region and discover where local growers and makers gather every week.
+            {t("markets.searchPlaceholder")}
           </p>
           <div className="flex flex-col sm:flex-row gap-3">
             <Link href="/markets/register">
               <Button className="gap-2 bg-amber-500 hover:bg-amber-400 text-white font-bold px-6">
-                Register Your Market
+                {t("markets.registerMarket")}
                 <ArrowRight className="w-4 h-4" />
               </Button>
             </Link>
@@ -244,7 +247,7 @@ export default function MarketsPage() {
           <div className="relative flex-1 min-w-0">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground pointer-events-none" />
             <Input
-              placeholder="Search by name or city…"
+              placeholder={t("markets.searchByName")}
               value={search}
               onChange={(e) => setSearch(e.target.value)}
               className="pl-9"
@@ -256,7 +259,7 @@ export default function MarketsPage() {
               <SelectValue placeholder="Day" />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="all">All days</SelectItem>
+              <SelectItem value="all">{t("markets.allDays")}</SelectItem>
               {DAYS.map((d) => <SelectItem key={d} value={d}>{d}</SelectItem>)}
             </SelectContent>
           </Select>
@@ -265,7 +268,7 @@ export default function MarketsPage() {
               <SelectValue placeholder="Region" />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="all">All regions</SelectItem>
+              <SelectItem value="all">{t("markets.allRegions")}</SelectItem>
               {REGIONS.map((r) => <SelectItem key={r} value={r}>{r}</SelectItem>)}
             </SelectContent>
           </Select>
@@ -282,7 +285,7 @@ export default function MarketsPage() {
               )}
             >
               <LayoutGrid className="w-3.5 h-3.5" />
-              List
+              {t("common.list")}
             </button>
             <button
               onClick={() => setViewMode("map")}
@@ -294,7 +297,7 @@ export default function MarketsPage() {
               )}
             >
               <Map className="w-3.5 h-3.5" />
-              Map
+              {t("common.map")}
             </button>
           </div>
         </div>
@@ -311,14 +314,14 @@ export default function MarketsPage() {
         ) : markets.length === 0 ? (
           <div className="py-24 text-center">
             <Store className="w-14 h-14 text-muted-foreground/30 mx-auto mb-4" />
-            <h3 className="font-semibold text-foreground text-lg mb-2">No markets found</h3>
+            <h3 className="font-semibold text-foreground text-lg mb-2">{t("markets.noMarketsFound")}</h3>
             <p className="text-muted-foreground text-sm max-w-xs mx-auto mb-6">
               {search || dayFilter !== "all" || regionFilter !== "all"
-                ? "No markets match your filters. Try adjusting your search."
-                : "No markets are listed yet. Be the first to register yours."}
+                ? t("markets.noMarketsMatch")
+                : t("markets.noMarketsYet")}
             </p>
             <Link href="/markets/register">
-              <Button className="gap-2">Register Your Market <ArrowRight className="w-4 h-4" /></Button>
+              <Button className="gap-2">{t("markets.registerMarket")} <ArrowRight className="w-4 h-4" /></Button>
             </Link>
           </div>
         ) : viewMode === "map" ? (
@@ -328,7 +331,7 @@ export default function MarketsPage() {
         ) : (
           <>
             <p className="text-sm text-muted-foreground mb-4">
-              {markets.length} market{markets.length !== 1 ? "s" : ""}
+              {t("markets.marketCount", { n: markets.length })}
             </p>
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
               {markets.map((m: Market) => <MarketCard key={m.id} market={m} />)}
@@ -342,14 +345,14 @@ export default function MarketsPage() {
           "flex flex-col sm:flex-row items-start sm:items-center gap-4",
         )}>
           <div className="flex-1">
-            <p className="font-semibold text-[#1a1a1a] text-sm">Is your market missing?</p>
+            <p className="font-semibold text-[#1a1a1a] text-sm">{t("markets.isYourMarketMissing")}</p>
             <p className="text-xs text-muted-foreground mt-0.5 leading-relaxed">
-              Register your farmers market for free. We'll review your submission within 1–2 business days and add it to the directory.
+              {t("markets.registerDescription")}
             </p>
           </div>
           <Link href="/markets/register">
             <Button className="gap-1.5 whitespace-nowrap">
-              Register for free <ArrowRight className="w-3.5 h-3.5" />
+              {t("markets.registerFree")} <ArrowRight className="w-3.5 h-3.5" />
             </Button>
           </Link>
         </div>

@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { useTranslation } from "react-i18next";
 import { Loader2, ShoppingBag, CheckCircle2, Clock, XCircle, RefreshCcw } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { cn } from "@/lib/utils";
@@ -27,10 +28,10 @@ interface VendorOrder {
 }
 
 const STATUS_META = {
-  paid: { label: "Paid", icon: CheckCircle2, className: "text-emerald-600" },
-  pending: { label: "Pending", icon: Clock, className: "text-amber-500" },
-  refunded: { label: "Refunded", icon: RefreshCcw, className: "text-muted-foreground" },
-  cancelled: { label: "Cancelled", icon: XCircle, className: "text-muted-foreground" },
+  paid: { labelKey: "orders.statusPaid", icon: CheckCircle2, className: "text-emerald-600" },
+  pending: { labelKey: "orders.statusPending", icon: Clock, className: "text-amber-500" },
+  refunded: { labelKey: "orders.statusRefunded", icon: RefreshCcw, className: "text-muted-foreground" },
+  cancelled: { labelKey: "orders.statusCancelled", icon: XCircle, className: "text-muted-foreground" },
 };
 
 function formatCents(cents: number) {
@@ -38,6 +39,7 @@ function formatCents(cents: number) {
 }
 
 export default function VendorOrdersPanel({ vendorId }: { vendorId: number }) {
+  const { t } = useTranslation();
   const [orders, setOrders] = useState<VendorOrder[] | null>(null);
   const [loading, setLoading] = useState(true);
   const [forbidden, setForbidden] = useState(false);
@@ -61,7 +63,7 @@ export default function VendorOrdersPanel({ vendorId }: { vendorId: number }) {
       <CardContent className="p-6">
         <div className="flex items-center gap-2 mb-5">
           <ShoppingBag className="w-5 h-5 text-primary" />
-          <h2 className="font-serif text-xl font-bold">Orders received</h2>
+          <h2 className="font-serif text-xl font-bold">{t("orders.ordersReceived")}</h2>
           {orders && orders.length > 0 && (
             <span className="ml-1 text-xs bg-primary text-primary-foreground rounded-full px-2 py-0.5 font-semibold">
               {orders.length}
@@ -76,19 +78,19 @@ export default function VendorOrdersPanel({ vendorId }: { vendorId: number }) {
         ) : !orders || orders.length === 0 ? (
           <div className="flex flex-col items-center gap-2 py-8 text-muted-foreground">
             <ShoppingBag className="w-8 h-8 opacity-30" />
-            <p className="text-sm">No orders yet. Set up payouts above to start accepting card payments.</p>
+            <p className="text-sm">{t("orders.noOrders")}</p>
           </div>
         ) : (
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
               <thead>
                 <tr className="border-b border-border text-left text-xs text-muted-foreground">
-                  <th className="pb-2 pr-4 font-medium">Order</th>
-                  <th className="pb-2 pr-4 font-medium">Customer</th>
-                  <th className="pb-2 pr-4 font-medium">Amount</th>
-                  <th className="pb-2 pr-4 font-medium">Your payout</th>
-                  <th className="pb-2 pr-4 font-medium">Status</th>
-                  <th className="pb-2 font-medium">Date</th>
+                  <th className="pb-2 pr-4 font-medium">{t("orders.colOrder")}</th>
+                  <th className="pb-2 pr-4 font-medium">{t("orders.colCustomer")}</th>
+                  <th className="pb-2 pr-4 font-medium">{t("orders.colAmount")}</th>
+                  <th className="pb-2 pr-4 font-medium">{t("orders.colPayout")}</th>
+                  <th className="pb-2 pr-4 font-medium">{t("orders.colStatus")}</th>
+                  <th className="pb-2 font-medium">{t("orders.colDate")}</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-border">
@@ -116,7 +118,7 @@ export default function VendorOrdersPanel({ vendorId }: { vendorId: number }) {
                       <td className="py-3 pr-4">
                         <span className={cn("flex items-center gap-1 text-xs font-medium", meta.className)}>
                           <StatusIcon className="w-3.5 h-3.5" />
-                          {meta.label}
+                          {t(meta.labelKey)}
                         </span>
                       </td>
                       <td className="py-3 text-xs text-muted-foreground whitespace-nowrap">

@@ -1,5 +1,6 @@
 "use client";
 import { useEffect, useRef, useState } from "react";
+import { useTranslation } from "react-i18next";
 import "leaflet/dist/leaflet.css";
 import L from "leaflet";
 import { MapContainer, TileLayer, Marker, useMapEvents } from "react-leaflet";
@@ -57,6 +58,7 @@ async function geocode(query: string): Promise<[number, number] | null> {
 }
 
 export function LocationPicker({ onChange, hint, initialLat, initialLng }: Props) {
+  const { t } = useTranslation();
   const [position, setPosition] = useState<[number, number] | null>(
     initialLat != null && initialLng != null ? [initialLat, initialLng] : null,
   );
@@ -130,7 +132,7 @@ export function LocationPicker({ onChange, hint, initialLat, initialLng }: Props
           className="gap-1.5 text-xs"
         >
           <LocateFixed className="w-3.5 h-3.5" />
-          {locating ? "Locating…" : "Use my location"}
+          {locating ? t("locationPicker.locating") : t("locationPicker.useMyLocation")}
         </Button>
         {hint && hint.trim().length > 0 && (
           <Button
@@ -142,7 +144,7 @@ export function LocationPicker({ onChange, hint, initialLat, initialLng }: Props
             className="gap-1.5 text-xs"
           >
             <Search className="w-3.5 h-3.5" />
-            {geocoding ? "Finding…" : "Find on map from address"}
+            {geocoding ? t("locationPicker.finding") : t("locationPicker.findOnMap")}
           </Button>
         )}
         {position && (
@@ -157,7 +159,7 @@ export function LocationPicker({ onChange, hint, initialLat, initialLng }: Props
         {!position && (
           <div className="absolute inset-0 z-10 pointer-events-none flex items-end justify-center pb-4">
             <p className="text-xs bg-background/90 text-foreground rounded-full px-3 py-1.5 shadow-sm border border-border">
-              Click the map or use "Find on map" to drop your pin
+              {t("locationPicker.clickMapHint")}
             </p>
           </div>
         )}
@@ -183,7 +185,7 @@ export function LocationPicker({ onChange, hint, initialLat, initialLng }: Props
       </div>
 
       <p className="text-xs text-muted-foreground">
-        Drag the pin or click anywhere on the map to adjust your exact location.
+        {t("locationPicker.dragHint")}
       </p>
     </div>
   );

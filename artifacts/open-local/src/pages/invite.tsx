@@ -3,6 +3,7 @@ import { Leaf, Mail, User, CheckCircle2, ArrowRight, Loader2 } from "lucide-reac
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { useTranslation } from "react-i18next";
 
 const BASE = import.meta.env.BASE_URL.replace(/\/$/, "");
 
@@ -23,6 +24,7 @@ export default function InvitePage() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
+  const { t } = useTranslation();
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -33,7 +35,7 @@ export default function InvitePage() {
       const res = await submitRequest(email.trim(), name.trim());
       setSuccess(res.message);
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Something went wrong");
+      setError(err instanceof Error ? err.message : t("invite.genericError"));
     } finally {
       setLoading(false);
     }
@@ -58,16 +60,16 @@ export default function InvitePage() {
               <div className="w-20 h-20 rounded-full bg-[#3c4a26]/10 flex items-center justify-center mx-auto mb-6">
                 <CheckCircle2 className="w-10 h-10 text-[#3c4a26]" />
               </div>
-              <h1 className="text-3xl font-bold text-[#1a1a1a] mb-3">You're in!</h1>
+              <h1 className="text-3xl font-bold text-[#1a1a1a] mb-3">{t("invite.successTitle")}</h1>
               <p className="text-[#555] text-lg leading-relaxed mb-8">{success}</p>
               <p className="text-sm text-[#888]">
-                In the meantime, explore what local producers are already on the platform.
+                {t("invite.exploreDescription")}
               </p>
               <a
                 href="/"
                 className="inline-flex items-center gap-2 mt-6 text-[#3c4a26] font-semibold hover:underline"
               >
-                Browse producers <ArrowRight className="w-4 h-4" />
+                {t("invite.browseProducers")} <ArrowRight className="w-4 h-4" />
               </a>
             </div>
           ) : (
@@ -75,29 +77,27 @@ export default function InvitePage() {
             <>
               <div className="mb-10">
                 <div className="inline-flex items-center gap-2 bg-[#3c4a26] text-white text-xs font-bold tracking-widest px-3 py-1.5 rounded-full mb-6 uppercase">
-                  <Leaf className="w-3 h-3" /> Invitation
+                  <Leaf className="w-3 h-3" /> {t("invite.invitationBadge")}
                 </div>
                 <h1 className="text-4xl font-bold text-[#1a1a1a] leading-tight mb-4">
-                  Join Open Local
+                  {t("invite.title")}
                 </h1>
                 <p className="text-[#555] text-lg leading-relaxed">
-                  Florida's marketplace for local bakers, farms, makers, brewers,
-                  florists, and more. Enter your email and we'll send you an invitation
-                  to create your account.
+                  {t("invite.description")}
                 </p>
               </div>
 
               <form onSubmit={handleSubmit} className="space-y-5">
                 <div className="space-y-2">
                   <Label htmlFor="name" className="text-sm font-medium text-[#333]">
-                    Your name <span className="text-[#999] font-normal">(optional)</span>
+                    {t("invite.yourName")} <span className="text-[#999] font-normal">{t("invite.optional")}</span>
                   </Label>
                   <div className="relative">
                     <User className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[#999]" />
                     <Input
                       id="name"
                       type="text"
-                      placeholder="Jane Smith"
+                      placeholder={t("invite.namePlaceholder")}
                       value={name}
                       onChange={(e) => setName(e.target.value)}
                       className="pl-9 h-12 border-[#d4cfc6] bg-white focus:border-[#3c4a26] focus:ring-[#3c4a26]/20"
@@ -108,14 +108,14 @@ export default function InvitePage() {
 
                 <div className="space-y-2">
                   <Label htmlFor="email" className="text-sm font-medium text-[#333]">
-                    Email address <span className="text-red-500">*</span>
+                    {t("invite.emailAddress")} <span className="text-red-500">*</span>
                   </Label>
                   <div className="relative">
                     <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[#999]" />
                     <Input
                       id="email"
                       type="email"
-                      placeholder="you@example.com"
+                      placeholder={t("invite.emailPlaceholder")}
                       value={email}
                       onChange={(e) => setEmail(e.target.value)}
                       required
@@ -138,17 +138,17 @@ export default function InvitePage() {
                 >
                   {loading ? (
                     <span className="flex items-center gap-2">
-                      <Loader2 className="w-4 h-4 animate-spin" /> Sending…
+                      <Loader2 className="w-4 h-4 animate-spin" /> {t("invite.sending")}
                     </span>
                   ) : (
                     <span className="flex items-center gap-2">
-                      Send my invitation <ArrowRight className="w-4 h-4" />
+                      {t("invite.sendInvitation")} <ArrowRight className="w-4 h-4" />
                     </span>
                   )}
                 </Button>
 
                 <p className="text-xs text-center text-[#999] leading-relaxed">
-                  We'll send you a link to create your account. No spam — ever.
+                  {t("invite.spamNotice")}
                 </p>
               </form>
             </>

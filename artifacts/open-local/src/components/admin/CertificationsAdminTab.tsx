@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { Loader2, CheckCircle2, XCircle, ExternalLink } from "lucide-react";
+import { useTranslation } from "react-i18next";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import {
@@ -39,6 +40,7 @@ const STATUS_BADGES: Record<string, string> = {
 };
 
 export default function CertificationsAdminTab() {
+  const { t } = useTranslation();
   const { toast } = useToast();
   const [rows, setRows] = useState<AdminCertification[] | null>(null);
   const [loading, setLoading] = useState(true);
@@ -51,7 +53,7 @@ export default function CertificationsAdminTab() {
     try {
       const r = await fetch("/api/admin/certifications", { headers: authHeaders() });
       if (r.status === 401 || r.status === 403) {
-        setError("Admin access required. Make sure you're signed in with an admin account.");
+        setError(t("admin.adminAccessRequired"));
         setRows(null);
         return;
       }
@@ -78,10 +80,10 @@ export default function CertificationsAdminTab() {
         body: JSON.stringify({ action }),
       });
       if (!r.ok) throw new Error(`HTTP ${r.status}`);
-      toast({ title: action === "approve" ? "Certification approved" : "Certification rejected" });
+      toast({ title: action === "approve" ? t("admin.certApproved") : t("admin.certRejected") });
       await reload();
     } catch (e) {
-      toast({ variant: "destructive", title: "Failed to update", description: (e as Error).message });
+      toast({ variant: "destructive", title: t("admin.certUpdateFailed"), description: (e as Error).message });
     } finally {
       setBusyId(null);
     }
@@ -107,12 +109,12 @@ export default function CertificationsAdminTab() {
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead>Vendor ID</TableHead>
-                  <TableHead>Certification</TableHead>
-                  <TableHead>Document</TableHead>
-                  <TableHead>Status</TableHead>
-                  <TableHead>Requested</TableHead>
-                  <TableHead className="text-right">Actions</TableHead>
+                  <TableHead>{t("admin.certColVendorId")}</TableHead>
+                  <TableHead>{t("admin.certColCertification")}</TableHead>
+                  <TableHead>{t("admin.certColDocument")}</TableHead>
+                  <TableHead>{t("admin.certColStatus")}</TableHead>
+                  <TableHead>{t("admin.certColRequested")}</TableHead>
+                  <TableHead className="text-right">{t("admin.colActions")}</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -128,10 +130,10 @@ export default function CertificationsAdminTab() {
                           rel="noopener noreferrer"
                           className="inline-flex items-center gap-1 text-sm text-primary hover:underline"
                         >
-                          View <ExternalLink className="w-3 h-3" />
+                          {t("admin.certView")} <ExternalLink className="w-3 h-3" />
                         </a>
                       ) : (
-                        <span className="text-xs text-muted-foreground">None</span>
+                        <span className="text-xs text-muted-foreground">{t("admin.certNone")}</span>
                       )}
                     </TableCell>
                     <TableCell>
@@ -152,7 +154,7 @@ export default function CertificationsAdminTab() {
                             disabled={busyId === c.id}
                           >
                             <CheckCircle2 className="w-4 h-4 mr-1 text-emerald-600" />
-                            Approve
+                            {t("admin.certApprove")}
                           </Button>
                           <Button
                             variant="ghost"
@@ -161,7 +163,7 @@ export default function CertificationsAdminTab() {
                             disabled={busyId === c.id}
                           >
                             <XCircle className="w-4 h-4 mr-1 text-red-600" />
-                            Reject
+                            {t("admin.certReject")}
                           </Button>
                         </div>
                       ) : (
@@ -177,7 +179,7 @@ export default function CertificationsAdminTab() {
           </div>
         ) : (
           <div className="text-center py-12 text-muted-foreground">
-            No certification requests yet.
+            {t("admin.noCertifications")}
           </div>
         )}
       </CardContent>

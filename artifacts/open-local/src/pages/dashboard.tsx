@@ -38,6 +38,7 @@ import {
   Box,
   Pencil,
 } from "lucide-react";
+import { useTranslation } from "react-i18next";
 import { useUser } from "@/context/UserContext";
 import { FEATURE_BOOST_PRICE, FEATURE_BOOST_DURATION_DAYS, TIER_PHOTO_LIMIT, TIER_VIDEO_LIMIT, type TierId } from "@/lib/tiers";
 import Layout from "@/components/layout/Layout";
@@ -89,6 +90,7 @@ const SESSION_OTP_KEY = "ol_dashboard_verified";
 // ─── Dashboard OTP gate ──────────────────────────────────────────────────────
 
 function DashboardOtpGate({ onVerified }: { onVerified: () => void }) {
+  const { t } = useTranslation();
   const { toast } = useToast();
   const [phase, setPhase] = useState<"idle" | "sending" | "sent" | "verifying">("idle");
   const [code, setCode] = useState("");
@@ -118,10 +120,10 @@ function DashboardOtpGate({ onVerified }: { onVerified: () => void }) {
       setDevCode(data.devCode ?? null);
       setPhase("sent");
     } catch {
-      setError("Network error. Please try again.");
+      setError(t("common.somethingWentWrong"));
       setPhase("idle");
     }
-  }, [sessionToken]);
+  }, [sessionToken, t]);
 
   useEffect(() => { sendCode(); }, []);
 
@@ -144,10 +146,10 @@ function DashboardOtpGate({ onVerified }: { onVerified: () => void }) {
       sessionStorage.setItem(SESSION_OTP_KEY, "1");
       onVerified();
     } catch {
-      setError("Network error. Please try again.");
+      setError(t("common.somethingWentWrong"));
       setPhase("sent");
     }
-  }, [sessionToken, code, onVerified]);
+  }, [sessionToken, code, onVerified, t]);
 
   return (
     <Layout>
@@ -159,10 +161,10 @@ function DashboardOtpGate({ onVerified }: { onVerified: () => void }) {
             </div>
           </div>
           <div>
-            <h1 className="font-serif text-2xl font-bold text-foreground">Dashboard access</h1>
+            <h1 className="font-serif text-2xl font-bold text-foreground">{t("dashboard.dashboardAccess")}</h1>
             <p className="mt-1 text-sm text-muted-foreground">
               {phase === "idle" || phase === "sending"
-                ? "Sending a verification code to your email…"
+                ? t("dashboard.sendingCode")
                 : `We sent a 6-digit code to ${email}`}
             </p>
           </div>
@@ -177,7 +179,7 @@ function DashboardOtpGate({ onVerified }: { onVerified: () => void }) {
             <div className="space-y-3">
               {devCode && (
                 <div className="rounded-md bg-amber-50 border border-amber-200 px-4 py-2 text-sm text-amber-800">
-                  <strong>Dev mode</strong> — code is{" "}
+                  <strong>{t("dashboard.devMode")}</strong> — code is{" "}
                   <span className="font-mono font-bold text-lg tracking-widest">{devCode}</span>
                 </div>
               )}
@@ -185,7 +187,7 @@ function DashboardOtpGate({ onVerified }: { onVerified: () => void }) {
                 type="text"
                 inputMode="numeric"
                 maxLength={6}
-                placeholder="Enter 6-digit code"
+                placeholder={t("dashboard.enterCode")}
                 value={code}
                 onChange={(e) => { setCode(e.target.value.replace(/\D/g, "").slice(0, 6)); setError(""); }}
                 onKeyDown={(e) => e.key === "Enter" && verify()}
@@ -194,7 +196,7 @@ function DashboardOtpGate({ onVerified }: { onVerified: () => void }) {
               />
               {error && <p className="text-sm text-destructive">{error}</p>}
               <Button onClick={verify} className="w-full" disabled={code.length < 6 || phase === "verifying"}>
-                {phase === "verifying" ? <><Loader2 className="mr-2 h-4 w-4 animate-spin" />Verifying…</> : <><Lock className="mr-2 h-4 w-4" />Enter dashboard</>}
+                {phase === "verifying" ? <><Loader2 className="mr-2 h-4 w-4 animate-spin" />{t("dashboard.verifying")}</> : <><Lock className="mr-2 h-4 w-4" />{t("dashboard.enterDashboard")}</>}
               </Button>
               <button
                 type="button"
@@ -265,11 +267,12 @@ function StatCard({ icon: Icon, label, value, accent }: { icon: typeof Package; 
 // ─── Listing badge ───────────────────────────────────────────────────────────
 
 function ListingBadge({ type }: { type: string }) {
+  const { t } = useTranslation();
   const styles: Record<string, { label: string; cls: string }> = {
-    batch_drop: { label: "Batch drop", cls: "bg-amber-100 text-amber-800" },
-    surplus: { label: "Surplus", cls: "bg-emerald-100 text-emerald-800" },
-    pre_order: { label: "Pre-order", cls: "bg-sky-100 text-sky-800" },
-    regular: { label: "Regular", cls: "bg-stone-100 text-stone-700" },
+    batch_drop: { label: t("dashboard.batchDrop"), cls: "bg-amber-100 text-amber-800" },
+    surplus: { label: t("dashboard.surplus"), cls: "bg-emerald-100 text-emerald-800" },
+    pre_order: { label: t("dashboard.preOrder"), cls: "bg-sky-100 text-sky-800" },
+    regular: { label: t("dashboard.regular"), cls: "bg-stone-100 text-stone-700" },
   };
   const s = styles[type] ?? styles.regular!;
   return (
@@ -282,6 +285,7 @@ function ListingBadge({ type }: { type: string }) {
 // ─── Listing promo actions ───────────────────────────────────────────────────
 
 function ListingPromoActions({ productId, featured }: { productId: number; featured: boolean }) {
+  const { t } = useTranslation();
   const { user } = useUser();
   const { toast } = useToast();
   const [busy, setBusy] = useState<"boost" | "feature" | null>(null);
@@ -290,7 +294,7 @@ function ListingPromoActions({ productId, featured }: { productId: number; featu
     typeof window !== "undefined" ? window.localStorage.getItem("ol_session") : null;
 
   const handleBoost = async () => {
-    if (!sessionToken) { toast({ title: "Sign in to boost listings" }); return; }
+    if (!sessionToken) { toast({ title: t("dashboard.signInToBoost") }); return; }
     setBusy("boost");
     try {
       const r = await fetch("/api/billing/feature-boost/checkout", {
@@ -300,7 +304,7 @@ function ListingPromoActions({ productId, featured }: { productId: number; featu
       });
       const data = await r.json() as { url?: string; error?: string };
       if (!r.ok || !data.url) {
-        toast({ title: "Couldn't start checkout", description: data.error ?? "Try again in a moment.", variant: "destructive" });
+        toast({ title: t("dashboard.couldntStartCheckout"), description: data.error ?? t("dashboard.tryAgain"), variant: "destructive" });
         return;
       }
       window.location.href = data.url;
@@ -317,10 +321,10 @@ function ListingPromoActions({ productId, featured }: { productId: number; featu
       });
       const data = await r.json().catch(() => ({})) as { error?: string; currentlyActive?: number; allowance?: number };
       if (!r.ok) {
-        toast({ title: "Couldn't feature listing", description: data.error ?? "Try again.", variant: "destructive" });
+        toast({ title: t("dashboard.couldntFeature"), description: data.error ?? "Try again.", variant: "destructive" });
         return;
       }
-      toast({ title: "Listing featured", description: `Using ${data.currentlyActive}/${data.allowance} included slots.` });
+      toast({ title: t("dashboard.listingFeatured"), description: `Using ${data.currentlyActive}/${data.allowance} included slots.` });
     } finally { setBusy(null); }
   };
 
@@ -337,7 +341,7 @@ function ListingPromoActions({ productId, featured }: { productId: number; featu
   return (
     <div className="flex items-center gap-1">
       {isPremium && (
-        <Button variant="ghost" size="sm" disabled={busy !== null} onClick={handleFeature} title="Use one of your Premium featured slots">
+        <Button variant="ghost" size="sm" disabled={busy !== null} onClick={handleFeature} title={t("dashboard.featuredSlotHelp")}>
           <Star className="mr-1 h-3.5 w-3.5" /> Feature
         </Button>
       )}
@@ -353,6 +357,7 @@ function ListingPromoActions({ productId, featured }: { productId: number; featu
 // ─── Analytics tab ───────────────────────────────────────────────────────────
 
 function AnalyticsTab({ vendorId, products }: { vendorId: number; products: Product[] }) {
+  const { t } = useTranslation();
   const inStockCount = products.filter((p) => p.inStock).length;
   const liveBatchDrops = products.filter((p) => p.listingType === "batch_drop" && p.inStock).length;
   const liveSurplus = products.filter((p) => p.listingType === "surplus" && p.inStock).length;
@@ -360,10 +365,10 @@ function AnalyticsTab({ vendorId, products }: { vendorId: number; products: Prod
   return (
     <div className="space-y-8">
       <div className="grid grid-cols-2 gap-3 md:grid-cols-4 md:gap-4">
-        <StatCard icon={Package} label="Total products" value={(products ?? []).length} />
-        <StatCard icon={Tag} label="In stock" value={inStockCount} />
-        <StatCard icon={Flame} label="Live batch drops" value={liveBatchDrops} accent="text-amber-700" />
-        <StatCard icon={TrendingDown} label="Live surplus" value={liveSurplus} accent="text-emerald-700" />
+        <StatCard icon={Package} label={t("dashboard.totalProducts")} value={(products ?? []).length} />
+        <StatCard icon={Tag} label={t("dashboard.inStock")} value={inStockCount} />
+        <StatCard icon={Flame} label={t("dashboard.liveBatchDrops")} value={liveBatchDrops} accent="text-amber-700" />
+        <StatCard icon={TrendingDown} label={t("dashboard.liveSurplus")} value={liveSurplus} accent="text-emerald-700" />
       </div>
       <AnalyticsPanel kind="vendor" id={vendorId} />
       <PayoutsPanel vendorSlug={""} />
@@ -387,6 +392,7 @@ function InventoryTab({
   onAddProduct: (type?: ListingType) => void;
   onRefresh: () => void;
 }) {
+  const { t } = useTranslation();
   const { toast } = useToast();
   const updateProduct = useUpdateProduct();
   const deleteProduct = useDeleteProduct();
@@ -412,15 +418,15 @@ function InventoryTab({
         <div className="flex gap-2 flex-wrap">
           <Button onClick={() => onAddProduct("regular")} className="gap-2">
             <Plus className="h-4 w-4" />
-            Add product
+            {t("dashboard.addProduct")}
           </Button>
           <Button variant="outline" onClick={() => onAddProduct("batch_drop")} className="gap-2">
             <Flame className="h-4 w-4 text-amber-600" />
-            Drop a batch
+            {t("dashboard.dropABatch")}
           </Button>
           <Button variant="outline" onClick={() => onAddProduct("surplus")} className="gap-2">
             <TrendingDown className="h-4 w-4 text-emerald-600" />
-            Mark surplus
+            {t("dashboard.markSurplus")}
           </Button>
         </div>
         <InventoryCsvTools vendorId={vendor.id} onImported={onRefresh} />
@@ -443,7 +449,7 @@ function InventoryTab({
           </button>
         ))}
         <span className="ml-auto text-sm text-muted-foreground self-center">
-          {filtered.length} listing{filtered.length !== 1 ? "s" : ""}
+          {t("dashboard.listingsCount", { n: filtered.length, s: filtered.length !== 1 ? "s" : "" })}
         </span>
       </div>
 
@@ -451,17 +457,19 @@ function InventoryTab({
         <div className="rounded-lg border border-dashed border-border bg-muted px-6 py-16 text-center">
           <Sparkles className="mx-auto h-10 w-10 text-muted-foreground" />
           <p className="mt-3 font-serif text-xl font-bold text-foreground">
-            {filterType === "all" ? "Nothing listed yet" : `No ${filterType.replace("_", " ")} listings`}
+            {filterType === "all"
+              ? t("dashboard.nothingListed")
+              : t("dashboard.noTypeListing", { type: filterType.replace("_", " ") })}
           </p>
           <p className="mt-1 text-muted-foreground">
             {filterType === "all"
-              ? "Use the buttons above to add your first listing."
-              : "Switch to a different filter or add one above."}
+              ? t("dashboard.addFirstListing")
+              : t("dashboard.switchFilter")}
           </p>
           {filterType === "all" && (
             <Button className="mt-5" onClick={() => onAddProduct("regular")}>
               <Plus className="mr-2 h-4 w-4" />
-              Add first product
+              {t("dashboard.addFirstProduct")}
             </Button>
           )}
         </div>
@@ -508,7 +516,7 @@ function InventoryTab({
                         );
                       }}
                     />
-                    <span className="hidden md:inline">In stock</span>
+                    <span className="hidden md:inline">{t("dashboard.inStock")}</span>
                   </label>
                   <ListingPromoActions productId={p.id} featured={p.featured} />
                   <Button
@@ -521,7 +529,7 @@ function InventoryTab({
                         {
                           onSuccess: () => {
                             onRefresh();
-                            toast({ title: "Deleted", description: `${p.name} was removed.` });
+                            toast({ title: t("dashboard.deleted"), description: t("dashboard.productRemoved", { name: p.name }) });
                           },
                         },
                       );
@@ -549,21 +557,22 @@ const STORE_THEMES = [
   { id: "minimal", label: "Minimal",  color: "#6B7280", font: "sans",  layout: "list", swatches: ["#6B7280","#D1D5DB","#F9FAFB"] },
 ] as const;
 
-async function uploadBannerFile(file: File): Promise<string> {
+async function uploadBannerFile(file: File, failedUploadUrlMsg: string, uploadFailedMsg?: (status: number) => string): Promise<string> {
   const base = import.meta.env.BASE_URL?.replace(/\/$/, "") || "";
   const metaRes = await fetch(`${base}/api/storage/uploads/request-url`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ name: file.name, size: file.size, contentType: file.type }),
   });
-  if (!metaRes.ok) throw new Error("Failed to get upload URL");
+  if (!metaRes.ok) throw new Error(failedUploadUrlMsg);
   const { uploadURL, objectPath } = await metaRes.json();
   const putRes = await fetch(uploadURL, { method: "PUT", body: file, headers: { "Content-Type": file.type } });
-  if (!putRes.ok) throw new Error(`Upload failed (${putRes.status})`);
+  if (!putRes.ok) throw new Error(uploadFailedMsg ? uploadFailedMsg(putRes.status) : `Upload failed (${putRes.status})`);
   return `${base}/api/storage${objectPath}`;
 }
 
 function StoreEditorTab({ vendor, tier }: { vendor: Vendor; tier: TierId }) {
+  const { t } = useTranslation();
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const bannerInputRef = useRef<HTMLInputElement>(null);
@@ -599,12 +608,12 @@ function StoreEditorTab({ vendor, tier }: { vendor: Vendor; tier: TierId }) {
   const isPremium = tier === "premium";
 
   function applyThemePreset(id: string) {
-    const t = STORE_THEMES.find((t) => t.id === id);
-    if (!t) return;
+    const th = STORE_THEMES.find((th) => th.id === id);
+    if (!th) return;
     setStoreTheme(id);
-    setStoreColor(t.color);
-    setStoreFont(t.font);
-    setStoreLayout(t.layout);
+    setStoreColor(th.color);
+    setStoreFont(th.font);
+    setStoreLayout(th.layout);
   }
 
   async function handleBannerChange(e: React.ChangeEvent<HTMLInputElement>) {
@@ -612,10 +621,10 @@ function StoreEditorTab({ vendor, tier }: { vendor: Vendor; tier: TierId }) {
     if (!file) return;
     setBannerUploading(true);
     try {
-      const url = await uploadBannerFile(file);
+      const url = await uploadBannerFile(file, t("dashboard.failedUploadUrl"), (status) => t("dashboard.uploadFailed", { status }));
       setStoreBanner(url);
     } catch {
-      toast({ title: "Banner upload failed", variant: "destructive" });
+      toast({ title: t("dashboard.bannerUploadFailed"), variant: "destructive" });
     } finally {
       setBannerUploading(false);
       if (bannerInputRef.current) bannerInputRef.current.value = "";
@@ -623,7 +632,7 @@ function StoreEditorTab({ vendor, tier }: { vendor: Vendor; tier: TierId }) {
   }
 
   const save = async () => {
-    if (!sessionToken) { toast({ title: "Not signed in", variant: "destructive" }); return; }
+    if (!sessionToken) { toast({ title: t("dashboard.notSignedIn"), variant: "destructive" }); return; }
     setSaving(true);
     try {
       const body: Record<string, unknown> = {
@@ -657,11 +666,11 @@ function StoreEditorTab({ vendor, tier }: { vendor: Vendor; tier: TierId }) {
       });
       if (!res.ok) {
         const d = await res.json().catch(() => ({})) as { error?: string };
-        toast({ title: "Save failed", description: d.error ?? "Please try again.", variant: "destructive" });
+        toast({ title: t("dashboard.saveFailed"), description: d.error ?? t("dashboard.tryAgain"), variant: "destructive" });
         return;
       }
       queryClient.invalidateQueries({ queryKey: ["vendor", vendor.slug] });
-      toast({ title: "Saved!", description: "Your storefront has been updated." });
+      toast({ title: t("dashboard.saved"), description: t("dashboard.storefrontUpdated") });
     } finally {
       setSaving(false);
     }
@@ -684,63 +693,63 @@ function StoreEditorTab({ vendor, tier }: { vendor: Vendor; tier: TierId }) {
     <div className="max-w-2xl space-y-10">
       {/* ── Business info ────────────────────────────────────── */}
       <div>
-        <SectionHeading icon={Store} label="Business Info" />
+        <SectionHeading icon={Store} label={t("dashboard.businessInfo")} />
         <div className="space-y-5">
-          <Field label="Business name">
+          <Field label={t("dashboard.businessName")}>
             <Input value={name} onChange={(e) => setName(e.target.value)} />
           </Field>
-          <Field label="Tagline">
-            <Input value={tagline} onChange={(e) => setTagline(e.target.value)} placeholder="One-line description for the directory listing" />
+          <Field label={t("dashboard.tagline")}>
+            <Input value={tagline} onChange={(e) => setTagline(e.target.value)} placeholder={t("dashboard.taglinePlaceholder")} />
           </Field>
-          <Field label="About / Story">
+          <Field label={t("dashboard.aboutStory")}>
             <textarea
               value={description}
               onChange={(e) => setDescription(e.target.value)}
-              placeholder="Tell people about your business, your craft, your values…"
+              placeholder={t("dashboard.aboutPlaceholder")}
               className="flex w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring min-h-[120px]"
             />
           </Field>
           <div className="grid grid-cols-2 gap-4">
-            <Field label="City / Area">
-              <Input value={location} onChange={(e) => setLocation(e.target.value)} placeholder="Tampa, FL" />
+            <Field label={t("dashboard.cityArea")}>
+              <Input value={location} onChange={(e) => setLocation(e.target.value)} placeholder={t("dashboard.placeholderLocation")} />
             </Field>
-            <Field label="Phone">
+            <Field label={t("dashboard.phone")}>
               <Input value={phone} onChange={(e) => setPhone(e.target.value)} placeholder="+1 (555) 000-0000" />
             </Field>
           </div>
-          <Field label="Website URL">
-            <Input value={websiteUrl} onChange={(e) => setWebsiteUrl(e.target.value)} placeholder="https://yourbusiness.com" />
+          <Field label={t("dashboard.websiteUrl")}>
+            <Input value={websiteUrl} onChange={(e) => setWebsiteUrl(e.target.value)} placeholder={t("dashboard.placeholderWebsite")} />
           </Field>
           <div className="grid grid-cols-2 gap-4">
-            <Field label="Instagram handle">
+            <Field label={t("dashboard.instagramHandle")}>
               <Input value={instagramHandle} onChange={(e) => setInstagramHandle(e.target.value)} placeholder="@handle" />
             </Field>
-            <Field label="Facebook URL">
-              <Input value={facebookUrl} onChange={(e) => setFacebookUrl(e.target.value)} placeholder="https://facebook.com/…" />
+            <Field label={t("dashboard.facebookUrl")}>
+              <Input value={facebookUrl} onChange={(e) => setFacebookUrl(e.target.value)} placeholder={t("dashboard.placeholderFacebook")} />
             </Field>
           </div>
-          <Field label="Markets / Where to find you">
+          <Field label={t("dashboard.marketsWhereToFind")}>
             <textarea
               value={marketsText}
               onChange={(e) => setMarketsText(e.target.value)}
-              placeholder="Saturday Farmers Market (9am–1pm), downtown …"
+              placeholder={t("dashboard.marketsPlaceholder")}
               className="flex w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring min-h-[60px]"
             />
           </Field>
           <div className="grid grid-cols-2 gap-4">
-            <Field label="Pickup address">
+            <Field label={t("dashboard.pickupAddress")}>
               <Input value={pickupAddress} onChange={(e) => setPickupAddress(e.target.value)} placeholder="123 Main St, Tampa" />
             </Field>
-            <Field label="Open hours">
-              <Input value={openHours} onChange={(e) => setOpenHours(e.target.value)} placeholder="Sat 9am–1pm, by appt" />
+            <Field label={t("dashboard.openHours")}>
+              <Input value={openHours} onChange={(e) => setOpenHours(e.target.value)} placeholder={t("dashboard.openHoursPlaceholder")} />
             </Field>
           </div>
-          <Field label="How to order">
-            <Input value={howToOrder} onChange={(e) => setHowToOrder(e.target.value)} placeholder="DM on Instagram, order online, walk-in…" />
+          <Field label={t("dashboard.howToOrder")}>
+            <Input value={howToOrder} onChange={(e) => setHowToOrder(e.target.value)} placeholder={t("dashboard.howToOrderPlaceholder")} />
           </Field>
-          <Field label="Map pin location">
+          <Field label={t("dashboard.mapPinLocation")}>
             <p className="mb-2 text-xs text-muted-foreground">
-              Drop a pin so shoppers can find you on the map. Drag to fine-tune.
+              {t("dashboard.mapPinHelp")}
             </p>
             <LocationPicker
               onChange={(newLat, newLng) => { setLat(newLat); setLng(newLng); }}
@@ -754,14 +763,14 @@ function StoreEditorTab({ vendor, tier }: { vendor: Vendor; tier: TierId }) {
 
       {/* ── Storefront Appearance (Premium) ─────────────────── */}
       <div>
-        <SectionHeading icon={Palette} label="Storefront Appearance" />
+        <SectionHeading icon={Palette} label={t("dashboard.storefrontAppearance")} />
 
         {!isPremium ? (
           <div className="rounded-xl border border-border bg-muted p-6 text-center">
             <Crown className="mx-auto mb-3 h-8 w-8 text-amber-500" />
-            <p className="font-semibold text-foreground mb-1">Premium feature</p>
+            <p className="font-semibold text-foreground mb-1">{t("dashboard.premiumFeature")}</p>
             <p className="text-sm text-muted-foreground">
-              Custom themes, colors, fonts, layouts, and banner images are available on the Premium plan.
+              {t("dashboard.premiumFeatureDescription")}
             </p>
           </div>
         ) : (
@@ -769,8 +778,8 @@ function StoreEditorTab({ vendor, tier }: { vendor: Vendor; tier: TierId }) {
             {/* Enable toggle */}
             <div className="flex items-center justify-between rounded-lg border border-border bg-muted/40 px-4 py-3">
               <div>
-                <p className="text-sm font-semibold text-foreground">Use custom storefront style</p>
-                <p className="text-xs text-muted-foreground">Turn off to use the default Open Local styling</p>
+                <p className="text-sm font-semibold text-foreground">{t("dashboard.useCustomStyle")}</p>
+                <p className="text-xs text-muted-foreground">{t("dashboard.useCustomStyleDesc")}</p>
               </div>
               <Switch checked={customEnabled} onCheckedChange={setCustomEnabled} />
             </div>
@@ -779,32 +788,32 @@ function StoreEditorTab({ vendor, tier }: { vendor: Vendor; tier: TierId }) {
               <>
                 {/* Theme presets */}
                 <div>
-                  <label className="mb-3 block text-sm font-semibold text-foreground">Theme preset</label>
+                  <label className="mb-3 block text-sm font-semibold text-foreground">{t("dashboard.themePreset")}</label>
                   <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-                    {STORE_THEMES.map((t) => (
+                    {STORE_THEMES.map((th) => (
                       <button
-                        key={t.id}
+                        key={th.id}
                         type="button"
-                        onClick={() => applyThemePreset(t.id)}
+                        onClick={() => applyThemePreset(th.id)}
                         className={cn(
                           "rounded-xl border-2 p-3 text-left transition-all hover:shadow-md",
-                          storeTheme === t.id
+                          storeTheme === th.id
                             ? "border-primary ring-2 ring-primary/20"
                             : "border-border bg-card hover:border-muted-foreground/40",
                         )}
                       >
                         <div className="flex gap-1 mb-2">
-                          {t.swatches.map((s) => (
+                          {th.swatches.map((s) => (
                             <div key={s} className="h-4 w-4 rounded-full ring-1 ring-black/10" style={{ background: s }} />
                           ))}
                         </div>
-                        <p className="text-xs font-bold text-foreground">{t.label}</p>
+                        <p className="text-xs font-bold text-foreground">{th.label}</p>
                         <p className="text-[10px] text-muted-foreground mt-0.5 capitalize">
-                          {t.font} · {t.layout}
+                          {th.font} · {th.layout}
                         </p>
-                        {storeTheme === t.id && (
+                        {storeTheme === th.id && (
                           <div className="mt-1.5 flex items-center gap-1 text-[10px] font-semibold text-primary">
-                            <Check className="h-3 w-3" /> Applied
+                            <Check className="h-3 w-3" /> {t("dashboard.applied")}
                           </div>
                         )}
                       </button>
@@ -818,8 +827,8 @@ function StoreEditorTab({ vendor, tier }: { vendor: Vendor; tier: TierId }) {
                       )}
                     >
                       <div className="h-4 w-[52px] rounded-full bg-gradient-to-r from-muted to-border mb-2" />
-                      <p className="text-xs font-bold text-foreground">Custom</p>
-                      <p className="text-[10px] text-muted-foreground mt-0.5">Set your own</p>
+                      <p className="text-xs font-bold text-foreground">{t("dashboard.themeCustom")}</p>
+                      <p className="text-[10px] text-muted-foreground mt-0.5">{t("dashboard.themeCustomDesc")}</p>
                     </button>
                   </div>
                 </div>
@@ -827,7 +836,7 @@ function StoreEditorTab({ vendor, tier }: { vendor: Vendor; tier: TierId }) {
                 {/* Brand color */}
                 <div>
                   <label className="mb-2 flex items-center gap-2 text-sm font-semibold text-foreground">
-                    <Palette className="h-4 w-4 text-muted-foreground" /> Brand / accent color
+                    <Palette className="h-4 w-4 text-muted-foreground" /> {t("dashboard.brandAccentColor")}
                   </label>
                   <div className="flex items-center gap-3">
                     <input
@@ -842,14 +851,14 @@ function StoreEditorTab({ vendor, tier }: { vendor: Vendor; tier: TierId }) {
                       placeholder="#3c4a26"
                       className="font-mono text-sm max-w-[120px]"
                     />
-                    <p className="text-xs text-muted-foreground">Used for your vendor name and accents</p>
+                    <p className="text-xs text-muted-foreground">{t("dashboard.brandAccentHelp")}</p>
                   </div>
                 </div>
 
                 {/* Font */}
                 <div>
                   <label className="mb-2 flex items-center gap-2 text-sm font-semibold text-foreground">
-                    <Type className="h-4 w-4 text-muted-foreground" /> Heading font
+                    <Type className="h-4 w-4 text-muted-foreground" /> {t("dashboard.headingFont")}
                   </label>
                   <div className="flex gap-2">
                     {[
@@ -881,8 +890,8 @@ function StoreEditorTab({ vendor, tier }: { vendor: Vendor; tier: TierId }) {
                   <div className="flex gap-2">
                     {[
                       { id: "grid", label: "Grid",   icon: LayoutGrid,    desc: "4-column cards" },
-                      { id: "list", label: "List",   icon: List,          desc: "Single-column rows" },
-                      { id: "hero", label: "Hero",   icon: LayoutTemplate, desc: "Large feature + grid" },
+                      { id: "list", label: "List",   icon: List,          desc: t("dashboard.layoutListDesc") },
+                      { id: "hero", label: "Hero",   icon: LayoutTemplate, desc: t("dashboard.layoutHeroDesc") },
                     ].map((l) => (
                       <button
                         key={l.id}
@@ -927,7 +936,7 @@ function StoreEditorTab({ vendor, tier }: { vendor: Vendor; tier: TierId }) {
                       className="flex w-full items-center gap-3 rounded-xl border border-dashed border-border bg-muted px-5 py-4 text-sm text-muted-foreground hover:bg-muted/70 transition-colors"
                     >
                       {bannerUploading ? <Loader2 className="h-5 w-5 animate-spin" /> : <ImageIcon className="h-5 w-5" />}
-                      {bannerUploading ? "Uploading…" : "Upload a banner image"}
+                      {bannerUploading ? t("dashboard.uploading") : t("dashboard.uploadBanner")}
                     </button>
                   )}
                 </div>
@@ -939,7 +948,7 @@ function StoreEditorTab({ vendor, tier }: { vendor: Vendor; tier: TierId }) {
 
       <div className="pt-2 border-t border-border">
         <Button onClick={save} disabled={saving} className="min-w-[120px]">
-          {saving ? <><Loader2 className="mr-2 h-4 w-4 animate-spin" />Saving…</> : "Save changes"}
+          {saving ? <><Loader2 className="mr-2 h-4 w-4 animate-spin" />{t("dashboard.saving")}</> : t("dashboard.saveChanges")}
         </Button>
       </div>
     </div>
@@ -949,6 +958,7 @@ function StoreEditorTab({ vendor, tier }: { vendor: Vendor; tier: TierId }) {
 // ─── Markets tab ─────────────────────────────────────────────────────────────
 
 function MarketsTab() {
+  const { t } = useTranslation();
   const [search, setSearch] = useState("");
   const [dayFilter, setDayFilter] = useState<string>("");
 
@@ -962,7 +972,7 @@ function MarketsTab() {
   return (
     <div className="space-y-6">
       <div>
-        <h2 className="font-serif text-2xl font-bold text-foreground mb-1">Discover Markets</h2>
+        <h2 className="font-serif text-2xl font-bold text-foreground mb-1">{t("dashboard.discoverMarkets")}</h2>
         <p className="text-muted-foreground text-sm">
           Find Florida farmers markets to apply to as a vendor. Each listing includes contact info so you can reach out directly.
         </p>
@@ -974,7 +984,7 @@ function MarketsTab() {
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
           <input
             type="text"
-            placeholder="Search by name or city…"
+            placeholder={t("dashboard.searchMarkets")}
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             className="w-full pl-9 pr-4 py-2 rounded-lg border border-border bg-background text-sm focus:outline-none focus:ring-2 focus:ring-primary/30"
@@ -985,7 +995,7 @@ function MarketsTab() {
           onChange={(e) => setDayFilter(e.target.value)}
           className="px-3 py-2 rounded-lg border border-border bg-background text-sm focus:outline-none focus:ring-2 focus:ring-primary/30"
         >
-          <option value="">All days</option>
+          <option value="">{t("dashboard.allDays")}</option>
           {DAYS.map((d) => (
             <option key={d} value={d}>{d}</option>
           ))}
@@ -1001,8 +1011,8 @@ function MarketsTab() {
       ) : markets.length === 0 ? (
         <div className="py-20 text-center text-muted-foreground">
           <MapPin className="mx-auto h-10 w-10 opacity-20 mb-3" />
-          <p className="font-medium">No markets found</p>
-          <p className="text-sm mt-1">Try a different search or check back soon.</p>
+          <p className="font-medium">{t("dashboard.noMarketsFound")}</p>
+          <p className="text-sm mt-1">{t("dashboard.noMarketsHint")}</p>
         </div>
       ) : (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
@@ -1014,7 +1024,7 @@ function MarketsTab() {
 
       <div className="rounded-xl border border-dashed border-border bg-muted/40 p-5 flex flex-col sm:flex-row items-start sm:items-center gap-4">
         <div className="flex-1">
-          <p className="font-semibold text-foreground text-sm">Is your market not listed?</p>
+          <p className="font-semibold text-foreground text-sm">{t("dashboard.marketNotListed")}</p>
           <p className="text-xs text-muted-foreground mt-0.5">
             Share our market manager page and we'll add them to the directory once they sign up.
           </p>
@@ -1043,6 +1053,7 @@ interface WForm {
 const WEMPTY: WForm = { title: "", description: "", category: "", pricePerUnit: "", unit: "", minOrderQty: "1", availableQty: "", imageUrl: "", expiresAt: "" };
 
 function WholesaleTab({ vendorId }: { vendorId: number }) {
+  const { t } = useTranslation();
   const queryClient = useQueryClient();
   const { toast } = useToast();
   const [modalOpen, setModalOpen] = useState(false);
@@ -1092,24 +1103,24 @@ function WholesaleTab({ vendorId }: { vendorId: number }) {
       expiresAt: form.expiresAt ? new Date(form.expiresAt).toISOString() : undefined,
     };
     try {
-      if (editing) { await updateM.mutateAsync({ id: editing.id, data: payload }); toast({ title: "Listing updated" }); }
-      else { await createM.mutateAsync({ data: payload }); toast({ title: "Listing posted!" }); }
+      if (editing) { await updateM.mutateAsync({ id: editing.id, data: payload }); toast({ title: t("dashboard.listingUpdated") }); }
+      else { await createM.mutateAsync({ data: payload }); toast({ title: t("dashboard.listingPosted") }); }
       invalidate();
       setModalOpen(false);
-    } catch { toast({ title: "Something went wrong", variant: "destructive" }); }
+    } catch { toast({ title: t("dashboard.somethingWentWrong"), variant: "destructive" }); }
   };
 
   const handleDelete = async (id: number) => {
     if (!confirm("Remove this listing?")) return;
-    try { await deleteM.mutateAsync({ id }); invalidate(); toast({ title: "Listing removed" }); }
-    catch { toast({ title: "Could not remove", variant: "destructive" }); }
+    try { await deleteM.mutateAsync({ id }); invalidate(); toast({ title: t("dashboard.listingRemoved") }); }
+    catch { toast({ title: t("dashboard.couldNotRemove"), variant: "destructive" }); }
   };
 
   return (
     <div className="space-y-6">
       <div className="flex items-start justify-between gap-4 flex-wrap">
         <div>
-          <h2 className="font-serif text-2xl font-bold text-foreground mb-1">Wholesale Exchange</h2>
+          <h2 className="font-serif text-2xl font-bold text-foreground mb-1">{t("dashboard.wholesaleExchange")}</h2>
           <p className="text-muted-foreground text-sm">
             Post bulk or wholesale availability for other Florida vendors to discover and contact you.
           </p>
@@ -1126,7 +1137,7 @@ function WholesaleTab({ vendorId }: { vendorId: number }) {
       ) : listings.length === 0 ? (
         <div className="py-16 text-center border border-dashed border-border rounded-2xl">
           <Box className="mx-auto h-10 w-10 opacity-20 mb-3 text-foreground" />
-          <p className="font-semibold text-foreground">No wholesale listings yet</p>
+          <p className="font-semibold text-foreground">{t("dashboard.noWholesaleListings")}</p>
           <p className="text-sm text-muted-foreground mt-1 mb-4">
             Post your first listing to connect with other Florida producers.
           </p>
@@ -1190,60 +1201,60 @@ function WholesaleTab({ vendorId }: { vendorId: number }) {
 
             <div className="space-y-3">
               <div>
-                <label className="text-xs font-semibold text-foreground mb-1 block">Title *</label>
-                <Input placeholder="e.g. Bulk wildflower honey" value={form.title} onChange={(e) => setF("title")(e.target.value)} />
+                <label className="text-xs font-semibold text-foreground mb-1 block">{t("dashboard.listingTitle")}</label>
+                <Input placeholder={t("dashboard.listingTitlePlaceholder")} value={form.title} onChange={(e) => setF("title")(e.target.value)} />
               </div>
               <div>
-                <label className="text-xs font-semibold text-foreground mb-1 block">Description</label>
-                <textarea value={form.description} onChange={(e) => setF("description")(e.target.value)} className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm resize-none focus:outline-none focus:ring-2 focus:ring-ring min-h-[70px]" placeholder="Product details, harvest info, terms…" />
+                <label className="text-xs font-semibold text-foreground mb-1 block">{t("dashboard.listingDescription")}</label>
+                <textarea value={form.description} onChange={(e) => setF("description")(e.target.value)} className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm resize-none focus:outline-none focus:ring-2 focus:ring-ring min-h-[70px]" placeholder={t("dashboard.listingDescriptionPlaceholder")} />
               </div>
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="text-xs font-semibold text-foreground mb-1 block">Category</label>
+                  <label className="text-xs font-semibold text-foreground mb-1 block">{t("dashboard.listingCategory")}</label>
                   <select value={form.category} onChange={(e) => setF("category")(e.target.value)} className="w-full px-3 py-2 rounded-md border border-input bg-background text-sm focus:outline-none focus:ring-2 focus:ring-ring">
-                    <option value="">Choose…</option>
+                    <option value="">{t("dashboard.choose")}</option>
                     {WHOLESALE_CATEGORIES.map((c) => <option key={c} value={c}>{c}</option>)}
                   </select>
                 </div>
                 <div>
-                  <label className="text-xs font-semibold text-foreground mb-1 block">Unit</label>
+                  <label className="text-xs font-semibold text-foreground mb-1 block">{t("dashboard.unit")}</label>
                   <select value={form.unit} onChange={(e) => setF("unit")(e.target.value)} className="w-full px-3 py-2 rounded-md border border-input bg-background text-sm focus:outline-none focus:ring-2 focus:ring-ring">
-                    <option value="">Choose…</option>
+                    <option value="">{t("dashboard.choose")}</option>
                     {WHOLESALE_UNITS.map((u) => <option key={u} value={u}>{u}</option>)}
                   </select>
                 </div>
               </div>
               <div className="grid grid-cols-3 gap-3">
                 <div>
-                  <label className="text-xs font-semibold text-foreground mb-1 block">Price/unit</label>
+                  <label className="text-xs font-semibold text-foreground mb-1 block">{t("dashboard.pricePerUnit")}</label>
                   <Input type="number" placeholder="0.00" min="0" step="0.01" value={form.pricePerUnit} onChange={(e) => setF("pricePerUnit")(e.target.value)} />
                 </div>
                 <div>
-                  <label className="text-xs font-semibold text-foreground mb-1 block">Min order</label>
+                  <label className="text-xs font-semibold text-foreground mb-1 block">{t("dashboard.minOrder")}</label>
                   <Input type="number" placeholder="1" min="1" value={form.minOrderQty} onChange={(e) => setF("minOrderQty")(e.target.value)} />
                 </div>
                 <div>
-                  <label className="text-xs font-semibold text-foreground mb-1 block">Available qty</label>
+                  <label className="text-xs font-semibold text-foreground mb-1 block">{t("dashboard.availableQuantity")}</label>
                   <Input type="number" placeholder="—" min="1" value={form.availableQty} onChange={(e) => setF("availableQty")(e.target.value)} />
                 </div>
               </div>
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="text-xs font-semibold text-foreground mb-1 block">Image URL</label>
-                  <Input placeholder="https://…" value={form.imageUrl} onChange={(e) => setF("imageUrl")(e.target.value)} />
+                  <label className="text-xs font-semibold text-foreground mb-1 block">{t("dashboard.imageUrl")}</label>
+                  <Input placeholder={t("dashboard.placeholderProductImage")} value={form.imageUrl} onChange={(e) => setF("imageUrl")(e.target.value)} />
                 </div>
                 <div>
-                  <label className="text-xs font-semibold text-foreground mb-1 block">Expires on</label>
+                  <label className="text-xs font-semibold text-foreground mb-1 block">{t("dashboard.expiresOn")}</label>
                   <Input type="date" value={form.expiresAt} onChange={(e) => setF("expiresAt")(e.target.value)} />
                 </div>
               </div>
             </div>
 
             <div className="flex justify-end gap-2 pt-2">
-              <Button variant="outline" onClick={() => setModalOpen(false)} disabled={saving}>Cancel</Button>
+              <Button variant="outline" onClick={() => setModalOpen(false)} disabled={saving}>{t("dashboard.cancel")}</Button>
               <Button onClick={handleSubmit} disabled={saving || !form.title.trim()}>
                 {saving && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                {editing ? "Save changes" : "Post listing"}
+                {editing ? t("dashboard.saveChanges") : t("dashboard.postListing")}
               </Button>
             </div>
           </div>
@@ -1383,6 +1394,7 @@ function MarketManagerTab({
   market: Market;
   onSaved: (updated: Market) => void;
 }) {
+  const { t } = useTranslation();
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const updateMarket = useUpdateMarket();
@@ -1400,7 +1412,7 @@ function MarketManagerTab({
     try {
       const tagsArr = form.tags
         .split(",")
-        .map((t) => t.trim())
+        .map((tag) => tag.trim())
         .filter(Boolean);
 
       // Helper: send null for cleared optional fields so the PATCH can wipe them;
@@ -1454,11 +1466,11 @@ function MarketManagerTab({
       queryClient.invalidateQueries({ queryKey: getListMarketsQueryKey() });
 
       onSaved(updated);
-      toast({ title: "Market updated!", description: "Your listing changes are live." });
+      toast({ title: t("dashboard.marketUpdated"), description: t("dashboard.marketChangesLive") });
     } catch {
       toast({
-        title: "Save failed",
-        description: "Please check your inputs and try again.",
+        title: t("dashboard.saveFailed"),
+        description: t("dashboard.tryAgain"),
         variant: "destructive",
       });
     }
@@ -1527,35 +1539,35 @@ function MarketManagerTab({
 
       {/* ── Basic info ─────────────────────────────────────── */}
       <div>
-        <SectionHeading icon={Store} label="Basic Info" />
+        <SectionHeading icon={Store} label={t("dashboard.sectionBasicInfo")} />
         <div className="space-y-5">
-          <Field label="Market name">
+          <Field label={t("dashboard.fieldMarketName")}>
             <Input value={form.name} onChange={(e) => setF("name")(e.target.value)} />
           </Field>
-          <Field label="Description">
+          <Field label={t("dashboard.fieldDescription")}>
             <textarea
               value={form.description}
               onChange={(e) => setF("description")(e.target.value)}
-              placeholder="Tell shoppers and vendors about your market…"
+              placeholder={t("dashboard.marketDescriptionPlaceholder")}
               className="flex w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring min-h-[100px]"
             />
           </Field>
           <div className="grid grid-cols-2 gap-4">
-            <Field label="City">
+            <Field label={t("dashboard.fieldCity")}>
               <Input value={form.city} onChange={(e) => setF("city")(e.target.value)} placeholder="Tampa" />
             </Field>
-            <Field label="Region / State">
+            <Field label={t("dashboard.fieldRegion")}>
               <Input value={form.region} onChange={(e) => setF("region")(e.target.value)} placeholder="FL" />
             </Field>
           </div>
-          <Field label="Street address">
+          <Field label={t("dashboard.fieldStreetAddress")}>
             <Input value={form.address} onChange={(e) => setF("address")(e.target.value)} placeholder="123 Main St" />
           </Field>
-          <Field label="Tags" hint="Comma-separated keywords (e.g. organic, arts, crafts)">
+          <Field label={t("dashboard.fieldTags")} hint={t("dashboard.tagsHint")}>
             <Input
               value={form.tags}
               onChange={(e) => setF("tags")(e.target.value)}
-              placeholder="organic, arts, crafts"
+              placeholder={t("dashboard.placeholderTags")}
             />
           </Field>
         </div>
@@ -1563,15 +1575,15 @@ function MarketManagerTab({
 
       {/* ── Schedule ───────────────────────────────────────── */}
       <div>
-        <SectionHeading icon={Calendar} label="Schedule" />
+        <SectionHeading icon={Calendar} label={t("dashboard.sectionSchedule")} />
         <div className="grid grid-cols-2 gap-4">
-          <Field label="Day">
+          <Field label={t("dashboard.fieldDay")}>
             <select
               value={form.day}
               onChange={(e) => setF("day")(e.target.value)}
               className="w-full px-3 py-2 rounded-md border border-input bg-background text-sm focus:outline-none focus:ring-2 focus:ring-ring"
             >
-              <option value="">Choose…</option>
+              <option value="">{t("dashboard.choose")}</option>
               {MARKET_DAYS.map((d) => (
                 <option key={d} value={d}>
                   {d}
@@ -1579,7 +1591,7 @@ function MarketManagerTab({
               ))}
             </select>
           </Field>
-          <Field label="Time" hint="">
+          <Field label={t("dashboard.fieldTime")} hint="">
             <Input value={form.time} onChange={(e) => setF("time")(e.target.value)} placeholder="8am – 1pm" />
           </Field>
         </div>
@@ -1587,54 +1599,54 @@ function MarketManagerTab({
 
       {/* ── Contact & Social ───────────────────────────────── */}
       <div>
-        <SectionHeading icon={Mail} label="Contact & Social" />
+        <SectionHeading icon={Mail} label={t("dashboard.sectionContactSocial")} />
         <div className="space-y-4">
-          <Field label="Contact email">
+          <Field label={t("dashboard.fieldContactEmail")}>
             <Input
               type="email"
               value={form.contactEmail}
               onChange={(e) => setF("contactEmail")(e.target.value)}
-              placeholder="manager@mymarket.com"
+              placeholder={t("dashboard.placeholderContactEmail")}
             />
           </Field>
-          <Field label="Website URL">
-            <Input value={form.websiteUrl} onChange={(e) => setF("websiteUrl")(e.target.value)} placeholder="https://mymarket.com" />
+          <Field label={t("dashboard.websiteUrl")}>
+            <Input value={form.websiteUrl} onChange={(e) => setF("websiteUrl")(e.target.value)} placeholder={t("dashboard.placeholderMarketWebsite")} />
           </Field>
           <div className="grid grid-cols-2 gap-4">
-            <Field label="Instagram handle">
-              <Input value={form.instagramHandle} onChange={(e) => setF("instagramHandle")(e.target.value)} placeholder="mymarket" />
+            <Field label={t("dashboard.instagramHandle")}>
+              <Input value={form.instagramHandle} onChange={(e) => setF("instagramHandle")(e.target.value)} placeholder={t("dashboard.placeholderInstagram")} />
             </Field>
-            <Field label="Facebook URL">
-              <Input value={form.facebookUrl} onChange={(e) => setF("facebookUrl")(e.target.value)} placeholder="https://facebook.com/…" />
+            <Field label={t("dashboard.facebookUrl")}>
+              <Input value={form.facebookUrl} onChange={(e) => setF("facebookUrl")(e.target.value)} placeholder={t("dashboard.placeholderFacebook")} />
             </Field>
           </div>
-          <Field label="Twitter / X handle">
-            <Input value={form.twitterHandle} onChange={(e) => setF("twitterHandle")(e.target.value)} placeholder="mymarket" />
+          <Field label={t("dashboard.fieldTwitter")}>
+            <Input value={form.twitterHandle} onChange={(e) => setF("twitterHandle")(e.target.value)} placeholder={t("dashboard.placeholderTwitter")} />
           </Field>
         </div>
       </div>
 
       {/* ── Images ─────────────────────────────────────────── */}
       <div>
-        <SectionHeading icon={ImageIcon} label="Images" />
+        <SectionHeading icon={ImageIcon} label={t("dashboard.sectionImages")} />
         <div className="space-y-4">
-          <Field label="Logo URL" hint="Square image, at least 200×200px">
-            <Input value={form.logoUrl} onChange={(e) => setF("logoUrl")(e.target.value)} placeholder="https://…" />
+          <Field label={t("dashboard.fieldLogoUrl")} hint={t("dashboard.logoHint")}>
+            <Input value={form.logoUrl} onChange={(e) => setF("logoUrl")(e.target.value)} placeholder={t("dashboard.placeholderProductImage")} />
             {form.logoUrl && (
               <img
                 src={form.logoUrl}
-                alt="Logo preview"
+                alt={t("dashboard.logoPreviewAlt")}
                 className="mt-2 h-16 w-16 rounded-lg object-cover border border-border"
                 onError={(e) => { (e.target as HTMLImageElement).style.display = "none"; }}
               />
             )}
           </Field>
-          <Field label="Banner / featured image URL" hint="Wide image for the market detail page hero">
-            <Input value={form.featuredImageUrl} onChange={(e) => setF("featuredImageUrl")(e.target.value)} placeholder="https://…" />
+          <Field label={t("dashboard.fieldBannerUrl")} hint={t("dashboard.bannerHint")}>
+            <Input value={form.featuredImageUrl} onChange={(e) => setF("featuredImageUrl")(e.target.value)} placeholder={t("dashboard.placeholderProductImage")} />
             {form.featuredImageUrl && (
               <img
                 src={form.featuredImageUrl}
-                alt="Banner preview"
+                alt={t("dashboard.bannerPreviewAlt")}
                 className="mt-2 w-full h-28 rounded-lg object-cover border border-border"
                 onError={(e) => { (e.target as HTMLImageElement).style.display = "none"; }}
               />
@@ -1648,10 +1660,10 @@ function MarketManagerTab({
           {saving ? (
             <>
               <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-              Saving…
+              {t("dashboard.saving")}
             </>
           ) : (
-            "Save changes"
+            t("dashboard.saveChanges")
           )}
         </Button>
       </div>
@@ -1662,6 +1674,7 @@ function MarketManagerTab({
 // ─── Settings tab ────────────────────────────────────────────────────────────
 
 function SettingsTab({ vendor }: { vendor: Vendor }) {
+  const { t } = useTranslation();
   return (
     <div className="max-w-xl space-y-8">
       <AdditionalLocationsPanel
@@ -1669,7 +1682,7 @@ function SettingsTab({ vendor }: { vendor: Vendor }) {
         onUpdated={() => {}}
       />
       <section className="rounded-xl border border-border bg-card p-6">
-        <h3 className="font-serif text-lg font-bold mb-4">Support</h3>
+        <h3 className="font-serif text-lg font-bold mb-4">{t("dashboard.support")}</h3>
         <SupportRequestForm />
       </section>
     </div>
@@ -1679,6 +1692,7 @@ function SettingsTab({ vendor }: { vendor: Vendor }) {
 // ─── Main dashboard ──────────────────────────────────────────────────────────
 
 export default function Dashboard() {
+  const { t } = useTranslation();
   const { slug } = useParams<{ slug: string }>();
   const { user } = useUser();
   const queryClient = useQueryClient();
@@ -1746,10 +1760,10 @@ export default function Dashboard() {
     return (
       <Layout>
         <div className="container mx-auto max-w-2xl px-4 py-20 text-center">
-          <h1 className="font-serif text-3xl font-bold">Dashboard not found</h1>
-          <p className="mt-2 text-muted-foreground">We couldn't find a business at this URL.</p>
+          <h1 className="font-serif text-3xl font-bold">{t("dashboard.notFoundTitle")}</h1>
+          <p className="mt-2 text-muted-foreground">{t("dashboard.notFoundDescription")}</p>
           <Link href="/submit">
-            <Button className="mt-6">List your business</Button>
+            <Button className="mt-6">{t("dashboard.listYourBusiness")}</Button>
           </Link>
         </div>
       </Layout>
@@ -1766,18 +1780,18 @@ export default function Dashboard() {
 
   const TABS: { id: Tab; label: string; icon: typeof BarChart3 }[] = useMemo(() => {
     const base: { id: Tab; label: string; icon: typeof BarChart3 }[] = [
-      { id: "analytics", label: "Analytics", icon: BarChart3 },
-      { id: "inventory", label: "Inventory", icon: Layers },
-      { id: "store", label: "Store Editor", icon: Store },
-      { id: "markets", label: "Find Markets", icon: MapPin },
-      { id: "wholesale", label: "Wholesale", icon: Box },
-      { id: "settings", label: "Settings", icon: Settings },
+      { id: "analytics", label: t("dashboard.tabAnalytics"), icon: BarChart3 },
+      { id: "inventory", label: t("dashboard.tabInventory"), icon: Layers },
+      { id: "store", label: t("dashboard.tabStoreEditor"), icon: Store },
+      { id: "markets", label: t("dashboard.tabFindMarkets"), icon: MapPin },
+      { id: "wholesale", label: t("dashboard.tabWholesale"), icon: Box },
+      { id: "settings", label: t("dashboard.tabSettings"), icon: Settings },
     ];
     if (managedMarket) {
-      base.splice(4, 0, { id: "my-market", label: "My Market", icon: Crown });
+      base.splice(4, 0, { id: "my-market", label: t("dashboard.tabMyMarket"), icon: Crown });
     }
     return base;
-  }, [managedMarket]);
+  }, [managedMarket, t]);
 
   return (
     <Layout>
@@ -1794,7 +1808,7 @@ export default function Dashboard() {
                   className="h-16 w-16 rounded-lg border border-border object-cover md:h-20 md:w-20"
                 />
                 <div>
-                  <p className="text-xs uppercase tracking-[0.2em] text-primary font-semibold">Your dashboard</p>
+                  <p className="text-xs uppercase tracking-[0.2em] text-primary font-semibold">{t("dashboard.yourDashboard")}</p>
                   <h1 className="font-serif text-3xl font-bold text-foreground md:text-4xl">{vendor.name}</h1>
                   <p className="text-sm text-muted-foreground">{vendor.category} · {vendor.location}, {vendor.region}</p>
                 </div>
@@ -1802,7 +1816,7 @@ export default function Dashboard() {
               <div className="flex flex-wrap gap-2">
                 <Button onClick={() => openAddProduct("regular")} className="gap-2">
                   <Plus className="h-4 w-4" />
-                  Add product
+                  {t("dashboard.addProduct")}
                 </Button>
               </div>
             </div>
@@ -1810,7 +1824,7 @@ export default function Dashboard() {
             {/* Storefront link — prominent */}
             <div>
               <p className="text-xs uppercase tracking-wider text-muted-foreground font-semibold mb-1.5">
-                Your public storefront — share with customers
+                {t("dashboard.publicStorefrontShare")}
               </p>
               <StorefrontLinkBar vendorSlug={vendor.slug} />
             </div>

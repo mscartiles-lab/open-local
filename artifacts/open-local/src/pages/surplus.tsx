@@ -1,4 +1,5 @@
 import { useState, useMemo } from "react";
+import { useTranslation } from "react-i18next";
 import { useSearchLogger } from "@/hooks/use-search-logger";
 import { Link } from "wouter";
 import { motion } from "framer-motion";
@@ -12,6 +13,7 @@ import { Search, Tag, Percent, Clock, ShoppingBag, ArrowRight, LocateFixed, Load
 import { useProximity, haversineMiles, PROXIMITY_PICKS, PROXIMITY_LABELS } from "@/hooks/use-proximity";
 
 export default function Surplus() {
+  const { t } = useTranslation();
   const { data: allProducts, isLoading } = useListProducts();
   const { data: vendors } = useListVendors();
   const [search, setSearch] = useState("");
@@ -88,6 +90,8 @@ export default function Surplus() {
     }, 0);
   }, [surplusProducts]);
 
+  const n = surplusProducts.length;
+
   return (
     <Layout>
       {/* Hero */}
@@ -97,22 +101,22 @@ export default function Surplus() {
           <div className="flex items-center gap-2 mb-4">
             <span className="inline-flex items-center gap-1.5 bg-red-500 text-white text-xs font-bold px-3 py-1 rounded-full uppercase tracking-wider">
               <Percent className="w-3 h-3" />
-              Final Sale
+              {t("surplus.finalSale")}
             </span>
             <span className="inline-flex items-center gap-1.5 bg-amber-600/40 text-amber-200 text-xs font-semibold px-3 py-1 rounded-full">
               <Clock className="w-3 h-3" />
-              While supplies last
+              {t("surplus.whileSuppliesLast")}
             </span>
           </div>
           <h1 className="text-5xl font-serif font-bold text-white mb-3">
-            Surplus & Final Sale
+            {t("surplus.title")}
           </h1>
           <p className="text-amber-200 text-lg max-w-xl font-sans">
-            Excess inventory, end-of-season goods, and clearance items from independent local producers — deeply discounted, while they last.
+            {t("surplus.subtitle")}
           </p>
           {totalSavings > 0 && (
             <p className="mt-4 text-amber-300 font-medium text-sm">
-              Up to ${(totalSavings / 100).toFixed(2)} in savings available right now.
+              {t("surplus.savingsAvailable", { pct: (totalSavings / 100).toFixed(2) })}
             </p>
           )}
         </div>
@@ -124,7 +128,7 @@ export default function Surplus() {
           <div className="relative flex-1 min-w-0">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground pointer-events-none" />
             <Input
-              placeholder="Search surplus items…"
+              placeholder={t("surplus.searchPlaceholder")}
               value={search}
               onChange={(e) => setSearch(e.target.value)}
               className="pl-9"
@@ -133,10 +137,10 @@ export default function Surplus() {
           <Select value={categoryFilter} onValueChange={setCategoryFilter}>
             <SelectTrigger className="w-full sm:w-44">
               <Tag className="w-3.5 h-3.5 mr-1.5 text-muted-foreground" />
-              <SelectValue placeholder="Category" />
+              <SelectValue placeholder={t("common.category")} />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="all">All categories</SelectItem>
+              <SelectItem value="all">{t("common.allCategories")}</SelectItem>
               {categories.map((c) => <SelectItem key={c} value={c}>{c}</SelectItem>)}
             </SelectContent>
           </Select>
@@ -145,10 +149,10 @@ export default function Surplus() {
               <SelectValue placeholder="Sort by" />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="newest">Newest first</SelectItem>
-              <SelectItem value="price_asc">Price: low to high</SelectItem>
-              <SelectItem value="price_desc">Price: high to low</SelectItem>
-              <SelectItem value="discount">Biggest discount</SelectItem>
+              <SelectItem value="newest">{t("surplus.sortNewest")}</SelectItem>
+              <SelectItem value="price_asc">{t("surplus.sortPriceLow")}</SelectItem>
+              <SelectItem value="price_desc">{t("surplus.sortPriceHigh")}</SelectItem>
+              <SelectItem value="discount">{t("surplus.sortBiggestDiscount")}</SelectItem>
             </SelectContent>
           </Select>
         </div>
@@ -157,7 +161,10 @@ export default function Surplus() {
         <div className="flex items-center gap-3 mb-6 flex-wrap">
           {!userPos ? (
             <Button variant="outline" size="sm" className="gap-2" onClick={locate} disabled={locating}>
-              {locating ? <><Loader2 className="w-4 h-4 animate-spin" /> Locating…</> : <><LocateFixed className="w-4 h-4" /> Near me</>}
+              {locating
+                ? <><Loader2 className="w-4 h-4 animate-spin" /> {t("common.locating")}</>
+                : <><LocateFixed className="w-4 h-4" /> {t("surplus.nearMe")}</>
+              }
             </Button>
           ) : (
             <>
@@ -169,7 +176,7 @@ export default function Surplus() {
                 ))}
               </div>
               <span className="text-xs text-muted-foreground">{surplusNear.length} nearby</span>
-              <button onClick={clear} className="text-xs text-muted-foreground hover:text-foreground flex items-center gap-1"><X className="w-3 h-3" /> Clear location</button>
+              <button onClick={clear} className="text-xs text-muted-foreground hover:text-foreground flex items-center gap-1"><X className="w-3 h-3" /> {t("surplus.clearLocation")}</button>
             </>
           )}
           {locationError && <p className="text-xs text-amber-600">{locationError}</p>}
@@ -177,7 +184,12 @@ export default function Surplus() {
 
         {/* Count */}
         <p className="text-sm text-muted-foreground mb-6">
-          {isLoading ? "Loading…" : `${surplusProducts.length} item${surplusProducts.length !== 1 ? "s" : ""} on sale`}
+          {isLoading
+            ? t("common.loading")
+            : n === 1
+            ? t("surplus.itemOnSale")
+            : t("surplus.itemsOnSale", { n })
+          }
         </p>
 
         {/* Grid */}
@@ -194,15 +206,15 @@ export default function Surplus() {
         ) : surplusProducts.length === 0 ? (
           <div className="text-center py-24 text-muted-foreground">
             <ShoppingBag className="w-12 h-12 mx-auto mb-4 opacity-25" />
-            <p className="text-lg font-medium">No surplus items right now.</p>
-            <p className="text-sm mt-1">Check back soon — vendors add clearance items regularly.</p>
+            <p className="text-lg font-medium">{t("surplus.noItems")}</p>
+            <p className="text-sm mt-1">{t("surplus.noItemsDescription")}</p>
           </div>
         ) : (
           <div className="space-y-8">
             {/* In-radius grid */}
             {surplusNear.length > 0 && (
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-                {surplusNear.map((product, i) => <SurplusCard key={product.id} product={product} i={i} />)}
+                {surplusNear.map((product, i) => <SurplusCard key={product.id} product={product} i={i} t={t} />)}
               </div>
             )}
 
@@ -220,7 +232,7 @@ export default function Surplus() {
             {/* Beyond grid */}
             {surplusBeyond.length > 0 && (
               <div className={`grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 ${userPos ? "opacity-60" : ""}`}>
-                {surplusBeyond.map((product, i) => <SurplusCard key={product.id} product={product} i={i} />)}
+                {surplusBeyond.map((product, i) => <SurplusCard key={product.id} product={product} i={i} t={t} />)}
               </div>
             )}
 
@@ -243,7 +255,11 @@ type SurplusProduct = {
   priceCents: number; originalPriceCents?: number | null; unit: string; imageUrl: string;
 };
 
-function SurplusCard({ product, i }: { product: SurplusProduct; i: number }) {
+function SurplusCard({ product, i, t }: {
+  product: SurplusProduct;
+  i: number;
+  t: (key: string, opts?: Record<string, unknown>) => string;
+}) {
   const savingsPercent = product.originalPriceCents
     ? Math.round(((product.originalPriceCents - product.priceCents) / product.originalPriceCents) * 100)
     : null;
@@ -254,9 +270,9 @@ function SurplusCard({ product, i }: { product: SurplusProduct; i: number }) {
           <div className="relative aspect-square overflow-hidden">
             <img src={product.imageUrl} alt={product.name} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
             {savingsPercent && (
-              <div className="absolute top-2 left-2 bg-red-500 text-white text-xs font-bold px-2 py-1 rounded-full">-{savingsPercent}%</div>
+              <div className="absolute top-2 left-2 bg-red-500 text-white text-xs font-bold px-2 py-1 rounded-full">{t("surplus.discount", { pct: savingsPercent })}</div>
             )}
-            <div className="absolute top-2 right-2 bg-amber-950/80 text-amber-200 text-xs font-semibold px-2 py-1 rounded-full">Final sale</div>
+            <div className="absolute top-2 right-2 bg-amber-950/80 text-amber-200 text-xs font-semibold px-2 py-1 rounded-full">{t("surplus.finalSale")}</div>
           </div>
           <div className="p-4">
             <p className="text-xs text-muted-foreground mb-1">{product.vendorName} · {product.vendorLocation}</p>
@@ -269,7 +285,7 @@ function SurplusCard({ product, i }: { product: SurplusProduct; i: number }) {
               <span className="text-xs text-muted-foreground">/ {product.unit}</span>
             </div>
             <div className="mt-3 flex items-center gap-1 text-xs text-primary font-medium group-hover:gap-2 transition-all">
-              View vendor <ArrowRight className="w-3 h-3" />
+              {t("surplus.viewVendor")} <ArrowRight className="w-3 h-3" />
             </div>
           </div>
         </div>

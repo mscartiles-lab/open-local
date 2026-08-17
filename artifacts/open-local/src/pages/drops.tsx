@@ -1,5 +1,6 @@
 import { useState, useMemo } from "react";
 import { Link } from "wouter";
+import { useTranslation } from "react-i18next";
 import { Zap, Clock, TrendingDown, ArrowRight, Tag } from "lucide-react";
 import { useListProducts } from "@workspace/api-client-react";
 import Layout from "@/components/layout/Layout";
@@ -11,35 +12,38 @@ type ListingKey = "batch_drop" | "pre_order" | "surplus";
 const TYPES = [
   {
     key: "batch_drop" as ListingKey,
-    label: "Batch Drops",
-    blurb: "Fresh releases just out of the oven, kiln, or kitchen — grab them before they're gone.",
+    labelKey: "drops.batchDrops",
+    blurbKey: "drops.batchDropsDescription",
     icon: Zap,
     color: "text-amber-700",
     bg: "bg-amber-50 border-amber-200",
     activeBg: "bg-amber-600",
     badge: "bg-amber-100 text-amber-800",
+    badgeKey: "common.batchDrop",
     dotColor: "#d97706",
   },
   {
     key: "pre_order" as ListingKey,
-    label: "Pre-Orders",
-    blurb: "Reserve your spot for upcoming market pickups before the vendor is sold out.",
+    labelKey: "drops.preOrders",
+    blurbKey: "drops.preOrdersDescription",
     icon: Clock,
     color: "text-sky-700",
     bg: "bg-sky-50 border-sky-200",
     activeBg: "bg-sky-600",
     badge: "bg-sky-100 text-sky-800",
+    badgeKey: "common.preOrder",
     dotColor: "#0284c7",
   },
   {
     key: "surplus" as ListingKey,
-    label: "Surplus",
-    blurb: "End-of-market leftovers at a discount. Help vendors reduce waste while saving money.",
+    labelKey: "drops.surplus",
+    blurbKey: "drops.surplusDescription",
     icon: TrendingDown,
     color: "text-emerald-700",
     bg: "bg-emerald-50 border-emerald-200",
     activeBg: "bg-emerald-600",
     badge: "bg-emerald-100 text-emerald-800",
+    badgeKey: "common.surplus",
     dotColor: "#059669",
   },
 ] as const;
@@ -49,6 +53,7 @@ function formatPrice(cents: number) {
 }
 
 export default function DropsPage() {
+  const { t } = useTranslation();
   const [active, setActive] = useState<ListingKey>("batch_drop");
   const { data: allProducts, isLoading } = useListProducts();
 
@@ -60,6 +65,20 @@ export default function DropsPage() {
     [allProducts, active],
   );
 
+  const noItemsKey =
+    active === "batch_drop"
+      ? "drops.noBatchDrops"
+      : active === "pre_order"
+      ? "drops.noPreOrders"
+      : "drops.noSurplus";
+
+  const noItemsDescKey =
+    active === "batch_drop"
+      ? "drops.noBatchDropsDescription"
+      : active === "pre_order"
+      ? "drops.noPreOrdersDescription"
+      : "drops.noSurplusDescription";
+
   return (
     <Layout>
       {/* Header */}
@@ -69,10 +88,10 @@ export default function DropsPage() {
             Open Local
           </p>
           <h1 className="font-serif text-5xl font-bold text-foreground mb-3">
-            Exclusive Drops &amp; Pre-Orders
+            {t("drops.title")}
           </h1>
           <p className="text-xl text-muted-foreground max-w-2xl">
-            Special listings from local producers — fresh batch drops, upcoming market pre-orders, and end-of-day surplus.
+            {t("drops.subtitle")}
           </p>
         </div>
       </div>
@@ -80,32 +99,31 @@ export default function DropsPage() {
       <div className="container mx-auto max-w-6xl px-4 py-10">
         {/* Type filter cards */}
         <div className="grid grid-cols-3 gap-4 mb-10">
-          {TYPES.map((t) => {
-            const TIcon = t.icon;
-            const isActive = active === t.key;
+          {TYPES.map((typeItem) => {
+            const TIcon = typeItem.icon;
+            const isActive = active === typeItem.key;
             return (
               <button
-                key={t.key}
-                onClick={() => setActive(t.key)}
+                key={typeItem.key}
+                onClick={() => setActive(typeItem.key)}
                 className={cn(
                   "rounded-xl border p-5 text-left transition-all",
                   isActive
-                    ? `${t.bg} ring-2 ring-offset-2`
+                    ? `${typeItem.bg} ring-2 ring-offset-2`
                     : "border-border bg-card hover:bg-muted",
                 )}
-
               >
                 <div className={cn("flex items-center gap-2 mb-2")}>
                   <div
-                    className={cn("flex h-8 w-8 items-center justify-center rounded-full", isActive ? t.activeBg : "bg-muted")}
+                    className={cn("flex h-8 w-8 items-center justify-center rounded-full", isActive ? typeItem.activeBg : "bg-muted")}
                   >
                     <TIcon className={cn("h-4 w-4", isActive ? "text-white" : "text-muted-foreground")} />
                   </div>
-                  <p className={cn("font-serif text-lg font-bold", isActive ? t.color : "text-foreground")}>
-                    {t.label}
+                  <p className={cn("font-serif text-lg font-bold", isActive ? typeItem.color : "text-foreground")}>
+                    {t(typeItem.labelKey)}
                   </p>
                 </div>
-                <p className="text-sm text-muted-foreground leading-relaxed">{t.blurb}</p>
+                <p className="text-sm text-muted-foreground leading-relaxed">{t(typeItem.blurbKey)}</p>
               </button>
             );
           })}
@@ -117,8 +135,8 @@ export default function DropsPage() {
             <Icon className="h-4 w-4 text-white" />
           </div>
           <div>
-            <h2 className="font-serif text-2xl font-bold text-foreground">{typeConfig.label}</h2>
-            <p className="text-sm text-muted-foreground">{typeConfig.blurb}</p>
+            <h2 className="font-serif text-2xl font-bold text-foreground">{t(typeConfig.labelKey)}</h2>
+            <p className="text-sm text-muted-foreground">{t(typeConfig.blurbKey)}</p>
           </div>
         </div>
 
@@ -133,12 +151,10 @@ export default function DropsPage() {
           <div className="rounded-xl border border-dashed border-border bg-muted px-8 py-20 text-center">
             <Icon className="mx-auto h-12 w-12 text-muted-foreground" />
             <p className="mt-4 font-serif text-2xl font-bold text-foreground">
-              No {typeConfig.label.toLowerCase()} right now
+              {t(noItemsKey)}
             </p>
             <p className="mt-2 text-muted-foreground max-w-sm mx-auto">
-              {active === "batch_drop" && "Vendors post fresh batches throughout the day and on market mornings. Check back soon."}
-              {active === "pre_order" && "Vendors open pre-orders ahead of upcoming markets. Check back as market day approaches."}
-              {active === "surplus" && "Vendors post leftover items after markets. Check back on market evenings."}
+              {t(noItemsDescKey)}
             </p>
           </div>
         ) : (
@@ -154,7 +170,7 @@ export default function DropsPage() {
                   <div className="flex-1 min-w-0">
                     <span className={cn("inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider mb-1.5", typeConfig.badge)}>
                       <Icon className="h-2.5 w-2.5" />
-                      {typeConfig.label.replace(/s$/, "")}
+                      {t(typeConfig.badgeKey)}
                     </span>
                     <p className="font-serif text-base font-bold text-foreground leading-tight mb-1 line-clamp-2">
                       {p.name}
@@ -169,7 +185,7 @@ export default function DropsPage() {
                     {p.availableUntil && (
                       <p className="mt-1 flex items-center gap-1 text-xs text-muted-foreground">
                         <Clock className="h-3 w-3" />
-                        Until {new Date(p.availableUntil).toLocaleDateString()}
+                        {t("drops.until")} {new Date(p.availableUntil).toLocaleDateString()}
                       </p>
                     )}
                     {p.vendorName && (

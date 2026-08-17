@@ -1,4 +1,5 @@
 import { useRef, useState } from "react";
+import { useTranslation } from "react-i18next";
 import Papa from "papaparse";
 import { Download, Upload, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -29,6 +30,7 @@ export default function InventoryCsvTools({
   vendorId: number;
   onImported: () => void;
 }) {
+  const { t } = useTranslation();
   const { toast } = useToast();
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [busy, setBusy] = useState<"import" | "export" | null>(null);
@@ -51,7 +53,7 @@ export default function InventoryCsvTools({
     } catch (e) {
       toast({
         variant: "destructive",
-        title: "Export failed",
+        title: t("csv.exportFailed"),
         description: (e as Error).message,
       });
     } finally {
@@ -92,8 +94,8 @@ export default function InventoryCsvTools({
           if (rows.length === 0) {
             toast({
               variant: "destructive",
-              title: "No valid rows found",
-              description: "Make sure your CSV has a header row with at least a 'name' column.",
+              title: t("csv.noValidRows"),
+              description: t("csv.noValidRowsHint"),
             });
             return;
           }
@@ -108,14 +110,14 @@ export default function InventoryCsvTools({
             throw new Error(data.error ?? `HTTP ${resp.status}`);
           }
           toast({
-            title: "Import complete",
-            description: `${data.imported} listing${data.imported === 1 ? "" : "s"} added.`,
+            title: t("csv.importComplete"),
+            description: t("csv.importedCount", { count: data.imported }),
           });
           onImported();
         } catch (err) {
           toast({
             variant: "destructive",
-            title: "Import failed",
+            title: t("csv.importFailed"),
             description: (err as Error).message,
           });
         } finally {
@@ -127,7 +129,7 @@ export default function InventoryCsvTools({
         setBusy(null);
         toast({
           variant: "destructive",
-          title: "Couldn't read CSV",
+          title: t("csv.couldntRead"),
           description: err.message,
         });
       },
@@ -148,7 +150,7 @@ export default function InventoryCsvTools({
         ) : (
           <Download className="mr-1.5 h-3.5 w-3.5" />
         )}
-        Export CSV
+        {t("csv.exportCsv")}
       </Button>
       <Button
         type="button"
@@ -162,7 +164,7 @@ export default function InventoryCsvTools({
         ) : (
           <Upload className="mr-1.5 h-3.5 w-3.5" />
         )}
-        Import CSV
+        {t("csv.importCsv")}
       </Button>
       <input
         ref={fileInputRef}

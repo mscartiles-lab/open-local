@@ -1,5 +1,6 @@
 import { useState, useMemo } from "react";
 import { motion, AnimatePresence } from "framer-motion";
+import { useTranslation } from "react-i18next";
 import { useListListings, useCreateListing } from "@workspace/api-client-react";
 import { useSearchLogger } from "@/hooks/use-search-logger";
 import Layout from "@/components/layout/Layout";
@@ -76,10 +77,13 @@ const formSchema = z.object({
 
 type FormValues = z.infer<typeof formSchema>;
 
-function ListingCard({ listing }: { listing: {
-  id: number; title: string; description: string; type: string;
-  category: string; city: string; state: string; contactName: string; createdAt: string;
-}}) {
+function ListingCard({ listing, t }: {
+  listing: {
+    id: number; title: string; description: string; type: string;
+    category: string; city: string; state: string; contactName: string; createdAt: string;
+  };
+  t: (key: string, opts?: Record<string, unknown>) => string;
+}) {
   const isWanted = listing.type === "wanted";
   const daysAgo = Math.max(0, Math.floor((Date.now() - new Date(listing.createdAt).getTime()) / 86400000));
 
@@ -101,7 +105,7 @@ function ListingCard({ listing }: { listing: {
             }`}
           >
             {isWanted ? <HandHelping className="w-3 h-3" /> : <Wrench className="w-3 h-3" />}
-            {isWanted ? "Wanted" : "Offering"}
+            {isWanted ? t("listings.wanted") : t("listings.offering")}
           </span>
           <span className="inline-flex items-center gap-1 text-xs text-muted-foreground bg-muted px-2 py-1 rounded-full">
             <Tag className="w-3 h-3" />
@@ -109,7 +113,7 @@ function ListingCard({ listing }: { listing: {
           </span>
         </div>
         <span className="text-xs text-muted-foreground whitespace-nowrap">
-          {daysAgo === 0 ? "Today" : daysAgo === 1 ? "Yesterday" : `${daysAgo}d ago`}
+          {daysAgo === 0 ? t("common.today") : daysAgo === 1 ? t("common.yesterday") : t("common.daysAgo", { n: daysAgo })}
         </span>
       </div>
 
@@ -131,6 +135,7 @@ function ListingCard({ listing }: { listing: {
 }
 
 export default function Listings() {
+  const { t } = useTranslation();
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const [tab, setTab] = useState<"all" | "wanted" | "offering">("all");
@@ -178,6 +183,7 @@ export default function Listings() {
   };
 
   const displayedListings = listings ?? [];
+  const n = displayedListings.length;
 
   return (
     <Layout>
@@ -186,30 +192,30 @@ export default function Listings() {
         <div className="container max-w-6xl mx-auto px-4 py-12">
           <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4">
             <div>
-              <h1 className="text-4xl font-serif font-bold text-foreground">Local Listings</h1>
+              <h1 className="text-4xl font-serif font-bold text-foreground">{t("listings.title")}</h1>
               <p className="text-muted-foreground mt-2 font-sans max-w-xl">
-                Community classifieds for local services — post what you need or what you offer, and connect with your neighbors.
+                {t("listings.subtitle")}
               </p>
             </div>
             <Button onClick={() => setPostOpen(true)} className="flex-shrink-0 self-start sm:self-auto">
               <Plus className="w-4 h-4 mr-2" />
-              Post a listing
+              {t("listings.postListing")}
             </Button>
           </div>
 
           {/* Tabs */}
           <div className="flex gap-1 mt-8 bg-background border border-border rounded-lg p-1 w-fit">
-            {(["all", "wanted", "offering"] as const).map((t) => (
+            {(["all", "wanted", "offering"] as const).map((tabKey) => (
               <button
-                key={t}
-                onClick={() => setTab(t)}
+                key={tabKey}
+                onClick={() => setTab(tabKey)}
                 className={`px-4 py-1.5 rounded-md text-sm font-medium transition-colors capitalize ${
-                  tab === t
+                  tab === tabKey
                     ? "bg-primary text-primary-foreground"
                     : "text-muted-foreground hover:text-foreground"
                 }`}
               >
-                {t === "all" ? "All" : t === "wanted" ? "🙋 Wanted" : "🔧 Offering"}
+                {tabKey === "all" ? t("common.all") : tabKey === "wanted" ? t("listings.wanted") : t("listings.offering")}
               </button>
             ))}
           </div>
@@ -222,7 +228,7 @@ export default function Listings() {
           <div className="relative flex-1">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground pointer-events-none" />
             <Input
-              placeholder="Search listings…"
+              placeholder={t("listings.searchPlaceholder")}
               value={search}
               onChange={(e) => setSearch(e.target.value)}
               className="pl-9"
@@ -231,17 +237,17 @@ export default function Listings() {
           <Select value={categoryFilter} onValueChange={setCategoryFilter}>
             <SelectTrigger className="w-full sm:w-48">
               <Tag className="w-3.5 h-3.5 mr-1.5 text-muted-foreground" />
-              <SelectValue placeholder="Category" />
+              <SelectValue placeholder={t("common.category")} />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="all">All categories</SelectItem>
+              <SelectItem value="all">{t("common.allCategories")}</SelectItem>
               {CATEGORIES.map((c) => <SelectItem key={c} value={c}>{c}</SelectItem>)}
             </SelectContent>
           </Select>
         </div>
 
         <p className="text-sm text-muted-foreground mb-6">
-          {isLoading ? "Loading…" : `${displayedListings.length} listing${displayedListings.length !== 1 ? "s" : ""}`}
+          {isLoading ? t("common.loading") : t("listings.listingCount", { n })}
         </p>
 
         {/* Cards */}
@@ -252,17 +258,17 @@ export default function Listings() {
         ) : displayedListings.length === 0 ? (
           <div className="text-center py-20 text-muted-foreground">
             <HandHelping className="w-10 h-10 mx-auto mb-3 opacity-30" />
-            <p className="font-medium">No listings yet.</p>
-            <p className="text-sm mt-1">Be the first to post a local listing.</p>
+            <p className="font-medium">{t("listings.noListings")}</p>
+            <p className="text-sm mt-1">{t("listings.noListingsHint")}</p>
             <Button className="mt-6" onClick={() => setPostOpen(true)}>
-              <Plus className="w-4 h-4 mr-2" /> Post a listing
+              <Plus className="w-4 h-4 mr-2" /> {t("listings.postListing")}
             </Button>
           </div>
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <AnimatePresence>
               {displayedListings.map((listing) => (
-                <ListingCard key={listing.id} listing={listing} />
+                <ListingCard key={listing.id} listing={listing} t={t} />
               ))}
             </AnimatePresence>
           </div>
@@ -273,9 +279,9 @@ export default function Listings() {
       <Dialog open={postOpen} onOpenChange={setPostOpen}>
         <DialogContent className="max-w-lg max-h-[90vh] overflow-y-auto">
           <DialogHeader>
-            <DialogTitle className="font-serif text-2xl">Post a Local Listing</DialogTitle>
+            <DialogTitle className="font-serif text-2xl">{t("listings.formTitle")}</DialogTitle>
             <DialogDescription>
-              Connect with your community — share what you need or what you can offer.
+              {t("listings.formSubtitle")}
             </DialogDescription>
           </DialogHeader>
 
@@ -287,11 +293,11 @@ export default function Listings() {
                 name="type"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>I am…</FormLabel>
+                    <FormLabel>{t("listings.fieldIAm")}</FormLabel>
                     <div className="flex gap-3">
                       {[
-                        { value: "wanted", label: "🙋 Looking for help", color: "border-violet-400 bg-violet-50 text-violet-800" },
-                        { value: "offering", label: "🔧 Offering a service", color: "border-emerald-400 bg-emerald-50 text-emerald-800" },
+                        { value: "wanted", label: t("listings.lookingForHelp"), color: "border-violet-400 bg-violet-50 text-violet-800" },
+                        { value: "offering", label: t("listings.offeringService"), color: "border-emerald-400 bg-emerald-50 text-emerald-800" },
                       ].map((opt) => (
                         <button
                           key={opt.value}
@@ -316,7 +322,7 @@ export default function Listings() {
                 name="title"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Title</FormLabel>
+                    <FormLabel>{t("listings.fieldTitle")}</FormLabel>
                     <FormControl>
                       <Input placeholder="e.g. Looking for a reliable dog walker in Tampa" {...field} />
                     </FormControl>
@@ -331,7 +337,7 @@ export default function Listings() {
                 name="description"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Details</FormLabel>
+                    <FormLabel>{t("listings.fieldDetails")}</FormLabel>
                     <FormControl>
                       <Textarea
                         placeholder="Describe what you need or what you offer — schedule, frequency, budget, experience, etc."
@@ -350,7 +356,7 @@ export default function Listings() {
                 name="category"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Category</FormLabel>
+                    <FormLabel>{t("common.category")}</FormLabel>
                     <Select onValueChange={field.onChange} value={field.value}>
                       <FormControl>
                         <SelectTrigger>
@@ -373,7 +379,7 @@ export default function Listings() {
                   name="city"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>City</FormLabel>
+                      <FormLabel>{t("listings.fieldCity")}</FormLabel>
                       <FormControl>
                         <Input placeholder="Tampa" {...field} />
                       </FormControl>
@@ -386,7 +392,7 @@ export default function Listings() {
                   name="state"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>State</FormLabel>
+                      <FormLabel>{t("listings.fieldState")}</FormLabel>
                       <Select onValueChange={field.onChange} value={field.value}>
                         <FormControl>
                           <SelectTrigger>
@@ -410,7 +416,7 @@ export default function Listings() {
                   name="contactName"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Your name</FormLabel>
+                      <FormLabel>{t("listings.fieldName")}</FormLabel>
                       <FormControl>
                         <Input placeholder="Jane" {...field} />
                       </FormControl>
@@ -423,7 +429,7 @@ export default function Listings() {
                   name="contactEmail"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Email</FormLabel>
+                      <FormLabel>{t("listings.fieldEmail")}</FormLabel>
                       <FormControl>
                         <Input type="email" placeholder="you@email.com" {...field} />
                       </FormControl>
@@ -434,7 +440,7 @@ export default function Listings() {
               </div>
 
               <Button type="submit" className="w-full" disabled={createListing.isPending}>
-                {createListing.isPending ? "Posting…" : "Post Listing"}
+                {createListing.isPending ? t("listings.posting") : t("listings.postBtn")}
               </Button>
             </form>
           </Form>

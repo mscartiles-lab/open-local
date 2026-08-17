@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { useTranslation } from "react-i18next";
 import { MapPin, Plus, Trash2, Lock, Loader2, Navigation, Crown } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -24,6 +25,7 @@ export default function AdditionalLocationsPanel({
   vendor: Vendor;
   onUpdated: () => void;
 }) {
+  const { t } = useTranslation();
   const { user } = useUser();
   const { toast } = useToast();
   const isPremium = user?.tier === "premium";
@@ -63,8 +65,8 @@ export default function AdditionalLocationsPanel({
       onUpdated();
     } catch {
       toast({
-        title: "Couldn't save locations",
-        description: "Please try again.",
+        title: t("locations.couldntSave"),
+        description: t("locations.tryAgain"),
         variant: "destructive",
       });
     } finally {
@@ -74,7 +76,7 @@ export default function AdditionalLocationsPanel({
 
   async function useMyLocation() {
     if (!navigator.geolocation) {
-      toast({ title: "Geolocation not available in your browser." });
+      toast({ title: t("locations.geoNotAvailable") });
       return;
     }
     setLocating(true);
@@ -87,7 +89,7 @@ export default function AdditionalLocationsPanel({
         setLocating(false);
       },
       () => {
-        toast({ title: "Couldn't get location", variant: "destructive" });
+        toast({ title: t("locations.couldntGetLocation"), variant: "destructive" });
         setLocating(false);
       },
     );
@@ -98,13 +100,13 @@ export default function AdditionalLocationsPanel({
     const lat = parseFloat(addLat);
     const lng = parseFloat(addLng);
     if (isNaN(lat) || lat < -90 || lat > 90) {
-      setLatError("Must be a number between -90 and 90");
+      setLatError(t("locations.latRange"));
       ok = false;
     } else {
       setLatError("");
     }
     if (isNaN(lng) || lng < -180 || lng > 180) {
-      setLngError("Must be a number between -180 and 180");
+      setLngError(t("locations.lngRange"));
       ok = false;
     } else {
       setLngError("");
@@ -126,7 +128,7 @@ export default function AdditionalLocationsPanel({
   }
 
   function removePin(idx: number) {
-    if (!confirm("Remove this location pin?")) return;
+    if (!confirm(t("locations.removeTitle"))) return;
     savePins(pins.filter((_, i) => i !== idx));
   }
 
@@ -136,16 +138,16 @@ export default function AdditionalLocationsPanel({
         <div className="flex items-center gap-2.5">
           <MapPin className="h-5 w-5 text-primary" />
           <h2 className="font-serif text-xl font-bold text-foreground">
-            Selling Locations
+            {t("locations.sellingLocations")}
           </h2>
           <span className="inline-flex items-center gap-1 rounded-full bg-amber-100 px-2 py-0.5 text-[11px] font-semibold uppercase tracking-wider text-amber-800">
             <Crown className="h-2.5 w-2.5" />
-            Premium
+            {t("locations.premium")}
           </span>
         </div>
         {isPremium && pins.length > 0 && (
           <span className="text-sm text-muted-foreground tabular-nums">
-            {pins.length} location{pins.length !== 1 ? "s" : ""}
+            {pins.length} {pins.length !== 1 ? t("locations.locationsPlural") : t("locations.locationSingular")}
           </span>
         )}
       </div>
@@ -153,18 +155,17 @@ export default function AdditionalLocationsPanel({
       {!isPremium ? (
         <div className="flex flex-col items-center gap-3 rounded-lg border border-dashed border-border bg-muted py-10 text-center px-6">
           <Lock className="h-8 w-8 text-muted-foreground" />
-          <p className="font-semibold text-foreground">Premium feature</p>
+          <p className="font-semibold text-foreground">{t("locations.premiumFeature")}</p>
           <p className="max-w-sm text-sm text-muted-foreground">
-            Upgrade to Premium to pin{" "}
-            <strong>{PREMIUM_INCLUDED_LOCATIONS} selling locations</strong> on
-            the map (included), then add more for{" "}
-            <strong>${ADDITIONAL_LOCATION_PRICE_MONTHLY}/mo each</strong> —
-            great for vendors who sell at multiple spots throughout the week.
+            {t("locations.upgradeDescription", {
+              count: PREMIUM_INCLUDED_LOCATIONS,
+              price: ADDITIONAL_LOCATION_PRICE_MONTHLY,
+            })}
           </p>
           <a href="/billing">
             <Button size="sm" variant="outline" className="gap-1.5 mt-1">
               <Crown className="h-3.5 w-3.5" />
-              Upgrade to Premium
+              {t("locations.upgradeToPremium")}
             </Button>
           </a>
         </div>
@@ -173,31 +174,26 @@ export default function AdditionalLocationsPanel({
           {/* Included vs extra cost summary */}
           <div className="rounded-lg bg-muted px-4 py-3 text-sm text-muted-foreground">
             <span className="font-medium text-foreground">
-              {PREMIUM_INCLUDED_LOCATIONS} locations included
+              {t("locations.includedLocations", { count: PREMIUM_INCLUDED_LOCATIONS })}
             </span>{" "}
-            with Premium.{" "}
+            {t("locations.withPremium")}{" "}
             {extraCount > 0 ? (
               <span>
-                You have{" "}
-                <span className="font-medium text-foreground">
-                  {extraCount} extra location{extraCount !== 1 ? "s" : ""}
-                </span>{" "}
-                adding{" "}
-                <span className="font-medium text-foreground">
-                  ${extraCostMonthly}/mo
-                </span>{" "}
-                to your subscription.
+                {t("locations.extraLocationsInfo", {
+                  count: extraCount,
+                  cost: extraCostMonthly,
+                })}
               </span>
             ) : (
               <span>
-                Add more at ${ADDITIONAL_LOCATION_PRICE_MONTHLY}/mo each.
+                {t("locations.addMoreAt", { price: ADDITIONAL_LOCATION_PRICE_MONTHLY })}
               </span>
             )}
           </div>
 
           {pins.length === 0 ? (
             <p className="text-sm text-muted-foreground">
-              No location pins yet. Add your first selling location below.
+              {t("locations.noPinsYet")}
             </p>
           ) : (
             <div className="space-y-2">
@@ -234,7 +230,7 @@ export default function AdditionalLocationsPanel({
                       size="icon"
                       disabled={saving}
                       onClick={() => removePin(idx)}
-                      title="Remove this pin"
+                      title={t("locations.removePin")}
                     >
                       <Trash2 className="h-4 w-4 text-destructive" />
                     </Button>
@@ -249,21 +245,21 @@ export default function AdditionalLocationsPanel({
             <div className="rounded-lg border border-dashed border-border p-4 space-y-3">
               <div className="flex items-center justify-between">
                 <p className="text-sm font-semibold text-foreground">
-                  Add a location
+                  {t("locations.addLocation")}
                 </p>
                 {pins.length >= PREMIUM_INCLUDED_LOCATIONS && (
                   <span className="text-xs text-amber-600 font-medium">
-                    +${ADDITIONAL_LOCATION_PRICE_MONTHLY}/mo added to your plan
+                    +${ADDITIONAL_LOCATION_PRICE_MONTHLY}/mo {t("locations.addedToPlan")}
                   </span>
                 )}
               </div>
               <div className="grid grid-cols-2 gap-2">
                 <div>
                   <label className="mb-1 block text-xs text-muted-foreground">
-                    Latitude
+                    {t("locations.latitude")}
                   </label>
                   <Input
-                    placeholder="25.761681"
+                    placeholder={t("locations.latPlaceholder")}
                     value={addLat}
                     onChange={(e) => {
                       setAddLat(e.target.value);
@@ -279,10 +275,10 @@ export default function AdditionalLocationsPanel({
                 </div>
                 <div>
                   <label className="mb-1 block text-xs text-muted-foreground">
-                    Longitude
+                    {t("locations.longitude")}
                   </label>
                   <Input
-                    placeholder="-80.191788"
+                    placeholder={t("locations.lngPlaceholder")}
                     value={addLng}
                     onChange={(e) => {
                       setAddLng(e.target.value);
@@ -299,11 +295,11 @@ export default function AdditionalLocationsPanel({
               </div>
               <div>
                 <label className="mb-1 block text-xs text-muted-foreground">
-                  Label{" "}
-                  <span className="text-muted-foreground/60">(optional)</span>
+                  {t("locations.label")}{" "}
+                  <span className="text-muted-foreground/60">{t("locations.optional")}</span>
                 </label>
                 <Input
-                  placeholder="Saturday Farmers Market, Wynwood"
+                  placeholder={t("locations.namePlaceholder")}
                   value={addLabel}
                   onChange={(e) => setAddLabel(e.target.value)}
                   onKeyDown={(e) => e.key === "Enter" && addPin()}
@@ -322,7 +318,7 @@ export default function AdditionalLocationsPanel({
                   ) : (
                     <Navigation className="h-3.5 w-3.5" />
                   )}
-                  Use my location
+                  {t("locations.useMyLocation")}
                 </Button>
                 <Button
                   size="sm"
@@ -335,7 +331,7 @@ export default function AdditionalLocationsPanel({
                   ) : (
                     <Plus className="h-3.5 w-3.5" />
                   )}
-                  Add pin
+                  {t("locations.addPin")}
                 </Button>
                 <Button
                   variant="ghost"
@@ -343,7 +339,7 @@ export default function AdditionalLocationsPanel({
                   onClick={() => setShowForm(false)}
                   disabled={saving}
                 >
-                  Cancel
+                  {t("locations.cancel")}
                 </Button>
               </div>
             </div>
@@ -355,7 +351,7 @@ export default function AdditionalLocationsPanel({
               className="gap-1.5"
             >
               <Plus className="h-3.5 w-3.5" />
-              + Selling Location
+              {t("locations.addSellingLocation")}
               {pins.length >= PREMIUM_INCLUDED_LOCATIONS && (
                 <span className="ml-1 text-amber-600 font-normal">
                   (${ADDITIONAL_LOCATION_PRICE_MONTHLY}/mo)
