@@ -38,6 +38,31 @@ const TAG_OPTIONS = [
   "music", "kids-activities", "food-trucks", "artisans", "plants",
   "seafood", "eggs", "honey", "baked-goods",
 ];
+const DAY_KEYS: Record<string, string> = {
+  Monday: "marketRegister.dayMonday",
+  Tuesday: "marketRegister.dayTuesday",
+  Wednesday: "marketRegister.dayWednesday",
+  Thursday: "marketRegister.dayThursday",
+  Friday: "marketRegister.dayFriday",
+  Saturday: "marketRegister.daySaturday",
+  Sunday: "marketRegister.daySunday",
+};
+const TAG_KEYS: Record<string, string> = {
+  organic: "marketRegister.tagOrganic",
+  "year-round": "marketRegister.tagYearRound",
+  seasonal: "marketRegister.tagSeasonal",
+  "pet-friendly": "marketRegister.tagPetFriendly",
+  "rain-or-shine": "marketRegister.tagRainOrShine",
+  music: "marketRegister.tagMusic",
+  "kids-activities": "marketRegister.tagKidsActivities",
+  "food-trucks": "marketRegister.tagFoodTrucks",
+  artisans: "marketRegister.tagArtisans",
+  plants: "marketRegister.tagPlants",
+  seafood: "marketRegister.tagSeafood",
+  eggs: "marketRegister.tagEggs",
+  honey: "marketRegister.tagHoney",
+  "baked-goods": "marketRegister.tagBakedGoods",
+};
 
 interface FormState {
   // Step 1 — Basics
@@ -110,7 +135,7 @@ function Step1({
       <div>
         <label className="text-sm font-semibold text-foreground mb-1.5 block">{t("marketRegister.fieldMarketName")} *</label>
         <Input
-          placeholder="e.g. Sarasota Farmers Market"
+          placeholder={t("marketRegister.placeholderMarketName")}
           value={form.name}
           onChange={(e) => set("name", e.target.value)}
         />
@@ -118,7 +143,7 @@ function Step1({
       <div className="grid grid-cols-2 gap-3">
         <div>
           <label className="text-sm font-semibold text-foreground mb-1.5 block">{t("marketRegister.fieldCity")} *</label>
-          <Input placeholder="Sarasota" value={form.city} onChange={(e) => set("city", e.target.value)} />
+          <Input placeholder={t("marketRegister.placeholderCity")} value={form.city} onChange={(e) => set("city", e.target.value)} />
         </div>
         <div>
           <label className="text-sm font-semibold text-foreground mb-1.5 block">{t("marketRegister.fieldState")}</label>
@@ -130,27 +155,27 @@ function Step1({
       </div>
       <div>
         <label className="text-sm font-semibold text-foreground mb-1.5 block">{t("marketRegister.fieldAddress")}</label>
-        <Input placeholder="5360 Gulf of Mexico Dr, Longboat Key, FL 34228" value={form.address} onChange={(e) => set("address", e.target.value)} />
+          <Input placeholder={t("marketRegister.placeholderAddress")} value={form.address} onChange={(e) => set("address", e.target.value)} />
       </div>
       <div className="grid grid-cols-2 gap-3">
         <div>
           <label className="text-sm font-semibold text-foreground mb-1.5 block">{t("marketRegister.fieldDay")}</label>
           <Select value={form.day} onValueChange={(v) => set("day", v)}>
-            <SelectTrigger><SelectValue placeholder="Choose…" /></SelectTrigger>
+            <SelectTrigger><SelectValue placeholder={t("marketRegister.chooseDay")} /></SelectTrigger>
             <SelectContent>
-              {DAYS.map((d) => <SelectItem key={d} value={d}>{d}</SelectItem>)}
+              {DAYS.map((d) => <SelectItem key={d} value={d}>{t(DAY_KEYS[d])}</SelectItem>)}
             </SelectContent>
           </Select>
         </div>
         <div>
           <label className="text-sm font-semibold text-foreground mb-1.5 block">{t("marketRegister.fieldHours")}</label>
-          <Input placeholder="8am – 1pm" value={form.time} onChange={(e) => set("time", e.target.value)} />
+          <Input placeholder={t("marketRegister.placeholderHours")} value={form.time} onChange={(e) => set("time", e.target.value)} />
         </div>
       </div>
       <div>
         <label className="text-sm font-semibold text-foreground mb-1.5 block">{t("marketRegister.fieldDescription")}</label>
         <textarea
-          placeholder="Tell shoppers what makes your market special — the vibe, what vendors you have, any regular events…"
+          placeholder={t("marketRegister.placeholderDescription")}
           value={form.description}
           onChange={(e) => set("description", e.target.value)}
           className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm resize-none focus:outline-none focus:ring-2 focus:ring-ring min-h-[100px]"
@@ -159,7 +184,7 @@ function Step1({
 
       <div>
         <label className="text-sm font-semibold text-foreground mb-2 block">
-          Pin your exact location
+          {t("marketRegister.pinExactLocation")}
         </label>
         <Suspense fallback={<div className="h-[280px] rounded-xl border border-border bg-muted animate-pulse" />}>
           <LocationPicker
@@ -189,35 +214,35 @@ function Step2({
       <div className="grid grid-cols-2 gap-3">
         <div>
           <label className="text-sm font-semibold text-foreground mb-1.5 block">{t("marketRegister.fieldEmail")} *</label>
-          <Input type="email" placeholder="manager@yourmarket.com" value={form.contactEmail} onChange={(e) => set("contactEmail", e.target.value)} />
+          <Input type="email" placeholder={t("marketRegister.placeholderEmail")} value={form.contactEmail} onChange={(e) => set("contactEmail", e.target.value)} />
         </div>
         <div>
           <label className="text-sm font-semibold text-foreground mb-1.5 block">{t("marketRegister.fieldPhone")}</label>
-          <Input type="tel" placeholder="(941) 555-0100" value={form.phone} onChange={(e) => set("phone", e.target.value)} />
+          <Input type="tel" placeholder={t("marketRegister.placeholderPhone")} value={form.phone} onChange={(e) => set("phone", e.target.value)} />
         </div>
       </div>
       <div>
         <label className="text-sm font-semibold text-foreground mb-1.5 block">{t("marketRegister.fieldWebsite")}</label>
-        <Input type="url" placeholder="https://yourmarket.com" value={form.websiteUrl} onChange={(e) => set("websiteUrl", e.target.value)} />
+          <Input type="url" placeholder={t("marketRegister.placeholderWebsite")} value={form.websiteUrl} onChange={(e) => set("websiteUrl", e.target.value)} />
       </div>
       <div className="grid grid-cols-2 gap-3">
         <div>
           <label className="text-sm font-semibold text-foreground mb-1.5 block">{t("marketRegister.fieldInstagram")}</label>
-          <Input placeholder="sarasotafarmersmarket" value={form.instagramHandle} onChange={(e) => set("instagramHandle", e.target.value)} />
+          <Input placeholder={t("marketRegister.placeholderInstagram")} value={form.instagramHandle} onChange={(e) => set("instagramHandle", e.target.value)} />
         </div>
         <div>
           <label className="text-sm font-semibold text-foreground mb-1.5 block">{t("marketRegister.fieldFacebook")}</label>
-          <Input type="url" placeholder="https://facebook.com/…" value={form.facebookUrl} onChange={(e) => set("facebookUrl", e.target.value)} />
+          <Input type="url" placeholder={t("marketRegister.placeholderFacebook")} value={form.facebookUrl} onChange={(e) => set("facebookUrl", e.target.value)} />
         </div>
       </div>
       <div className="grid grid-cols-2 gap-3">
         <div>
           <label className="text-sm font-semibold text-foreground mb-1.5 block">{t("marketRegister.fieldLogo")}</label>
-          <Input type="url" placeholder="https://…/logo.png" value={form.logoUrl} onChange={(e) => set("logoUrl", e.target.value)} />
+          <Input type="url" placeholder={t("marketRegister.placeholderLogo")} value={form.logoUrl} onChange={(e) => set("logoUrl", e.target.value)} />
         </div>
         <div>
           <label className="text-sm font-semibold text-foreground mb-1.5 block">{t("marketRegister.fieldBanner")}</label>
-          <Input type="url" placeholder="https://…/banner.jpg" value={form.featuredImageUrl} onChange={(e) => set("featuredImageUrl", e.target.value)} />
+          <Input type="url" placeholder={t("marketRegister.placeholderBanner")} value={form.featuredImageUrl} onChange={(e) => set("featuredImageUrl", e.target.value)} />
         </div>
       </div>
       <div>
@@ -238,7 +263,7 @@ function Step2({
                   : "bg-background text-muted-foreground border-border hover:border-primary/50",
               )}
             >
-              {tag}
+               {t(TAG_KEYS[tag])}
             </button>
           ))}
         </div>
@@ -251,13 +276,13 @@ function Step3({ form }: { form: FormState }) {
   const { t } = useTranslation();
   const rows: [string, string][] = [
     [t("marketRegister.fieldMarketName"), form.name],
-    ["Location", [form.city, form.region].filter(Boolean).join(", ")],
+    [t("marketRegister.reviewLocation"), [form.city, form.region].filter(Boolean).join(", ")],
     ...(form.address ? [[t("marketRegister.fieldAddress"), form.address] as [string, string]] : []),
-    ...(form.day ? [["Day", [form.day, form.time].filter(Boolean).join(" · ")] as [string, string]] : []),
+    ...(form.day ? [[t("marketRegister.reviewDay"), [t(DAY_KEYS[form.day]), form.time].filter(Boolean).join(" · ")] as [string, string]] : []),
     [t("marketRegister.fieldEmail"), form.contactEmail],
     ...(form.websiteUrl ? [[t("marketRegister.fieldWebsite"), form.websiteUrl] as [string, string]] : []),
-    ...(form.instagramHandle ? [["Instagram", `@${form.instagramHandle}`] as [string, string]] : []),
-    ...(form.tags.length ? [["Tags", form.tags.join(", ")] as [string, string]] : []),
+    ...(form.instagramHandle ? [[t("marketRegister.reviewInstagram"), `@${form.instagramHandle}`] as [string, string]] : []),
+    ...(form.tags.length ? [[t("marketRegister.reviewTags"), form.tags.map((tag) => t(TAG_KEYS[tag])).join(", ")] as [string, string]] : []),
   ];
 
   return (
@@ -270,7 +295,7 @@ function Step3({ form }: { form: FormState }) {
         {rows.map(([label, value], i) => (
           <div key={label} className={cn("flex gap-4 px-4 py-3", i % 2 === 0 ? "bg-muted/40" : "bg-background")}>
             <span className="text-xs font-semibold text-muted-foreground w-32 shrink-0 pt-0.5">{label}</span>
-            <span className="text-sm text-foreground break-all">{value || "—"}</span>
+            <span className="text-sm text-foreground break-all">{value || t("marketRegister.emptyValue")}</span>
           </div>
         ))}
       </div>
@@ -398,7 +423,7 @@ export default function MarketRegisterPage() {
         <div className="mb-8">
           <StepIndicator current={step} total={3} />
           <p className="text-xs text-muted-foreground mt-2 font-semibold">
-            Step {step + 1} of 3 — {STEP_LABELS[step]}
+            {t("marketRegister.stepProgress", { step: step + 1, total: 3, label: STEP_LABELS[step] })}
           </p>
         </div>
 

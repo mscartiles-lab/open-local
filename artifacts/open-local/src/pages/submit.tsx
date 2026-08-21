@@ -1,5 +1,6 @@
 import { useState, useMemo, useRef, useEffect } from "react";
 import { useTranslation } from "react-i18next";
+import type { TFunction } from "i18next";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
@@ -79,18 +80,18 @@ const popularCities = [
 
 const DAYS_OF_WEEK = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"] as const;
 const HOW_TO_ORDER_OPTIONS = [
-  { value: "open_local_storefront", label: "Order via Open Local storefront" },
-  { value: "website", label: "Order on my website" },
-  { value: "preorder_required", label: "Pre-order required" },
-  { value: "farmers_market", label: "Find me at the farmers market" },
+  { value: "open_local_storefront" },
+  { value: "website" },
+  { value: "preorder_required" },
+  { value: "farmers_market" },
 ] as const;
 
-const formSchema = z.object({
-  category: z.string().min(2, "Pick a category."),
-  name: z.string().min(2, "Add your business name."),
-  tagline: z.string().min(10, "A short one-liner that tells people what you make."),
-  description: z.string().min(20, "Tell us a sentence or two about what you make."),
-  location: z.string().min(2, "Pick or type a city."),
+const createFormSchema = (t: TFunction) => z.object({
+  category: z.string().min(2, t("submit.errorCategory")),
+  name: z.string().min(2, t("submit.errorName")),
+  tagline: z.string().min(10, t("submit.errorTagline")),
+  description: z.string().min(20, t("submit.errorDescription")),
+  location: z.string().min(2, t("submit.errorCity")),
   region: z.string().min(2),
   zipCode: z.string().optional().or(z.literal("")),
   established: z.coerce.number().int().min(1800).max(new Date().getFullYear()),
@@ -101,7 +102,7 @@ const formSchema = z.object({
   howToOrder: z.array(z.string()).optional(),
   marketsText: z.string().optional().or(z.literal("")),
   // Step 4 — contact
-  contactEmail: z.string().email("Enter a valid email."),
+  contactEmail: z.string().email(t("submit.errorEmail")),
   imageUrl: z.string().optional().or(z.literal("")),
   websiteUrl: z.string().optional().or(z.literal("")),
   phone: z.string().optional().or(z.literal("")),
@@ -109,7 +110,7 @@ const formSchema = z.object({
   facebookUrl: z.string().optional().or(z.literal("")),
 });
 
-type FormValues = z.infer<typeof formSchema>;
+type FormValues = z.infer<ReturnType<typeof createFormSchema>>;
 
 const stepFields: Record<number, (keyof FormValues)[]> = {
   1: ["category"],
@@ -147,7 +148,7 @@ export default function Submit() {
   const [verifyError, setVerifyError] = useState<string | null>(null);
 
   const form = useForm<FormValues>({
-    resolver: zodResolver(formSchema),
+    resolver: zodResolver(createFormSchema(t)),
     mode: "onChange",
     defaultValues: {
       category: "",
@@ -357,7 +358,7 @@ export default function Submit() {
           >
             {step === 1 && (<>
               <StepHeader
-                eyebrow="Step 1"
+                eyebrow={t("submit.stepOf", { step: 1, total: 4 })}
                 title={t("submit.step1Title")}
                 subtitle={t("submit.step1Description")}
               />
@@ -387,7 +388,7 @@ export default function Submit() {
                         <Icon className="h-6 w-6" />
                       </span>
                       <span className="font-serif font-semibold text-foreground">
-                        {name}
+                        {t(`wholesale.cat${name}`)}
                       </span>
                     </button>
                   );
@@ -399,7 +400,7 @@ export default function Submit() {
             </>)}
             {step === 2 && (<>
               <StepHeader
-                eyebrow="Step 2"
+                eyebrow={t("submit.stepOf", { step: 2, total: 4 })}
                 title={t("submit.step2Title")}
                 subtitle={t("submit.step2Description")}
               />
@@ -411,7 +412,7 @@ export default function Submit() {
                   error={form.formState.errors.name?.message}
                 >
                   <Input
-                    placeholder="Wynwood Loaf"
+                    placeholder={t("submit.namePlaceholder")}
                     autoFocus
                     {...form.register("name")}
                   />
@@ -420,7 +421,7 @@ export default function Submit() {
                 <Field
                   label={t("submit.fieldTagline")}
                   required
-                  hint="What you make, in a sentence."
+                    hint={t("submit.fieldTaglinePlaceholder")}
                   error={form.formState.errors.tagline?.message}
                 >
                   <Input
@@ -432,7 +433,7 @@ export default function Submit() {
                 <Field
                   label={t("submit.fieldStory")}
                   required
-                  hint="A couple of sentences about who you are and how you make it."
+                    hint={t("submit.fieldStoryPlaceholder")}
                   error={form.formState.errors.description?.message}
                 >
                   <Textarea
@@ -475,7 +476,7 @@ export default function Submit() {
                     <div className="relative">
                       <MapPin className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
                       <Input
-                        placeholder="Or type another Florida city"
+                        placeholder={t("submit.cityPlaceholder")}
                         className="pl-9"
                         value={form.watch("location")}
                         onChange={(e) =>
@@ -549,7 +550,7 @@ export default function Submit() {
             </>)}
             {step === 3 && (<>
               <StepHeader
-                eyebrow="Step 3 of 4"
+                eyebrow={t("submit.stepOf", { step: 3, total: 4 })}
                 title={t("submit.step3Title")}
                 subtitle={t("submit.step3Description")}
               />
@@ -558,12 +559,12 @@ export default function Submit() {
                 {/* Pickup location */}
                 <Field
                   label={t("submit.fieldPickupAddress")}
-                  hint="Where do customers pick up orders? E.g. 'Our garage at 123 Mango Lane, Miami' or 'Wynwood Saturday Market, booth #12'."
+                  hint={t("submit.pickupAddressHint")}
                 >
                   <div className="relative">
                     <Home className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
                     <Input
-                      placeholder="Address, market booth, farm gate…"
+                      placeholder={t("submit.pickupAddressPlaceholder")}
                       className="pl-9"
                       {...form.register("pickupAddress")}
                     />
@@ -573,7 +574,7 @@ export default function Submit() {
                 {/* Pin exact location */}
                 <Field
                   label={t("submit.pinExactSpot")}
-                  hint="Drag the pin or click the map to mark where customers should come. Helps shoppers find you on our map."
+                  hint={t("submit.pinExactSpotHint")}
                 >
                   <LocationPicker
                     hint={form.watch("pickupAddress") || form.watch("location")}
@@ -587,7 +588,7 @@ export default function Submit() {
                 {/* Days open */}
                 <Field
                   label={t("submit.fieldDays")}
-                  hint="Pick every day that applies."
+                  hint={t("submit.fieldDaysHint")}
                 >
                   <div className="flex flex-wrap gap-2 mt-1">
                     {DAYS_OF_WEEK.map((day) => {
@@ -611,7 +612,7 @@ export default function Submit() {
                               : "border-border bg-card text-foreground hover:border-primary/50",
                           )}
                         >
-                          {day.slice(0, 3)}
+                           {t(`submit.dayShort${day}`)}
                         </button>
                       );
                     })}
@@ -621,12 +622,12 @@ export default function Submit() {
                 {/* Hours */}
                 <Field
                   label={t("submit.fieldHours")}
-                  hint="E.g. 'Saturdays 8 am – 1 pm' or 'Tuesday–Friday by appointment'."
+                  hint={t("submit.fieldHoursHint")}
                 >
                   <div className="relative">
                     <Clock className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
                     <Input
-                      placeholder="Saturdays 8 am – 1 pm"
+                      placeholder={t("submit.fieldHoursPlaceholder")}
                       className="pl-9"
                       {...form.register("openHours")}
                     />
@@ -636,10 +637,10 @@ export default function Submit() {
                 {/* How to order */}
                 <Field
                   label={t("submit.fieldHowToOrder")}
-                  hint="Select everything that applies — we'll show this on your profile."
+                  hint={t("submit.fieldHowToOrderHint")}
                 >
                   <div className="flex flex-col gap-2 mt-1">
-                    {HOW_TO_ORDER_OPTIONS.map(({ value, label }) => {
+                    {HOW_TO_ORDER_OPTIONS.map(({ value }) => {
                       const selected = (form.watch("howToOrder") ?? []).includes(value);
                       return (
                         <button
@@ -666,7 +667,7 @@ export default function Submit() {
                           )}>
                             {selected && <Check className="h-3 w-3 text-primary-foreground" />}
                           </span>
-                          {label}
+                           {t(`submit.order${value}`)}
                         </button>
                       );
                     })}
@@ -675,13 +676,13 @@ export default function Submit() {
 
                 {/* Markets */}
                 <Field
-                  label="Farmers markets or pop-ups you attend"
-                  hint="Separate with commas — e.g. 'Wynwood Saturday Market, Coconut Grove Sunday Market'."
+                  label={t("submit.fieldMarkets")}
+                  hint={t("submit.fieldMarketsHint")}
                 >
                   <div className="relative">
                     <CalendarDays className="pointer-events-none absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
                     <Textarea
-                      placeholder="Wynwood Saturday Market, Coconut Grove Sunday Market…"
+                      placeholder={t("submit.fieldMarketsPlaceholder")}
                       className="min-h-[80px] pl-9"
                       {...form.register("marketsText")}
                     />
@@ -701,7 +702,7 @@ export default function Submit() {
                   </Button>
                 </div>
                 <p className="text-center text-sm text-muted-foreground">
-                  Not sure yet?{" "}
+                  {t("submit.skipIntro")}{" "}
                   <button
                     type="button"
                     onClick={() => {
@@ -714,31 +715,31 @@ export default function Submit() {
                     }}
                     className="font-semibold text-primary hover:underline"
                   >
-                    Skip this step
+                    {t("submit.skipAction")}
                   </button>
-                  {" "}— you can always add it from your dashboard later.
+                  {" "}— {t("submit.skipOutro")}
                 </p>
               </div>
             </>)}
             {step === 4 && (<>
               <StepHeader
-                eyebrow="Step 4 of 4"
+                eyebrow={t("submit.stepOf", { step: 4, total: 4 })}
                 title={t("submit.step4Title")}
-                subtitle="Just an email is enough. Add a cover photo and socials if you'd like."
+                subtitle={t("submit.step4Description")}
               />
 
               <div className="mt-8 space-y-6">
                 <Field
                   label={t("submit.fieldEmail")}
                   required
-                  hint="Shown on your public profile so people can reach out."
+                  hint={t("submit.fieldEmailHint")}
                   error={form.formState.errors.contactEmail?.message}
                 >
                   <div className="relative">
                     <AtSign className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
                     <Input
                       type="email"
-                      placeholder="hello@yourbusiness.com"
+                      placeholder={t("submit.emailPlaceholder")}
                       className="pl-9"
                       autoFocus
                       {...form.register("contactEmail")}
@@ -747,13 +748,13 @@ export default function Submit() {
                 </Field>
 
                 <Field
-                  label="Cover photo"
+                  label={t("submit.coverPhoto")}
                   hint={
                     form.watch("imageUrl")
                       ? undefined
                       : defaultImage
-                        ? `We'll use a ${watchedCategory.toLowerCase()} cover if you skip this — or upload your own.`
-                        : "Upload a wide shot of your storefront, farm, or studio."
+                        ? t("submit.coverPhotoDefaultHint", { category: t(`wholesale.cat${watchedCategory}`).toLowerCase() })
+                        : t("submit.coverPhotoUploadHint")
                   }
                 >
                   <div className="space-y-3">
@@ -761,7 +762,7 @@ export default function Submit() {
                       <div className="relative overflow-hidden rounded-md border border-border">
                         <img
                           src={form.watch("imageUrl")}
-                          alt="Cover preview"
+                          alt={t("submit.coverPreviewAlt")}
                           className="h-36 w-full object-cover"
                         />
                         <button
@@ -774,18 +775,18 @@ export default function Submit() {
                           <X className="h-4 w-4" />
                         </button>
                         <p className="bg-muted px-3 py-1.5 text-xs text-muted-foreground">
-                          Uploaded — tap ✕ to remove
+                          {t("submit.uploadedRemove")}
                         </p>
                       </div>
                     ) : defaultImage ? (
                       <div className="overflow-hidden rounded-md border border-dashed border-border">
                         <img
                           src={defaultImage}
-                          alt="Default cover"
+                          alt={t("submit.defaultCoverAlt")}
                           className="h-36 w-full object-cover opacity-60"
                         />
                         <p className="bg-muted px-3 py-1.5 text-xs text-muted-foreground">
-                          Using this as your default cover — or upload your own below.
+                          {t("submit.usingDefaultCover")}
                         </p>
                       </div>
                     ) : null}
@@ -801,12 +802,12 @@ export default function Submit() {
                       {isUploading ? (
                         <>
                           <Loader2 className="h-4 w-4 animate-spin" />
-                          Uploading…
+                           {t("submit.uploading")}
                         </>
                       ) : (
                         <>
                           <ImagePlus className="h-4 w-4" />
-                          {form.watch("imageUrl") ? "Replace photo" : "Upload a photo"}
+                           {form.watch("imageUrl") ? t("submit.replacePhoto") : t("submit.uploadPhoto")}
                         </>
                       )}
                       <input
@@ -825,18 +826,18 @@ export default function Submit() {
                               headers: { "Content-Type": "application/json" },
                               body: JSON.stringify({ name: file.name, size: file.size, contentType: file.type }),
                             });
-                            if (!metaRes.ok) throw new Error("Couldn't start upload");
+                            if (!metaRes.ok) throw new Error(t("submit.uploadStartFailed"));
                             const { uploadURL, objectPath } = await metaRes.json();
                             const putRes = await fetch(uploadURL, {
                               method: "PUT",
                               body: file,
                               headers: { "Content-Type": file.type },
                             });
-                            if (!putRes.ok) throw new Error("Upload failed");
+                            if (!putRes.ok) throw new Error(t("submit.uploadFailed"));
                             const servingUrl = `/api/storage${objectPath}`;
                             form.setValue("imageUrl", servingUrl, { shouldValidate: true });
                           } catch (err) {
-                            setUploadError(err instanceof Error ? err.message : "Upload failed");
+                            setUploadError(err instanceof Error ? err.message : t("submit.uploadFailed"));
                           } finally {
                             setIsUploading(false);
                             e.target.value = "";
@@ -860,7 +861,7 @@ export default function Submit() {
                   ) : (
                     <Plus className="h-4 w-4" />
                   )}
-                  {showOptionalContact ? "Hide" : "Add"} more details (optional)
+                   {showOptionalContact ? t("submit.hideDetails") : t("submit.addDetails")}
                 </button>
 
                 <AnimatePresence>
@@ -875,7 +876,7 @@ export default function Submit() {
                       <div className="space-y-6 pt-2">
                         <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
                           <Field
-                            label="Phone"
+                             label={t("submit.fieldPhone")}
                             error={form.formState.errors.phone?.message}
                           >
                             <div className="relative">
@@ -888,7 +889,7 @@ export default function Submit() {
                             </div>
                           </Field>
                           <Field
-                            label="Website"
+                             label={t("submit.fieldWebsite")}
                             error={form.formState.errors.websiteUrl?.message}
                           >
                             <div className="relative">
@@ -901,7 +902,7 @@ export default function Submit() {
                             </div>
                           </Field>
                           <Field
-                            label="Instagram"
+                             label={t("submit.fieldInstagram")}
                             error={form.formState.errors.instagramHandle?.message}
                           >
                             <div className="relative">
@@ -914,7 +915,7 @@ export default function Submit() {
                             </div>
                           </Field>
                           <Field
-                            label="Facebook"
+                             label={t("submit.fieldFacebook")}
                             error={form.formState.errors.facebookUrl?.message}
                           >
                             <div className="relative">
@@ -928,7 +929,7 @@ export default function Submit() {
                           </Field>
                         </div>
                         <Field
-                          label="Year established"
+                          label={t("submit.fieldEstablished")}
                           error={form.formState.errors.established?.message}
                         >
                           <Input
@@ -945,13 +946,13 @@ export default function Submit() {
                 {watchedName && (
                   <div className="rounded-lg border border-border bg-card p-4">
                     <p className="text-xs uppercase tracking-wider text-muted-foreground mb-1">
-                      Preview
+                      {t("submit.preview")}
                     </p>
                     <p className="font-serif text-xl font-bold text-foreground">
                       {watchedName}
                     </p>
                     <p className="text-sm text-muted-foreground">
-                      {watchedCategory} · {watchedLocation || "Florida"}
+                      {t(`wholesale.cat${watchedCategory}`)} · {watchedLocation || t("submit.defaultLocation")}
                     </p>
                   </div>
                 )}
@@ -1002,7 +1003,14 @@ export default function Submit() {
 }
 
 function Stepper({ step }: { step: number }) {
-  const labels = ["Category", "Story", "Availability", "Contact", "Verify"];
+  const { t } = useTranslation();
+  const labels = [
+    t("submit.stepCategory"),
+    t("submit.stepStory"),
+    t("submit.stepAvailability"),
+    t("submit.stepContact"),
+    t("submit.stepVerify"),
+  ];
   return (
     <div className="mt-8 flex items-center justify-center gap-2 sm:gap-4">
       {labels.map((label, i) => {
@@ -1140,15 +1148,13 @@ function VerifyStep({
           <Mail className="h-6 w-6" />
         </div>
         <p className="text-xs uppercase tracking-[0.2em] text-primary font-semibold mb-2">
-          Step 5 — Final check
+          {t("submit.stepFinalCheck")}
         </p>
         <h2 className="text-3xl md:text-4xl font-serif font-bold text-foreground mb-2">
-          Verify your email
+          {t("submit.verifyEmail")}
         </h2>
         <p className="text-muted-foreground max-w-lg mx-auto">
-          We just sent a 6-digit code to{" "}
-          <span className="font-semibold text-foreground">{email}</span>. Enter
-          it below to publish your business.
+          {t("submit.verifyEmailDescription", { email })}
         </p>
       </div>
 
@@ -1181,11 +1187,10 @@ function VerifyStep({
           <div className="mt-4 rounded-md border border-amber-300 bg-amber-50 px-4 py-3 text-sm text-amber-900">
             <p className="mb-1 flex items-center gap-2 font-semibold">
               <ShieldCheck className="h-4 w-4" />
-              Demo mode — no email service connected
+              {t("submit.demoModeTitle")}
             </p>
             <p>
-              Email sending isn't configured yet, so here's your code for
-              testing:{" "}
+              {t("submit.demoModeDescription")}{" "}
               <span className="font-mono text-base font-bold tracking-widest">
                 {devCode}
               </span>
@@ -1194,14 +1199,14 @@ function VerifyStep({
         )}
 
         <div className="mt-6 text-center text-sm text-muted-foreground">
-          Didn't get it?{" "}
+          {t("submit.resendPrompt")}{" "}
           <button
             type="button"
             onClick={onResend}
             disabled={isResending}
             className="font-semibold text-primary hover:underline disabled:opacity-50"
           >
-            {isResending ? t("dashboard.sendingCode") : "Send a new code"}
+            {isResending ? t("dashboard.sendingCode") : t("submit.resendCode")}
           </button>
         </div>
       </div>
@@ -1209,7 +1214,7 @@ function VerifyStep({
       <div className="mt-10 flex items-center justify-between gap-3 border-t border-border pt-6">
         <Button type="button" variant="ghost" onClick={onBack}>
           <ArrowLeft className="mr-2 h-4 w-4" />
-          Use a different email
+          {t("submit.useDifferentEmail")}
         </Button>
         <Button
           type="button"

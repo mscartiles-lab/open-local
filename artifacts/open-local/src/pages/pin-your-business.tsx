@@ -4,6 +4,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { useSubmitEstablishment } from "@workspace/api-client-react";
 import { useTranslation } from "react-i18next";
+import type { TFunction } from "i18next";
 import Layout from "@/components/layout/Layout";
 import { TierPicker } from "@/components/billing/TierPicker";
 import { TIERS, type TierId } from "@/lib/tiers";
@@ -24,26 +25,40 @@ const ESTABLISHMENT_TYPES = [
   "Market",
   "Other",
 ];
+const ESTABLISHMENT_TYPE_KEYS: Record<(typeof ESTABLISHMENT_TYPES)[number], string> = {
+  "Café": "pinBusiness.typeCafe",
+  Restaurant: "pinBusiness.typeRestaurant",
+  "Bar / Brewery": "pinBusiness.typeBarBrewery",
+  Boutique: "pinBusiness.typeBoutique",
+  Gallery: "pinBusiness.typeGallery",
+  Bookshop: "pinBusiness.typeBookshop",
+  Bakery: "pinBusiness.typeBakery",
+  "Farm Stand": "pinBusiness.typeFarmStand",
+  "Spa / Wellness": "pinBusiness.typeSpaWellness",
+  Fitness: "pinBusiness.typeFitness",
+  Market: "pinBusiness.typeMarket",
+  Other: "pinBusiness.typeOther",
+};
 
-const schema = z.object({
-  name: z.string().min(2, "Business name is required"),
-  type: z.string().min(1, "Please select a type"),
-  description: z.string().min(20, "Please write at least 20 characters"),
-  address: z.string().min(5, "Street address is required"),
-  city: z.string().min(2, "City is required"),
-  state: z.string().min(2, "State is required"),
-  contactEmail: z.string().email("Valid email required"),
+const createSchema = (t: TFunction) => z.object({
+  name: z.string().min(2, t("pinBusiness.errorName")),
+  type: z.string().min(1, t("pinBusiness.errorType")),
+  description: z.string().min(20, t("pinBusiness.errorDescription")),
+  address: z.string().min(5, t("pinBusiness.errorAddress")),
+  city: z.string().min(2, t("pinBusiness.errorCity")),
+  state: z.string().min(2, t("pinBusiness.errorState")),
+  contactEmail: z.string().email(t("pinBusiness.errorEmail")),
   phone: z.string().optional(),
-  website: z.string().url("Enter a valid URL (include https://)").optional().or(z.literal("")),
+  website: z.string().url(t("pinBusiness.errorWebsite")).optional().or(z.literal("")),
   instagramHandle: z.string().optional(),
-  facebookUrl: z.string().url("Enter a valid URL").optional().or(z.literal("")),
-  tiktokUrl: z.string().url("Enter a valid URL").optional().or(z.literal("")),
-  imageUrl: z.string().url("Enter a valid image URL").optional().or(z.literal("")),
+  facebookUrl: z.string().url(t("pinBusiness.errorUrl")).optional().or(z.literal("")),
+  tiktokUrl: z.string().url(t("pinBusiness.errorUrl")).optional().or(z.literal("")),
+  imageUrl: z.string().url(t("pinBusiness.errorImageUrl")).optional().or(z.literal("")),
   photoUrlsRaw: z.string().optional(),
-  videoUrl: z.string().url("Enter a valid video URL").optional().or(z.literal("")),
+  videoUrl: z.string().url(t("pinBusiness.errorVideoUrl")).optional().or(z.literal("")),
 });
 
-type FormData = z.infer<typeof schema>;
+type FormData = z.infer<ReturnType<typeof createSchema>>;
 
 interface BusinessPricing {
   business: {
@@ -81,7 +96,7 @@ export default function PinYourBusiness() {
     watch,
     formState: { errors },
   } = useForm<FormData>({
-    resolver: zodResolver(schema),
+    resolver: zodResolver(createSchema(t)),
     defaultValues: { state: "FL" },
   });
 
@@ -319,8 +334,8 @@ export default function PinYourBusiness() {
                   className="w-full border border-input rounded-md px-3 py-2.5 text-sm bg-background focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary"
                 >
                   <option value="">{t("pinBusiness.selectType")}</option>
-                  {ESTABLISHMENT_TYPES.map((t) => (
-                    <option key={t} value={t}>{t}</option>
+                  {ESTABLISHMENT_TYPES.map((type) => (
+                    <option key={type} value={type}>{t(ESTABLISHMENT_TYPE_KEYS[type])}</option>
                   ))}
                 </select>
                 {errors.type && <p className="text-xs text-destructive mt-1">{errors.type.message}</p>}
