@@ -1,3 +1,4 @@
 - [EAS monorepo yarn build](eas-yarn-build.md) — pnpm monorepo + EAS build requires vendoring @workspace/* deps and several config fixes
+- [Safe Metro image dimensions](safe-metro-image-dimensions.md) — Metro needs a safe synchronous dimension provider because no patched image-size release exists
 - [Mobile-web feature parity](mobile-web-parity.md) — any workflow or feature added to mobile must also be applied to the equivalent web page in the same task
 - [Expo native-map web bundling](expo-native-map-web-bundling.md) — Metro follows conditional native map imports; use platform-specific modules to keep web bundles loadable

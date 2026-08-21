@@ -24,6 +24,11 @@ EAS builds run with yarn. The pnpm monorepo root confuses EAS in several ways.
    - `.config` — EAS CLI user settings, not needed on build server
 7. **`.npmrc`** in mobile folder: `package-manager=yarn`
 8. **`eas.json` production profile**: must have `"channel": "production"` for OTA updates to reach App Store/Play Store builds
+9. **Local package dependencies:** Any `file:` dependency must be vendored below `artifacts/open-local-mobile/`; root `lib/` is deliberately excluded from the EAS archive.
+
+**Why:** A local dependency can pass monorepo checks while failing EAS’s isolated Yarn install if its source folder is outside the mobile artifact.
+
+**How to apply:** Keep mobile-only compatibility packages in the artifact’s `vendor/` directory and verify a frozen Yarn install resolves the installed copy from that source.
 
 ### Pre-build local requirement
 

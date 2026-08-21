@@ -63,6 +63,14 @@
     "babel-plugin-react-compiler": "^19.0.0-beta-e993439-20250117",
     "typescript": "~5.9.2"
   },
+  "resolutions": {
+    "image-size": "file:./vendor/image-size-compat",
+    "postcss": "8.5.23",
+    "undici": "8.9.0",
+    "**/js-yaml": "4.3.1",
+    "nanoid": "3.3.18",
+    "uuid": "11.1.1"
+  },
   "engines": {
     "node": ">=20.0.0"
   },
