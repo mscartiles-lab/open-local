@@ -43,11 +43,13 @@ export default function LanguagePickerScreen() {
         <TouchableOpacity style={s.backBtn} onPress={() => router.back()}>
           <Feather name="arrow-left" size={22} color={colors.foreground} />
         </TouchableOpacity>
-        <Text style={s.title}>{t("languagePicker.title")}</Text>
+        <Text style={s.title} testID="language-picker-title">
+          {t("languagePicker.title")}
+        </Text>
         <View style={{ width: 40 }} />
       </View>
 
-      <View style={s.list}>
+      <View style={s.list} accessibilityRole="radiogroup">
         {SUPPORTED_LANGUAGES.map((lang, i) => {
           const selected = currentLang === lang.code || currentLang.startsWith(lang.code);
           return (
@@ -60,15 +62,17 @@ export default function LanguagePickerScreen() {
               ]}
               onPress={() => handleSelect(lang.code)}
               activeOpacity={0.7}
-              accessibilityRole="button"
-              accessibilityState={{ selected }}
+              accessibilityRole="radio"
+              accessibilityState={{ checked: selected }}
               testID={`language-option-${lang.code}`}
             >
               <Text style={[s.langName, selected && { color: colors.primary, fontFamily: "DMSans_700Bold" }]}>
                 {LANG_LABELS[lang.code] ?? lang.label}
               </Text>
               {selected && (
-                <Feather name="check" size={18} color={colors.primary} />
+                <View testID={`selected-language-${lang.code}`}>
+                  <Feather name="check" size={18} color={colors.primary} />
+                </View>
               )}
             </TouchableOpacity>
           );

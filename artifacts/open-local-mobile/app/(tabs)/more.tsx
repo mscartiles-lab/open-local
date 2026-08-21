@@ -39,7 +39,9 @@ export default function MoreScreen() {
   const router = useRouter();
   const { user, logout } = useAuth();
   const topPad = Platform.OS === "web" ? 67 : insets.top;
-  const bottomPad = Platform.OS === "web" ? 34 : insets.bottom + 60;
+  // On web, the fixed tab bar is 84px tall. Leave enough scrolling room for
+  // the final Resources action to sit fully above it.
+  const bottomPad = Platform.OS === "web" ? 100 : insets.bottom + 60;
   const s = styles(colors, topPad, bottomPad);
 
   const MENU_ITEMS: MenuItem[] = [
