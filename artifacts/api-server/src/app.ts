@@ -9,14 +9,17 @@ import { handleAppWebhookEvent } from "./lib/webhookAppHandlers";
 import { ipLoggingMiddleware } from "./lib/ipLogger";
 
 // Origins explicitly permitted for cross-origin requests.
-// APP_URL carries the Replit dev-domain in the workspace; the production origin
-// is always included. Both are checked at runtime so nothing is hardcoded into
-// the binary for the wrong environment.
+// APP_URL carries the Replit dev-domain in the workspace, while Expo serves its
+// browser preview from a separate Replit-managed domain. Both are checked at
+// runtime so nothing is hardcoded into the binary for the wrong environment.
 const ALLOWED_ORIGINS = new Set(
   [
     "https://openlocalapp.com",
     "https://www.openlocalapp.com",
     process.env.APP_URL ?? "",
+    process.env.REPLIT_EXPO_DEV_DOMAIN
+      ? `https://${process.env.REPLIT_EXPO_DEV_DOMAIN}`
+      : "",
   ].filter(Boolean),
 );
 
@@ -84,8 +87,8 @@ app.post(
 
 app.use(
   cors({
-    // Allow the production domain, the dev-workspace domain, and requests that
-    // carry no Origin at all (native mobile clients, server-to-server calls).
+    // Allow the production domain, workspace domains, and requests that carry
+    // no Origin at all (native mobile clients, server-to-server calls).
     origin(origin, callback) {
       if (!origin || ALLOWED_ORIGINS.has(origin)) {
         callback(null, true);
