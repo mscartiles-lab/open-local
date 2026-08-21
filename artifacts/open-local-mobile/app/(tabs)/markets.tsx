@@ -18,10 +18,10 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import { useColors } from "@/hooks/useColors";
 import type { Market } from "@/lib/api-client";
+import { MarketsMapView } from "@/components/MarketsMapView";
 
 // DAYS built inside component so labels re-translate on language change
 
-const FLORIDA_CENTER = { latitude: 27.6, longitude: -82.5 };
 function MarketListCard({
   market,
   colors,
@@ -158,98 +158,6 @@ const cardStyles = StyleSheet.create({
   },
 });
 
-function MarketsMapView({
-  markets,
-  colors,
-  onMarketPress,
-}: {
-  markets: Market[];
-  colors: ReturnType<typeof useColors>;
-  onMarketPress: (market: Market) => void;
-}) {
-  const { t } = useTranslation();
-  // Web doesn't support react-native-maps — show a placeholder instead
-  if (Platform.OS === "web") {
-    return (
-      <View style={mapStyles.webFallback}>
-        <Feather name="map" size={36} color={colors.mutedForeground} />
-        <Text style={[mapStyles.webFallbackText, { color: colors.mutedForeground }]}>
-          {t("markets.mapAvailableMobile")}
-        </Text>
-      </View>
-    );
-  }
-
-  // Lazy-require so the web bundle never tries to import react-native-maps
-  // eslint-disable-next-line @typescript-eslint/no-require-imports
-  const Maps = require("react-native-maps") as typeof import("react-native-maps");
-  const MapView = Maps.default;
-  const { Marker, Callout } = Maps;
-
-  const mappedMarkets = markets.filter(
-    (m) => m.latitude != null && m.longitude != null,
-  );
-
-  return (
-    <View style={StyleSheet.absoluteFill}>
-      <MapView
-        style={StyleSheet.absoluteFill}
-        initialRegion={{
-          ...FLORIDA_CENTER,
-          latitudeDelta: 4,
-          longitudeDelta: 4,
-        }}
-        showsUserLocation
-        showsMyLocationButton={false}
-        showsCompass={false}
-        toolbarEnabled={false}
-        pitchEnabled={false}
-        rotateEnabled={false}
-      >
-        {mappedMarkets.map((m) => (
-          <Marker
-            key={m.id}
-            coordinate={{ latitude: m.latitude!, longitude: m.longitude! }}
-            onPress={() => onMarketPress(m)}
-          >
-            {/* Custom green pin */}
-            <View style={mapStyles.pin}>
-              <Feather name="map-pin" size={13} color="#fff" />
-            </View>
-
-            <Callout tooltip={false} onPress={() => onMarketPress(m)}>
-              <View style={mapStyles.callout}>
-                <Text style={mapStyles.calloutName} numberOfLines={2}>
-                  {m.name}
-                </Text>
-                <Text style={mapStyles.calloutCity}>
-                  {m.city}, {m.region}
-                </Text>
-                {(m.day || m.time) && (
-                  <Text style={mapStyles.calloutSchedule}>
-                    {[m.day, m.time].filter(Boolean).join(" · ")}
-                  </Text>
-                )}
-                {m.slug && (
-                  <Text style={[mapStyles.calloutLink, { color: MARKET_COLOR }]}>
-                    {t("markets.viewMarket")}
-                  </Text>
-                )}
-              </View>
-            </Callout>
-          </Marker>
-        ))}
-      </MapView>
-
-      {/* Count badge */}
-      <View style={[mapStyles.badge, { backgroundColor: `${colors.card}F0` }]}>
-        <Text style={[mapStyles.badgeText, { color: colors.foreground }]}>
-          {mappedMarkets.length} market{mappedMarkets.length !== 1 ? "s" : ""} on map
-        </Text>
-      </View>
-    </View>
-  );
-}
 export default function MarketsScreen() {
   const { t } = useTranslation();
   const colors = useColors();
@@ -561,81 +469,5 @@ const styles = (
   });
 
 const MARKET_COLOR = "#166534";
-
-const mapStyles = StyleSheet.create({
-  pin: {
-    width: 28,
-    height: 28,
-    borderRadius: 14,
-    backgroundColor: MARKET_COLOR,
-    borderWidth: 2.5,
-    borderColor: "#fff",
-    alignItems: "center",
-    justifyContent: "center",
-    shadowColor: "#000",
-    shadowOpacity: 0.25,
-    shadowRadius: 4,
-    shadowOffset: { width: 0, height: 2 },
-    elevation: 4,
-  },
-  callout: {
-    minWidth: 160,
-    maxWidth: 220,
-    padding: 10,
-    gap: 3,
-  },
-  calloutName: {
-    fontSize: 13,
-    fontFamily: "DMSans_600SemiBold",
-    fontWeight: "600",
-    color: "#111",
-  },
-  calloutCity: {
-    fontSize: 11,
-    fontFamily: "DMSans_400Regular",
-    color: "#666",
-  },
-  calloutSchedule: {
-    fontSize: 11,
-    fontFamily: "DMSans_400Regular",
-    color: "#555",
-    marginTop: 1,
-  },
-  calloutLink: {
-    fontSize: 12,
-    fontFamily: "DMSans_600SemiBold",
-    fontWeight: "600",
-    marginTop: 4,
-  },
-  badge: {
-    position: "absolute",
-    bottom: 16,
-    left: 16,
-    borderRadius: 20,
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    shadowColor: "#000",
-    shadowOpacity: 0.12,
-    shadowRadius: 6,
-    shadowOffset: { width: 0, height: 2 },
-    elevation: 3,
-  },
-  badgeText: {
-    fontSize: 12,
-    fontFamily: "DMSans_500Medium",
-    fontWeight: "500",
-  },
-  webFallback: {
-    flex: 1,
-    alignItems: "center",
-    justifyContent: "center",
-    gap: 12,
-  },
-  webFallbackText: {
-    fontSize: 14,
-    fontFamily: "DMSans_400Regular",
-    textAlign: "center",
-  },
-});
 
 type ViewMode = "list" | "map";

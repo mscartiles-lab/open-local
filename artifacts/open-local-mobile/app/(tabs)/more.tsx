@@ -239,6 +239,8 @@ export default function MoreScreen() {
               style={[s.row, i < MENU_ITEMS.length - 1 && s.rowBorder]}
               onPress={() => router.push(item.id === "language" ? "/language-picker" as any : item.route as any)}
               activeOpacity={0.7}
+              accessibilityRole="button"
+              testID={item.id === "language" ? "more-language" : undefined}
             >
               <View style={s.iconWrap}>
                 <Feather name={item.icon} size={18} color={colors.primary} />

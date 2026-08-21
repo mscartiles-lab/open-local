@@ -62,6 +62,10 @@ function RootLayoutNav() {
         options={{ headerShown: false, presentation: "card" }}
       />
       <Stack.Screen
+        name="language-picker"
+        options={{ headerShown: false, presentation: "card" }}
+      />
+      <Stack.Screen
         name="messages/index"
         options={{ headerShown: false, presentation: "card" }}
       />

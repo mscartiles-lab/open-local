@@ -60,6 +60,9 @@ export default function LanguagePickerScreen() {
               ]}
               onPress={() => handleSelect(lang.code)}
               activeOpacity={0.7}
+              accessibilityRole="button"
+              accessibilityState={{ selected }}
+              testID={`language-option-${lang.code}`}
             >
               <Text style={[s.langName, selected && { color: colors.primary, fontFamily: "DMSans_700Bold" }]}>
                 {LANG_LABELS[lang.code] ?? lang.label}
