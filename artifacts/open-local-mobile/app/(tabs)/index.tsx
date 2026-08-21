@@ -167,6 +167,14 @@ export default function TheLocalsScreen() {
     return { inRadiusItems: inR, beyondItems: out };
   }, [items, filterCenter, mapRadius]);
 
+  // Keep all discovery results in the scrollable list. Previously, after a
+  // location fix the list only received nearby results and placed every other
+  // vendor in a footer. When no vendor fell inside the default 0.5-mile radius,
+  // the screen looked empty despite the API having returned vendors.
+  const visibleItems = filterCenter
+    ? [...inRadiusItems, ...beyondItems]
+    : items;
+
   const isLoading = vendorsLoading || estLoading;
   const isError = vendorsError && estError;
 
@@ -250,11 +258,20 @@ export default function TheLocalsScreen() {
       {/* List panel — scrolls below the map, no overlap */}
       <FlatList
         ref={flatListRef}
-        data={isLoading || isError ? [] : inRadiusItems}
+        data={isLoading || isError ? [] : visibleItems}
         keyExtractor={(item) => `${item.kind}-${item.data.id}`}
         style={s.list}
-        renderItem={({ item }) => (
+        renderItem={({ item, index }) => (
           <View style={s.itemWrap}>
+            {filterCenter &&
+            beyondItems.length > 0 &&
+            index === inRadiusItems.length ? (
+              <BeyondDivider
+                radius={mapRadius}
+                count={beyondItems.length}
+                colors={colors}
+              />
+            ) : null}
             {item.kind === "vendor" ? (
               <VendorCard
                 vendor={item.data}
@@ -347,35 +364,6 @@ export default function TheLocalsScreen() {
         }
         ListFooterComponent={
           <View style={{ backgroundColor: colors.background }}>
-            {beyondItems.length > 0 && filterCenter ? (
-              <>
-                <BeyondDivider
-                  radius={mapRadius}
-                  count={beyondItems.length}
-                  colors={colors}
-                />
-                {beyondItems.map((item) => (
-                  <View key={`beyond-${item.kind}-${item.data.id}`} style={s.itemWrap}>
-                    {item.kind === "vendor" ? (
-                      <VendorCard
-                        vendor={item.data}
-                        onPress={() => router.push(`/vendor/${item.data.slug}`)}
-                      />
-                    ) : (
-                      <EstablishmentCard
-                        establishment={item.data}
-                        colors={colors}
-                        onPress={() => {
-                          if (item.data.website) {
-                            router.push(item.data.website as `${string}:${string}`);
-                          }
-                        }}
-                      />
-                    )}
-                  </View>
-                ))}
-              </>
-            ) : null}
             <View style={s.panelFooter} />
           </View>
         }
