@@ -5,6 +5,7 @@ import * as Location from "expo-location";
 import { Image } from "expo-image";
 import { router } from "expo-router";
 import React, { useState, useCallback, useRef } from "react";
+import { useTranslation } from "react-i18next";
 import {
   ActivityIndicator,
   Alert,
@@ -15,14 +16,13 @@ import {
   StyleSheet,
   Text,
   TextInput,
-  TouchableOpacity,
   View,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
 import { useAuth } from "@/context/AuthContext";
 import { useColors } from "@/hooks/useColors";
-import { apiFetch, apiUrl } from "@/lib/api";
+import { apiFetch } from "@/lib/api";
 import { LocationPickerMap, type PickedLocation } from "@/components/LocationPickerMap";
 import {
   TIERS,
@@ -50,19 +50,80 @@ const CATEGORIES = [
   { value: "Other", emoji: "✨" },
 ] as const;
 
+const CATEGORY_LABEL_KEYS: Record<(typeof CATEGORIES)[number]["value"], string> = {
+  Bakery: "vendorOnboard.categoryBakery",
+  Farm: "vendorOnboard.categoryFarm",
+  Apiary: "vendorOnboard.categoryApiary",
+  Brewery: "vendorOnboard.categoryBrewery",
+  Crafts: "vendorOnboard.categoryCrafts",
+  Pantry: "vendorOnboard.categoryPantry",
+  Butcher: "vendorOnboard.categoryButcher",
+  Florist: "vendorOnboard.categoryFlorist",
+  Coffee: "vendorOnboard.categoryCoffee",
+  Other: "vendorOnboard.categoryOther",
+};
+
 const POPULAR_CITIES = [
   "Miami", "Tampa", "Orlando", "Jacksonville", "St. Petersburg",
   "Fort Lauderdale", "Gainesville", "Tallahassee", "Sarasota", "Key West",
 ];
 
-const DAYS_SHORT = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
 const DAYS_FULL = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"];
+const DAY_LABEL_KEYS = [
+  "vendorOnboard.dayMon",
+  "vendorOnboard.dayTue",
+  "vendorOnboard.dayWed",
+  "vendorOnboard.dayThu",
+  "vendorOnboard.dayFri",
+  "vendorOnboard.daySat",
+  "vendorOnboard.daySun",
+] as const;
 
 const ORDER_OPTIONS = [
-  { value: "email_to_order", label: "Email to order" },
-  { value: "walk_in", label: "Walk-in / first-come-first-served" },
-  { value: "open_local_storefront", label: "Order via Open Local storefront" },
+  { value: "email_to_order", labelKey: "vendorOnboard.orderEmail" },
+  { value: "walk_in", labelKey: "vendorOnboard.orderWalkIn" },
+  { value: "open_local_storefront", labelKey: "vendorOnboard.orderOpenLocal" },
 ];
+
+const TIER_COPY: Record<TierId, { nameKey: string; taglineKey: string; featureKeys: string[] }> = {
+  basic: {
+    nameKey: "vendorOnboard.tierBasicName",
+    taglineKey: "vendorOnboard.tierBasicTagline",
+    featureKeys: [
+      "vendorOnboard.tierBasicFeatureMap",
+      "vendorOnboard.tierBasicFeatureCover",
+      "vendorOnboard.tierBasicFeatureDescription",
+      "vendorOnboard.tierBasicFeatureListing",
+      "vendorOnboard.tierBasicFeatureCancel",
+    ],
+  },
+  middle: {
+    nameKey: "vendorOnboard.tierStandardName",
+    taglineKey: "vendorOnboard.tierStandardTagline",
+    featureKeys: [
+      "vendorOnboard.tierStandardFeatureBasic",
+      "vendorOnboard.tierStandardFeaturePhotos",
+      "vendorOnboard.tierStandardFeatureVideo",
+      "vendorOnboard.tierStandardFeatureProducts",
+      "vendorOnboard.tierStandardFeatureSocial",
+      "vendorOnboard.tierStandardFeatureContact",
+      "vendorOnboard.tierStandardFeaturePreorder",
+    ],
+  },
+  premium: {
+    nameKey: "vendorOnboard.tierPremiumName",
+    taglineKey: "vendorOnboard.tierPremiumTagline",
+    featureKeys: [
+      "vendorOnboard.tierPremiumFeatureStandard",
+      "vendorOnboard.tierPremiumFeaturePhotos",
+      "vendorOnboard.tierPremiumFeatureLocations",
+      "vendorOnboard.tierPremiumFeatureFeatured",
+      "vendorOnboard.tierPremiumFeatureHomepage",
+      "vendorOnboard.tierPremiumFeaturePriority",
+      "vendorOnboard.tierPremiumFeatureOffers",
+    ],
+  },
+};
 
 const DEFAULT_COVERS: Record<string, string> = {
   Bakery: "https://images.unsplash.com/photo-1509440159596-0249088772ff?w=1200&q=80",
@@ -151,6 +212,7 @@ function FieldGroup({
 // ─────────────────────────────────────────────
 
 export default function VendorOnboardScreen() {
+  const { t } = useTranslation();
   const colors = useColors();
   const { user, sessionToken } = useAuth();
   const scrollRef = useRef<ScrollView>(null);
@@ -225,8 +287,8 @@ export default function VendorOnboardScreen() {
       const { status } = await Location.requestForegroundPermissionsAsync();
       if (status !== "granted") {
         Alert.alert(
-          "Location permission",
-          "Allow location access to fill in your city and ZIP automatically, or enter manually.",
+          t("vendorOnboard.locationPermissionTitle"),
+          t("vendorOnboard.cityLocationPermissionMessage"),
         );
         return;
       }
@@ -244,7 +306,7 @@ export default function VendorOnboardScreen() {
     } finally {
       setLocating(false);
     }
-  }, []);
+  }, [t]);
 
   // ─── Tier / Stripe ───────────────────────────
 
@@ -265,11 +327,11 @@ export default function VendorOnboardScreen() {
         await Linking.openURL(res.url);
       }
     } catch (e) {
-      setError(e instanceof Error ? e.message : "Could not open billing");
+      setError(e instanceof Error ? e.message : t("vendorOnboard.couldNotOpenBilling"));
     } finally {
       setStripeLoading(false);
     }
-  }, [sessionToken, selectedTier]);
+  }, [sessionToken, selectedTier, t]);
 
   // ─── Media picking ───────────────────────────
 
@@ -283,7 +345,10 @@ export default function VendorOnboardScreen() {
   const pickImage = useCallback(async () => {
     const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
     if (status !== "granted") {
-      Alert.alert("Permission needed", "Allow photo library access to upload images.");
+      Alert.alert(
+        t("vendorOnboard.permissionNeeded"),
+        t("vendorOnboard.photoLibraryPermission"),
+      );
       return;
     }
     const result = await ImagePicker.launchImageLibraryAsync({
@@ -306,12 +371,15 @@ export default function VendorOnboardScreen() {
       const combined = [...prev, ...newItems];
       return combined.slice(0, photoLimit + videoLimit);
     });
-  }, [photoLimit, videoLimit, currentPhotos.length]);
+  }, [photoLimit, videoLimit, currentPhotos.length, t]);
 
   const pickVideo = useCallback(async () => {
     const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
     if (status !== "granted") {
-      Alert.alert("Permission needed", "Allow photo library access to upload videos.");
+      Alert.alert(
+        t("vendorOnboard.permissionNeeded"),
+        t("vendorOnboard.videoLibraryPermission"),
+      );
       return;
     }
     const result = await ImagePicker.launchImageLibraryAsync({
@@ -332,7 +400,7 @@ export default function VendorOnboardScreen() {
         fileSize: asset.fileSize,
       },
     ]);
-  }, []);
+  }, [t]);
 
   const removeMedia = useCallback((uri: string) => {
     setPickedMedia((prev) => prev.filter((m) => m.uri !== uri));
@@ -421,14 +489,14 @@ export default function VendorOnboardScreen() {
         devCode: res.devFallback ? res.devCode : null,
       });
     } catch (e) {
-      setError(e instanceof Error ? e.message : "Could not send verification code");
+      setError(e instanceof Error ? e.message : t("vendorOnboard.errorSendCode"));
     } finally {
       setSubmitting(false);
     }
   }, [
     name, category, tagline, description, city, zipCode, established,
     phone, websiteUrl, instagramHandle, marketsText, pickupAddress,
-    pickupLat, pickupLng, openDays, openHours, howToOrder, sessionToken,
+    pickupLat, pickupLng, openDays, openHours, howToOrder, sessionToken, t,
   ]);
 
   const submitCode = useCallback(async () => {
@@ -446,11 +514,11 @@ export default function VendorOnboardScreen() {
       });
       router.replace("/(tabs)");
     } catch (e) {
-      setError(e instanceof Error ? e.message : "Invalid code — try again");
+      setError(e instanceof Error ? e.message : t("vendorOnboard.invalidCode"));
     } finally {
       setSubmitting(false);
     }
-  }, [verifyState, code, sessionToken]);
+  }, [verifyState, code, sessionToken, t]);
 
   const resendCode = useCallback(async () => {
     if (!verifyState) return;
@@ -469,13 +537,16 @@ export default function VendorOnboardScreen() {
         verificationId: res.verificationId,
         devCode: res.devFallback ? res.devCode : null,
       });
-      Alert.alert("Code resent", "Check your email for a new 6-digit code.");
+      Alert.alert(
+        t("vendorOnboard.codeResent"),
+        t("vendorOnboard.checkEmailNewCode"),
+      );
     } catch {
-      Alert.alert("Error", "Could not resend code. Try again.");
+      Alert.alert(t("vendorOnboard.errorGeneric"), t("vendorOnboard.errorResend"));
     } finally {
       setSubmitting(false);
     }
-  }, [verifyState, sessionToken]);
+  }, [verifyState, sessionToken, t]);
 
   // ─── Advance handler ──────────────────────────
 
@@ -488,7 +559,7 @@ export default function VendorOnboardScreen() {
         try {
           await uploadAllMedia();
         } catch (e) {
-          setError(e instanceof Error ? e.message : "Upload failed — try again");
+          setError(e instanceof Error ? e.message : t("vendorOnboard.uploadFailed"));
           return;
         }
       }
@@ -502,7 +573,7 @@ export default function VendorOnboardScreen() {
       } else {
         // Start verification (also triggers upload if not done yet)
         if (!contactEmail || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(contactEmail)) {
-          setError("Please enter a valid email address");
+           setError(t("vendorOnboard.invalidEmail"));
           return;
         }
         let mediaUrls = uploadedUrls;
@@ -510,7 +581,7 @@ export default function VendorOnboardScreen() {
           try {
             mediaUrls = await uploadAllMedia();
           } catch (e) {
-            setError(e instanceof Error ? e.message : "Upload failed — try again");
+            setError(e instanceof Error ? e.message : t("vendorOnboard.uploadFailed"));
             return;
           }
         }
@@ -522,7 +593,7 @@ export default function VendorOnboardScreen() {
     goToStep(STEPS[stepIndex + 1]);
   }, [
     step, stepIndex, pickedMedia, uploadedUrls, verifyState,
-    contactEmail, uploadAllMedia, startVerification, submitCode, goToStep,
+    contactEmail, uploadAllMedia, startVerification, submitCode, goToStep, t,
   ]);
 
   const canAdvance = (): boolean => {
@@ -567,10 +638,10 @@ export default function VendorOnboardScreen() {
           </Pressable>
           <Text style={[s.headerTitle, { color: c.foreground }]} numberOfLines={1}>
             {step === "verify" && verifyState
-              ? "Enter your code"
+              ? t("vendorOnboard.enterCodeTitle")
               : step === "verify"
-              ? "Verify your email"
-              : "Onboard your business"}
+              ? t("vendorOnboard.stepVerify")
+              : t("vendorOnboard.headerTitle")}
           </Text>
           <Pressable
             onPress={() => router.replace("/(tabs)")}
@@ -594,7 +665,7 @@ export default function VendorOnboardScreen() {
           />
         </View>
         <Text style={[s.stepLabel, { color: c.mutedForeground }]}>
-          Step {stepIndex + 1} of {STEPS.length}
+          {t("vendorOnboard.stepLabel", { current: stepIndex + 1, total: STEPS.length })}
         </Text>
 
         {/* ── Scrollable body ── */}
@@ -607,9 +678,9 @@ export default function VendorOnboardScreen() {
           {/* ── STEP 1: Category ─────────────────────────────── */}
           {step === "category" && (
             <View style={{ gap: 16 }}>
-              <Text style={[s.h1, { color: c.foreground }]}>What do you make?</Text>
+              <Text style={[s.h1, { color: c.foreground }]}>{t("vendorOnboard.stepCategory")}</Text>
               <Text style={[s.body, { color: c.mutedForeground }]}>
-                Pick the category that fits best — you can change it later.
+                {t("vendorOnboard.categoryHint")}
               </Text>
               <View style={s.catGrid}>
                 {CATEGORIES.map(({ value, emoji }) => {
@@ -632,7 +703,9 @@ export default function VendorOnboardScreen() {
                       ]}
                     >
                       <Text style={s.catEmoji}>{emoji}</Text>
-                      <Text style={[s.catLabel, { color: c.foreground }]}>{value}</Text>
+                      <Text style={[s.catLabel, { color: c.foreground }]}>
+                        {t(CATEGORY_LABEL_KEYS[value])}
+                      </Text>
                     </Pressable>
                   );
                 })}
@@ -645,18 +718,18 @@ export default function VendorOnboardScreen() {
             <View style={{ gap: 20 }}>
               <View>
                 <Text style={[s.h1, { color: c.foreground }]}>
-                  Tell us about your business
+                  {t("vendorOnboard.stepStory")}
                 </Text>
                 <Text style={[s.body, { color: c.mutedForeground, marginTop: 6 }]}>
-                  This is your public profile. Be specific and personal.
+                  {t("vendorOnboard.storyHint")}
                 </Text>
               </View>
 
-              <FieldGroup label="Business name *">
+              <FieldGroup label={t("vendorOnboard.businessName")}>
                 <TextInput
                   value={name}
                   onChangeText={setName}
-                  placeholder="Wynwood Loaf"
+                  placeholder={t("vendorOnboard.businessNamePlaceholder")}
                   placeholderTextColor={c.mutedForeground}
                   style={[s.input, { color: c.foreground, borderColor: c.border, backgroundColor: c.muted }]}
                   returnKeyType="next"
@@ -665,13 +738,13 @@ export default function VendorOnboardScreen() {
               </FieldGroup>
 
               <FieldGroup
-                label="One-line tagline *"
-                hint="What you make, in a sentence. (min 5 chars)"
+                label={t("vendorOnboard.tagline")}
+                hint={t("vendorOnboard.taglineHint")}
               >
                 <TextInput
                   value={tagline}
                   onChangeText={setTagline}
-                  placeholder="Sourdough and Cuban-style breads from a Miami garage bakery."
+                  placeholder={t("vendorOnboard.taglinePlaceholder")}
                   placeholderTextColor={c.mutedForeground}
                   style={[s.input, { color: c.foreground, borderColor: c.border, backgroundColor: c.muted }]}
                   returnKeyType="next"
@@ -679,13 +752,13 @@ export default function VendorOnboardScreen() {
               </FieldGroup>
 
               <FieldGroup
-                label="Short story *"
-                hint="Two sentences about who you are and what you make. (min 20 chars)"
+                label={t("vendorOnboard.story")}
+                hint={t("vendorOnboard.storyFieldHint")}
               >
                 <TextInput
                   value={description}
                   onChangeText={setDescription}
-                  placeholder="A two-baker shop turning out naturally leavened miches and Cuban pan tostado from a home kitchen."
+                  placeholder={t("vendorOnboard.storyPlaceholder")}
                   placeholderTextColor={c.mutedForeground}
                   multiline
                   numberOfLines={4}
@@ -694,7 +767,7 @@ export default function VendorOnboardScreen() {
                 />
               </FieldGroup>
 
-              <FieldGroup label="City *">
+              <FieldGroup label={t("vendorOnboard.city")}>
                 <ScrollView
                   horizontal
                   showsHorizontalScrollIndicator={false}
@@ -721,18 +794,18 @@ export default function VendorOnboardScreen() {
                 <TextInput
                   value={city}
                   onChangeText={setCity}
-                  placeholder="Or type another city"
+                  placeholder={t("vendorOnboard.cityPlaceholder")}
                   placeholderTextColor={c.mutedForeground}
                   style={[s.input, { color: c.foreground, borderColor: c.border, backgroundColor: c.muted, marginTop: 8 }]}
                 />
               </FieldGroup>
 
-              <FieldGroup label="ZIP code (optional)">
+              <FieldGroup label={t("vendorOnboard.zipCode")}>
                 <View style={{ flexDirection: "row", gap: 8 }}>
                   <TextInput
                     value={zipCode}
                     onChangeText={setZipCode}
-                    placeholder="33101"
+                  placeholder={t("vendorOnboard.zipPlaceholder")}
                     placeholderTextColor={c.mutedForeground}
                     keyboardType="number-pad"
                     maxLength={10}
@@ -758,14 +831,15 @@ export default function VendorOnboardScreen() {
           {step === "tier" && (
             <View style={{ gap: 20 }}>
               <View>
-                <Text style={[s.h1, { color: c.foreground }]}>Choose your plan</Text>
+                <Text style={[s.h1, { color: c.foreground }]}>{t("vendorOnboard.stepTier")}</Text>
                 <Text style={[s.body, { color: c.mutedForeground, marginTop: 6 }]}>
-                  Your first 30–60 days are free. Subscribe now or later from your dashboard.
+                  {t("vendorOnboard.planIntro")}
                 </Text>
               </View>
 
               {TIER_ORDER.map((tierId) => {
                 const tier = TIERS[tierId];
+                const tierCopy = TIER_COPY[tierId];
                 const active = selectedTier === tierId;
                 const isPremium = tierId === "premium";
                 return (
@@ -785,32 +859,39 @@ export default function VendorOnboardScreen() {
                       <View style={{ flex: 1 }}>
                         <View style={{ flexDirection: "row", alignItems: "center", gap: 8 }}>
                           <Text style={[s.tierName, { color: c.foreground }]}>
-                            {tier.name}
+                            {t(tierCopy.nameKey)}
                           </Text>
                           {isPremium && (
                             <View style={[s.premiumBadge, { backgroundColor: "#f59e0b" + "20" }]}>
-                              <Text style={s.premiumBadgeText}>⭐ Best</Text>
+                              <Text style={s.premiumBadgeText}>{t("vendorOnboard.bestBadge")}</Text>
                             </View>
                           )}
                         </View>
                         <Text style={[s.tierTagline, { color: c.mutedForeground }]}>
-                          {tier.tagline}
+                          {t(tierCopy.taglineKey)}
                         </Text>
                       </View>
                       <View style={{ alignItems: "flex-end" }}>
                         <Text style={[s.tierPrice, { color: c.foreground }]}>
                           ${tier.priceMonthly.toFixed(2)}
                         </Text>
-                        <Text style={[s.tierPriceSub, { color: c.mutedForeground }]}>/mo</Text>
+                        <Text style={[s.tierPriceSub, { color: c.mutedForeground }]}>
+                          {t("vendorOnboard.perMonth")}
+                        </Text>
                       </View>
                     </View>
 
                     <View style={[s.tierDivider, { backgroundColor: c.border }]} />
 
-                    {tier.features.map((f) => (
-                      <View key={f} style={s.tierFeatureRow}>
+                    {tierCopy.featureKeys.map((featureKey) => (
+                      <View key={featureKey} style={s.tierFeatureRow}>
                         <Feather name="check" size={14} color={active ? c.primary : c.mutedForeground} />
-                        <Text style={[s.tierFeatureText, { color: c.foreground }]}>{f}</Text>
+                        <Text style={[s.tierFeatureText, { color: c.foreground }]}>
+                          {t(featureKey, {
+                            count: PREMIUM_INCLUDED_LOCATIONS,
+                            price: ADDITIONAL_LOCATION_PRICE_MONTHLY,
+                          })}
+                        </Text>
                       </View>
                     ))}
 
@@ -818,7 +899,10 @@ export default function VendorOnboardScreen() {
                       <View style={[s.locationNote, { backgroundColor: "#f59e0b" + "15", borderColor: "#f59e0b" + "40" }]}>
                         <Feather name="map-pin" size={13} color="#d97706" />
                         <Text style={[s.locationNoteText, { color: "#92400e" }]}>
-                          {PREMIUM_INCLUDED_LOCATIONS} selling locations included · +${ADDITIONAL_LOCATION_PRICE_MONTHLY}/mo each additional
+                          {t("vendorOnboard.premiumLocations", {
+                            count: PREMIUM_INCLUDED_LOCATIONS,
+                            price: ADDITIONAL_LOCATION_PRICE_MONTHLY,
+                          })}
                         </Text>
                       </View>
                     )}
@@ -850,7 +934,9 @@ export default function VendorOnboardScreen() {
                   <Feather name="credit-card" size={16} color="#fff" />
                 )}
                 <Text style={s.stripeBtnText}>
-                  {stripeLoading ? "Opening…" : "Subscribe now (opens browser)"}
+                  {stripeLoading
+                    ? t("vendorOnboard.opening")
+                    : t("vendorOnboard.subscribe")}
                 </Text>
               </Pressable>
 
@@ -859,7 +945,7 @@ export default function VendorOnboardScreen() {
                 style={s.skipBtn}
               >
                 <Text style={[s.skipBtnText, { color: c.mutedForeground }]}>
-                  Skip for now — set up billing later
+                  {t("vendorOnboard.skipBilling")}
                 </Text>
               </Pressable>
             </View>
@@ -869,14 +955,16 @@ export default function VendorOnboardScreen() {
           {step === "photos" && (
             <View style={{ gap: 20 }}>
               <View>
-                <Text style={[s.h1, { color: c.foreground }]}>Add photos & videos</Text>
+                <Text style={[s.h1, { color: c.foreground }]}>{t("vendorOnboard.stepPhotos")}</Text>
                 <Text style={[s.body, { color: c.mutedForeground, marginTop: 6 }]}>
-                  {selectedTier === "basic"
-                    ? "Basic plan: 1 cover photo."
-                    : selectedTier === "middle"
-                    ? "Standard plan: up to 5 photos + 1 video."
-                    : "Premium plan: up to 20 photos + 5 videos."}
-                  {" "}The first photo becomes your cover.
+                  {t(
+                    selectedTier === "basic"
+                      ? "vendorOnboard.basicPhotos"
+                      : selectedTier === "middle"
+                      ? "vendorOnboard.standardPhotos"
+                      : "vendorOnboard.premiumPhotos",
+                  )}{" "}
+                  {t("vendorOnboard.firstPhotoIsCover")}
                 </Text>
               </View>
 
@@ -884,8 +972,17 @@ export default function VendorOnboardScreen() {
               <View style={[s.limitNote, { backgroundColor: c.muted, borderColor: c.border }]}>
                 <Feather name="info" size={14} color={c.mutedForeground} />
                 <Text style={[s.limitNoteText, { color: c.mutedForeground }]}>
-                  Photos: {currentPhotos.length}/{photoLimit}
-                  {videoLimit > 0 ? `  ·  Videos: ${currentVideos.length}/${videoLimit}` : "  ·  Videos: not included on Basic"}
+                  {t("vendorOnboard.photoCountNote", {
+                    current: currentPhotos.length,
+                    limit: photoLimit,
+                  })}
+                  {"  ·  "}
+                  {videoLimit > 0
+                    ? t("vendorOnboard.videoCountNote", {
+                      current: currentVideos.length,
+                      limit: videoLimit,
+                    })
+                    : t("vendorOnboard.videosNotIncluded")}
                 </Text>
               </View>
 
@@ -906,7 +1003,7 @@ export default function VendorOnboardScreen() {
                       )}
                       {idx === 0 && (
                         <View style={[s.coverBadge, { backgroundColor: c.primary }]}>
-                          <Text style={s.coverBadgeText}>Cover</Text>
+                          <Text style={s.coverBadgeText}>{t("vendorOnboard.photoCover")}</Text>
                         </View>
                       )}
                       <Pressable
@@ -930,7 +1027,9 @@ export default function VendorOnboardScreen() {
                   >
                     <Feather name="image" size={20} color={c.primary} />
                     <Text style={[s.pickBtnText, { color: c.foreground }]}>
-                      {currentPhotos.length === 0 ? "Add cover photo" : "Add another photo"}
+                      {currentPhotos.length === 0
+                        ? t("vendorOnboard.addCoverPhoto")
+                        : t("vendorOnboard.addAnotherPhoto")}
                     </Text>
                   </Pressable>
                 )}
@@ -941,7 +1040,9 @@ export default function VendorOnboardScreen() {
                   >
                     <Feather name="video" size={20} color={c.primary} />
                     <Text style={[s.pickBtnText, { color: c.foreground }]}>
-                      {currentVideos.length === 0 ? "Add a short video" : "Add another video"}
+                      {currentVideos.length === 0
+                        ? t("vendorOnboard.addShortVideo")
+                        : t("vendorOnboard.addAnotherVideo")}
                     </Text>
                   </Pressable>
                 )}
@@ -949,7 +1050,9 @@ export default function VendorOnboardScreen() {
 
               {pickedMedia.length === 0 && (
                 <Text style={[s.skipNote, { color: c.mutedForeground }]}>
-                  You can skip this — we'll use a clean {category.toLowerCase()} cover photo from our library.
+                  {t("vendorOnboard.skipPhotoNote", {
+                    category: t(CATEGORY_LABEL_KEYS[category as keyof typeof CATEGORY_LABEL_KEYS]),
+                  })}
                 </Text>
               )}
             </View>
@@ -960,15 +1063,18 @@ export default function VendorOnboardScreen() {
             <View style={{ gap: 20 }}>
               <View>
                 <Text style={[s.h1, { color: c.foreground }]}>
-                  Availability & ordering
+                  {t("vendorOnboard.stepAvailability")}
                 </Text>
                 <Text style={[s.body, { color: c.mutedForeground, marginTop: 6 }]}>
-                  All fields optional — fill in whatever applies.
+                  {t("vendorOnboard.allFieldsOptional")}
                 </Text>
               </View>
 
-              <FieldGroup label="How do customers order?" hint="Check all that apply.">
-                {ORDER_OPTIONS.map(({ value, label }) => {
+              <FieldGroup
+                label={t("vendorOnboard.howDoCustomersOrder")}
+                hint={t("vendorOnboard.orderCheckAll")}
+              >
+                {ORDER_OPTIONS.map(({ value, labelKey }) => {
                   const active = howToOrder.includes(value);
                   return (
                     <Pressable
@@ -993,23 +1099,31 @@ export default function VendorOnboardScreen() {
                       >
                         {active && <Feather name="check" size={11} color="#fff" />}
                       </View>
-                      <Text style={[s.checkLabel, { color: c.foreground }]}>{label}</Text>
+                      <Text style={[s.checkLabel, { color: c.foreground }]}>
+                        {t(labelKey)}
+                      </Text>
                     </Pressable>
                   );
                 })}
               </FieldGroup>
 
-              <FieldGroup label="Pickup / selling location" hint="Address, market booth, farm gate…">
+              <FieldGroup
+                label={t("vendorOnboard.pickupLocation")}
+                hint={t("vendorOnboard.pickupLocationHint")}
+              >
                 <TextInput
                   value={pickupAddress}
                   onChangeText={setPickupAddress}
-                  placeholder="123 NW 2nd Ave, Miami"
+                  placeholder={t("vendorOnboard.pickupLocationPlaceholder")}
                   placeholderTextColor={c.mutedForeground}
                   style={[s.input, { color: c.foreground, borderColor: c.border, backgroundColor: c.muted }]}
                 />
               </FieldGroup>
 
-              <FieldGroup label="Pin your exact location" hint="Helps shoppers find you on the map.">
+              <FieldGroup
+                label={t("vendorOnboard.pinExactLocation")}
+                hint={t("vendorOnboard.pinExactLocationHint")}
+              >
                 <LocationPickerMap
                   onChange={(loc: PickedLocation) => {
                     setPickupLat(loc.latitude);
@@ -1025,14 +1139,13 @@ export default function VendorOnboardScreen() {
                 />
               </FieldGroup>
 
-              <FieldGroup label="Days you're available">
+              <FieldGroup label={t("vendorOnboard.daysAvailable")}>
                 <View style={s.chipWrap}>
-                  {DAYS_SHORT.map((d, i) => {
-                    const full = DAYS_FULL[i];
+                  {DAYS_FULL.map((full, i) => {
                     const active = openDays.includes(full);
                     return (
                       <Pressable
-                        key={d}
+                        key={full}
                         onPress={() => toggleDay(full)}
                         style={[
                           s.chip,
@@ -1043,7 +1156,7 @@ export default function VendorOnboardScreen() {
                         ]}
                       >
                         <Text style={[s.chipText, { color: active ? "#fff" : c.foreground }]}>
-                          {d}
+                          {t(DAY_LABEL_KEYS[i])}
                         </Text>
                       </Pressable>
                     );
@@ -1051,21 +1164,24 @@ export default function VendorOnboardScreen() {
                 </View>
               </FieldGroup>
 
-              <FieldGroup label="Hours" hint="e.g. 'Saturdays 8 am – 1 pm'">
+              <FieldGroup label={t("vendorOnboard.hours")} hint={t("vendorOnboard.hoursHint")}>
                 <TextInput
                   value={openHours}
                   onChangeText={setOpenHours}
-                  placeholder="Saturdays 8 am – 1 pm"
+                  placeholder={t("vendorOnboard.hoursPlaceholder")}
                   placeholderTextColor={c.mutedForeground}
                   style={[s.input, { color: c.foreground, borderColor: c.border, backgroundColor: c.muted }]}
                 />
               </FieldGroup>
 
-              <FieldGroup label="Markets or pop-ups you attend" hint="Comma-separated">
+              <FieldGroup
+                label={t("vendorOnboard.marketsAttend")}
+                hint={t("vendorOnboard.marketsAttendHint")}
+              >
                 <TextInput
                   value={marketsText}
                   onChangeText={setMarketsText}
-                  placeholder="Wynwood Saturday Market, Coconut Grove Sunday Market…"
+                  placeholder={t("vendorOnboard.marketsPlaceholder")}
                   placeholderTextColor={c.mutedForeground}
                   multiline
                   numberOfLines={3}
@@ -1074,11 +1190,11 @@ export default function VendorOnboardScreen() {
                 />
               </FieldGroup>
 
-              <FieldGroup label="Instagram handle (optional)">
+              <FieldGroup label={t("vendorOnboard.instagramHandle")}>
                 <TextInput
                   value={instagramHandle}
                   onChangeText={setInstagramHandle}
-                  placeholder="@yourbusiness"
+                  placeholder={t("vendorOnboard.instagramPlaceholder")}
                   placeholderTextColor={c.mutedForeground}
                   autoCapitalize="none"
                   autoCorrect={false}
@@ -1086,22 +1202,22 @@ export default function VendorOnboardScreen() {
                 />
               </FieldGroup>
 
-              <FieldGroup label="Phone (optional)">
+              <FieldGroup label={t("vendorOnboard.phone")}>
                 <TextInput
                   value={phone}
                   onChangeText={setPhone}
-                  placeholder="(555) 123-4567"
+                  placeholder={t("vendorOnboard.phonePlaceholder")}
                   placeholderTextColor={c.mutedForeground}
                   keyboardType="phone-pad"
                   style={[s.input, { color: c.foreground, borderColor: c.border, backgroundColor: c.muted }]}
                 />
               </FieldGroup>
 
-              <FieldGroup label="Website (optional)">
+              <FieldGroup label={t("vendorOnboard.website")}>
                 <TextInput
                   value={websiteUrl}
                   onChangeText={setWebsiteUrl}
-                  placeholder="https://yourbusiness.com"
+                  placeholder={t("vendorOnboard.websitePlaceholder")}
                   placeholderTextColor={c.mutedForeground}
                   keyboardType="url"
                   autoCapitalize="none"
@@ -1110,7 +1226,7 @@ export default function VendorOnboardScreen() {
                 />
               </FieldGroup>
 
-              <FieldGroup label="Year established (optional)">
+              <FieldGroup label={t("vendorOnboard.yearEstablished")}>
                 <TextInput
                   value={established}
                   onChangeText={setEstablished}
@@ -1128,17 +1244,20 @@ export default function VendorOnboardScreen() {
           {step === "verify" && !verifyState && (
             <View style={{ gap: 20 }}>
               <View>
-                <Text style={[s.h1, { color: c.foreground }]}>Verify your email</Text>
+                <Text style={[s.h1, { color: c.foreground }]}>{t("vendorOnboard.stepVerify")}</Text>
                 <Text style={[s.body, { color: c.mutedForeground, marginTop: 6 }]}>
-                  We'll send a 6-digit code to confirm your email and publish your listing.
+                  {t("vendorOnboard.verifyBody")}
                 </Text>
               </View>
 
-              <FieldGroup label="Contact email *" hint="Shown on your public profile.">
+              <FieldGroup
+                label={t("vendorOnboard.contactEmail")}
+                hint={t("vendorOnboard.contactEmailHint")}
+              >
                 <TextInput
                   value={contactEmail}
                   onChangeText={setContactEmail}
-                  placeholder="hello@yourbusiness.com"
+                  placeholder={t("vendorOnboard.contactEmailPlaceholder")}
                   placeholderTextColor={c.mutedForeground}
                   keyboardType="email-address"
                   autoCapitalize="none"
@@ -1151,7 +1270,7 @@ export default function VendorOnboardScreen() {
                 <View style={[s.uploadingNote, { backgroundColor: c.muted, borderColor: c.border }]}>
                   <ActivityIndicator size="small" color={c.primary} />
                   <Text style={[s.uploadingText, { color: c.mutedForeground }]}>
-                    Uploading {pickedMedia.length} media file{pickedMedia.length !== 1 ? "s" : ""}…
+                    {t("vendorOnboard.uploadingMedia", { count: pickedMedia.length })}
                   </Text>
                 </View>
               )}
@@ -1161,13 +1280,11 @@ export default function VendorOnboardScreen() {
           {step === "verify" && verifyState && (
             <View style={{ gap: 20 }}>
               <View>
-                <Text style={[s.h1, { color: c.foreground }]}>Enter the code</Text>
+                <Text style={[s.h1, { color: c.foreground }]}>
+                  {t("vendorOnboard.enterCodeTitle")}
+                </Text>
                 <Text style={[s.body, { color: c.mutedForeground, marginTop: 6 }]}>
-                  We sent a 6-digit code to{" "}
-                  <Text style={{ color: c.foreground, fontWeight: "600" }}>
-                    {contactEmail}
-                  </Text>
-                  . Check your inbox (and spam).
+                  {t("vendorOnboard.enterCodeBody", { email: contactEmail })}
                 </Text>
               </View>
 
@@ -1175,7 +1292,8 @@ export default function VendorOnboardScreen() {
                 <View style={[s.devNote, { backgroundColor: "#fef3c7", borderColor: "#fcd34d" }]}>
                   <Feather name="terminal" size={14} color="#92400e" />
                   <Text style={[s.devNoteText, { color: "#92400e" }]}>
-                    Dev mode — code: <Text style={{ fontWeight: "700" }}>{verifyState.devCode}</Text>
+                    {t("vendorOnboard.devMode")}{" "}
+                    <Text style={{ fontWeight: "700" }}>{verifyState.devCode}</Text>
                   </Text>
                 </View>
               )}
@@ -1202,7 +1320,9 @@ export default function VendorOnboardScreen() {
               />
 
               <Pressable onPress={resendCode} disabled={submitting} style={s.resendBtn}>
-                <Text style={[s.resendText, { color: c.primary }]}>Resend code</Text>
+                <Text style={[s.resendText, { color: c.primary }]}>
+                  {t("vendorOnboard.resendCode")}
+                </Text>
               </Pressable>
             </View>
           )}
@@ -1245,12 +1365,12 @@ export default function VendorOnboardScreen() {
                   ]}
                 >
                   {step === "verify" && verifyState
-                    ? "Publish my business 🎉"
+                    ? t("vendorOnboard.publishBusiness")
                     : step === "verify"
-                    ? "Send code"
+                    ? t("vendorOnboard.sendCode")
                     : step === "photos" && pickedMedia.length > 0 && uploadedUrls.length === 0
-                    ? "Upload & continue"
-                    : "Continue"}
+                    ? t("vendorOnboard.uploadAndContinue")
+                    : t("vendorOnboard.continue")}
                 </Text>
               )}
             </Pressable>
