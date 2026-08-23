@@ -18,6 +18,7 @@ import {
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import { useColors } from "@/hooks/useColors";
+import { ApiErrorDetails } from "@/components/ApiErrorDetails";
 import type { WholesaleListing } from "@/lib/api-client";
 
 
@@ -206,6 +207,7 @@ export default function WholesaleScreen() {
     data: listings,
     isLoading,
     isError,
+    error: listingsQueryError,
     refetch,
   } = useListWholesaleListings({
     search: search.trim() || undefined,
@@ -282,6 +284,9 @@ export default function WholesaleScreen() {
           <Text style={[s.emptyTitle, { color: colors.foreground }]}>
             {t("wholesale.couldNotLoad")}
           </Text>
+          <ApiErrorDetails
+            errors={[{ label: "Wholesale listings", error: listingsQueryError }]}
+          />
           <TouchableOpacity
             style={[s.retryBtn, { backgroundColor: "#166534" }]}
             onPress={() => refetch()}

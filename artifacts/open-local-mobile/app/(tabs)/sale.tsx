@@ -19,6 +19,7 @@ import {
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import { FeedProductCard } from "@/components/FeedProductCard";
+import { ApiErrorDetails } from "@/components/ApiErrorDetails";
 import { MiniMap, type MapPin } from "@/components/MiniMap";
 import { useColors } from "@/hooks/useColors";
 import { haversineDistanceMiles } from "@/utils/distance";
@@ -45,6 +46,7 @@ export default function SaleScreen() {
     data: feed,
     isLoading,
     isError,
+    error: feedQueryError,
     refetch: refetchFeed,
   } = useGetLocalNowFeed();
 
@@ -185,6 +187,9 @@ export default function SaleScreen() {
                   <Text style={[s.emptyTitle, { color: colors.foreground }]}>
                     {t("sale.couldNotLoad")}
                   </Text>
+                  <ApiErrorDetails
+                    errors={[{ label: "Final Sale", error: feedQueryError }]}
+                  />
                 </View>
               )}
             </View>

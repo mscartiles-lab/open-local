@@ -17,6 +17,7 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Feather } from "@expo/vector-icons";
 
 import { useColors } from "@/hooks/useColors";
+import { ApiErrorDetails } from "@/components/ApiErrorDetails";
 import { VendorCard } from "@/components/VendorCard";
 import type { Vendor } from "@/lib/api-client";
 
@@ -28,9 +29,13 @@ export default function BrowseScreen() {
   const [search, setSearch] = useState("");
   const [refreshing, setRefreshing] = useState(false);
 
-  const { data: vendors, isLoading, isError, refetch } = useListVendors({
-    search: search.trim() || undefined,
-  });
+  const {
+    data: vendors,
+    isLoading,
+    isError,
+    error: vendorsQueryError,
+    refetch,
+  } = useListVendors({ search: search.trim() || undefined });
 
   const topPad = Platform.OS === "web" ? 67 : insets.top;
   const bottomPad = Platform.OS === "web" ? 34 : insets.bottom + 60;
@@ -73,6 +78,9 @@ export default function BrowseScreen() {
       ) : isError ? (
         <View style={s.center}>
           <Text style={s.emptyTitle}>{t("browse.couldNotLoad")}</Text>
+          <ApiErrorDetails
+            errors={[{ label: "Vendors", error: vendorsQueryError }]}
+          />
           <TouchableOpacity style={s.retryBtn} onPress={() => refetch()}>
             <Text style={s.retryText}>{t("common.retry")}</Text>
           </TouchableOpacity>

@@ -202,7 +202,13 @@
     "roleVendor": "Productor",
     "roleShopper": "Comprador",
     "language": "Idioma",
-    "languageSubtitle": "Cambiar idioma de la app"
+    "languageSubtitle": "Cambiar idioma de la app",
+    "checkForUpdates": "Buscar actualizaciones",
+    "checkForUpdatesSubtitle": "Busca la actualización más reciente",
+    "checkingForUpdates": "Buscando actualizaciones…",
+    "noUpdatesAvailable": "Tienes la versión más reciente",
+    "noUpdatesAvailableSubtitle": "No hay una actualización nueva disponible.",
+    "updateCheckFailed": "No se pudieron buscar actualizaciones"
   },
   "login": {
     "welcomeBack": "Bienvenido de nuevo",

@@ -202,7 +202,13 @@
     "roleVendor": "Nhà cung cấp",
     "roleShopper": "Người mua",
     "language": "Ngôn ngữ",
-    "languageSubtitle": "Đổi ngôn ngữ hiển thị"
+    "languageSubtitle": "Đổi ngôn ngữ hiển thị",
+    "checkForUpdates": "Kiểm tra cập nhật",
+    "checkForUpdatesSubtitle": "Tìm bản cập nhật mới nhất",
+    "checkingForUpdates": "Đang kiểm tra cập nhật…",
+    "noUpdatesAvailable": "Bạn đang dùng bản mới nhất",
+    "noUpdatesAvailableSubtitle": "Không có bản cập nhật mới.",
+    "updateCheckFailed": "Không thể kiểm tra cập nhật"
   },
   "login": {
     "welcomeBack": "Chào mừng trở lại",

@@ -17,6 +17,7 @@ import {
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import { useColors } from "@/hooks/useColors";
+import { ApiErrorDetails } from "@/components/ApiErrorDetails";
 import type { Market } from "@/lib/api-client";
 import { MarketsMapView } from "@/components/MarketsMapView";
 
@@ -185,6 +186,7 @@ export default function MarketsScreen() {
     isLoading,
     isError,
     refetch,
+    error: marketsQueryError,
   } = useListMarkets({
     search: search.trim() || undefined,
     day: dayFilter,
@@ -314,6 +316,9 @@ export default function MarketsScreen() {
           <Text style={[s.emptyTitle, { color: colors.foreground }]}>
             Could not load markets
           </Text>
+          <ApiErrorDetails
+            errors={[{ label: "Markets", error: marketsQueryError }]}
+          />
           <TouchableOpacity
             style={[s.retryBtn, { backgroundColor: "#166634" }]}
             onPress={() => refetch()}

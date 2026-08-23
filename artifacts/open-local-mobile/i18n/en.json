@@ -202,7 +202,13 @@
     "roleVendor": "Vendor",
     "roleShopper": "Shopper",
     "language": "Language",
-    "languageSubtitle": "Change display language"
+    "languageSubtitle": "Change display language",
+    "checkForUpdates": "Check for Updates",
+    "checkForUpdatesSubtitle": "Look for the latest app update",
+    "checkingForUpdates": "Checking for updates…",
+    "noUpdatesAvailable": "You're up to date",
+    "noUpdatesAvailableSubtitle": "No newer update is available.",
+    "updateCheckFailed": "Could not check for updates"
   },
   "login": {
     "welcomeBack": "Welcome back",

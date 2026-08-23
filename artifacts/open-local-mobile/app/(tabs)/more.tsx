@@ -1,7 +1,8 @@
 import { Feather } from "@expo/vector-icons";
+import * as Updates from "expo-updates";
 import { useRouter } from "expo-router";
 import { Linking } from "react-native";
-import React from "react";
+import React, { useState } from "react";
 import { useTranslation } from "react-i18next";
 import {
   Alert,
@@ -38,6 +39,7 @@ export default function MoreScreen() {
   const insets = useSafeAreaInsets();
   const router = useRouter();
   const { user, logout } = useAuth();
+  const [checkingForUpdate, setCheckingForUpdate] = useState(false);
   const topPad = Platform.OS === "web" ? 67 : insets.top;
   // On web, the fixed tab bar is 84px tall. Leave enough scrolling room for
   // the final Resources action to sit fully above it.
@@ -59,6 +61,33 @@ export default function MoreScreen() {
       { text: t("more.signOutConfirmCancel"), style: "cancel" },
       { text: t("more.signOutConfirmOk"), style: "destructive", onPress: logout },
     ]);
+  };
+
+  const handleCheckForUpdates = async () => {
+    if (checkingForUpdate) return;
+
+    setCheckingForUpdate(true);
+    try {
+      const update = await Updates.checkForUpdateAsync();
+      if (!update.isAvailable) {
+        Alert.alert(
+          t("more.noUpdatesAvailable"),
+          t("more.noUpdatesAvailableSubtitle"),
+        );
+        return;
+      }
+
+      await Updates.fetchUpdateAsync();
+      await Updates.reloadAsync();
+    } catch (error) {
+      const message =
+        error instanceof Error
+          ? `${error.name}: ${error.message}`
+          : String(error);
+      Alert.alert(t("more.updateCheckFailed"), message);
+    } finally {
+      setCheckingForUpdate(false);
+    }
   };
 
   return (
@@ -235,6 +264,32 @@ export default function MoreScreen() {
 
         <Text style={[s.sectionLabel, { marginTop: 20 }]}>{t("more.sectionResources")}</Text>
         <View style={s.card}>
+          <TouchableOpacity
+            style={[s.row, s.rowBorder]}
+            onPress={handleCheckForUpdates}
+            activeOpacity={0.7}
+            accessibilityRole="button"
+            accessibilityLabel={t("more.checkForUpdates")}
+            testID="more-check-for-updates"
+            disabled={checkingForUpdate}
+          >
+            <View style={[s.iconWrap, { backgroundColor: colors.primary + "18" }]}>
+              <Feather name="download-cloud" size={18} color={colors.primary} />
+            </View>
+            <View style={s.rowText}>
+              <Text style={s.rowLabel}>{t("more.checkForUpdates")}</Text>
+              <Text style={s.rowSubtitle}>
+                {checkingForUpdate
+                  ? t("more.checkingForUpdates")
+                  : t("more.checkForUpdatesSubtitle")}
+              </Text>
+            </View>
+            <Feather
+              name={checkingForUpdate ? "loader" : "chevron-right"}
+              size={18}
+              color={colors.mutedForeground}
+            />
+          </TouchableOpacity>
           {MENU_ITEMS.map((item, i) => (
             <TouchableOpacity
               key={item.id}

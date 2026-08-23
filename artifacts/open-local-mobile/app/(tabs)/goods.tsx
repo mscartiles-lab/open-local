@@ -22,6 +22,7 @@ import {
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import { MiniMap, type MapPin } from "@/components/MiniMap";
+import { ApiErrorDetails } from "@/components/ApiErrorDetails";
 import { useColors } from "@/hooks/useColors";
 import { haversineDistanceMiles } from "@/utils/distance";
 import type { Product, Vendor } from "@/lib/api-client";
@@ -70,6 +71,7 @@ export default function GoodsScreen() {
     data: allProducts,
     isLoading: productsLoading,
     isError: productsError,
+    error: productsQueryError,
     refetch: refetchProducts,
   } = useListProducts();
 
@@ -248,6 +250,9 @@ export default function GoodsScreen() {
                   <Text style={[s.emptyTitle, { color: colors.foreground }]}>
                     {t("goods.couldNotLoad")}
                   </Text>
+                  <ApiErrorDetails
+                    errors={[{ label: "Products", error: productsQueryError }]}
+                  />
                   <TouchableOpacity style={s.retryBtn} onPress={onRefresh}>
                     <Text style={[s.retryText, { color: colors.primaryForeground }]}>
                       {t("common.retry")}

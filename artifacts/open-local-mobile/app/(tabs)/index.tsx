@@ -25,6 +25,7 @@ import {
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import Avatar from "@/components/Avatar";
+import { ApiErrorDetails } from "@/components/ApiErrorDetails";
 import { MiniMap, type MapPin } from "@/components/MiniMap";
 import { VendorCard } from "@/components/VendorCard";
 import { useAuth } from "@/context/AuthContext";
@@ -65,12 +66,14 @@ export default function TheLocalsScreen() {
     data: vendors,
     isLoading: vendorsLoading,
     isError: vendorsError,
+    error: vendorsQueryError,
     refetch: refetchVendors,
   } = useListVendors({ search: search.trim() || undefined });
   const {
     data: establishments,
     isLoading: estLoading,
     isError: estError,
+    error: establishmentsQueryError,
     refetch: refetchEst,
   } = useListEstablishments();
 
@@ -343,6 +346,12 @@ export default function TheLocalsScreen() {
               {isError && (
                 <View style={s.inlineError}>
                   <Text style={s.emptyTitle}>{t("vendors.errorLoad")}</Text>
+                  <ApiErrorDetails
+                    errors={[
+                      { label: "Vendors", error: vendorsQueryError },
+                      { label: "Businesses", error: establishmentsQueryError },
+                    ]}
+                  />
                   <TouchableOpacity style={s.retryBtn} onPress={onRefresh}>
                     <Text style={s.retryText}>{t("common.retry")}</Text>
                   </TouchableOpacity>

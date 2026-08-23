@@ -202,7 +202,13 @@
     "roleVendor": "Produtor",
     "roleShopper": "Consumidor",
     "language": "Idioma",
-    "languageSubtitle": "Alterar idioma de exibição"
+    "languageSubtitle": "Alterar idioma de exibição",
+    "checkForUpdates": "Verificar atualizações",
+    "checkForUpdatesSubtitle": "Procurar a atualização mais recente",
+    "checkingForUpdates": "Verificando atualizações…",
+    "noUpdatesAvailable": "Você está com a versão mais recente",
+    "noUpdatesAvailableSubtitle": "Nenhuma atualização nova está disponível.",
+    "updateCheckFailed": "Não foi possível verificar atualizações"
   },
   "login": {
     "welcomeBack": "Bem-vindo de volta",

@@ -202,7 +202,13 @@
     "roleVendor": "Producteur",
     "roleShopper": "Acheteur",
     "language": "Langue",
-    "languageSubtitle": "Changer la langue d’affichage"
+    "languageSubtitle": "Changer la langue d’affichage",
+    "checkForUpdates": "Rechercher des mises à jour",
+    "checkForUpdatesSubtitle": "Rechercher la dernière mise à jour",
+    "checkingForUpdates": "Recherche des mises à jour…",
+    "noUpdatesAvailable": "Vous utilisez la dernière version",
+    "noUpdatesAvailableSubtitle": "Aucune nouvelle mise à jour n’est disponible.",
+    "updateCheckFailed": "Impossible de rechercher les mises à jour"
   },
   "login": {
     "welcomeBack": "Bon retour",

@@ -17,6 +17,7 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Image } from "expo-image";
 
 import { useColors } from "@/hooks/useColors";
+import { ApiErrorDetails } from "@/components/ApiErrorDetails";
 import type { Product } from "@/lib/api-client";
 
 function formatPrice(cents: number) {
@@ -42,7 +43,13 @@ export default function ListingsScreen() {
   const topPad = Platform.OS === "web" ? 67 : insets.top;
   const bottomPad = Platform.OS === "web" ? 34 : insets.bottom + 60;
 
-  const { data: allProducts, isLoading, isError, refetch } = useListProducts();
+  const {
+    data: allProducts,
+    isLoading,
+    isError,
+    error: productsQueryError,
+    refetch,
+  } = useListProducts();
   const products = (allProducts ?? []).filter((p) => p.listingType === activeType);
 
   const onRefresh = async () => {
@@ -95,6 +102,9 @@ export default function ListingsScreen() {
       ) : isError ? (
         <View style={s.center}>
           <Text style={s.emptyTitle}>{t("listings.couldNotLoad")}</Text>
+          <ApiErrorDetails
+            errors={[{ label: "Listings", error: productsQueryError }]}
+          />
           <TouchableOpacity style={[s.retryBtn, { backgroundColor: activeConfig.color }]} onPress={() => refetch()}>
             <Text style={s.retryText}>{t("common.retry")}</Text>
           </TouchableOpacity>
