@@ -34,6 +34,7 @@ EMAILJS_TEMPLATE_ID = "template_05e3r7u"
 EMAILJS_PUBLIC_KEY = "bXLUPvpo7S-IxJwMT"
 EMAILJS_PRIVATE_KEY = "RTUcX2RqDC1xLHNzYnoZr"
 EMAILJS_ONBOARDING_TEMPLATE_ID = "template_ddumzg3"
+EXPO_PUBLIC_DOMAIN = "openlocalapp.com"
 
 [[ports]]
 localPort = 8080
