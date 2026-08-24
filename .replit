@@ -27,7 +27,6 @@ packages = ["glib", "nss", "nspr", "atk", "at-spi2-atk", "cups", "libdrm", "dbus
 [userenv]
 
 [userenv.shared]
-ADMIN_EMAILS = "mscartiles@gmail.com,support@openlocalapp.com"
 MAIL_FROM = "Open Local <automated@openlocalmail.com>"
 EMAILJS_SERVICE_ID = "service_h2ipm46"
 EMAILJS_TEMPLATE_ID = "template_05e3r7u"
@@ -35,6 +34,12 @@ EMAILJS_PUBLIC_KEY = "bXLUPvpo7S-IxJwMT"
 EMAILJS_PRIVATE_KEY = "RTUcX2RqDC1xLHNzYnoZr"
 EMAILJS_ONBOARDING_TEMPLATE_ID = "template_ddumzg3"
 EXPO_PUBLIC_DOMAIN = "openlocalapp.com"
+
+[userenv.development]
+ADMIN_EMAILS = "mscartiles@gmail.com,support@openlocalapp.com,julylan.johnson@gmail.com"
+
+[userenv.production]
+ADMIN_EMAILS = "mscartiles@gmail.com,support@openlocalapp.com,julylan.johnson@gmail.com"
 
 [[ports]]
 localPort = 8080
