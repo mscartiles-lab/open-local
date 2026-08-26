@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { Loader2, Trash2, ShieldCheck } from "lucide-react";
+import { useTranslation } from "react-i18next";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
@@ -37,6 +38,7 @@ function authHeaders(): HeadersInit {
 }
 
 export default function UsersAdminTab() {
+  const { t } = useTranslation();
   const { toast } = useToast();
   const [users, setUsers] = useState<AdminUser[] | null>(null);
   const [loading, setLoading] = useState(true);
@@ -49,7 +51,7 @@ export default function UsersAdminTab() {
     try {
       const r = await fetch("/api/admin/users", { headers: authHeaders() });
       if (r.status === 401 || r.status === 403) {
-        setError("Admin access required. Make sure you're signed in with an admin account.");
+        setError(t("admin.adminAccessRequired"));
         setUsers(null);
         return;
       }
@@ -73,10 +75,10 @@ export default function UsersAdminTab() {
         body: JSON.stringify({ role }),
       });
       if (!r.ok) throw new Error(`HTTP ${r.status}`);
-      toast({ title: "Role updated" });
+      toast({ title: t("admin.userRoleUpdated") });
       await reload();
     } catch (e) {
-      toast({ variant: "destructive", title: "Failed to update role", description: (e as Error).message });
+      toast({ variant: "destructive", title: t("admin.userRoleUpdateFailed"), description: (e as Error).message });
     } finally {
       setBusyId(null);
     }
@@ -87,10 +89,10 @@ export default function UsersAdminTab() {
     try {
       const r = await fetch(`/api/admin/users/${id}`, { method: "DELETE", headers: authHeaders() });
       if (!r.ok) throw new Error(`HTTP ${r.status}`);
-      toast({ title: "User deleted" });
+      toast({ title: t("admin.userDeleted") });
       await reload();
     } catch (e) {
-      toast({ variant: "destructive", title: "Failed to delete user", description: (e as Error).message });
+      toast({ variant: "destructive", title: t("admin.userDeleteFailed"), description: (e as Error).message });
     } finally {
       setBusyId(null);
     }
@@ -112,13 +114,13 @@ export default function UsersAdminTab() {
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead>User</TableHead>
-                  <TableHead>Email</TableHead>
-                  <TableHead>Location</TableHead>
-                  <TableHead>Tier</TableHead>
-                  <TableHead>Role</TableHead>
-                  <TableHead>Joined</TableHead>
-                  <TableHead className="text-right">Actions</TableHead>
+                  <TableHead>{t("admin.userColUser")}</TableHead>
+                  <TableHead>{t("admin.userColEmail")}</TableHead>
+                  <TableHead>{t("admin.colLocation")}</TableHead>
+                  <TableHead>{t("admin.userColTier")}</TableHead>
+                  <TableHead>{t("admin.userColRole")}</TableHead>
+                  <TableHead>{t("admin.userColJoined")}</TableHead>
+                  <TableHead className="text-right">{t("admin.colActions")}</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -137,7 +139,7 @@ export default function UsersAdminTab() {
                     <TableCell>
                       <span className="capitalize text-sm">
                         {u.tier}
-                        {!u.stripeSubscriptionId && <span className="text-muted-foreground"> (unpaid)</span>}
+                        {!u.stripeSubscriptionId && <span className="text-muted-foreground"> ({t("admin.userUnpaid")})</span>}
                       </span>
                     </TableCell>
                     <TableCell>
@@ -148,9 +150,9 @@ export default function UsersAdminTab() {
                       >
                         <SelectTrigger className="w-32 h-8"><SelectValue /></SelectTrigger>
                         <SelectContent>
-                          <SelectItem value="shopper">Shopper</SelectItem>
-                          <SelectItem value="vendor">Vendor</SelectItem>
-                          <SelectItem value="admin">Admin</SelectItem>
+                          <SelectItem value="shopper">{t("admin.userRoleShopper")}</SelectItem>
+                          <SelectItem value="vendor">{t("admin.userRoleVendor")}</SelectItem>
+                          <SelectItem value="admin">{t("admin.userRoleAdmin")}</SelectItem>
                         </SelectContent>
                       </Select>
                     </TableCell>
@@ -166,14 +168,14 @@ export default function UsersAdminTab() {
                         </AlertDialogTrigger>
                         <AlertDialogContent>
                           <AlertDialogHeader>
-                            <AlertDialogTitle>Delete @{u.username}?</AlertDialogTitle>
+                            <AlertDialogTitle>{t("admin.deleteUserTitle", { username: u.username })}</AlertDialogTitle>
                             <AlertDialogDescription>
-                              This will permanently delete the user account and their session. This action cannot be undone.
+                              {t("admin.deleteUserWarning")}
                             </AlertDialogDescription>
                           </AlertDialogHeader>
                           <AlertDialogFooter>
-                            <AlertDialogCancel>Cancel</AlertDialogCancel>
-                            <AlertDialogAction onClick={() => remove(u.id)} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">Delete</AlertDialogAction>
+                            <AlertDialogCancel>{t("admin.cancel")}</AlertDialogCancel>
+                            <AlertDialogAction onClick={() => remove(u.id)} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">{t("admin.delete")}</AlertDialogAction>
                           </AlertDialogFooter>
                         </AlertDialogContent>
                       </AlertDialog>
@@ -184,7 +186,7 @@ export default function UsersAdminTab() {
             </Table>
           </div>
         ) : (
-          <div className="text-center py-12 text-muted-foreground">No users yet.</div>
+          <div className="text-center py-12 text-muted-foreground">{t("admin.noUsers")}</div>
         )}
       </CardContent>
     </Card>

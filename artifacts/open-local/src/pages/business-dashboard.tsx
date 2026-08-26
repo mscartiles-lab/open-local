@@ -4,6 +4,7 @@ import { Loader2, Bookmark } from "lucide-react";
 import Layout from "@/components/layout/Layout";
 import { Button } from "@/components/ui/button";
 import AnalyticsPanel from "@/components/AnalyticsPanel";
+import { useTranslation } from "react-i18next";
 
 interface Establishment {
   id: number;
@@ -21,6 +22,7 @@ export default function BusinessDashboard() {
   const [biz, setBiz] = useState<Establishment | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const { t } = useTranslation();
 
   useEffect(() => {
     if (!Number.isFinite(numId)) {
@@ -52,10 +54,10 @@ export default function BusinessDashboard() {
     return (
       <Layout>
         <div className="container mx-auto max-w-2xl px-4 py-20 text-center">
-          <h1 className="font-serif text-3xl font-bold">Business not found</h1>
-          <p className="mt-2 text-muted-foreground">{error ?? "We couldn't find this business."}</p>
+          <h1 className="font-serif text-3xl font-bold">{t("businessDashboard.notFound")}</h1>
+          <p className="mt-2 text-muted-foreground">{error ?? t("businessDashboard.notFoundDescription")}</p>
           <Link href="/submit">
-            <Button className="mt-6">List your business</Button>
+            <Button className="mt-6">{t("businessDashboard.listYourBusiness")}</Button>
           </Link>
         </div>
       </Layout>
@@ -76,7 +78,7 @@ export default function BusinessDashboard() {
                 />
               )}
               <div>
-                <p className="text-xs uppercase tracking-[0.2em] text-primary font-semibold">Business dashboard</p>
+                <p className="text-xs uppercase tracking-[0.2em] text-primary font-semibold">{t("businessDashboard.title")}</p>
                 <h1 className="font-serif text-3xl font-bold text-foreground md:text-4xl">{biz.name}</h1>
                 <p className="text-sm text-muted-foreground">
                   {biz.type} · {biz.city}, {biz.state}
@@ -87,9 +89,7 @@ export default function BusinessDashboard() {
 
           <div className="mt-6 flex items-start gap-2 rounded-md border border-amber-300 bg-amber-50 px-4 py-3 text-sm text-amber-900">
             <Bookmark className="mt-0.5 h-4 w-4 shrink-0" />
-            <p>
-              <strong>Bookmark this page</strong> — only the contact email on file (or an admin) can view these analytics.
-            </p>
+            <p>{t("businessDashboard.bookmarkNotice")}</p>
           </div>
         </div>
       </div>

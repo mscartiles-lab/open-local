@@ -183,6 +183,20 @@ router.post("/auth/email/verify", async (req, res): Promise<void> => {
 
   // Code is valid — create the vendor.
   const payload = existing.vendorPayload as Record<string, unknown>;
+
+  // Auto-geocode if the onboarding flow didn't produce a manual pin
+  if (payload.latitude == null || payload.longitude == null) {
+    const { geocodeVendor } = await import("../lib/geocode");
+    const coords = await geocodeVendor(
+      payload.zipCode as string | null,
+      payload.location as string | null,
+    );
+    if (coords) {
+      payload.latitude = coords.latitude;
+      payload.longitude = coords.longitude;
+    }
+  }
+
   const [vendor] = await db
     .insert(vendorsTable)
     .values(payload as never)

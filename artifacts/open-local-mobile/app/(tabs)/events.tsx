@@ -1,6 +1,8 @@
 import { useListEvents, useListVendors } from "@/lib/api-client";
 import { Feather } from "@expo/vector-icons";
+import { useRouter } from "expo-router";
 import React, { useMemo, useState } from "react";
+import { useTranslation } from "react-i18next";
 import {
   ActivityIndicator,
   Dimensions,
@@ -22,8 +24,10 @@ import type { EventItem } from "@/lib/api-client";
 const EVENT_COLOR = "#1a4a6e";
 
 export default function EventsScreen() {
+  const { t } = useTranslation();
   const colors = useColors();
   const insets = useSafeAreaInsets();
+  const router = useRouter();
   const [refreshing, setRefreshing] = useState(false);
 
   const {
@@ -72,19 +76,22 @@ export default function EventsScreen() {
       <View style={s.mapLayer}>
         <MiniMap
           pins={pins}
-          radiusMiles={25}
+          radiusMiles={0.5}
           height={screenH}
-          emptyHint="No locations mapped"
+          emptyHint={t("events.noLocationsMapped")}
           fullBleed
           showControls
+          onPinPress={(key) => {
+            if (key.startsWith("v-")) router.push(`/vendor/${key.slice(2)}`);
+          }}
         />
       </View>
 
       {/* Floating title over the map */}
       <View style={[s.floatHeader, { top: topPad + 8 }]}>
         <View style={s.brandPill}>
-          <Text style={s.wordmark}>Events</Text>
-          <Text style={s.tagline}>Markets & pop-ups near you</Text>
+          <Text style={s.wordmark}>{t("events.title")}</Text>
+          <Text style={s.tagline}>{t("events.subtitle")}</Text>
         </View>
       </View>
 
@@ -106,7 +113,7 @@ export default function EventsScreen() {
             <View style={{ height: mapPeek, pointerEvents: "none" }} />
             <View style={s.panelHead}>
               <View style={s.grabber} />
-              <Text style={s.panelTitle}>Upcoming events</Text>
+              <Text style={s.panelTitle}>{t("events.upcoming")}</Text>
 
               {isLoading && (
                 <View style={s.inline}>
@@ -116,9 +123,9 @@ export default function EventsScreen() {
 
               {isError && (
                 <View style={s.inline}>
-                  <Text style={s.emptyTitle}>Could not load events</Text>
+                  <Text style={s.emptyTitle}>{t("events.couldNotLoad")}</Text>
                   <TouchableOpacity style={s.retryBtn} onPress={onRefresh}>
-                    <Text style={s.retryText}>Retry</Text>
+                    <Text style={s.retryText}>{t("common.retry")}</Text>
                   </TouchableOpacity>
                 </View>
               )}
@@ -133,9 +140,9 @@ export default function EventsScreen() {
                 size={36}
                 color={colors.mutedForeground}
               />
-              <Text style={s.emptyTitle}>No upcoming events</Text>
+              <Text style={s.emptyTitle}>{t("events.noUpcoming")}</Text>
               <Text style={s.emptySubtitle}>
-                Check back soon — organizers add new events all the time.
+                {t("events.checkBackSoon")}
               </Text>
             </View>
           ) : null
@@ -161,6 +168,7 @@ function EventCard({
   event: EventItem;
   colors: ReturnType<typeof useColors>;
 }) {
+  const { t } = useTranslation();
   const start = new Date(event.startsAt);
   const dateLabel = start.toLocaleDateString(undefined, {
     weekday: "short",
@@ -222,7 +230,7 @@ function EventCard({
               style={[evStyles.badge, { backgroundColor: `${EVENT_COLOR}18` }]}
             >
               <Text style={[evStyles.badgeText, { color: EVENT_COLOR }]}>
-                Free
+                {t("events.free")}
               </Text>
             </View>
           ) : event.priceCents != null ? (

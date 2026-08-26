@@ -28,6 +28,12 @@ tags:
     description: Community events — local gatherings, markets, pop-ups, and workshops
   - name: insights
     description: Search demand analytics and vendor recruitment signals
+  - name: Storage
+    description: Object storage upload and serving endpoints.
+  - name: markets
+    description: Farmers market directory and manager operations
+  - name: wholesale
+    description: Vendor wholesale exchange operations
 
 paths:
   /healthz:
@@ -61,6 +67,9 @@ paths:
         - in: query
           name: featured
           schema: { type: boolean }
+        - in: query
+          name: marketName
+          schema: { type: string }
       responses:
         "200":
           description: List of vendors
@@ -671,8 +680,359 @@ paths:
             application/json:
               schema: { $ref: "#/components/schemas/ErrorResponse" }
 
+  /markets:
+    get:
+      operationId: listMarkets
+      tags: [markets]
+      summary: List active markets
+      parameters:
+        - in: query
+          name: search
+          schema: { type: string }
+        - in: query
+          name: city
+          schema: { type: string }
+        - in: query
+          name: region
+          schema: { type: string }
+        - in: query
+          name: day
+          schema: { type: string }
+      responses:
+        "200":
+          description: Active markets
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: "#/components/schemas/Market" }
+
+  /markets/register:
+    post:
+      operationId: registerMarket
+      tags: [markets]
+      summary: Register a market for review
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/MarketRegistrationInput" }
+      responses:
+        "201":
+          description: Registered market
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Market" }
+        "400":
+          description: Validation error
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ErrorResponse" }
+
+  /markets/mine:
+    get:
+      operationId: getMyMarket
+      tags: [markets]
+      summary: Get the authenticated manager's market
+      responses:
+        "200":
+          description: Managed market
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Market" }
+        "404":
+          description: No managed market found
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ErrorResponse" }
+
+  /markets/{slug}:
+    parameters:
+      - in: path
+        name: slug
+        required: true
+        schema: { type: string }
+    get:
+      operationId: getMarket
+      tags: [markets]
+      summary: Get a market by slug
+      responses:
+        "200":
+          description: Market
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Market" }
+        "404":
+          description: Market not found
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ErrorResponse" }
+    patch:
+      operationId: updateMarket
+      tags: [markets]
+      summary: Update a managed market
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/MarketUpdateInput" }
+      responses:
+        "200":
+          description: Updated market
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Market" }
+        "400":
+          description: Validation error
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ErrorResponse" }
+        "404":
+          description: Market not found
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ErrorResponse" }
+
+  /markets/{slug}/claim:
+    parameters:
+      - in: path
+        name: slug
+        required: true
+        schema: { type: string }
+    post:
+      operationId: claimMarket
+      tags: [markets]
+      summary: Claim management of a market
+      responses:
+        "200":
+          description: Claimed market
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Market" }
+        "404":
+          description: Market not found
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ErrorResponse" }
+        "409":
+          description: Market already claimed
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ErrorResponse" }
+
+  /wholesale:
+    get:
+      operationId: listWholesaleListings
+      tags: [wholesale]
+      summary: List active wholesale listings
+      parameters:
+        - in: query
+          name: search
+          schema: { type: string }
+        - in: query
+          name: category
+          schema: { type: string }
+        - in: query
+          name: vendorId
+          schema: { type: integer, minimum: 1 }
+      responses:
+        "200":
+          description: Wholesale listings
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: "#/components/schemas/WholesaleListing" }
+    post:
+      operationId: createWholesaleListing
+      tags: [wholesale]
+      summary: Create a wholesale listing
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/WholesaleListingInput" }
+      responses:
+        "201":
+          description: Created wholesale listing
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/WholesaleListingRecord" }
+        "400":
+          description: Validation error
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ErrorResponse" }
+
+  /wholesale/{id}:
+    parameters:
+      - in: path
+        name: id
+        required: true
+        schema: { type: integer }
+    patch:
+      operationId: updateWholesaleListing
+      tags: [wholesale]
+      summary: Update a wholesale listing
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/WholesaleListingUpdate" }
+      responses:
+        "200":
+          description: Updated wholesale listing
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/WholesaleListingRecord" }
+        "400":
+          description: Validation error
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ErrorResponse" }
+    delete:
+      operationId: deleteWholesaleListing
+      tags: [wholesale]
+      summary: Remove a wholesale listing
+      responses:
+        "204":
+          description: Listing removed
+
+  /storage/uploads/request-url:
+    post:
+      tags: [Storage]
+      operationId: requestUploadUrl
+      summary: Request a presigned URL for file upload
+      description: |
+        Returns a presigned GCS URL for direct upload. The client sends JSON
+        metadata here, then uploads the file directly to the returned URL.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UploadUrlRequest'
+      responses:
+        '200':
+          description: Presigned upload URL generated.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UploadUrlResponse'
+        '400':
+          description: Missing or invalid required fields.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '500':
+          description: Failed to generate upload URL.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+  /storage/public-objects/{filePath}:
+    get:
+      tags: [Storage]
+      operationId: getPublicObject
+      summary: Serve a public asset from PUBLIC_OBJECT_SEARCH_PATHS
+      description: |
+        Unconditionally public — no authentication or ACL checks.
+        Searches PUBLIC_OBJECT_SEARCH_PATHS for the given file path.
+      parameters:
+        - name: filePath
+          in: path
+          required: true
+          schema:
+            type: string
+          description: Relative file path within the public search paths.
+      responses:
+        '200':
+          description: Object content streamed with correct Content-Type.
+          content:
+            '*/*':
+              schema:
+                type: string
+                format: binary
+        '404':
+          description: File not found.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '500':
+          description: Failed to serve public object.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+  /storage/objects/{objectPath}:
+    get:
+      tags: [Storage]
+      operationId: getStorageObject
+      summary: Serve an object entity from PRIVATE_OBJECT_DIR
+      description: |
+        Serves object entities uploaded via presigned URLs. These can optionally
+        be protected with authentication or ACL checks based on the use case.
+      parameters:
+        - name: objectPath
+          in: path
+          required: true
+          schema:
+            type: string
+          description: Object path within the private object dir (e.g. `uploads/some-uuid`).
+      responses:
+        '200':
+          description: Object content streamed with correct Content-Type.
+          content:
+            '*/*':
+              schema:
+                type: string
+                format: binary
+        '404':
+          description: Object not found.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '500':
+          description: Failed to serve object.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
 components:
   schemas:
+    UploadUrlRequest:
+      type: object
+      required: [name, size, contentType]
+      properties:
+        name:
+          type: string
+          minLength: 1
+          description: Original file name.
+        size:
+          type: integer
+          minimum: 1
+          description: File size in bytes.
+        contentType:
+          type: string
+          minLength: 1
+          description: MIME type of the file (e.g. `image/jpeg`).
+    UploadUrlResponse:
+      type: object
+      required: [uploadURL, objectPath]
+      properties:
+        uploadURL:
+          type: string
+          format: uri
+          description: Presigned GCS URL for PUT upload.
+        objectPath:
+          type: string
+          description: Normalized object path (e.g. `/objects/uploads/uuid`). Store this in your database.
+        metadata:
+          $ref: '#/components/schemas/UploadUrlRequest'
     HealthStatus:
       type: object
       properties:
@@ -685,6 +1045,145 @@ components:
         error: { type: string }
       required: [error]
 
+    Market:
+      type: object
+      properties:
+        id: { type: integer }
+        name: { type: string }
+        slug: { type: ["string", "null"] }
+        city: { type: string }
+        region: { type: string }
+        address: { type: ["string", "null"] }
+        day: { type: ["string", "null"] }
+        time: { type: ["string", "null"] }
+        description: { type: ["string", "null"] }
+        imageUrl: { type: ["string", "null"] }
+        logoUrl: { type: ["string", "null"] }
+        featuredImageUrl: { type: ["string", "null"] }
+        websiteUrl: { type: ["string", "null"] }
+        contactEmail: { type: ["string", "null"] }
+        instagramHandle: { type: ["string", "null"] }
+        facebookUrl: { type: ["string", "null"] }
+        twitterHandle: { type: ["string", "null"] }
+        latitude: { type: ["number", "null"] }
+        longitude: { type: ["number", "null"] }
+        managerId: { type: ["integer", "null"] }
+        verified: { type: boolean }
+        vendorCount: { type: integer }
+        tags:
+          type: array
+          items: { type: string }
+        active: { type: boolean }
+        createdAt: { type: string, format: date-time }
+      required:
+        [id, name, slug, city, region, address, day, time, description, imageUrl,
+        logoUrl, featuredImageUrl, websiteUrl, contactEmail, instagramHandle,
+        facebookUrl, twitterHandle, latitude, longitude, managerId, verified,
+        vendorCount, tags, active, createdAt]
+
+    MarketRegistrationInput:
+      type: object
+      properties:
+        name: { type: string, minLength: 2 }
+        city: { type: string, minLength: 1 }
+        region: { type: string, default: FL }
+        address: { type: string }
+        day: { type: string }
+        time: { type: string }
+        description: { type: string }
+        contactEmail: { type: string, format: email }
+        phone: { type: string }
+        websiteUrl: { type: string, format: uri }
+        instagramHandle: { type: string }
+        facebookUrl: { type: string, format: uri }
+        twitterHandle: { type: string }
+        logoUrl: { type: string, format: uri }
+        featuredImageUrl: { type: string, format: uri }
+        tags:
+          type: array
+          items: { type: string }
+        latitude: { type: number }
+        longitude: { type: number }
+      required: [name, city, contactEmail]
+
+    MarketUpdateInput:
+      type: object
+      properties:
+        name: { type: string, minLength: 2 }
+        city: { type: string, minLength: 1 }
+        region: { type: string }
+        address: { type: ["string", "null"] }
+        day: { type: ["string", "null"] }
+        time: { type: ["string", "null"] }
+        description: { type: ["string", "null"] }
+        contactEmail: { type: string, format: email }
+        websiteUrl: { type: ["string", "null"], format: uri }
+        instagramHandle: { type: ["string", "null"] }
+        facebookUrl: { type: ["string", "null"], format: uri }
+        twitterHandle: { type: ["string", "null"] }
+        logoUrl: { type: ["string", "null"], format: uri }
+        featuredImageUrl: { type: ["string", "null"], format: uri }
+        tags:
+          type: array
+          items: { type: string }
+
+    WholesaleListing:
+      allOf:
+        - $ref: "#/components/schemas/WholesaleListingRecord"
+        - type: object
+          properties:
+            vendorName: { type: string }
+            vendorSlug: { type: string }
+            vendorImageUrl: { type: string }
+          required: [vendorName, vendorSlug, vendorImageUrl]
+
+    WholesaleListingRecord:
+      type: object
+      properties:
+        id: { type: integer }
+        vendorId: { type: integer }
+        title: { type: string }
+        description: { type: ["string", "null"] }
+        category: { type: ["string", "null"] }
+        pricePerUnit: { type: ["number", "null"] }
+        unit: { type: ["string", "null"] }
+        minOrderQty: { type: integer }
+        availableQty: { type: ["integer", "null"] }
+        imageUrl: { type: ["string", "null"] }
+        expiresAt: { type: ["string", "null"], format: date-time }
+        active: { type: boolean }
+        createdAt: { type: string, format: date-time }
+      required:
+        [id, vendorId, title, description, category, pricePerUnit, unit,
+        minOrderQty, availableQty, imageUrl, expiresAt, active, createdAt]
+
+    WholesaleListingInput:
+      type: object
+      properties:
+        title: { type: string, minLength: 2 }
+        description: { type: string }
+        category: { type: string }
+        pricePerUnit: { type: number, exclusiveMinimum: 0 }
+        unit: { type: string }
+        minOrderQty: { type: integer, minimum: 1, default: 1 }
+        availableQty: { type: integer, minimum: 1 }
+        imageUrl: { type: string, format: uri }
+        expiresAt: { type: string, format: date-time }
+      required: [title]
+
+    WholesaleListingUpdate:
+      type: object
+      properties:
+        title: { type: string, minLength: 2 }
+        description: { type: string }
+        category: { type: string }
+        pricePerUnit: { type: number, exclusiveMinimum: 0 }
+        unit: { type: string }
+        minOrderQty: { type: integer, minimum: 1 }
+        availableQty: { type: integer, minimum: 1 }
+        imageUrl: { type: string, format: uri }
+        expiresAt: { type: string, format: date-time }
+
     Vendor:
       type: object
       properties:
@@ -695,6 +1194,7 @@ components:
         description: { type: string }
         category: { type: string }
         location: { type: string }
+        zipCode: { type: ["string", "null"] }
         region: { type: string }
         contactEmail: { type: string }
         websiteUrl: { type: ["string", "null"] }
@@ -705,13 +1205,40 @@ components:
         instagramHandle: { type: ["string", "null"] }
         facebookUrl: { type: ["string", "null"] }
         marketsText: { type: ["string", "null"] }
+        pickupAddress: { type: ["string", "null"] }
+        openDays:
+          type: ["array", "null"]
+          items: { type: string }
+        openHours: { type: ["string", "null"] }
+        howToOrder: { type: ["string", "null"] }
         latitude: { type: ["number", "null"] }
         longitude: { type: ["number", "null"] }
+        additionalLocations:
+          type: ["array", "null"]
+          items:
+            type: object
+            properties:
+              lat: { type: number }
+              lng: { type: number }
+              label: { type: ["string", "null"] }
+            required: [lat, lng]
         createdAt: { type: string, format: date-time }
         onboardingEmailsSent:
           type: array
           items: { type: string }
         flaggedForFollowup: { type: boolean }
+        storeTheme:
+          type: ["string", "null"]
+          enum: [rustic, modern, bold, minimal, null]
+        storePrimaryColor: { type: ["string", "null"] }
+        storeFont:
+          type: ["string", "null"]
+          enum: [serif, sans, handwritten, null]
+        storeLayout:
+          type: ["string", "null"]
+          enum: [grid, list, hero, null]
+        storeBannerUrl: { type: ["string", "null"] }
+        storeCustomizationEnabled: { type: boolean }
       required:
         - id
         - name
@@ -720,6 +1247,7 @@ components:
         - description
         - category
         - location
+        - zipCode
         - region
         - contactEmail
         - websiteUrl
@@ -730,11 +1258,21 @@ components:
         - instagramHandle
         - facebookUrl
         - marketsText
+        - pickupAddress
+        - openDays
+        - openHours
+        - howToOrder
         - latitude
         - longitude
         - createdAt
         - onboardingEmailsSent
         - flaggedForFollowup
+        - storeTheme
+        - storePrimaryColor
+        - storeFont
+        - storeLayout
+        - storeBannerUrl
+        - storeCustomizationEnabled
 
     VendorInput:
       type: object
@@ -745,6 +1283,7 @@ components:
         description: { type: string }
         category: { type: string }
         location: { type: string }
+        zipCode: { type: ["string", "null"] }
         region: { type: string }
         contactEmail: { type: string }
         websiteUrl: { type: ["string", "null"] }
@@ -755,8 +1294,23 @@ components:
         instagramHandle: { type: ["string", "null"] }
         facebookUrl: { type: ["string", "null"] }
         marketsText: { type: ["string", "null"] }
+        pickupAddress: { type: ["string", "null"] }
+        openDays:
+          type: ["array", "null"]
+          items: { type: string }
+        openHours: { type: ["string", "null"] }
+        howToOrder: { type: ["string", "null"] }
         latitude: { type: ["number", "null"] }
         longitude: { type: ["number", "null"] }
+        additionalLocations:
+          type: ["array", "null"]
+          items:
+            type: object
+            properties:
+              lat: { type: number }
+              lng: { type: number }
+              label: { type: ["string", "null"] }
+            required: [lat, lng]
       required:
         - name
         - slug
@@ -778,6 +1332,7 @@ components:
         description: { type: string }
         category: { type: string }
         location: { type: string }
+        zipCode: { type: ["string", "null"] }
         region: { type: string }
         contactEmail: { type: string }
         websiteUrl: { type: ["string", "null"] }
@@ -788,8 +1343,35 @@ components:
         instagramHandle: { type: ["string", "null"] }
         facebookUrl: { type: ["string", "null"] }
         marketsText: { type: ["string", "null"] }
+        pickupAddress: { type: ["string", "null"] }
+        openDays:
+          type: ["array", "null"]
+          items: { type: string }
+        openHours: { type: ["string", "null"] }
+        howToOrder: { type: ["string", "null"] }
         latitude: { type: ["number", "null"] }
         longitude: { type: ["number", "null"] }
+        additionalLocations:
+          type: ["array", "null"]
+          items:
+            type: object
+            properties:
+              lat: { type: number }
+              lng: { type: number }
+              label: { type: ["string", "null"] }
+            required: [lat, lng]
+        storeTheme:
+          type: ["string", "null"]
+          enum: [rustic, modern, bold, minimal, null]
+        storePrimaryColor: { type: ["string", "null"] }
+        storeFont:
+          type: ["string", "null"]
+          enum: [serif, sans, handwritten, null]
+        storeLayout:
+          type: ["string", "null"]
+          enum: [grid, list, hero, null]
+        storeBannerUrl: { type: ["string", "null"] }
+        storeCustomizationEnabled: { type: boolean }
 
     ListingType:
       type: string

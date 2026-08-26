@@ -4,7 +4,7 @@ import { Link } from "wouter";
 const SITE = "openlocalapp.com";
 const SUPPORT_EMAIL = "support@openlocalapp.com";
 const COMPANY = "Open Local";
-const EFFECTIVE_DATE = "May 2, 2026";
+const EFFECTIVE_DATE = "June 11, 2026";
 
 export default function Terms() {
   return (
@@ -26,8 +26,9 @@ export default function Terms() {
             you agree to these Terms. If you do not agree, do not use the Service.
           </p>
           <p>
-            The Service is operated by {COMPANY}, a Florida-based marketplace connecting shoppers with
-            independently owned local businesses, vendors, makers, farms, and artisans.
+            The Service is operated by {COMPANY}, a nationwide marketplace connecting shoppers with
+            independently owned local businesses, vendors, makers, farms, and artisans. We are launching
+            initially in Florida markets with a roadmap to expand across the United States.
           </p>
         </Section>
 
@@ -57,23 +58,34 @@ export default function Terms() {
           </p>
           <p>
             We reserve the right to review, edit, reject, or remove any listing that we determine, at our
-            sole discretion, violates these Terms, applicable law, or our content guidelines. We do not
-            verify every listing and are not a party to transactions between vendors, businesses, and
-            shoppers.
+            sole discretion, violates these Terms, applicable law, or our content guidelines.
           </p>
         </Section>
 
         <Section title="5. Subscriptions and billing">
           <p>
-            Paid plans on the Service are billed monthly through Stripe. Current plans include the Open
-            Local Vendor Plan and the Open Local Business Listing, each priced at $10.98 per month
-            (subject to change with notice).
+            Paid plans on the Service are billed monthly through Stripe and renew automatically until
+            cancelled. {COMPANY} offers three subscription tiers for vendors and businesses:
           </p>
           <ul>
             <li>
-              <strong>Free trials.</strong> The first 150 vendor accounts receive a 60-day free trial;
-              additional vendors receive a 30-day trial. The first 100 business listings receive a 90-day
-              (three-month) free trial; subsequent listings are billed immediately.
+              <strong>Basic — $4.99/month.</strong> A pin on the map with a profile photo and business
+              description. Ideal for getting discovered locally.
+            </li>
+            <li>
+              <strong>Standard — $10.98/month.</strong> Everything in Basic, plus multiple photo and
+              video uploads, product listings, and linked social media accounts.
+            </li>
+            <li>
+              <strong>Premium — $24.20/month.</strong> Everything in Standard, plus up to three listings,
+              products, batch drops, or pre-orders featured at the top of the discovery feed.
+            </li>
+          </ul>
+          <ul>
+            <li>
+              <strong>Free trials.</strong> The first 100 vendor and business accounts on the platform
+              receive a 60-day free trial. All accounts after the first 100 receive a 30-day free trial.
+              Trials apply to any subscription tier.
             </li>
             <li>
               <strong>Renewals.</strong> Subscriptions renew automatically each month until cancelled. You
@@ -94,7 +106,16 @@ export default function Terms() {
           </ul>
         </Section>
 
-        <Section title="6. Acceptable use">
+        <Section title="6. À-la-carte features">
+          <p>
+            In addition to subscription tiers, vendors and businesses on any plan may purchase
+            individual listing boosts for <strong>$5.99 per boost</strong>. A boost features a selected
+            listing at the top of the discovery feed for 14 days. Boosts are non-refundable and
+            non-transferable.
+          </p>
+        </Section>
+
+        <Section title="7. Acceptable use">
           <p>You agree not to:</p>
           <ul>
             <li>Post false, misleading, illegal, infringing, or harmful content;</li>
@@ -105,16 +126,35 @@ export default function Terms() {
           </ul>
         </Section>
 
-        <Section title="7. Transactions between users">
+        <Section title="8. Transactions">
           <p>
-            {COMPANY} is a discovery and listing platform. We are not the seller, manufacturer, or
-            provider of products or services listed by vendors and businesses. Any transaction, contract,
-            or dispute is solely between the buyer and the seller. We are not responsible for the
-            quality, safety, legality, or fulfillment of any listed item.
+            {COMPANY} provides both a discovery platform and tools that enable direct transactions
+            between shoppers and vendors or businesses on the Service, including purchases of products,
+            pre-orders, and batch-drop reservations. When you transact through the Service:
           </p>
+          <ul>
+            <li>
+              <strong>Vendor responsibility.</strong> Vendors and businesses are solely responsible for
+              the accuracy of their listings, the quality, safety, and legality of products and services
+              offered, and fulfillment of orders placed through the Service.
+            </li>
+            <li>
+              <strong>Shopper responsibility.</strong> Shoppers are responsible for reviewing listing
+              details, pickup or delivery terms, and any applicable policies before completing a purchase.
+            </li>
+            <li>
+              <strong>Disputes.</strong> We encourage both parties to resolve disputes directly. {COMPANY}
+              may, at its discretion, assist in mediation but is not obligated to adjudicate or
+              financially guarantee any transaction.
+            </li>
+            <li>
+              <strong>Payments.</strong> All payment processing is handled by Stripe. By transacting on
+              the Service you agree to Stripe's terms of service.
+            </li>
+          </ul>
         </Section>
 
-        <Section title="8. Intellectual property">
+        <Section title="9. Intellectual property">
           <p>
             The Service, including its design, code, logo, branding, and original content, is owned by
             {" "}{COMPANY} and protected by intellectual property laws. You may not copy, modify, or
@@ -123,7 +163,7 @@ export default function Terms() {
           </p>
         </Section>
 
-        <Section title="9. Disclaimers">
+        <Section title="10. Disclaimers">
           <p>
             The Service is provided "as is" and "as available" without warranties of any kind, express
             or implied, including merchantability, fitness for a particular purpose, and non-infringement.
@@ -131,7 +171,7 @@ export default function Terms() {
           </p>
         </Section>
 
-        <Section title="10. Limitation of liability">
+        <Section title="11. Limitation of liability">
           <p>
             To the fullest extent permitted by law, {COMPANY} and its affiliates will not be liable for
             any indirect, incidental, special, consequential, or punitive damages, or any loss of
@@ -142,7 +182,7 @@ export default function Terms() {
           </p>
         </Section>
 
-        <Section title="11. Indemnification">
+        <Section title="12. Indemnification">
           <p>
             You agree to indemnify and hold harmless {COMPANY} from any claims, losses, or expenses
             (including reasonable attorneys' fees) arising from your use of the Service, your content,
@@ -150,7 +190,7 @@ export default function Terms() {
           </p>
         </Section>
 
-        <Section title="12. Termination">
+        <Section title="13. Termination">
           <p>
             You may stop using the Service at any time. We may suspend or terminate your access for any
             reason, including violation of these Terms. Sections that by their nature should survive
@@ -159,7 +199,7 @@ export default function Terms() {
           </p>
         </Section>
 
-        <Section title="13. Governing law and disputes">
+        <Section title="14. Governing law and disputes">
           <p>
             These Terms are governed by the laws of the State of Florida, without regard to conflict of
             laws principles. Any dispute arising from or relating to these Terms or the Service will be
@@ -168,7 +208,7 @@ export default function Terms() {
           </p>
         </Section>
 
-        <Section title="14. Changes to these Terms">
+        <Section title="15. Changes to these Terms">
           <p>
             We may update these Terms from time to time. Material changes will be communicated by
             posting an updated effective date at the top of this page or by emailing registered users.
@@ -176,7 +216,7 @@ export default function Terms() {
           </p>
         </Section>
 
-        <Section title="15. Contact">
+        <Section title="16. Contact">
           <p>
             Questions about these Terms? Email us at{" "}
             <a href={`mailto:${SUPPORT_EMAIL}`} className="text-primary hover:underline">

@@ -7,7 +7,7 @@ import {
   type ReactNode,
 } from "react";
 
-export type UserRole = "vendor" | "shopper";
+export type UserRole = "vendor" | "shopper" | "admin";
 export type AvatarStyle =
   | "thumbs"
   | "adventurer"
@@ -58,7 +58,9 @@ interface UserContextType {
   login: (sessionToken: string, user: AppUser) => void;
   logout: () => void;
   showOnboarding: boolean;
+  loginMode: boolean;
   openOnboarding: () => void;
+  openLogin: () => void;
   closeOnboarding: () => void;
 }
 
@@ -68,6 +70,7 @@ export function UserProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<AppUser | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [showOnboarding, setShowOnboarding] = useState(false);
+  const [loginMode, setLoginMode] = useState(false);
 
   useEffect(() => {
     const token = localStorage.getItem(SESSION_KEY);
@@ -112,16 +115,25 @@ export function UserProvider({ children }: { children: ReactNode }) {
     setUser(null);
   }, []);
 
-  const openOnboarding = useCallback(() => setShowOnboarding(true), []);
+  const openOnboarding = useCallback(() => {
+    setLoginMode(false);
+    setShowOnboarding(true);
+  }, []);
+
+  const openLogin = useCallback(() => {
+    setLoginMode(true);
+    setShowOnboarding(true);
+  }, []);
 
   const closeOnboarding = useCallback(() => {
     localStorage.setItem(ONBOARDING_DISMISSED_KEY, "1");
     setShowOnboarding(false);
+    setLoginMode(false);
   }, []);
 
   return (
     <UserContext.Provider
-      value={{ user, isLoading, login, logout, showOnboarding, openOnboarding, closeOnboarding }}
+      value={{ user, isLoading, login, logout, showOnboarding, loginMode, openOnboarding, openLogin, closeOnboarding }}
     >
       {children}
     </UserContext.Provider>

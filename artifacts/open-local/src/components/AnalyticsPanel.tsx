@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { useTranslation } from "react-i18next";
 import { Loader2, TrendingUp, Users, Search, Package, MapPin, Sparkles } from "lucide-react";
 
 const SESSION_KEY = "ol_session";
@@ -102,6 +103,7 @@ function StatTile({
 }
 
 export default function AnalyticsPanel(props: Props) {
+  const { t } = useTranslation();
   const [data, setData] = useState<VendorAnalytics | EstablishmentAnalytics | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -115,9 +117,9 @@ export default function AnalyticsPanel(props: Props) {
     const token = localStorage.getItem(SESSION_KEY);
     fetch(url, { headers: token ? { Authorization: `Bearer ${token}` } : {} })
       .then(async (r) => {
-        if (r.status === 401) throw new Error("Sign in to view analytics.");
-        if (r.status === 403) throw new Error("You don't have access to these analytics.");
-        if (!r.ok) throw new Error(`Couldn't load analytics (${r.status}).`);
+        if (r.status === 401) throw new Error(t("analytics.errorSignIn"));
+        if (r.status === 403) throw new Error(t("analytics.errorAccess"));
+        if (!r.ok) throw new Error(t("analytics.errorLoad", { status: r.status }));
         return r.json();
       })
       .then((d) => setData(d))
@@ -148,38 +150,38 @@ export default function AnalyticsPanel(props: Props) {
     return (
       <section className="space-y-4">
         <div className="flex items-center justify-between">
-          <h2 className="font-serif text-2xl text-foreground">Analytics</h2>
-          <span className="text-xs text-muted-foreground">Last 30 days</span>
+          <h2 className="font-serif text-2xl text-foreground">{t("analytics.title")}</h2>
+          <span className="text-xs text-muted-foreground">{t("analytics.last30Days")}</span>
         </div>
 
         <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-          <StatTile icon={Users} label="Approved visits" value={v.visits.approved} hint={`${v.visits.last30} in last 30d`} />
-          <StatTile icon={Sparkles} label="Pending requests" value={v.visits.pending} />
-          <StatTile icon={Search} label="Matching searches" value={v.search.appearancesLast30} hint="Queries containing your keywords" />
-          <StatTile icon={Package} label="Live listings" value={v.products.inStock} hint={`of ${v.products.total} total`} />
+          <StatTile icon={Users} label={t("analytics.approvedVisits")} value={v.visits.approved} hint={t("analytics.inLast30d", { count: v.visits.last30 })} />
+          <StatTile icon={Sparkles} label={t("analytics.pendingRequests")} value={v.visits.pending} />
+          <StatTile icon={Search} label={t("analytics.matchingSearches")} value={v.search.appearancesLast30} hint={t("analytics.queriesHint")} />
+          <StatTile icon={Package} label={t("analytics.liveListings")} value={v.products.inStock} hint={t("analytics.ofTotal", { total: v.products.total })} />
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div className="bg-card border border-border rounded-2xl p-5">
             <div className="flex items-center gap-2 mb-2">
               <TrendingUp className="w-4 h-4 text-primary" />
-              <h3 className="font-semibold text-sm text-foreground">Visits trend</h3>
-              <span className="text-xs text-muted-foreground ml-auto">{v.visits.last30} approved</span>
+              <h3 className="font-semibold text-sm text-foreground">{t("analytics.visitsTrend")}</h3>
+              <span className="text-xs text-muted-foreground ml-auto">{v.visits.last30} {t("analytics.approved")}</span>
             </div>
             <Sparkline points={v.visits.daily} accent={accent} />
             <div className="flex justify-between text-[10px] text-muted-foreground mt-1">
-              <span>30d ago</span>
-              <span>today</span>
+              <span>{t("analytics.thirtyDaysAgo")}</span>
+              <span>{t("analytics.today")}</span>
             </div>
           </div>
 
           <div className="bg-card border border-border rounded-2xl p-5">
             <div className="flex items-center gap-2 mb-3">
               <Search className="w-4 h-4 text-primary" />
-              <h3 className="font-semibold text-sm text-foreground">What shoppers are searching</h3>
+              <h3 className="font-semibold text-sm text-foreground">{t("analytics.searchTitle")}</h3>
             </div>
             {v.search.topMarketplaceQueries.length === 0 ? (
-              <p className="text-xs text-muted-foreground">No searches yet.</p>
+              <p className="text-xs text-muted-foreground">{t("analytics.noSearches")}</p>
             ) : (
               <ul className="space-y-1.5">
                 {v.search.topMarketplaceQueries.map((q) => (
@@ -194,13 +196,13 @@ export default function AnalyticsPanel(props: Props) {
         </div>
 
         <div className="bg-card border border-border rounded-2xl p-5">
-          <h3 className="font-semibold text-sm text-foreground mb-3">Listing breakdown</h3>
+          <h3 className="font-semibold text-sm text-foreground mb-3">{t("analytics.listingBreakdown")}</h3>
           <div className="grid grid-cols-2 md:grid-cols-5 gap-3 text-center">
-            <div><div className="text-xl font-serif font-bold">{v.products.total}</div><div className="text-xs text-muted-foreground">Total</div></div>
-            <div><div className="text-xl font-serif font-bold text-emerald-700">{v.products.inStock}</div><div className="text-xs text-muted-foreground">In stock</div></div>
-            <div><div className="text-xl font-serif font-bold text-amber-700">{v.products.batchDrops}</div><div className="text-xs text-muted-foreground">Batch drops</div></div>
-            <div><div className="text-xl font-serif font-bold text-rose-700">{v.products.surplus}</div><div className="text-xs text-muted-foreground">Surplus</div></div>
-            <div><div className="text-xl font-serif font-bold text-primary">{v.products.featured}</div><div className="text-xs text-muted-foreground">Featured</div></div>
+            <div><div className="text-xl font-serif font-bold">{v.products.total}</div><div className="text-xs text-muted-foreground">{t("analytics.total")}</div></div>
+            <div><div className="text-xl font-serif font-bold text-emerald-700">{v.products.inStock}</div><div className="text-xs text-muted-foreground">{t("analytics.inStock")}</div></div>
+            <div><div className="text-xl font-serif font-bold text-amber-700">{v.products.batchDrops}</div><div className="text-xs text-muted-foreground">{t("analytics.batchDrops")}</div></div>
+            <div><div className="text-xl font-serif font-bold text-rose-700">{v.products.surplus}</div><div className="text-xs text-muted-foreground">{t("analytics.surplus")}</div></div>
+            <div><div className="text-xl font-serif font-bold text-primary">{v.products.featured}</div><div className="text-xs text-muted-foreground">{t("analytics.featured")}</div></div>
           </div>
         </div>
       </section>
@@ -211,36 +213,36 @@ export default function AnalyticsPanel(props: Props) {
   return (
     <section className="space-y-4">
       <div className="flex items-center justify-between">
-        <h2 className="font-serif text-2xl text-foreground">Analytics</h2>
-        <span className="text-xs text-muted-foreground">Last 30 days</span>
+        <h2 className="font-serif text-2xl text-foreground">{t("analytics.title")}</h2>
+        <span className="text-xs text-muted-foreground">{t("analytics.last30Days")}</span>
       </div>
 
       <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-        <StatTile icon={Search} label="Matching searches" value={e.search.appearancesLast30} hint="Queries containing your keywords" />
-        <StatTile icon={MapPin} label="Peers in your city" value={e.neighborhood.peersInCity} hint={e.establishment.city} />
-        <StatTile icon={Users} label="Local vendor visits" value={e.neighborhood.visitsToVendorsInCityLast30} hint="Activity nearby (30d)" />
-        <StatTile icon={Sparkles} label="Status" value={e.establishment.status} hint={`Tier: ${e.establishment.tier}`} />
+        <StatTile icon={Search} label={t("analytics.matchingSearches")} value={e.search.appearancesLast30} hint={t("analytics.queriesHint")} />
+        <StatTile icon={MapPin} label={t("analytics.peersInCity")} value={e.neighborhood.peersInCity} hint={e.establishment.city} />
+        <StatTile icon={Users} label={t("analytics.localVendorVisits")} value={e.neighborhood.visitsToVendorsInCityLast30} hint={t("analytics.activityNearby")} />
+        <StatTile icon={Sparkles} label={t("analytics.status")} value={e.establishment.status} hint={t("analytics.tier", { tier: e.establishment.tier })} />
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <div className="bg-card border border-border rounded-2xl p-5">
           <div className="flex items-center gap-2 mb-2">
             <TrendingUp className="w-4 h-4 text-primary" />
-            <h3 className="font-semibold text-sm text-foreground">Search appearances trend</h3>
+            <h3 className="font-semibold text-sm text-foreground">{t("analytics.searchAppearancesTrend")}</h3>
           </div>
           <Sparkline points={e.search.daily} accent={accent} />
           <div className="flex justify-between text-[10px] text-muted-foreground mt-1">
-            <span>30d ago</span><span>today</span>
+            <span>{t("analytics.thirtyDaysAgo")}</span><span>{t("analytics.today")}</span>
           </div>
         </div>
 
         <div className="bg-card border border-border rounded-2xl p-5">
           <div className="flex items-center gap-2 mb-3">
             <Search className="w-4 h-4 text-primary" />
-            <h3 className="font-semibold text-sm text-foreground">Top searches in the marketplace</h3>
+            <h3 className="font-semibold text-sm text-foreground">{t("analytics.topSearches")}</h3>
           </div>
           {e.search.topMarketplaceQueries.length === 0 ? (
-            <p className="text-xs text-muted-foreground">No searches yet.</p>
+            <p className="text-xs text-muted-foreground">{t("analytics.noSearches")}</p>
           ) : (
             <ul className="space-y-1.5">
               {e.search.topMarketplaceQueries.map((q) => (

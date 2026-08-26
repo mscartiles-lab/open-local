@@ -8,15 +8,36 @@ export interface TierDef {
   features: string[];
 }
 
+/** Number of selling location pins included in Premium at no extra charge. */
+export const PREMIUM_INCLUDED_LOCATIONS = 3;
+
+/** Monthly cost in dollars for each selling location beyond the included count. */
+export const ADDITIONAL_LOCATION_PRICE_MONTHLY = 5;
+
+/** Max photos allowed per tier during vendor onboarding and dashboard uploads. */
+export const TIER_PHOTO_LIMIT: Record<TierId, number> = {
+  basic: 1,
+  middle: 5,
+  premium: 20,
+};
+
+/** Max videos allowed per tier during vendor onboarding and dashboard uploads. */
+export const TIER_VIDEO_LIMIT: Record<TierId, number> = {
+  basic: 0,
+  middle: 1,
+  premium: 5,
+};
+
 export const TIERS: Record<TierId, TierDef> = {
   basic: {
     id: "basic",
     name: "Basic",
     priceMonthly: 4.58,
-    tagline: "A simple presence on the map.",
+    tagline: "Get discovered on the map.",
     features: [
-      "Map pin with name & address",
-      "1 photo",
+      "Pin on the map",
+      "1 cover photo",
+      "Business description",
       "Public listing page",
       "Cancel anytime",
     ],
@@ -28,11 +49,11 @@ export const TIERS: Record<TierId, TierDef> = {
     tagline: "Everything most local businesses need.",
     features: [
       "Everything in Basic",
-      "Multiple photos (up to 6)",
-      "Phone, hours & full contact info",
-      "Social links (Instagram, Facebook, TikTok)",
-      "Customer reviews on your page",
-      "Featured in your area's discovery feed",
+      "Up to 5 photo uploads",
+      "1 video upload",
+      "Product listings",
+      "Linked social media accounts (Instagram, Facebook, TikTok)",
+      "Phone & full contact info",
       "Pre-order listings (reserve for market pickup)",
     ],
   },
@@ -43,12 +64,12 @@ export const TIERS: Record<TierId, TierDef> = {
     tagline: "Maximum visibility and promotional power.",
     features: [
       "Everything in Standard",
-      "2 featured posts — feature any of your listings, anywhere",
-      "Featured on the homepage",
-      "Featured in your category",
-      "Promotional offers & discounts",
-      "Video clip on your listing",
+      "Up to 20 photo uploads + 5 videos",
+      `${PREMIUM_INCLUDED_LOCATIONS} selling locations included (+$${ADDITIONAL_LOCATION_PRICE_MONTHLY}/mo each additional)`,
+      "3 listings featured at the top of the feed",
+      "Featured on the homepage & category pages",
       "Priority placement in search results",
+      "Promotional offers & discounts",
     ],
   },
 };

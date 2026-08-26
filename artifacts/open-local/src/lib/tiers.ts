@@ -8,15 +8,22 @@ export interface TierDef {
   features: string[];
 }
 
+/** Number of selling location pins included in Premium at no extra charge. */
+export const PREMIUM_INCLUDED_LOCATIONS = 3;
+
+/** Monthly cost in dollars for each selling location beyond the included count. */
+export const ADDITIONAL_LOCATION_PRICE_MONTHLY = 5;
+
 export const TIERS: Record<TierId, TierDef> = {
   basic: {
     id: "basic",
     name: "Basic",
     priceMonthly: 4.58,
-    tagline: "A simple presence on the map.",
+    tagline: "Get discovered on the map.",
     features: [
-      "Map pin with name & address",
-      "1 photo",
+      "Pin on the map",
+      "Profile photo",
+      "Business description",
       "Public listing page",
       "Cancel anytime",
     ],
@@ -28,11 +35,11 @@ export const TIERS: Record<TierId, TierDef> = {
     tagline: "Everything most local businesses need.",
     features: [
       "Everything in Basic",
-      "Multiple photos (up to 6)",
-      "Phone, hours & full contact info",
-      "Social links (Instagram, Facebook, TikTok)",
-      "Customer reviews on your page",
-      "Featured in your area's discovery feed",
+      "Multiple photo uploads",
+      "Video uploads",
+      "Product listings",
+      "Linked social media accounts (Instagram, Facebook, TikTok)",
+      "Phone & full contact info",
       "Pre-order listings (reserve for market pickup)",
     ],
   },
@@ -43,17 +50,31 @@ export const TIERS: Record<TierId, TierDef> = {
     tagline: "Maximum visibility and promotional power.",
     features: [
       "Everything in Standard",
-      "2 featured posts — feature any of your listings, anywhere",
+      `${PREMIUM_INCLUDED_LOCATIONS} selling locations included (+$${ADDITIONAL_LOCATION_PRICE_MONTHLY}/mo each additional)`,
+      "3 listings, products, batch drops, or pre-orders featured at the top of the feed",
       "Featured on the homepage",
       "Featured in your category",
-      "Promotional offers & discounts",
-      "Video clip on your listing",
       "Priority placement in search results",
+      "Promotional offers & discounts",
     ],
   },
 };
 
 export const TIER_ORDER: TierId[] = ["basic", "middle", "premium"];
+
+/** Max photos per product listing. Standard+ gets unlimited (Infinity). */
+export const TIER_PHOTO_LIMIT: Record<TierId, number> = {
+  basic: 1,
+  middle: Infinity,
+  premium: Infinity,
+};
+
+/** Max videos per product listing. Basic gets 0, Standard+ gets unlimited. */
+export const TIER_VIDEO_LIMIT: Record<TierId, number> = {
+  basic: 0,
+  middle: Infinity,
+  premium: Infinity,
+};
 
 // À-la-carte boost: anyone can pay to feature a single listing for 2 weeks.
 export const FEATURE_BOOST_PRICE = 5;

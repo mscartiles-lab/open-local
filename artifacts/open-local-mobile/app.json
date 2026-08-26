@@ -2,7 +2,7 @@
   "expo": {
     "name": "Open Local Mobile",
     "slug": "open-local-mobile",
-    "version": "1.0.0",
+    "version": "2.0.5",
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
     "scheme": "open-local-mobile",
@@ -16,15 +16,17 @@
     "ios": {
       "supportsTablet": false,
       "bundleIdentifier": "com.rentacoder2026.openlocalmobile",
-      "buildNumber": "1",
+      "buildNumber": "14",
       "infoPlist": {
         "NSLocationWhenInUseUsageDescription": "Open Local uses your location to show nearby vendors and events."
       }
     },
     "android": {
       "package": "com.rentacoder2026.openlocalmobile",
-      "versionCode": 1,
+      "versionCode": 13,
       "permissions": [
+        "ACCESS_COARSE_LOCATION",
+        "ACCESS_FINE_LOCATION",
         "ACCESS_COARSE_LOCATION",
         "ACCESS_FINE_LOCATION"
       ]
@@ -40,19 +42,23 @@
         }
       ],
       "expo-font",
-      "expo-web-browser"
+      "expo-web-browser",
+      "expo-updates"
     ],
     "experiments": {
       "typedRoutes": true,
       "reactCompiler": true
     },
     "extra": {
-      "router": {
-        "origin": "https://mvp-upload.replit.app"
-      },
       "eas": {
         "projectId": "01ce32a2-7226-4ae0-94e7-0fdfa18bd013"
       }
+    },
+    "runtimeVersion": {
+      "policy": "appVersion"
+    },
+    "updates": {
+      "url": "https://u.expo.dev/01ce32a2-7226-4ae0-94e7-0fdfa18bd013"
     }
   }
 }

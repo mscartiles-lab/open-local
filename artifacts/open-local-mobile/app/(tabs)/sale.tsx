@@ -5,6 +5,7 @@ import {
 import { Feather } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
 import React, { useMemo, useState } from "react";
+import { useTranslation } from "react-i18next";
 import {
   ActivityIndicator,
   Dimensions,
@@ -18,12 +19,14 @@ import {
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import { FeedProductCard } from "@/components/FeedProductCard";
+import { ApiErrorDetails } from "@/components/ApiErrorDetails";
 import { MiniMap, type MapPin } from "@/components/MiniMap";
 import { useColors } from "@/hooks/useColors";
 import { haversineDistanceMiles } from "@/utils/distance";
 import type { ProductWithVendor, Vendor } from "@/lib/api-client";
 
 export default function SaleScreen() {
+  const { t } = useTranslation();
   const colors = useColors();
   const insets = useSafeAreaInsets();
   const router = useRouter();
@@ -43,6 +46,7 @@ export default function SaleScreen() {
     data: feed,
     isLoading,
     isError,
+    error: feedQueryError,
     refetch: refetchFeed,
   } = useGetLocalNowFeed();
 
@@ -121,7 +125,7 @@ export default function SaleScreen() {
           pins={pins}
           radiusMiles={mapRadius}
           height={screenH}
-          emptyHint="No surplus vendors mapped"
+          emptyHint={t("sale.emptyMapHint")}
           fullBleed
           showControls
           onUserLocationChange={setUserLocation}
@@ -135,8 +139,8 @@ export default function SaleScreen() {
       {/* Floating title */}
       <View style={[s.floatHeader, { top: topPad + 8 }]}>
         <View style={s.brandPill}>
-          <Text style={s.wordmark}>Sale</Text>
-          <Text style={s.tagline}>Market-leftover discounts near you</Text>
+          <Text style={s.wordmark}>{t("sale.title")}</Text>
+          <Text style={s.tagline}>{t("sale.subtitle")}</Text>
         </View>
       </View>
 
@@ -166,10 +170,10 @@ export default function SaleScreen() {
                 </View>
                 <View style={{ flex: 1 }}>
                   <Text style={[s.panelTitle, { color: colors.foreground }]}>
-                    Market surplus
+                    {t("sale.marketSurplus")}
                   </Text>
                   <Text style={[s.panelSubtitle, { color: colors.mutedForeground }]}>
-                    Rescue before it&apos;s gone
+                    {t("sale.rescueBefore")}
                   </Text>
                 </View>
               </View>
@@ -181,8 +185,11 @@ export default function SaleScreen() {
               {isError && (
                 <View style={s.inlineLoading}>
                   <Text style={[s.emptyTitle, { color: colors.foreground }]}>
-                    Could not load sale items
+                    {t("sale.couldNotLoad")}
                   </Text>
+                  <ApiErrorDetails
+                    errors={[{ label: "Final Sale", error: feedQueryError }]}
+                  />
                 </View>
               )}
             </View>
@@ -193,12 +200,12 @@ export default function SaleScreen() {
             <View style={s.emptyPanel}>
               <Feather name="package" size={36} color={colors.mutedForeground} />
               <Text style={[s.emptyTitle, { color: colors.foreground }]}>
-                {userLocation ? "No surplus nearby" : "No surplus today"}
+                {userLocation ? t("sale.noSurplusNearby") : t("sale.noSurplusToday")}
               </Text>
               <Text style={[s.emptySubtitle, { color: colors.mutedForeground }]}>
                 {userLocation
-                  ? `Nothing within ${mapRadius} mi — scroll down to see more`
-                  : "Check back after the next market — vendors post leftovers in the evening."}
+                  ? t("sale.nothingWithin", { radius: mapRadius })
+                  : t("sale.checkBackAfterMarket")}
               </Text>
             </View>
           ) : null
@@ -243,15 +250,16 @@ function BeyondDivider({
   count: number;
   colors: ReturnType<typeof useColors>;
 }) {
+  const { t } = useTranslation();
   return (
     <View style={beyondStyles.wrap}>
       <View style={[beyondStyles.line, { backgroundColor: colors.border }]} />
       <View style={beyondStyles.center}>
         <Text style={[beyondStyles.label, { color: colors.mutedForeground }]}>
-          Beyond {radius} mi
+          {t("sale.beyondRadiusLabel", { radius })}
         </Text>
         <Text style={[beyondStyles.count, { color: colors.mutedForeground }]}>
-          {count} more
+          {t("sale.moreCount", { count })}
         </Text>
       </View>
       <View style={[beyondStyles.line, { backgroundColor: colors.border }]} />

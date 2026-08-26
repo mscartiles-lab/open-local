@@ -7,8 +7,10 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { useListVendors, useListProducts } from "@workspace/api-client-react";
 import { useFavorites } from "@/hooks/use-favorites";
+import { useTranslation } from "react-i18next";
 
 export default function Favorites() {
+  const { t } = useTranslation();
   const { favoriteVendors, favoriteProducts, toggleVendor, toggleProduct, isFavoriteVendor, isFavoriteProduct } = useFavorites();
 
   const { data: vendors, isLoading: vendorsLoading } = useListVendors();
@@ -22,10 +24,10 @@ export default function Favorites() {
       <div className="bg-muted border-b border-border py-12">
         <div className="container max-w-6xl mx-auto px-4">
           <h1 className="text-4xl font-serif font-bold text-foreground mb-4 flex items-center gap-3">
-            <Heart className="w-8 h-8 text-primary" fill="currentColor" /> Favorites
+            <Heart className="w-8 h-8 text-primary" fill="currentColor" /> {t("favorites.title")}
           </h1>
           <p className="text-lg text-muted-foreground max-w-2xl font-sans">
-            Your saved Florida producers and local goods.
+            {t("favorites.subtitle")}
           </p>
         </div>
       </div>
@@ -33,7 +35,7 @@ export default function Favorites() {
       <div className="container max-w-6xl mx-auto px-4 py-12 space-y-16">
         {/* Saved Producers */}
         <section>
-          <h2 className="text-2xl font-serif font-bold text-foreground mb-6">Saved Producers</h2>
+          <h2 className="text-2xl font-serif font-bold text-foreground mb-6">{t("favorites.savedProducers")}</h2>
           {vendorsLoading ? (
             <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6">
               {[...Array(3)].map((_, i) => <Skeleton key={i} className="h-[300px] w-full" />)}
@@ -79,10 +81,10 @@ export default function Favorites() {
           ) : (
             <div className="text-center py-16 bg-muted/50 border border-border">
               <Store className="w-12 h-12 text-muted-foreground mx-auto mb-4 opacity-50" />
-              <h3 className="text-xl font-serif font-bold text-foreground mb-2">No saved producers</h3>
-              <p className="text-muted-foreground mb-6">You haven't saved any producers yet.</p>
+              <h3 className="text-xl font-serif font-bold text-foreground mb-2">{t("favorites.noSavedProducers")}</h3>
+              <p className="text-muted-foreground mb-6">{t("favorites.noSavedProducersDescription")}</p>
               <Button asChild>
-                <Link href="/vendors">Browse Producers</Link>
+                <Link href="/vendors">{t("favorites.browseProducers")}</Link>
               </Button>
             </div>
           )}
@@ -90,7 +92,7 @@ export default function Favorites() {
 
         {/* Saved Goods */}
         <section>
-          <h2 className="text-2xl font-serif font-bold text-foreground mb-6">Saved Goods</h2>
+          <h2 className="text-2xl font-serif font-bold text-foreground mb-6">{t("favorites.savedGoods")}</h2>
           {productsLoading ? (
             <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-6">
               {[...Array(4)].map((_, i) => <Skeleton key={i} className="h-[300px] w-full" />)}
@@ -122,22 +124,22 @@ export default function Favorites() {
                         )}
                         {product.listingType === "batch_drop" && (
                           <div className="absolute top-2 left-2 bg-amber-100 text-amber-900 text-xs px-2 py-1 uppercase tracking-wider font-bold border border-amber-200">
-                            Fresh Batch
+                            {t("common.freshBatch")}
                           </div>
                         )}
                         {product.listingType === "surplus" && (
                           <div className="absolute top-2 left-2 bg-green-100 text-green-900 text-xs px-2 py-1 uppercase tracking-wider font-bold border border-green-200">
-                            Market Surplus
+                            {t("common.marketSurplus")}
                           </div>
                         )}
                         {product.listingType === "pre_order" && (
                           <div className="absolute top-2 left-2 bg-blue-50 text-blue-900 text-xs px-2 py-1 uppercase tracking-wider font-bold border border-blue-200">
-                            Pre-Order
+                            {t("common.preOrder")}
                           </div>
                         )}
                         {!product.inStock && (
                           <div className="absolute bottom-2 right-2 bg-background/90 text-foreground text-xs px-2 py-1 uppercase tracking-wider font-bold">
-                            Sold Out
+                            {t("common.soldOut")}
                           </div>
                         )}
                       </div>
@@ -155,7 +157,7 @@ export default function Favorites() {
                         </div>
                         {product.availableUntil && (
                           <div className="text-xs text-muted-foreground mt-2">
-                            Available until {new Date(product.availableUntil).toLocaleDateString()}
+                            {t("common.availableUntil", { date: new Date(product.availableUntil).toLocaleDateString() })}
                           </div>
                         )}
                       </CardContent>
@@ -167,10 +169,10 @@ export default function Favorites() {
           ) : (
             <div className="text-center py-16 bg-muted/50 border border-border">
               <Tag className="w-12 h-12 text-muted-foreground mx-auto mb-4 opacity-50" />
-              <h3 className="text-xl font-serif font-bold text-foreground mb-2">No saved goods</h3>
-              <p className="text-muted-foreground mb-6">You haven't saved any goods yet.</p>
+              <h3 className="text-xl font-serif font-bold text-foreground mb-2">{t("favorites.noSavedGoods")}</h3>
+              <p className="text-muted-foreground mb-6">{t("favorites.noSavedGoodsDescription")}</p>
               <Button asChild>
-                <Link href="/products">Browse Goods</Link>
+                <Link href="/products">{t("favorites.browseGoods")}</Link>
               </Button>
             </div>
           )}

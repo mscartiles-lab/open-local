@@ -3,9 +3,12 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { useSubmitEstablishment } from "@workspace/api-client-react";
+import { useTranslation } from "react-i18next";
+import type { TFunction } from "i18next";
 import Layout from "@/components/layout/Layout";
 import { TierPicker } from "@/components/billing/TierPicker";
 import { TIERS, type TierId } from "@/lib/tiers";
+import { LocationPicker } from "@/components/LocationPicker";
 import { MapPin, Store, CheckCircle, Clock, Sparkles, CreditCard, Loader2, Image as ImageIcon, Video } from "lucide-react";
 
 const ESTABLISHMENT_TYPES = [
@@ -22,26 +25,40 @@ const ESTABLISHMENT_TYPES = [
   "Market",
   "Other",
 ];
+const ESTABLISHMENT_TYPE_KEYS: Record<(typeof ESTABLISHMENT_TYPES)[number], string> = {
+  "Café": "pinBusiness.typeCafe",
+  Restaurant: "pinBusiness.typeRestaurant",
+  "Bar / Brewery": "pinBusiness.typeBarBrewery",
+  Boutique: "pinBusiness.typeBoutique",
+  Gallery: "pinBusiness.typeGallery",
+  Bookshop: "pinBusiness.typeBookshop",
+  Bakery: "pinBusiness.typeBakery",
+  "Farm Stand": "pinBusiness.typeFarmStand",
+  "Spa / Wellness": "pinBusiness.typeSpaWellness",
+  Fitness: "pinBusiness.typeFitness",
+  Market: "pinBusiness.typeMarket",
+  Other: "pinBusiness.typeOther",
+};
 
-const schema = z.object({
-  name: z.string().min(2, "Business name is required"),
-  type: z.string().min(1, "Please select a type"),
-  description: z.string().min(20, "Please write at least 20 characters"),
-  address: z.string().min(5, "Street address is required"),
-  city: z.string().min(2, "City is required"),
-  state: z.string().min(2, "State is required"),
-  contactEmail: z.string().email("Valid email required"),
+const createSchema = (t: TFunction) => z.object({
+  name: z.string().min(2, t("pinBusiness.errorName")),
+  type: z.string().min(1, t("pinBusiness.errorType")),
+  description: z.string().min(20, t("pinBusiness.errorDescription")),
+  address: z.string().min(5, t("pinBusiness.errorAddress")),
+  city: z.string().min(2, t("pinBusiness.errorCity")),
+  state: z.string().min(2, t("pinBusiness.errorState")),
+  contactEmail: z.string().email(t("pinBusiness.errorEmail")),
   phone: z.string().optional(),
-  website: z.string().url("Enter a valid URL (include https://)").optional().or(z.literal("")),
+  website: z.string().url(t("pinBusiness.errorWebsite")).optional().or(z.literal("")),
   instagramHandle: z.string().optional(),
-  facebookUrl: z.string().url("Enter a valid URL").optional().or(z.literal("")),
-  tiktokUrl: z.string().url("Enter a valid URL").optional().or(z.literal("")),
-  imageUrl: z.string().url("Enter a valid image URL").optional().or(z.literal("")),
+  facebookUrl: z.string().url(t("pinBusiness.errorUrl")).optional().or(z.literal("")),
+  tiktokUrl: z.string().url(t("pinBusiness.errorUrl")).optional().or(z.literal("")),
+  imageUrl: z.string().url(t("pinBusiness.errorImageUrl")).optional().or(z.literal("")),
   photoUrlsRaw: z.string().optional(),
-  videoUrl: z.string().url("Enter a valid video URL").optional().or(z.literal("")),
+  videoUrl: z.string().url(t("pinBusiness.errorVideoUrl")).optional().or(z.literal("")),
 });
 
-type FormData = z.infer<typeof schema>;
+type FormData = z.infer<ReturnType<typeof createSchema>>;
 
 interface BusinessPricing {
   business: {
@@ -52,9 +69,11 @@ interface BusinessPricing {
 }
 
 export default function PinYourBusiness() {
+  const { t } = useTranslation();
   const [tier, setTier] = useState<TierId>("middle");
   const [submitted, setSubmitted] = useState(false);
   const [submittedData, setSubmittedData] = useState<{ token: string; name: string } | null>(null);
+  const [pinLatLng, setPinLatLng] = useState<{ lat: number; lng: number } | null>(null);
   const [pricing, setPricing] = useState<BusinessPricing | null>(null);
   const [pricingError, setPricingError] = useState(false);
   const [checkoutLoading, setCheckoutLoading] = useState(false);
@@ -74,11 +93,17 @@ export default function PinYourBusiness() {
   const {
     register,
     handleSubmit,
+    watch,
     formState: { errors },
   } = useForm<FormData>({
-    resolver: zodResolver(schema),
+    resolver: zodResolver(createSchema(t)),
     defaultValues: { state: "FL" },
   });
+
+  const watchedAddress = watch("address");
+  const watchedCity = watch("city");
+  const watchedState = watch("state");
+  const locationHint = [watchedAddress, watchedCity, watchedState].filter(Boolean).join(" ");
 
   const onSubmit = async (data: FormData) => {
     const photoUrls = data.photoUrlsRaw
@@ -102,15 +127,15 @@ export default function PinYourBusiness() {
       imageUrl: data.imageUrl || null,
       photoUrls: tier !== "basic" ? photoUrls : null,
       videoUrl: tier === "premium" ? (data.videoUrl || null) : null,
-      latitude: null,
-      longitude: null,
+      latitude: pinLatLng?.lat ?? null,
+      longitude: pinLatLng?.lng ?? null,
       tier,
     };
 
     const result = await mutateAsync({ data: payload });
     const token = (result as { billingToken?: string })?.billingToken;
     if (!token) {
-      setCheckoutError("Submission saved, but we couldn't generate a billing link. Please contact support.");
+      setCheckoutError(t("pinBusiness.errorNoBillingLink"));
       setSubmitted(true);
       return;
     }
@@ -132,11 +157,11 @@ export default function PinYourBusiness() {
       if (r.ok && result.url) {
         window.location.href = result.url;
       } else {
-        setCheckoutError(result.error ?? "Couldn't start checkout.");
+        setCheckoutError(result.error ?? t("pinBusiness.errorCheckoutFailed"));
         setCheckoutLoading(false);
       }
     } catch {
-      setCheckoutError("Couldn't reach the billing service. Please try again.");
+      setCheckoutError(t("pinBusiness.errorBillingService"));
       setCheckoutLoading(false);
     }
   };
@@ -157,10 +182,10 @@ export default function PinYourBusiness() {
                 <CheckCircle className="w-8 h-8 text-primary" />
               </div>
               <h1 className="text-3xl font-serif font-bold text-foreground mb-3">
-                Submission received!
+                {t("pinBusiness.submissionReceived")}
               </h1>
               <p className="text-muted-foreground leading-relaxed">
-                Our team reviews submissions within 24 hours. To go live the moment we approve you, set up your listing subscription now.
+                {t("pinBusiness.submissionReceivedDesc")}
               </p>
             </div>
 
@@ -169,14 +194,14 @@ export default function PinYourBusiness() {
                 <div className="flex items-center gap-2 mb-1">
                   <Sparkles className="w-4 h-4 text-primary" />
                   <span className="text-xs font-bold uppercase tracking-wider text-primary">
-                    Open Local Business Listing — {selectedTier.name}
+                    Open Local {t("pinBusiness.businessListing")} — {selectedTier.name}
                   </span>
                 </div>
                 <div className="flex items-baseline gap-2">
                   <span className="text-4xl font-serif font-bold text-foreground">
                     ${selectedTier.priceMonthly.toFixed(2)}
                   </span>
-                  <span className="text-muted-foreground">/ month</span>
+                  <span className="text-muted-foreground">{t("pinBusiness.perMonth")}</span>
                 </div>
               </div>
 
@@ -187,17 +212,17 @@ export default function PinYourBusiness() {
                       <Clock className="w-5 h-5 mt-0.5 text-amber-700" />
                       <div>
                         <p className="font-semibold text-amber-900 mb-0.5">
-                          {trialMonths} months free — early-bird offer
+                          {t("pinBusiness.earlyBirdOffer", { count: trialMonths })}
                         </p>
                         <p className="text-sm text-amber-800">
-                          Only {earlyBirdLeft} of {pricing?.business.earlyBirdTotal} free spots remaining.
+                          {t("pinBusiness.earlyBirdSpotsLeft", { left: earlyBirdLeft, total: pricing?.business.earlyBirdTotal })}
                         </p>
                       </div>
                     </div>
                   </div>
                 ) : (
                   <p className="text-sm text-muted-foreground mb-5">
-                    Standard billing starts immediately.
+                    {t("pinBusiness.standardBillingStarts")}
                   </p>
                 )}
 
@@ -222,21 +247,21 @@ export default function PinYourBusiness() {
                   className="w-full bg-primary text-primary-foreground hover:bg-primary/90 transition-colors h-12 rounded-xl font-semibold inline-flex items-center justify-center gap-2 disabled:opacity-60"
                 >
                   {checkoutLoading ? (
-                    <><Loader2 className="w-4 h-4 animate-spin" /> Starting checkout…</>
+                    <><Loader2 className="w-4 h-4 animate-spin" /> {t("pinBusiness.startingCheckout")}</>
                   ) : (
-                    <><CreditCard className="w-4 h-4" /> {isEarlyBird ? `Start ${trialMonths}-month free trial` : `Subscribe — $${selectedTier.priceMonthly.toFixed(2)}/mo`}</>
+                    <><CreditCard className="w-4 h-4" /> {isEarlyBird ? t("pinBusiness.startFreeTrial", { count: trialMonths }) : t("pinBusiness.subscribe", { price: selectedTier.priceMonthly.toFixed(2) })}</>
                   )}
                 </button>
 
                 <p className="text-xs text-muted-foreground text-center mt-3">
-                  {isEarlyBird ? "You won't be charged until your free period ends. " : ""}Manage anything later from the Stripe portal.
+                  {isEarlyBird ? t("pinBusiness.noChargeUntilEnd") + " " : ""}{t("pinBusiness.manageStripePortal")}
                 </p>
               </div>
             </div>
 
             <div className="text-center mt-6">
               <a href="/" className="text-sm text-muted-foreground hover:text-primary underline underline-offset-4">
-                Skip for now — I'll set up billing later
+                {t("pinBusiness.skipForNow")}
               </a>
             </div>
           </div>
@@ -251,21 +276,26 @@ export default function PinYourBusiness() {
         <div className="mb-10">
           <div className="inline-flex items-center gap-2 bg-primary/10 text-primary px-3 py-1.5 rounded-full text-sm font-semibold mb-5">
             <Sparkles className="w-4 h-4" />
-            {isEarlyBird ? `${earlyBirdLeft} free spots left — ${trialMonths} months on us` : "Plans from $4.58/month"}
+            {isEarlyBird ? t("pinBusiness.earlyBirdBadge", { left: earlyBirdLeft, months: trialMonths }) : t("pinBusiness.plansFrom")}
           </div>
           <h1 className="text-5xl font-serif font-bold text-foreground mb-4 leading-tight">
-            Pin your business<br />on the map
+            {t("pinBusiness.heroHeading")}
           </h1>
           <p className="text-lg text-muted-foreground max-w-xl leading-relaxed">
-            Get your independently-owned establishment discovered by locals and visitors exploring the area. Visible on both our web map and mobile app.
+            {t("pinBusiness.heroSubheading")}
           </p>
         </div>
 
         {/* Tier Picker */}
         <div className="mb-10">
-          <h2 className="text-lg font-semibold text-foreground mb-1">Choose your plan</h2>
+          <h2 className="text-lg font-semibold text-foreground mb-1">{t("pinBusiness.choosePlan")}</h2>
           <p className="text-sm text-muted-foreground mb-5">
-            All plans include a map pin. {pricingError ? "Live trial pricing unavailable — see Stripe for details." : isEarlyBird ? `Early-bird trial applies to all plans.` : "No active trial promotion."}
+            {t("pinBusiness.allPlansIncludePin")}{" "}
+            {pricingError
+              ? t("pinBusiness.pricingUnavailable")
+              : isEarlyBird
+              ? t("pinBusiness.earlyBirdApplies")
+              : t("pinBusiness.noActiveTrial")}
           </p>
           <TierPicker
             selected={tier}
@@ -279,17 +309,17 @@ export default function PinYourBusiness() {
         <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
           <div className="border border-border rounded-xl p-6 space-y-5">
             <h2 className="text-lg font-semibold text-foreground flex items-center gap-2">
-              <Store className="w-5 h-5 text-primary" /> Business info
+              <Store className="w-5 h-5 text-primary" /> {t("pinBusiness.businessInfo")}
             </h2>
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div className="sm:col-span-2">
                 <label className="block text-sm font-medium text-foreground mb-1.5">
-                  Business name <span className="text-destructive">*</span>
+                  {t("pinBusiness.labelBusinessName")} <span className="text-destructive">*</span>
                 </label>
                 <input
                   {...register("name")}
-                  placeholder="e.g. The Garden Café"
+                  placeholder={t("pinBusiness.placeholderBusinessName")}
                   className="w-full border border-input rounded-md px-3 py-2.5 text-sm bg-background focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary"
                 />
                 {errors.name && <p className="text-xs text-destructive mt-1">{errors.name.message}</p>}
@@ -297,37 +327,37 @@ export default function PinYourBusiness() {
 
               <div>
                 <label className="block text-sm font-medium text-foreground mb-1.5">
-                  Type <span className="text-destructive">*</span>
+                  {t("pinBusiness.labelType")} <span className="text-destructive">*</span>
                 </label>
                 <select
                   {...register("type")}
                   className="w-full border border-input rounded-md px-3 py-2.5 text-sm bg-background focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary"
                 >
-                  <option value="">Select type…</option>
-                  {ESTABLISHMENT_TYPES.map((t) => (
-                    <option key={t} value={t}>{t}</option>
+                  <option value="">{t("pinBusiness.selectType")}</option>
+                  {ESTABLISHMENT_TYPES.map((type) => (
+                    <option key={type} value={type}>{t(ESTABLISHMENT_TYPE_KEYS[type])}</option>
                   ))}
                 </select>
                 {errors.type && <p className="text-xs text-destructive mt-1">{errors.type.message}</p>}
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-foreground mb-1.5">Phone</label>
+                <label className="block text-sm font-medium text-foreground mb-1.5">{t("pinBusiness.labelPhone")}</label>
                 <input
                   {...register("phone")}
-                  placeholder="(555) 000-0000"
+                  placeholder={t("pinBusiness.placeholderPhone")}
                   className="w-full border border-input rounded-md px-3 py-2.5 text-sm bg-background focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary"
                 />
               </div>
 
               <div className="sm:col-span-2">
                 <label className="block text-sm font-medium text-foreground mb-1.5">
-                  Description <span className="text-destructive">*</span>
+                  {t("pinBusiness.labelDescription")} <span className="text-destructive">*</span>
                 </label>
                 <textarea
                   {...register("description")}
                   rows={3}
-                  placeholder="Tell locals what makes your place special…"
+                  placeholder={t("pinBusiness.placeholderDescription")}
                   className="w-full border border-input rounded-md px-3 py-2.5 text-sm bg-background focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary resize-none"
                 />
                 {errors.description && <p className="text-xs text-destructive mt-1">{errors.description.message}</p>}
@@ -337,17 +367,17 @@ export default function PinYourBusiness() {
 
           <div className="border border-border rounded-xl p-6 space-y-5">
             <h2 className="text-lg font-semibold text-foreground flex items-center gap-2">
-              <MapPin className="w-5 h-5 text-primary" /> Location
+              <MapPin className="w-5 h-5 text-primary" /> {t("pinBusiness.sectionLocation")}
             </h2>
 
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
               <div className="sm:col-span-2">
                 <label className="block text-sm font-medium text-foreground mb-1.5">
-                  Street address <span className="text-destructive">*</span>
+                  {t("pinBusiness.labelStreetAddress")} <span className="text-destructive">*</span>
                 </label>
                 <input
                   {...register("address")}
-                  placeholder="123 Main St"
+                  placeholder={t("pinBusiness.placeholderAddress")}
                   className="w-full border border-input rounded-md px-3 py-2.5 text-sm bg-background focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary"
                 />
                 {errors.address && <p className="text-xs text-destructive mt-1">{errors.address.message}</p>}
@@ -355,7 +385,7 @@ export default function PinYourBusiness() {
 
               <div>
                 <label className="block text-sm font-medium text-foreground mb-1.5">
-                  State <span className="text-destructive">*</span>
+                  {t("pinBusiness.labelState")} <span className="text-destructive">*</span>
                 </label>
                 <input
                   {...register("state")}
@@ -368,35 +398,48 @@ export default function PinYourBusiness() {
 
               <div className="sm:col-span-3">
                 <label className="block text-sm font-medium text-foreground mb-1.5">
-                  City <span className="text-destructive">*</span>
+                  {t("pinBusiness.labelCity")} <span className="text-destructive">*</span>
                 </label>
                 <input
                   {...register("city")}
-                  placeholder="Tampa"
+                  placeholder={t("pinBusiness.placeholderCity")}
                   className="w-full border border-input rounded-md px-3 py-2.5 text-sm bg-background focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary"
                 />
                 {errors.city && <p className="text-xs text-destructive mt-1">{errors.city.message}</p>}
               </div>
+            </div>
+
+            {/* Draggable map pin */}
+            <div>
+              <label className="block text-sm font-medium text-foreground mb-2">
+                {t("pinBusiness.labelPinLocation")}
+              </label>
+              <LocationPicker
+                onChange={(lat, lng) => setPinLatLng({ lat, lng })}
+                hint={locationHint}
+                initialLat={pinLatLng?.lat}
+                initialLng={pinLatLng?.lng}
+              />
             </div>
           </div>
 
           {/* Photos */}
           <div className="border border-border rounded-xl p-6 space-y-5">
             <h2 className="text-lg font-semibold text-foreground flex items-center gap-2">
-              <ImageIcon className="w-5 h-5 text-primary" /> Photos
+              <ImageIcon className="w-5 h-5 text-primary" /> {t("pinBusiness.sectionPhotos")}
             </h2>
 
             <div>
               <label className="block text-sm font-medium text-foreground mb-1.5">
-                Primary photo URL
+                {t("pinBusiness.labelPrimaryPhoto")}
               </label>
               <input
                 {...register("imageUrl")}
-                placeholder="https://example.com/your-photo.jpg"
+                placeholder={t("pinBusiness.placeholderPrimaryPhoto")}
                 className="w-full border border-input rounded-md px-3 py-2.5 text-sm bg-background focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary"
               />
               <p className="text-xs text-muted-foreground mt-1">
-                Paste a hosted image URL. Direct uploads coming soon.
+                {t("pinBusiness.primaryPhotoHint")}
               </p>
               {errors.imageUrl && <p className="text-xs text-destructive mt-1">{errors.imageUrl.message}</p>}
             </div>
@@ -404,7 +447,7 @@ export default function PinYourBusiness() {
             {tier !== "basic" && (
               <div>
                 <label className="block text-sm font-medium text-foreground mb-1.5">
-                  Additional photo URLs <span className="text-xs text-muted-foreground font-normal">(up to 6, one per line)</span>
+                  {t("pinBusiness.labelAdditionalPhotos")} <span className="text-xs text-muted-foreground font-normal">({t("pinBusiness.additionalPhotosHint")})</span>
                 </label>
                 <textarea
                   {...register("photoUrlsRaw")}
@@ -417,45 +460,45 @@ export default function PinYourBusiness() {
 
             {tier === "basic" && (
               <p className="text-xs text-muted-foreground italic bg-muted/50 rounded-md px-3 py-2">
-                Multiple photos are included in the Standard plan.
+                {t("pinBusiness.multiplePhotosStandard")}
               </p>
             )}
           </div>
 
           <div className="border border-border rounded-xl p-6 space-y-5">
-            <h2 className="text-lg font-semibold text-foreground">Contact & links</h2>
+            <h2 className="text-lg font-semibold text-foreground">{t("pinBusiness.sectionContactLinks")}</h2>
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div>
                 <label className="block text-sm font-medium text-foreground mb-1.5">
-                  Contact email <span className="text-destructive">*</span>
+                  {t("pinBusiness.labelContactEmail")} <span className="text-destructive">*</span>
                 </label>
                 <input
                   {...register("contactEmail")}
                   type="email"
-                  placeholder="you@yourbusiness.com"
+                  placeholder={t("pinBusiness.placeholderEmail")}
                   className="w-full border border-input rounded-md px-3 py-2.5 text-sm bg-background focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary"
                 />
                 {errors.contactEmail && <p className="text-xs text-destructive mt-1">{errors.contactEmail.message}</p>}
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-foreground mb-1.5">Website</label>
+                <label className="block text-sm font-medium text-foreground mb-1.5">{t("pinBusiness.labelWebsite")}</label>
                 <input
                   {...register("website")}
-                  placeholder="https://yourbusiness.com"
+                  placeholder={t("pinBusiness.placeholderWebsite")}
                   className="w-full border border-input rounded-md px-3 py-2.5 text-sm bg-background focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary"
                 />
                 {errors.website && <p className="text-xs text-destructive mt-1">{errors.website.message}</p>}
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-foreground mb-1.5">Instagram handle</label>
+                <label className="block text-sm font-medium text-foreground mb-1.5">{t("pinBusiness.labelInstagram")}</label>
                 <div className="flex items-center border border-input rounded-md overflow-hidden bg-background focus-within:ring-2 focus-within:ring-primary/30 focus-within:border-primary">
                   <span className="px-3 text-sm text-muted-foreground border-r border-input py-2.5 bg-muted">@</span>
                   <input
                     {...register("instagramHandle")}
-                    placeholder="yourbusiness"
+                    placeholder={t("pinBusiness.placeholderInstagram")}
                     className="flex-1 px-3 py-2.5 text-sm bg-transparent focus:outline-none"
                   />
                 </div>
@@ -464,20 +507,20 @@ export default function PinYourBusiness() {
               {tier !== "basic" && (
                 <>
                   <div>
-                    <label className="block text-sm font-medium text-foreground mb-1.5">Facebook URL</label>
+                    <label className="block text-sm font-medium text-foreground mb-1.5">{t("pinBusiness.labelFacebook")}</label>
                     <input
                       {...register("facebookUrl")}
-                      placeholder="https://facebook.com/yourbusiness"
+                      placeholder={t("pinBusiness.placeholderFacebook")}
                       className="w-full border border-input rounded-md px-3 py-2.5 text-sm bg-background focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary"
                     />
                     {errors.facebookUrl && <p className="text-xs text-destructive mt-1">{errors.facebookUrl.message}</p>}
                   </div>
 
                   <div>
-                    <label className="block text-sm font-medium text-foreground mb-1.5">TikTok URL</label>
+                    <label className="block text-sm font-medium text-foreground mb-1.5">{t("pinBusiness.labelTikTok")}</label>
                     <input
                       {...register("tiktokUrl")}
-                      placeholder="https://tiktok.com/@yourbusiness"
+                      placeholder={t("pinBusiness.placeholderTikTok")}
                       className="w-full border border-input rounded-md px-3 py-2.5 text-sm bg-background focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary"
                     />
                     {errors.tiktokUrl && <p className="text-xs text-destructive mt-1">{errors.tiktokUrl.message}</p>}
@@ -488,7 +531,7 @@ export default function PinYourBusiness() {
 
             {tier === "basic" && (
               <p className="text-xs text-muted-foreground italic bg-muted/50 rounded-md px-3 py-2">
-                Facebook & TikTok links are included starting at the Standard plan.
+                {t("pinBusiness.facebookTikTokStandard")}
               </p>
             )}
           </div>
@@ -497,17 +540,17 @@ export default function PinYourBusiness() {
           {tier === "premium" && (
             <div className="border-2 border-primary/30 bg-primary/5 rounded-xl p-6 space-y-5">
               <h2 className="text-lg font-semibold text-foreground flex items-center gap-2">
-                <Video className="w-5 h-5 text-primary" /> Video clip
-                <span className="text-xs font-bold uppercase tracking-wider text-primary bg-primary/10 px-2 py-0.5 rounded-full">Premium</span>
+                <Video className="w-5 h-5 text-primary" /> {t("pinBusiness.sectionVideo")}
+                <span className="text-xs font-bold uppercase tracking-wider text-primary bg-primary/10 px-2 py-0.5 rounded-full">{t("pinBusiness.premiumBadge")}</span>
               </h2>
 
               <div>
                 <label className="block text-sm font-medium text-foreground mb-1.5">
-                  Video URL <span className="text-xs text-muted-foreground font-normal">(YouTube, Vimeo, or direct .mp4)</span>
+                  {t("pinBusiness.labelVideoUrl")} <span className="text-xs text-muted-foreground font-normal">({t("pinBusiness.videoUrlHint")})</span>
                 </label>
                 <input
                   {...register("videoUrl")}
-                  placeholder="https://youtube.com/watch?v=…"
+                  placeholder={t("pinBusiness.placeholderVideoUrl")}
                   className="w-full border border-input rounded-md px-3 py-2.5 text-sm bg-background focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary"
                 />
                 {errors.videoUrl && <p className="text-xs text-destructive mt-1">{errors.videoUrl.message}</p>}
@@ -517,15 +560,15 @@ export default function PinYourBusiness() {
 
           <div className="flex items-center justify-between pt-2 gap-4 flex-wrap">
             <p className="text-sm text-muted-foreground">
-              {selectedTier.name} plan · ${selectedTier.priceMonthly.toFixed(2)}/mo
-              {isEarlyBird ? ` · ${trialMonths} months free` : ""}
+              {selectedTier.name} {t("pinBusiness.planDot")} ${selectedTier.priceMonthly.toFixed(2)}/mo
+              {isEarlyBird ? ` · ${trialMonths} ${t("pinBusiness.monthsFree")}` : ""}
             </p>
             <button
               type="submit"
               disabled={isPending}
               className="bg-primary text-primary-foreground px-8 py-3 rounded-md font-semibold hover:bg-primary/90 transition-colors disabled:opacity-60 inline-flex items-center gap-2"
             >
-              {isPending ? "Submitting…" : "Submit & continue"}
+              {isPending ? t("pinBusiness.submitting") : t("pinBusiness.submitContinue")}
             </button>
           </div>
         </form>

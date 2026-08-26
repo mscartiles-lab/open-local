@@ -1,4 +1,3 @@
-import nodemailer, { type Transporter } from "nodemailer";
 import { logger } from "./logger";
 
 interface SendVerificationOptions {
@@ -12,106 +11,205 @@ export interface SendVerificationResult {
   devFallback: boolean;
 }
 
-const VERIFICATION_SUBJECT = "Your Open Local verification code";
+const RESEND_API = "https://api.resend.com/emails";
+const FROM = process.env.MAIL_FROM ?? "Open Local <onboarding@resend.dev>";
 
-function renderHtml(opts: SendVerificationOptions): string {
-  return `<!doctype html>
-<html>
-  <body style="margin:0;padding:0;background:#f3f1ea;font-family:Georgia,'Times New Roman',serif;color:#1d1d1b;">
-    <div style="max-width:520px;margin:0 auto;padding:32px 24px;">
-      <div style="background:#ffffff;border:1px solid #e5e2d6;padding:32px 28px;">
-        <p style="margin:0 0 4px;font-family:Helvetica,Arial,sans-serif;font-size:11px;letter-spacing:2px;text-transform:uppercase;color:#5b6a3f;font-weight:600;">Open Local</p>
-        <h1 style="margin:0 0 16px;font-size:24px;font-weight:700;color:#1d1d1b;">Verify your email</h1>
-        <p style="margin:0 0 24px;font-size:15px;line-height:1.55;color:#3a3a36;">Use this code to publish <strong>${escapeHtml(opts.businessName)}</strong> on Open Local. It expires in 10 minutes.</p>
-        <div style="background:#f3f1ea;border:1px solid #e5e2d6;padding:18px 0;text-align:center;font-family:'SFMono-Regular',Menlo,Consolas,monospace;font-size:34px;letter-spacing:10px;font-weight:700;color:#3d4a26;">${opts.code}</div>
-        <p style="margin:24px 0 0;font-size:13px;line-height:1.5;color:#7a7a72;">If you didn't request this, you can ignore this email — your address won't be added.</p>
-      </div>
-      <p style="margin:18px 0 0;font-family:Helvetica,Arial,sans-serif;font-size:11px;letter-spacing:1px;text-transform:uppercase;color:#7a7a72;text-align:center;">Open Local · Florida's local marketplace</p>
-    </div>
-  </body>
-</html>`;
+function resendConfigured(): boolean {
+  return !!process.env.RESEND_API_KEY;
 }
 
-function renderText(opts: SendVerificationOptions): string {
-  return `Open Local — Verify your email
-
-Use this code to publish ${opts.businessName} on Open Local: ${opts.code}
-
-This code expires in 10 minutes.
-
-If you didn't request this, you can ignore this email.`;
-}
-
-function escapeHtml(s: string): string {
-  return s
-    .replace(/&/g, "&amp;")
-    .replace(/</g, "&lt;")
-    .replace(/>/g, "&gt;")
-    .replace(/"/g, "&quot;")
-    .replace(/'/g, "&#39;");
-}
-
-// Lazy-initialized transporter. SMTP_HOST/PORT/USER/PASS are the canonical
-// generic SMTP env vars and work for any provider. For Gmail, set:
-//   SMTP_HOST=smtp.gmail.com
-//   SMTP_PORT=465
-//   SMTP_USER=<your gmail address>
-//   SMTP_PASS=<16-char app password from https://myaccount.google.com/apppasswords>
-//   MAIL_FROM=Open Local <hello@openlocalapp.com>   (defaults to SMTP_USER)
-let transporter: Transporter | null = null;
-
-function getTransporter(): Transporter | null {
-  if (transporter) return transporter;
-  const host = process.env.SMTP_HOST;
-  const user = process.env.SMTP_USER;
-  const pass = process.env.SMTP_PASS;
-  if (!host || !user || !pass) return null;
-  const port = Number(process.env.SMTP_PORT ?? 465);
-  transporter = nodemailer.createTransport({
-    host,
-    port,
-    // 465 → TLS from the start (Gmail), 587 → STARTTLS upgrade.
-    secure: port === 465,
-    auth: { user, pass },
-  });
-  return transporter;
-}
-
-function fromAddress(): string {
-  return (
-    process.env.MAIL_FROM ||
-    (process.env.SMTP_USER ? `Open Local <${process.env.SMTP_USER}>` : "Open Local <onboarding@resend.dev>")
-  );
-}
+// ─── Verification code email (vendor/shopper signup) ─────────────────────────
 
 export async function sendVerificationEmail(
   opts: SendVerificationOptions,
 ): Promise<SendVerificationResult> {
-  const tx = getTransporter();
-  if (!tx) {
+  if (!resendConfigured()) {
     logger.warn(
-      { to: opts.to, code: opts.code },
-      "[email] SMTP not configured — verification code shown in dev fallback only",
+      { to: opts.to },
+      "[email] RESEND_API_KEY not set — verification code shown in dev fallback only",
     );
     return { sent: false, devFallback: true };
   }
 
+  const html = `
+    <div style="font-family:sans-serif;max-width:480px;margin:0 auto;padding:24px">
+      <h2 style="color:#3c4a26;margin-bottom:8px">Open Local</h2>
+      <p style="color:#555;margin-bottom:24px">Hi ${opts.businessName},</p>
+      <p style="color:#555">Here's your verification code:</p>
+      <div style="font-size:36px;font-weight:700;letter-spacing:8px;color:#3c4a26;padding:16px 0">${opts.code}</div>
+      <p style="color:#888;font-size:13px">This code expires in 10 minutes. If you didn't request this, you can safely ignore this email.</p>
+    </div>
+  `;
+
   try {
-    const info = await tx.sendMail({
-      from: fromAddress(),
-      to: opts.to,
-      subject: VERIFICATION_SUBJECT,
-      html: renderHtml(opts),
-      text: renderText(opts),
+    const resp = await fetch(RESEND_API, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${process.env.RESEND_API_KEY}`,
+      },
+      body: JSON.stringify({
+        from: FROM,
+        to: [opts.to],
+        subject: `${opts.code} — your Open Local verification code`,
+        html,
+      }),
     });
-    logger.info({ to: opts.to, messageId: info.messageId }, "[email] sent");
+
+    if (!resp.ok) {
+      const body = await resp.text().catch(() => "");
+      logger.warn(
+        { to: opts.to, status: resp.status, body },
+        "[email] Resend verification send failed — falling back to dev mode",
+      );
+      return { sent: false, devFallback: true };
+    }
+
+    logger.info({ to: opts.to }, "[email] verification sent via Resend");
     return { sent: true, devFallback: false };
   } catch (err) {
-    logger.error({ err, to: opts.to }, "[email] SMTP send failed");
-    throw new Error(`Email send failed: ${(err as Error).message}`);
+    logger.warn(
+      { err, to: opts.to },
+      "[email] Resend request failed — falling back to dev mode",
+    );
+    return { sent: false, devFallback: true };
+  }
+}
+
+// ─── Generic direct email (onboarding, welcome, trial reminders) ─────────────
+
+export async function sendDirectEmail(opts: {
+  to: string;
+  toName: string;
+  subject: string;
+  message: string;
+}): Promise<void> {
+  if (!resendConfigured()) {
+    logger.warn(
+      { to: opts.to, subject: opts.subject },
+      "[email] RESEND_API_KEY not set — direct email skipped",
+    );
+    return;
+  }
+
+  const html = `
+    <div style="font-family:sans-serif;max-width:480px;margin:0 auto;padding:24px">
+      <h2 style="color:#3c4a26;margin-bottom:8px">Open Local</h2>
+      <p style="color:#555;margin-bottom:16px">Hi ${opts.toName},</p>
+      <div style="color:#555;white-space:pre-wrap">${opts.message}</div>
+      <hr style="border:none;border-top:1px solid #eee;margin:24px 0"/>
+      <p style="color:#aaa;font-size:12px">Open Local · Local Sourcing and Experiences</p>
+    </div>
+  `;
+
+  try {
+    const resp = await fetch(RESEND_API, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${process.env.RESEND_API_KEY}`,
+      },
+      body: JSON.stringify({
+        from: FROM,
+        to: [opts.to],
+        subject: opts.subject,
+        html,
+      }),
+    });
+
+    if (!resp.ok) {
+      const body = await resp.text().catch(() => "");
+      logger.warn(
+        { to: opts.to, status: resp.status, body },
+        "[email] Resend direct send failed",
+      );
+      return;
+    }
+
+    logger.info({ to: opts.to, subject: opts.subject }, "[email] direct send OK via Resend");
+  } catch (err) {
+    logger.warn({ err, to: opts.to }, "[email] Resend direct send request failed");
   }
 }
 
 export function generateVerificationCode(): string {
   return Math.floor(100000 + Math.random() * 900000).toString();
+}
+
+// ─── Invitation email (waitlist / QR code sign-up) ────────────────────────────
+
+export interface SendInvitationResult {
+  sent: boolean;
+}
+
+export async function sendInvitationEmail(opts: {
+  to: string;
+  name?: string | null;
+  signupUrl: string;
+}): Promise<SendInvitationResult> {
+  const greeting = opts.name ? `Hi ${opts.name},` : "Hi there,";
+
+  const html = `
+    <div style="font-family:sans-serif;max-width:520px;margin:0 auto;padding:32px 24px;background:#fff">
+      <div style="margin-bottom:24px">
+        <span style="display:inline-block;background:#3c4a26;color:#fff;font-size:13px;font-weight:700;letter-spacing:1px;padding:6px 14px;border-radius:4px">OPEN LOCAL</span>
+      </div>
+      <h1 style="color:#1a1a1a;font-size:26px;font-weight:700;margin:0 0 16px">You're invited! 🎉</h1>
+      <p style="color:#555;font-size:16px;line-height:1.6;margin:0 0 16px">${greeting}</p>
+      <p style="color:#555;font-size:16px;line-height:1.6;margin:0 0 24px">
+        Thanks for your interest in <strong>Open Local</strong> — Florida's marketplace for local producers,
+        bakers, farms, makers, and more. We'd love to have you join our community.
+      </p>
+      <a href="${opts.signupUrl}"
+         style="display:inline-block;background:#3c4a26;color:#fff;font-size:16px;font-weight:600;
+                padding:14px 32px;border-radius:8px;text-decoration:none;margin-bottom:32px">
+        Create your account →
+      </a>
+      <p style="color:#888;font-size:13px;line-height:1.6;margin:0 0 8px">
+        This invitation is for you — just click the button above to get started.
+        It only takes a couple of minutes.
+      </p>
+      <hr style="border:none;border-top:1px solid #eee;margin:24px 0"/>
+      <p style="color:#aaa;font-size:12px;margin:0">
+        Open Local · Local Sourcing and Experiences<br/>
+        Florida's marketplace for local producers and artisans.
+      </p>
+    </div>
+  `;
+
+  if (!resendConfigured()) {
+    logger.warn(
+      { to: opts.to },
+      "[email] RESEND_API_KEY not set — invitation email not sent (dev mode)",
+    );
+    return { sent: false };
+  }
+
+  try {
+    const resp = await fetch(RESEND_API, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${process.env.RESEND_API_KEY}`,
+      },
+      body: JSON.stringify({
+        from: FROM,
+        to: [opts.to],
+        subject: "You're invited to Open Local 🎉",
+        html,
+      }),
+    });
+
+    if (!resp.ok) {
+      const body = await resp.text().catch(() => "");
+      logger.warn({ to: opts.to, status: resp.status, body }, "[email] invitation send failed");
+      return { sent: false };
+    }
+
+    logger.info({ to: opts.to }, "[email] invitation sent via Resend");
+    return { sent: true };
+  } catch (err) {
+    logger.warn({ err, to: opts.to }, "[email] invitation send request failed");
+    return { sent: false };
+  }
 }

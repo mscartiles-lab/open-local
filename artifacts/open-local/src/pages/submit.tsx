@@ -1,4 +1,6 @@
 import { useState, useMemo, useRef, useEffect } from "react";
+import { useTranslation } from "react-i18next";
+import type { TFunction } from "i18next";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
@@ -29,8 +31,14 @@ import {
   Minus,
   Mail,
   ShieldCheck,
+  Clock,
+  CalendarDays,
+  Home,
+  ImagePlus,
+  X,
 } from "lucide-react";
 import Layout from "@/components/layout/Layout";
+import { LocationPicker } from "@/components/LocationPicker";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -70,29 +78,45 @@ const popularCities = [
   "Key West",
 ];
 
-const formSchema = z.object({
-  category: z.string().min(2, "Pick a category."),
-  name: z.string().min(2, "Add your business name."),
-  tagline: z.string().min(10, "A short one-liner that tells people what you make."),
-  description: z.string().min(20, "Tell us a sentence or two about what you make."),
-  location: z.string().min(2, "Pick or type a city."),
+const DAYS_OF_WEEK = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"] as const;
+const HOW_TO_ORDER_OPTIONS = [
+  { value: "open_local_storefront" },
+  { value: "website" },
+  { value: "preorder_required" },
+  { value: "farmers_market" },
+] as const;
+
+const createFormSchema = (t: TFunction) => z.object({
+  category: z.string().min(2, t("submit.errorCategory")),
+  name: z.string().min(2, t("submit.errorName")),
+  tagline: z.string().min(10, t("submit.errorTagline")),
+  description: z.string().min(20, t("submit.errorDescription")),
+  location: z.string().min(2, t("submit.errorCity")),
   region: z.string().min(2),
+  zipCode: z.string().optional().or(z.literal("")),
   established: z.coerce.number().int().min(1800).max(new Date().getFullYear()),
-  contactEmail: z.string().email("Enter a valid email."),
-  imageUrl: z.string().url("Must be a valid image URL").optional().or(z.literal("")),
-  websiteUrl: z.string().url("Must be a valid URL").optional().or(z.literal("")),
+  // Step 3 — availability
+  pickupAddress: z.string().optional().or(z.literal("")),
+  openDays: z.array(z.string()).optional(),
+  openHours: z.string().optional().or(z.literal("")),
+  howToOrder: z.array(z.string()).optional(),
+  marketsText: z.string().optional().or(z.literal("")),
+  // Step 4 — contact
+  contactEmail: z.string().email(t("submit.errorEmail")),
+  imageUrl: z.string().optional().or(z.literal("")),
+  websiteUrl: z.string().optional().or(z.literal("")),
   phone: z.string().optional().or(z.literal("")),
   instagramHandle: z.string().optional().or(z.literal("")),
-  facebookUrl: z.string().url("Must be a valid URL").optional().or(z.literal("")),
-  marketsText: z.string().optional().or(z.literal("")),
+  facebookUrl: z.string().optional().or(z.literal("")),
 });
 
-type FormValues = z.infer<typeof formSchema>;
+type FormValues = z.infer<ReturnType<typeof createFormSchema>>;
 
 const stepFields: Record<number, (keyof FormValues)[]> = {
   1: ["category"],
-  2: ["name", "tagline", "description", "location", "region"],
-  3: ["contactEmail", "imageUrl", "websiteUrl", "phone", "instagramHandle", "facebookUrl", "marketsText"],
+  2: ["name", "tagline", "description", "location", "region", "zipCode"],
+  3: ["pickupAddress", "openDays", "openHours", "howToOrder", "marketsText"],
+  4: ["contactEmail", "imageUrl", "websiteUrl", "phone", "instagramHandle", "facebookUrl"],
 };
 
 type VerificationState = {
@@ -102,6 +126,7 @@ type VerificationState = {
 };
 
 export default function Submit() {
+  const { t } = useTranslation();
   const [, setLocation] = useLocation();
   const { toast } = useToast();
   const queryClient = useQueryClient();
@@ -111,6 +136,11 @@ export default function Submit() {
 
   const [step, setStep] = useState(1);
   const [showOptionalContact, setShowOptionalContact] = useState(false);
+  const [geolocating, setGeolocating] = useState(false);
+  const [pickupLat, setPickupLat] = useState<number | null>(null);
+  const [pickupLng, setPickupLng] = useState<number | null>(null);
+  const [isUploading, setIsUploading] = useState(false);
+  const [uploadError, setUploadError] = useState<string | null>(null);
   const [verification, setVerification] = useState<VerificationState | null>(
     null,
   );
@@ -118,7 +148,7 @@ export default function Submit() {
   const [verifyError, setVerifyError] = useState<string | null>(null);
 
   const form = useForm<FormValues>({
-    resolver: zodResolver(formSchema),
+    resolver: zodResolver(createFormSchema(t)),
     mode: "onChange",
     defaultValues: {
       category: "",
@@ -127,14 +157,19 @@ export default function Submit() {
       description: "",
       location: "",
       region: "Florida",
+      zipCode: "",
       established: new Date().getFullYear(),
+      pickupAddress: "",
+      openDays: [],
+      openHours: "",
+      howToOrder: [],
+      marketsText: "",
       contactEmail: "",
       imageUrl: "",
       websiteUrl: "",
       phone: "",
       instagramHandle: "",
       facebookUrl: "",
-      marketsText: "",
     },
   });
 
@@ -148,8 +183,10 @@ export default function Submit() {
   }, [watchedCategory]);
 
   function pickCategory(name: string) {
-    form.setValue("category", name, { shouldValidate: true });
+    console.log("[OL-submit] pickCategory fired:", name, "step before:", step);
+    form.setValue("category", name, { shouldDirty: true, shouldTouch: true });
     setStep(2);
+    console.log("[OL-submit] setStep(2) called");
   }
 
   async function nextStep() {
@@ -163,10 +200,22 @@ export default function Submit() {
     setStep(Math.max(1, step - 1));
   }
 
+  function normalizeUrl(val: string | undefined): string | null {
+    if (!val || !val.trim()) return null;
+    const trimmed = val.trim();
+    if (/^https?:\/\//i.test(trimmed)) return trimmed;
+    return `https://${trimmed}`;
+  }
+
   async function publish() {
-    const fields = stepFields[3];
+    const fields = stepFields[4];
     const valid = await form.trigger(fields);
-    if (!valid) return;
+    if (!valid) {
+      // Scroll to the first visible error so the user knows what's wrong
+      const firstError = document.querySelector("[data-error]");
+      firstError?.scrollIntoView({ behavior: "smooth", block: "center" });
+      return;
+    }
     const values = form.getValues();
     const slug = values.name
       .toLowerCase()
@@ -178,11 +227,17 @@ export default function Submit() {
       ...values,
       slug,
       imageUrl: values.imageUrl || defaultImage,
-      websiteUrl: values.websiteUrl || null,
+      websiteUrl: normalizeUrl(values.websiteUrl),
       phone: values.phone || null,
       instagramHandle: instagramHandleClean || null,
-      facebookUrl: values.facebookUrl || null,
+      facebookUrl: normalizeUrl(values.facebookUrl),
       marketsText: values.marketsText || null,
+      pickupAddress: values.pickupAddress || null,
+      openDays: values.openDays?.length ? values.openDays : null,
+      openHours: values.openHours || null,
+      howToOrder: values.howToOrder?.length ? values.howToOrder.join(", ") : null,
+      latitude: pickupLat ?? null,
+      longitude: pickupLng ?? null,
     };
 
     startVerification.mutate(
@@ -201,14 +256,13 @@ export default function Submit() {
           });
           setCode("");
           setVerifyError(null);
-          setStep(4);
+          setStep(5);
         },
         onError: () => {
           toast({
             variant: "destructive",
-            title: "Couldn't send verification email",
-            description:
-              "Please double-check the email and try again in a moment.",
+            title: t("submit.couldntSendCode"),
+            description: t("submit.checkEmailRetry"),
           });
         },
       },
@@ -228,9 +282,8 @@ export default function Submit() {
             queryKey: getListVendorsQueryKey(),
           });
           toast({
-            title: "You're on Open Local",
-            description:
-              "Your business is published. Welcome to your dashboard.",
+            title: t("submit.successToast"),
+            description: t("submit.successDescription"),
           });
           setLocation(`/dashboard/${vendor.slug}`);
         },
@@ -259,15 +312,15 @@ export default function Submit() {
             devCode: data.devCode,
           });
           toast({
-            title: "New code sent",
-            description: `Check ${data.email} for a fresh 6-digit code.`,
+            title: t("submit.newCodeSent"),
+            description: t("submit.checkEmail", { email: data.email }),
           });
         },
         onError: () => {
           toast({
             variant: "destructive",
-            title: "Couldn't resend",
-            description: "Please try again in a moment.",
+            title: t("submit.couldntResend"),
+            description: t("submit.tryAgainMoment"),
           });
         },
       },
@@ -280,13 +333,13 @@ export default function Submit() {
         <div className="container max-w-3xl mx-auto px-4 py-10 md:py-14">
           <div className="text-center">
             <p className="text-sm tracking-[0.2em] uppercase text-primary font-semibold mb-3">
-              Three quick steps
+              {t("submit.stepsTitle")}
             </p>
             <h1 className="text-4xl md:text-5xl font-serif font-bold text-foreground mb-3">
-              List your business on Open Local
+              {t("submit.heroTitle")}
             </h1>
             <p className="text-lg text-muted-foreground max-w-xl mx-auto">
-              We'll help neighbors and visitors find what you make. Free to list, takes about a minute.
+              {t("submit.heroDescription")}
             </p>
           </div>
 
@@ -296,18 +349,18 @@ export default function Submit() {
 
       <div className="container max-w-3xl mx-auto px-4 py-10 md:py-14">
         <AnimatePresence mode="wait">
-          {step === 1 && (
-            <motion.div
-              key="step-1"
-              initial={{ opacity: 0, y: 12 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -12 }}
-              transition={{ duration: 0.25 }}
-            >
+          <motion.div
+            key={step}
+            initial={{ opacity: 0, y: 12 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -12 }}
+            transition={{ duration: 0.25 }}
+          >
+            {step === 1 && (<>
               <StepHeader
-                eyebrow="Step 1"
-                title="What do you make?"
-                subtitle="Pick the category that fits best — you can always change it later."
+                eyebrow={t("submit.stepOf", { step: 1, total: 4 })}
+                title={t("submit.step1Title")}
+                subtitle={t("submit.step1Description")}
               />
               <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-3 md:gap-4 mt-8">
                 {categories.map(({ name, icon: Icon }) => {
@@ -335,72 +388,63 @@ export default function Submit() {
                         <Icon className="h-6 w-6" />
                       </span>
                       <span className="font-serif font-semibold text-foreground">
-                        {name}
+                        {t(`wholesale.cat${name}`)}
                       </span>
                     </button>
                   );
                 })}
               </div>
               <p className="text-sm text-muted-foreground text-center mt-6">
-                Tap a category to continue.
+                {t("submit.step1Hint")}
               </p>
-            </motion.div>
-          )}
-
-          {step === 2 && (
-            <motion.div
-              key="step-2"
-              initial={{ opacity: 0, y: 12 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -12 }}
-              transition={{ duration: 0.25 }}
-            >
+            </>)}
+            {step === 2 && (<>
               <StepHeader
-                eyebrow="Step 2"
-                title="Tell us about your business"
-                subtitle="A few quick details so people know what you're about."
+                eyebrow={t("submit.stepOf", { step: 2, total: 4 })}
+                title={t("submit.step2Title")}
+                subtitle={t("submit.step2Description")}
               />
 
               <div className="mt-8 space-y-6">
                 <Field
-                  label="Business name"
+                  label={t("submit.fieldName")}
                   required
                   error={form.formState.errors.name?.message}
                 >
                   <Input
-                    placeholder="Wynwood Loaf"
+                    placeholder={t("submit.namePlaceholder")}
                     autoFocus
                     {...form.register("name")}
                   />
                 </Field>
 
                 <Field
-                  label="One-line tagline"
+                  label={t("submit.fieldTagline")}
                   required
-                  hint="What you make, in a sentence."
+                    hint={t("submit.fieldTaglinePlaceholder")}
                   error={form.formState.errors.tagline?.message}
                 >
                   <Input
-                    placeholder="Sourdough and Cuban-style breads from a Miami garage bakery."
+                    placeholder={t("submit.fieldTaglinePlaceholder")}
                     {...form.register("tagline")}
                   />
                 </Field>
 
                 <Field
-                  label="Short story"
+                  label={t("submit.fieldStory")}
                   required
-                  hint="A couple of sentences about who you are and how you make it."
+                    hint={t("submit.fieldStoryPlaceholder")}
                   error={form.formState.errors.description?.message}
                 >
                   <Textarea
-                    placeholder="A two-baker shop turning out naturally leavened miches and guava cream cheese danishes. We mill some of our own flour from Florida-grown grains."
+                    placeholder={t("submit.fieldStoryPlaceholder")}
                     className="min-h-[140px]"
                     {...form.register("description")}
                   />
                 </Field>
 
                 <Field
-                  label="City"
+                  label={t("submit.fieldCity")}
                   required
                   error={form.formState.errors.location?.message}
                 >
@@ -432,7 +476,7 @@ export default function Submit() {
                     <div className="relative">
                       <MapPin className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
                       <Input
-                        placeholder="Or type another Florida city"
+                        placeholder={t("submit.cityPlaceholder")}
                         className="pl-9"
                         value={form.watch("location")}
                         onChange={(e) =>
@@ -441,6 +485,55 @@ export default function Submit() {
                           })
                         }
                       />
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <div className="relative flex-1">
+                        <Input
+                          placeholder={t("submit.fieldZip")}
+                          {...form.register("zipCode")}
+                          className="font-mono"
+                        />
+                      </div>
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        className="shrink-0"
+                        onClick={() => {
+                          if (!navigator.geolocation) return;
+                          setGeolocating(true);
+                          navigator.geolocation.getCurrentPosition(
+                            async (pos) => {
+                              try {
+                                const r = await fetch(
+                                  `https://nominatim.openstreetmap.org/reverse?lat=${pos.coords.latitude}&lon=${pos.coords.longitude}&format=json`,
+                                );
+                                const data = await r.json();
+                                const city =
+                                  data.address?.city ||
+                                  data.address?.town ||
+                                  data.address?.village ||
+                                  "";
+                                const zip = data.address?.postcode || "";
+                                if (city) form.setValue("location", city, { shouldValidate: true });
+                                if (zip) form.setValue("zipCode", zip, { shouldValidate: true });
+                              } catch {
+                                // silently ignore
+                              } finally {
+                                setGeolocating(false);
+                              }
+                            },
+                            () => setGeolocating(false),
+                          );
+                        }}
+                      >
+                        {geolocating ? (
+                          <Loader2 className="h-4 w-4 animate-spin" />
+                        ) : (
+                          <MapPin className="h-4 w-4" />
+                        )}
+                        <span className="ml-1.5">{t("submit.useMyLocation")}</span>
+                      </Button>
                     </div>
                   </div>
                 </Field>
@@ -451,38 +544,202 @@ export default function Submit() {
               <NavRow
                 onBack={prevStep}
                 onNext={nextStep}
-                nextLabel="Continue"
+                nextLabel={t("common.continue")}
                 disabled={false}
               />
-            </motion.div>
-          )}
-
-          {step === 3 && (
-            <motion.div
-              key="step-3"
-              initial={{ opacity: 0, y: 12 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -12 }}
-              transition={{ duration: 0.25 }}
-            >
+            </>)}
+            {step === 3 && (<>
               <StepHeader
-                eyebrow="Step 3"
-                title="How can people reach you?"
-                subtitle="Just an email is enough. Add a cover photo and socials if you'd like."
+                eyebrow={t("submit.stepOf", { step: 3, total: 4 })}
+                title={t("submit.step3Title")}
+                subtitle={t("submit.step3Description")}
+              />
+
+              <div className="mt-8 space-y-8">
+                {/* Pickup location */}
+                <Field
+                  label={t("submit.fieldPickupAddress")}
+                  hint={t("submit.pickupAddressHint")}
+                >
+                  <div className="relative">
+                    <Home className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+                    <Input
+                      placeholder={t("submit.pickupAddressPlaceholder")}
+                      className="pl-9"
+                      {...form.register("pickupAddress")}
+                    />
+                  </div>
+                </Field>
+
+                {/* Pin exact location */}
+                <Field
+                  label={t("submit.pinExactSpot")}
+                  hint={t("submit.pinExactSpotHint")}
+                >
+                  <LocationPicker
+                    hint={form.watch("pickupAddress") || form.watch("location")}
+                    onChange={(lat, lng) => {
+                      setPickupLat(lat);
+                      setPickupLng(lng);
+                    }}
+                  />
+                </Field>
+
+                {/* Days open */}
+                <Field
+                  label={t("submit.fieldDays")}
+                  hint={t("submit.fieldDaysHint")}
+                >
+                  <div className="flex flex-wrap gap-2 mt-1">
+                    {DAYS_OF_WEEK.map((day) => {
+                      const selected = (form.watch("openDays") ?? []).includes(day);
+                      return (
+                        <button
+                          key={day}
+                          type="button"
+                          onClick={() => {
+                            const current = form.getValues("openDays") ?? [];
+                            form.setValue(
+                              "openDays",
+                              selected ? current.filter((d) => d !== day) : [...current, day],
+                              { shouldValidate: true },
+                            );
+                          }}
+                          className={cn(
+                            "rounded-full border px-3 py-1.5 text-sm font-medium transition-colors",
+                            selected
+                              ? "border-primary bg-primary text-primary-foreground"
+                              : "border-border bg-card text-foreground hover:border-primary/50",
+                          )}
+                        >
+                           {t(`submit.dayShort${day}`)}
+                        </button>
+                      );
+                    })}
+                  </div>
+                </Field>
+
+                {/* Hours */}
+                <Field
+                  label={t("submit.fieldHours")}
+                  hint={t("submit.fieldHoursHint")}
+                >
+                  <div className="relative">
+                    <Clock className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+                    <Input
+                      placeholder={t("submit.fieldHoursPlaceholder")}
+                      className="pl-9"
+                      {...form.register("openHours")}
+                    />
+                  </div>
+                </Field>
+
+                {/* How to order */}
+                <Field
+                  label={t("submit.fieldHowToOrder")}
+                  hint={t("submit.fieldHowToOrderHint")}
+                >
+                  <div className="flex flex-col gap-2 mt-1">
+                    {HOW_TO_ORDER_OPTIONS.map(({ value }) => {
+                      const selected = (form.watch("howToOrder") ?? []).includes(value);
+                      return (
+                        <button
+                          key={value}
+                          type="button"
+                          onClick={() => {
+                            const current = form.getValues("howToOrder") ?? [];
+                            form.setValue(
+                              "howToOrder",
+                              selected ? current.filter((v) => v !== value) : [...current, value],
+                              { shouldValidate: true },
+                            );
+                          }}
+                          className={cn(
+                            "flex items-center gap-3 rounded-xl border px-4 py-3 text-sm font-medium text-left transition-colors",
+                            selected
+                              ? "border-primary bg-primary/5 text-foreground"
+                              : "border-border bg-card text-foreground hover:border-primary/50",
+                          )}
+                        >
+                          <span className={cn(
+                            "flex h-5 w-5 items-center justify-center rounded-full border-2 shrink-0 transition-colors",
+                            selected ? "border-primary bg-primary" : "border-border"
+                          )}>
+                            {selected && <Check className="h-3 w-3 text-primary-foreground" />}
+                          </span>
+                           {t(`submit.order${value}`)}
+                        </button>
+                      );
+                    })}
+                  </div>
+                </Field>
+
+                {/* Markets */}
+                <Field
+                  label={t("submit.fieldMarkets")}
+                  hint={t("submit.fieldMarketsHint")}
+                >
+                  <div className="relative">
+                    <CalendarDays className="pointer-events-none absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+                    <Textarea
+                      placeholder={t("submit.fieldMarketsPlaceholder")}
+                      className="min-h-[80px] pl-9"
+                      {...form.register("marketsText")}
+                    />
+                  </div>
+                </Field>
+              </div>
+
+              <div className="mt-10 border-t border-border pt-6 space-y-3">
+                <div className="flex items-center justify-between gap-3">
+                  <Button type="button" variant="ghost" onClick={prevStep}>
+                    <ArrowLeft className="mr-2 h-4 w-4" />
+                    {t("submit.back")}
+                  </Button>
+                  <Button type="button" onClick={nextStep} className="px-6">
+                    {t("common.continue")}
+                    <ArrowRight className="ml-2 h-4 w-4" />
+                  </Button>
+                </div>
+                <p className="text-center text-sm text-muted-foreground">
+                  {t("submit.skipIntro")}{" "}
+                  <button
+                    type="button"
+                    onClick={() => {
+                      form.setValue("pickupAddress", "");
+                      form.setValue("openDays", []);
+                      form.setValue("openHours", "");
+                      form.setValue("howToOrder", []);
+                      form.setValue("marketsText", "");
+                      setStep(4);
+                    }}
+                    className="font-semibold text-primary hover:underline"
+                  >
+                    {t("submit.skipAction")}
+                  </button>
+                  {" "}— {t("submit.skipOutro")}
+                </p>
+              </div>
+            </>)}
+            {step === 4 && (<>
+              <StepHeader
+                eyebrow={t("submit.stepOf", { step: 4, total: 4 })}
+                title={t("submit.step4Title")}
+                subtitle={t("submit.step4Description")}
               />
 
               <div className="mt-8 space-y-6">
                 <Field
-                  label="Email"
+                  label={t("submit.fieldEmail")}
                   required
-                  hint="Shown on your public profile so people can reach out."
+                  hint={t("submit.fieldEmailHint")}
                   error={form.formState.errors.contactEmail?.message}
                 >
                   <div className="relative">
                     <AtSign className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
                     <Input
                       type="email"
-                      placeholder="hello@yourbusiness.com"
+                      placeholder={t("submit.emailPlaceholder")}
                       className="pl-9"
                       autoFocus
                       {...form.register("contactEmail")}
@@ -491,30 +748,107 @@ export default function Submit() {
                 </Field>
 
                 <Field
-                  label="Cover photo"
+                  label={t("submit.coverPhoto")}
                   hint={
-                    defaultImage
-                      ? `Leave blank and we'll use a clean ${watchedCategory.toLowerCase()} cover.`
-                      : "Paste an image URL — a wide shot of your storefront, farm, or studio."
+                    form.watch("imageUrl")
+                      ? undefined
+                      : defaultImage
+                        ? t("submit.coverPhotoDefaultHint", { category: t(`wholesale.cat${watchedCategory}`).toLowerCase() })
+                        : t("submit.coverPhotoUploadHint")
                   }
-                  error={form.formState.errors.imageUrl?.message}
                 >
-                  <Input
-                    placeholder="https://..."
-                    {...form.register("imageUrl")}
-                  />
-                  {defaultImage && !form.watch("imageUrl") && (
-                    <div className="mt-3 overflow-hidden rounded-md border border-border">
-                      <img
-                        src={defaultImage}
-                        alt="Default cover preview"
-                        className="h-32 w-full object-cover"
+                  <div className="space-y-3">
+                    {form.watch("imageUrl") ? (
+                      <div className="relative overflow-hidden rounded-md border border-border">
+                        <img
+                          src={form.watch("imageUrl")}
+                          alt={t("submit.coverPreviewAlt")}
+                          className="h-36 w-full object-cover"
+                        />
+                        <button
+                          type="button"
+                          onClick={() => {
+                            form.setValue("imageUrl", "");
+                          }}
+                          className="absolute right-2 top-2 flex h-7 w-7 items-center justify-center rounded-full bg-black/60 text-white hover:bg-black/80"
+                        >
+                          <X className="h-4 w-4" />
+                        </button>
+                        <p className="bg-muted px-3 py-1.5 text-xs text-muted-foreground">
+                          {t("submit.uploadedRemove")}
+                        </p>
+                      </div>
+                    ) : defaultImage ? (
+                      <div className="overflow-hidden rounded-md border border-dashed border-border">
+                        <img
+                          src={defaultImage}
+                          alt={t("submit.defaultCoverAlt")}
+                          className="h-36 w-full object-cover opacity-60"
+                        />
+                        <p className="bg-muted px-3 py-1.5 text-xs text-muted-foreground">
+                          {t("submit.usingDefaultCover")}
+                        </p>
+                      </div>
+                    ) : null}
+
+                    <label
+                      className={cn(
+                        "flex cursor-pointer items-center justify-center gap-2 rounded-lg border-2 border-dashed px-4 py-4 text-sm font-medium transition-colors",
+                        isUploading
+                          ? "cursor-not-allowed opacity-60 border-border text-muted-foreground"
+                          : "border-primary/30 text-primary hover:border-primary hover:bg-primary/5",
+                      )}
+                    >
+                      {isUploading ? (
+                        <>
+                          <Loader2 className="h-4 w-4 animate-spin" />
+                           {t("submit.uploading")}
+                        </>
+                      ) : (
+                        <>
+                          <ImagePlus className="h-4 w-4" />
+                           {form.watch("imageUrl") ? t("submit.replacePhoto") : t("submit.uploadPhoto")}
+                        </>
+                      )}
+                      <input
+                        type="file"
+                        accept="image/*"
+                        className="sr-only"
+                        disabled={isUploading}
+                        onChange={async (e) => {
+                          const file = e.target.files?.[0];
+                          if (!file) return;
+                          setIsUploading(true);
+                          setUploadError(null);
+                          try {
+                            const metaRes = await fetch("/api/storage/uploads/request-url", {
+                              method: "POST",
+                              headers: { "Content-Type": "application/json" },
+                              body: JSON.stringify({ name: file.name, size: file.size, contentType: file.type }),
+                            });
+                            if (!metaRes.ok) throw new Error(t("submit.uploadStartFailed"));
+                            const { uploadURL, objectPath } = await metaRes.json();
+                            const putRes = await fetch(uploadURL, {
+                              method: "PUT",
+                              body: file,
+                              headers: { "Content-Type": file.type },
+                            });
+                            if (!putRes.ok) throw new Error(t("submit.uploadFailed"));
+                            const servingUrl = `/api/storage${objectPath}`;
+                            form.setValue("imageUrl", servingUrl, { shouldValidate: true });
+                          } catch (err) {
+                            setUploadError(err instanceof Error ? err.message : t("submit.uploadFailed"));
+                          } finally {
+                            setIsUploading(false);
+                            e.target.value = "";
+                          }
+                        }}
                       />
-                      <p className="bg-muted px-3 py-1.5 text-xs text-muted-foreground">
-                        Using this as your cover unless you add your own.
-                      </p>
-                    </div>
-                  )}
+                    </label>
+                    {uploadError && (
+                      <p className="text-xs text-destructive">{uploadError}</p>
+                    )}
+                  </div>
                 </Field>
 
                 <button
@@ -527,7 +861,7 @@ export default function Submit() {
                   ) : (
                     <Plus className="h-4 w-4" />
                   )}
-                  {showOptionalContact ? "Hide" : "Add"} more details (optional)
+                   {showOptionalContact ? t("submit.hideDetails") : t("submit.addDetails")}
                 </button>
 
                 <AnimatePresence>
@@ -542,7 +876,7 @@ export default function Submit() {
                       <div className="space-y-6 pt-2">
                         <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
                           <Field
-                            label="Phone"
+                             label={t("submit.fieldPhone")}
                             error={form.formState.errors.phone?.message}
                           >
                             <div className="relative">
@@ -555,7 +889,7 @@ export default function Submit() {
                             </div>
                           </Field>
                           <Field
-                            label="Website"
+                             label={t("submit.fieldWebsite")}
                             error={form.formState.errors.websiteUrl?.message}
                           >
                             <div className="relative">
@@ -568,7 +902,7 @@ export default function Submit() {
                             </div>
                           </Field>
                           <Field
-                            label="Instagram"
+                             label={t("submit.fieldInstagram")}
                             error={form.formState.errors.instagramHandle?.message}
                           >
                             <div className="relative">
@@ -581,7 +915,7 @@ export default function Submit() {
                             </div>
                           </Field>
                           <Field
-                            label="Facebook"
+                             label={t("submit.fieldFacebook")}
                             error={form.formState.errors.facebookUrl?.message}
                           >
                             <div className="relative">
@@ -595,14 +929,13 @@ export default function Submit() {
                           </Field>
                         </div>
                         <Field
-                          label="Markets you sell at"
-                          hint="Separate with commas — e.g. Wynwood Saturday Market, Coconut Grove Sunday Market."
-                          error={form.formState.errors.marketsText?.message}
+                          label={t("submit.fieldEstablished")}
+                          error={form.formState.errors.established?.message}
                         >
-                          <Textarea
-                            placeholder="Wynwood Saturday Market, Coconut Grove Sunday Market"
-                            className="min-h-[80px]"
-                            {...form.register("marketsText")}
+                          <Input
+                            type="number"
+                            placeholder={String(new Date().getFullYear())}
+                            {...form.register("established")}
                           />
                         </Field>
                       </div>
@@ -613,13 +946,13 @@ export default function Submit() {
                 {watchedName && (
                   <div className="rounded-lg border border-border bg-card p-4">
                     <p className="text-xs uppercase tracking-wider text-muted-foreground mb-1">
-                      Preview
+                      {t("submit.preview")}
                     </p>
                     <p className="font-serif text-xl font-bold text-foreground">
                       {watchedName}
                     </p>
                     <p className="text-sm text-muted-foreground">
-                      {watchedCategory} · {watchedLocation || "Florida"}
+                      {t(`wholesale.cat${watchedCategory}`)} · {watchedLocation || t("submit.defaultLocation")}
                     </p>
                   </div>
                 )}
@@ -630,8 +963,8 @@ export default function Submit() {
                 onNext={publish}
                 nextLabel={
                   startVerification.isPending
-                    ? "Sending code..."
-                    : "Verify email & publish"
+                    ? t("dashboard.sendingCode")
+                    : t("submit.publish")
                 }
                 nextIcon={
                   startVerification.isPending ? (
@@ -642,17 +975,8 @@ export default function Submit() {
                 }
                 disabled={startVerification.isPending}
               />
-            </motion.div>
-          )}
-
-          {step === 4 && verification && (
-            <motion.div
-              key="step-4"
-              initial={{ opacity: 0, y: 12 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -12 }}
-              transition={{ duration: 0.25 }}
-            >
+            </>)}
+            {step === 5 && verification && (<>
               <VerifyStep
                 email={verification.email}
                 devCode={verification.devCode}
@@ -661,7 +985,7 @@ export default function Submit() {
                 onSubmit={submitCode}
                 onResend={resendCode}
                 onBack={() => {
-                  setStep(3);
+                  setStep(4);
                   setVerification(null);
                   setCode("");
                   setVerifyError(null);
@@ -670,8 +994,8 @@ export default function Submit() {
                 isVerifying={verifyCode.isPending}
                 isResending={resendVerification.isPending}
               />
-            </motion.div>
-          )}
+            </>)}
+          </motion.div>
         </AnimatePresence>
       </div>
     </Layout>
@@ -679,7 +1003,14 @@ export default function Submit() {
 }
 
 function Stepper({ step }: { step: number }) {
-  const labels = ["Category", "Story", "Contact", "Verify"];
+  const { t } = useTranslation();
+  const labels = [
+    t("submit.stepCategory"),
+    t("submit.stepStory"),
+    t("submit.stepAvailability"),
+    t("submit.stepContact"),
+    t("submit.stepVerify"),
+  ];
   return (
     <div className="mt-8 flex items-center justify-center gap-2 sm:gap-4">
       {labels.map((label, i) => {
@@ -796,6 +1127,7 @@ function VerifyStep({
   isVerifying: boolean;
   isResending: boolean;
 }) {
+  const { t } = useTranslation();
   const inputRef = useRef<HTMLInputElement | null>(null);
 
   useEffect(() => {
@@ -816,15 +1148,13 @@ function VerifyStep({
           <Mail className="h-6 w-6" />
         </div>
         <p className="text-xs uppercase tracking-[0.2em] text-primary font-semibold mb-2">
-          Step 4 — Final check
+          {t("submit.stepFinalCheck")}
         </p>
         <h2 className="text-3xl md:text-4xl font-serif font-bold text-foreground mb-2">
-          Verify your email
+          {t("submit.verifyEmail")}
         </h2>
         <p className="text-muted-foreground max-w-lg mx-auto">
-          We just sent a 6-digit code to{" "}
-          <span className="font-semibold text-foreground">{email}</span>. Enter
-          it below to publish your business.
+          {t("submit.verifyEmailDescription", { email })}
         </p>
       </div>
 
@@ -847,7 +1177,7 @@ function VerifyStep({
               : "border-border focus:border-primary focus:ring-primary/30",
           )}
           placeholder="······"
-          aria-label="Six-digit verification code"
+          aria-label={t("dashboard.enterCode")}
         />
         {error && (
           <p className="mt-2 text-center text-sm text-destructive">{error}</p>
@@ -857,11 +1187,10 @@ function VerifyStep({
           <div className="mt-4 rounded-md border border-amber-300 bg-amber-50 px-4 py-3 text-sm text-amber-900">
             <p className="mb-1 flex items-center gap-2 font-semibold">
               <ShieldCheck className="h-4 w-4" />
-              Demo mode — no email service connected
+              {t("submit.demoModeTitle")}
             </p>
             <p>
-              Email sending isn't configured yet, so here's your code for
-              testing:{" "}
+              {t("submit.demoModeDescription")}{" "}
               <span className="font-mono text-base font-bold tracking-widest">
                 {devCode}
               </span>
@@ -870,14 +1199,14 @@ function VerifyStep({
         )}
 
         <div className="mt-6 text-center text-sm text-muted-foreground">
-          Didn't get it?{" "}
+          {t("submit.resendPrompt")}{" "}
           <button
             type="button"
             onClick={onResend}
             disabled={isResending}
             className="font-semibold text-primary hover:underline disabled:opacity-50"
           >
-            {isResending ? "Sending..." : "Send a new code"}
+            {isResending ? t("dashboard.sendingCode") : t("submit.resendCode")}
           </button>
         </div>
       </div>
@@ -885,7 +1214,7 @@ function VerifyStep({
       <div className="mt-10 flex items-center justify-between gap-3 border-t border-border pt-6">
         <Button type="button" variant="ghost" onClick={onBack}>
           <ArrowLeft className="mr-2 h-4 w-4" />
-          Use a different email
+          {t("submit.useDifferentEmail")}
         </Button>
         <Button
           type="button"
@@ -893,7 +1222,7 @@ function VerifyStep({
           disabled={code.length !== 6 || isVerifying}
           className="px-6"
         >
-          {isVerifying ? "Verifying..." : "Verify & publish"}
+          {isVerifying ? t("dashboard.verifying") : t("submit.publish")}
           {isVerifying ? (
             <Loader2 className="ml-2 h-4 w-4 animate-spin" />
           ) : (
@@ -918,11 +1247,12 @@ function NavRow({
   nextIcon?: React.ReactNode;
   disabled?: boolean;
 }) {
+  const { t } = useTranslation();
   return (
     <div className="mt-10 flex items-center justify-between gap-3 border-t border-border pt-6">
       <Button type="button" variant="ghost" onClick={onBack}>
         <ArrowLeft className="mr-2 h-4 w-4" />
-        Back
+        {t("submit.back")}
       </Button>
       <Button type="button" onClick={onNext} disabled={disabled} className="px-6">
         {nextLabel}

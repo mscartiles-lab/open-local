@@ -1,11 +1,13 @@
 import { Router, type IRouter, type Request, type Response } from "express";
 import { eq, and, gt } from "drizzle-orm";
 import { z } from "zod";
-import { db, usersTable, sessionsTable, signupVerificationsTable } from "@workspace/db";
-import { generateVerificationCode, sendVerificationEmail } from "../lib/email";
+import { db, usersTable, sessionsTable, signupVerificationsTable, vendorsTable } from "@workspace/db";
+import { generateVerificationCode, sendVerificationEmail, sendDirectEmail } from "../lib/email";
 import { logger } from "../lib/logger";
 import { emitEvent } from "../lib/webhooks";
-import { isReplitWorkspaceRequest } from "../lib/requireAdmin";
+import { isAdminEmail, isReplitWorkspaceRequest } from "../lib/requireAdmin";
+import { logIp, extractIp } from "../lib/ipLogger";
+import { getAppUrl } from "../lib/appUrl";
 
 const router: IRouter = Router();
 
@@ -58,13 +60,14 @@ function generateToken(): string {
 }
 
 function userPublic(user: typeof usersTable.$inferSelect) {
+  const effectiveRole = (user.role === "admin" || isAdminEmail(user.email)) ? "admin" : user.role;
   return {
     id: user.id,
     email: user.email,
     username: user.username,
     avatarSeed: user.avatarSeed,
     avatarStyle: user.avatarStyle,
-    role: user.role,
+    role: effectiveRole,
     zip: user.zip,
     state: user.state,
     tier: user.tier ?? null,
@@ -103,7 +106,11 @@ router.post("/auth/signup/start", async (req: Request, res: Response): Promise<v
     .from(usersTable)
     .where(eq(usersTable.email, normalizedEmail));
   if (existingUser) {
-    res.status(409).json({ error: "An account with this email already exists." });
+    // Return the same generic response as a successful signup to prevent
+    // email enumeration — callers cannot distinguish registered from new emails.
+    res.status(201).json({
+      message: "If this email is new to Open Local, a verification code has been sent.",
+    });
     return;
   }
 
@@ -140,6 +147,9 @@ router.post("/auth/signup/start", async (req: Request, res: Response): Promise<v
     return;
   }
 
+  const signupIp = extractIp(req);
+  req.log.info({ ip: signupIp, email: normalizedEmail, username }, "signup OTP generated");
+  void logIp(signupIp, "POST", "/auth/signup/start", "signup_attempt", { userAgent: req.headers["user-agent"] });
   const adminViewer = devFallback && isReplitWorkspaceRequest(req);
   res.status(201).json({
     verificationId: row!.id,
@@ -238,6 +248,7 @@ router.post("/auth/signup/verify", async (req: Request, res: Response): Promise<
       .update(signupVerificationsTable)
       .set({ attempts: existing.attempts + 1 })
       .where(eq(signupVerificationsTable.id, existing.id));
+    void logIp(extractIp(req), "POST", "/auth/signup/verify", "signup_failure", { userAgent: req.headers["user-agent"] });
     res.status(400).json({ error: "That code didn't match. Try again." });
     return;
   }
@@ -296,12 +307,178 @@ router.post("/auth/signup/verify", async (req: Request, res: Response): Promise<
     state: user!.state,
   });
 
+  // Send shopper welcome email directly via EmailJS. Vendors get their welcome
+  // via fireWelcome() after the vendor profile is created (not at user signup).
+  if (user!.role === "shopper") {
+    const appUrl = getAppUrl();
+    void sendDirectEmail({
+      to: user!.email,
+      toName: user!.username,
+      subject: "Welcome to Open Local!",
+      message: `Hi ${user!.username},\n\nWelcome to Open Local — the marketplace connecting neighbors with local producers, farms, bakeries, and makers.\n\nHere's what you can do:\n• Browse local vendors near you\n• Save your favorite producers\n• Grab fresh batch drops and market surplus before they sell out\n• Pre-order for upcoming market pickups\n\nExplore the marketplace:\n${appUrl}\n\nWe're so glad you're here.\n\nThe Open Local team`,
+    }).catch((err) => logger.error({ err }, "shopper welcome email failed"));
+  }
+
+  void logIp(extractIp(req), "POST", "/auth/signup/verify", "signup_success", { userId: user!.id, userAgent: req.headers["user-agent"] });
   res.status(201).json({
     user: userPublic(user!),
     sessionToken: token,
     sessionExpiresAt: sessionExpiresAt.toISOString(),
   });
 });
+
+// ─── Login (OTP for existing users) ──────────────────────────────────────────
+
+const LoginStartBody = z.object({
+  email: z.string().email(),
+});
+
+const LoginVerifyBody = z.object({
+  verificationId: z.number().int().positive(),
+  code: z.string().regex(/^\d{6}$/),
+});
+
+router.post("/auth/login/start", async (req: Request, res: Response): Promise<void> => {
+  const parsed = LoginStartBody.safeParse(req.body);
+  if (!parsed.success) {
+    res.status(400).json({ error: "Please enter a valid email address." });
+    return;
+  }
+
+  const normalizedEmail = parsed.data.email.toLowerCase();
+
+  const [user] = await db
+    .select()
+    .from(usersTable)
+    .where(eq(usersTable.email, normalizedEmail));
+
+  if (!user) {
+    // Return the same generic response as a successful login start to prevent
+    // email enumeration — callers cannot distinguish registered from unknown emails.
+    res.status(200).json({
+      message: "If an account exists for this email, a login code has been sent.",
+    });
+    return;
+  }
+
+  const code = generateVerificationCode();
+  const expiresAt = new Date(Date.now() + VERIFICATION_TTL_MS);
+
+  const [row] = await db
+    .insert(signupVerificationsTable)
+    .values({
+      email: normalizedEmail,
+      code,
+      payload: { type: "login", userId: user.id },
+      expiresAt,
+    })
+    .returning({ id: signupVerificationsTable.id });
+
+  let devFallback = false;
+  try {
+    const result = await sendVerificationEmail({
+      to: normalizedEmail,
+      code,
+      businessName: user.username,
+    });
+    devFallback = result.devFallback;
+  } catch (err) {
+    logger.error({ err }, "[login] failed to send verification email");
+    res.status(502).json({ error: "Couldn't send the login code. Please try again." });
+    return;
+  }
+
+  const loginIp = extractIp(req);
+  req.log.info({ ip: loginIp, email: normalizedEmail, userId: user.id }, "login OTP generated");
+  void logIp(loginIp, "POST", "/auth/login/start", "login_attempt", { userAgent: req.headers["user-agent"] });
+  const adminViewer = devFallback && isReplitWorkspaceRequest(req);
+  res.json({
+    verificationId: row!.id,
+    email: normalizedEmail,
+    expiresAt: expiresAt.toISOString(),
+    devFallback,
+    devCode: devFallback && adminViewer ? code : null,
+  });
+});
+
+router.post("/auth/login/verify", async (req: Request, res: Response): Promise<void> => {
+  const parsed = LoginVerifyBody.safeParse(req.body);
+  if (!parsed.success) {
+    res.status(400).json({ error: "Invalid request" });
+    return;
+  }
+
+  const [existing] = await db
+    .select()
+    .from(signupVerificationsTable)
+    .where(eq(signupVerificationsTable.id, parsed.data.verificationId));
+
+  if (!existing) {
+    res.status(404).json({ error: "Login request not found." });
+    return;
+  }
+  if (existing.consumed) {
+    res.status(400).json({ error: "This code has already been used." });
+    return;
+  }
+  if (new Date() > existing.expiresAt) {
+    res.status(400).json({ error: "This code has expired. Please request a new one." });
+    return;
+  }
+  if ((existing.attempts ?? 0) >= MAX_ATTEMPTS) {
+    res.status(400).json({ error: "Too many attempts. Please request a new code." });
+    return;
+  }
+
+  const pl = existing.payload as { type?: string; userId?: number };
+  if (pl?.type !== "login" || !pl?.userId) {
+    res.status(400).json({ error: "Invalid login request." });
+    return;
+  }
+
+  if (existing.code !== parsed.data.code) {
+    await db
+      .update(signupVerificationsTable)
+      .set({ attempts: (existing.attempts ?? 0) + 1 })
+      .where(eq(signupVerificationsTable.id, existing.id));
+    void logIp(extractIp(req), "POST", "/auth/login/verify", "login_failure", { userAgent: req.headers["user-agent"] });
+    res.status(400).json({ error: "Incorrect code. Please try again." });
+    return;
+  }
+
+  await db
+    .update(signupVerificationsTable)
+    .set({ consumed: true })
+    .where(eq(signupVerificationsTable.id, existing.id));
+
+  const [user] = await db
+    .select()
+    .from(usersTable)
+    .where(eq(usersTable.id, pl.userId));
+
+  if (!user) {
+    res.status(404).json({ error: "Account not found." });
+    return;
+  }
+
+  const token = generateToken();
+  const sessionExpiresAt = new Date(Date.now() + SESSION_TTL_MS);
+
+  await db.insert(sessionsTable).values({
+    userId: user.id,
+    token,
+    expiresAt: sessionExpiresAt,
+  });
+
+  void logIp(extractIp(req), "POST", "/auth/login/verify", "login_success", { userId: user.id, userAgent: req.headers["user-agent"] });
+  res.json({
+    user: userPublic(user),
+    sessionToken: token,
+    sessionExpiresAt: sessionExpiresAt.toISOString(),
+  });
+});
+
+// ─── Me / Logout ─────────────────────────────────────────────────────────────
 
 router.get("/auth/me", async (req: Request, res: Response): Promise<void> => {
   const authHeader = req.headers.authorization;
@@ -336,7 +513,17 @@ router.get("/auth/me", async (req: Request, res: Response): Promise<void> => {
     return;
   }
 
-  res.json({ user: userPublic(user) });
+  let vendorSlug: string | null = null;
+  if (user.role === "vendor") {
+    const [vendor] = await db
+      .select({ slug: vendorsTable.slug })
+      .from(vendorsTable)
+      .where(eq(vendorsTable.contactEmail, user.email))
+      .limit(1);
+    vendorSlug = vendor?.slug ?? null;
+  }
+
+  res.json({ user: { ...userPublic(user), vendorSlug } });
 });
 
 router.post("/auth/logout", async (req: Request, res: Response): Promise<void> => {

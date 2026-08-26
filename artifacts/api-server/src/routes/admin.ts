@@ -1,10 +1,11 @@
 import { Router, type IRouter } from "express";
-import { eq, desc } from "drizzle-orm";
+import { eq, desc, and, gte, sql } from "drizzle-orm";
 import { z } from "zod";
 import {
   db,
   usersTable,
   establishmentsTable,
+  ipLogsTable,
 } from "@workspace/db";
 import { requireAdmin } from "../lib/requireAdmin";
 
@@ -95,6 +96,47 @@ router.delete("/admin/establishments/:id", requireAdmin, async (req, res): Promi
     return;
   }
   res.json({ ok: true });
+});
+
+// ─── IP Logs ──────────────────────────────────────────────────────────────────
+
+router.get("/admin/ip-logs", requireAdmin, async (req, res): Promise<void> => {
+  const limit = Math.min(Number(req.query.limit ?? 200), 500);
+  const ip = typeof req.query.ip === "string" ? req.query.ip.trim() : undefined;
+  const eventType = typeof req.query.eventType === "string" ? req.query.eventType.trim() : undefined;
+  const since = typeof req.query.since === "string" ? new Date(req.query.since) : undefined;
+
+  const conditions = [];
+  if (ip) conditions.push(sql`${ipLogsTable.ip} = ${ip}`);
+  if (eventType) conditions.push(eq(ipLogsTable.eventType, eventType));
+  if (since && !isNaN(since.getTime())) conditions.push(gte(ipLogsTable.createdAt, since));
+
+  const rows = await db
+    .select()
+    .from(ipLogsTable)
+    .where(conditions.length ? and(...conditions) : undefined)
+    .orderBy(desc(ipLogsTable.createdAt))
+    .limit(limit);
+
+  res.json(rows);
+});
+
+router.get("/admin/ip-logs/summary", requireAdmin, async (_req, res): Promise<void> => {
+  const since24h = new Date(Date.now() - 24 * 60 * 60 * 1000);
+  const rows = await db
+    .select({
+      ip: ipLogsTable.ip,
+      count: sql<number>`count(*)::int`,
+      lastSeen: sql<string>`max(${ipLogsTable.createdAt})`,
+      authEvents: sql<number>`sum(case when ${ipLogsTable.eventType} like 'login%' or ${ipLogsTable.eventType} like 'signup%' then 1 else 0 end)::int`,
+    })
+    .from(ipLogsTable)
+    .where(gte(ipLogsTable.createdAt, since24h))
+    .groupBy(ipLogsTable.ip)
+    .orderBy(sql`count(*) desc`)
+    .limit(100);
+
+  res.json(rows);
 });
 
 export default router;

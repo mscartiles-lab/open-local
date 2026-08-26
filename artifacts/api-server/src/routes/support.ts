@@ -8,6 +8,7 @@ import {
   createSupportTicket,
   markSupportTicketResolved,
 } from "../lib/supportTickets";
+import { getAppUrl } from "../lib/appUrl";
 
 const router: IRouter = Router();
 
@@ -17,11 +18,7 @@ const createBody = z.object({
 });
 
 function feedbackUrlFor(req: Request, reference: string): string {
-  const domain = process.env.REPLIT_DOMAINS?.split(",")[0];
-  const baseUrl = domain
-    ? `https://${domain}`
-    : `${req.protocol}://${req.get("host")}`;
-  return `${baseUrl}/support/${reference}/feedback`;
+  return `${getAppUrl()}/support/${reference}/feedback`;
 }
 
 // Authed vendor (or shopper) submits a new ticket. Returns the ticket with

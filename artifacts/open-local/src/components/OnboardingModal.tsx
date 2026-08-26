@@ -11,6 +11,8 @@ import {
   InputOTPSlot,
 } from "@/components/ui/input-otp";
 import { useUser, type UserRole, type AvatarStyle, avatarUrl } from "@/context/UserContext";
+import { LogIn } from "lucide-react";
+import { useTranslation } from "react-i18next";
 
 const AVATAR_STYLES: { style: AvatarStyle; label: string }[] = [
   { style: "thumbs", label: "Thumbs" },
@@ -29,7 +31,7 @@ const AVATAR_STYLES: { style: AvatarStyle; label: string }[] = [
   { style: "croodles", label: "Doodle" },
 ];
 
-type Step = "role" | "profile" | "avatar" | "email" | "verify" | "welcome";
+type Step = "role" | "profile" | "avatar" | "email" | "verify" | "welcome" | "login-email" | "login-verify";
 
 interface FormState {
   role: UserRole | null;
@@ -48,7 +50,8 @@ const slideVariants = {
 };
 
 export default function OnboardingModal() {
-  const { showOnboarding, closeOnboarding, login } = useUser();
+  const { t } = useTranslation();
+  const { showOnboarding, loginMode, closeOnboarding, openOnboarding, login } = useUser();
   const [step, setStep] = useState<Step>("role");
   const [dir, setDir] = useState(1);
   const [form, setForm] = useState<FormState>({
@@ -102,7 +105,7 @@ export default function OnboardingModal() {
   const detectLocation = useCallback(() => {
     setLocationError(null);
     if (!navigator.geolocation) {
-      setLocationError("Geolocation is not supported by your browser.");
+      setLocationError(t("onboarding.errorGeolocationUnsupported"));
       return;
     }
     setLocationLoading(true);
@@ -119,10 +122,10 @@ export default function OnboardingModal() {
             setForm((f) => ({ ...f, zip }));
             setLocationError(null);
           } else {
-            setLocationError("Couldn't determine your zip code. Please type it in.");
+            setLocationError(t("onboarding.errorZipNotFound"));
           }
         } catch {
-          setLocationError("Couldn't look up your location. Please type it in.");
+          setLocationError(t("onboarding.errorLocationLookup"));
         } finally {
           setLocationLoading(false);
         }
@@ -130,19 +133,19 @@ export default function OnboardingModal() {
       (err) => {
         setLocationLoading(false);
         if (err.code === 1) {
-          setLocationError("Location access denied. Please type your zip code.");
+          setLocationError(t("onboarding.errorLocationDenied"));
         } else {
-          setLocationError("Couldn't get your location. Please type your zip code.");
+          setLocationError(t("onboarding.errorLocationFailed"));
         }
       },
       { timeout: 8000, maximumAge: 60000 }
     );
-  }, []);
+  }, [t]);
 
   const handleContinueToAvatar = () => {
-    if (form.username.length < 3) { setError("Username must be at least 3 characters."); return; }
-    if (usernameStatus === "taken") { setError("That username is already taken."); return; }
-    if (usernameStatus === "checking") { setError("Still checking username…"); return; }
+    if (form.username.length < 3) { setError(t("onboarding.errorUsernameShort")); return; }
+    if (usernameStatus === "taken") { setError(t("onboarding.errorUsernameTaken")); return; }
+    if (usernameStatus === "checking") { setError(t("onboarding.errorUsernameChecking")); return; }
     go("avatar");
   };
 
@@ -152,7 +155,7 @@ export default function OnboardingModal() {
 
   const handleSendCode = async () => {
     if (!form.email.match(/^[^\s@]+@[^\s@]+\.[^\s@]+$/)) {
-      setError("Please enter a valid email address.");
+      setError(t("onboarding.errorInvalidEmail"));
       return;
     }
     setLoading(true);
@@ -173,7 +176,7 @@ export default function OnboardingModal() {
       });
       const data = await r.json() as { verificationId?: number; devCode?: string | null; error?: string };
       if (!r.ok) {
-        setError((data as { error: string }).error || "Something went wrong.");
+        setError((data as { error: string }).error || t("onboarding.errorGeneric"));
         return;
       }
       setForm((f) => ({
@@ -183,14 +186,14 @@ export default function OnboardingModal() {
       }));
       go("verify");
     } catch {
-      setError("Network error. Please try again.");
+      setError(t("onboarding.errorNetwork"));
     } finally {
       setLoading(false);
     }
   };
 
   const handleVerify = async () => {
-    if (otp.length !== 6) { setError("Enter the 6-digit code."); return; }
+    if (otp.length !== 6) { setError(t("onboarding.errorEnterCode")); return; }
     setLoading(true);
     setError(null);
     try {
@@ -201,13 +204,13 @@ export default function OnboardingModal() {
       });
       const data = await r.json() as { user?: Record<string, unknown>; sessionToken?: string; error?: string };
       if (!r.ok) {
-        setError(data.error || "Verification failed.");
+        setError(data.error || t("onboarding.errorVerificationFailed"));
         return;
       }
       login(data.sessionToken!, data.user as never);
       go("welcome");
     } catch {
-      setError("Network error. Please try again.");
+      setError(t("onboarding.errorNetwork"));
     } finally {
       setLoading(false);
     }
@@ -224,11 +227,11 @@ export default function OnboardingModal() {
         body: JSON.stringify({ verificationId: form.verificationId }),
       });
       const data = await r.json() as { devCode?: string | null; error?: string };
-      if (!r.ok) { setError(data.error || "Couldn't resend."); return; }
+      if (!r.ok) { setError(data.error || t("onboarding.errorResendFailed")); return; }
       setOtp("");
       setForm((f) => ({ ...f, devCode: data.devCode ?? null }));
     } catch {
-      setError("Network error.");
+      setError(t("onboarding.errorNetwork"));
     } finally {
       setLoading(false);
     }
@@ -237,7 +240,14 @@ export default function OnboardingModal() {
   const avatarSeed = form.username || "openlocal";
 
   useEffect(() => {
-    if (!showOnboarding) {
+    if (showOnboarding) {
+      setStep(loginMode ? "login-email" : "role");
+      setOtp("");
+      setError(null);
+      setLocationError(null);
+      setLocationLoading(false);
+      setForm({ role: null, username: "", zip: "", avatarStyle: "thumbs", email: "", verificationId: null, devCode: null });
+    } else {
       setStep("role");
       setOtp("");
       setError(null);
@@ -245,13 +255,65 @@ export default function OnboardingModal() {
       setLocationLoading(false);
       setForm({ role: null, username: "", zip: "", avatarStyle: "thumbs", email: "", verificationId: null, devCode: null });
     }
-  }, [showOnboarding]);
+  }, [showOnboarding, loginMode]);
+
+  const handleLoginSendCode = async () => {
+    if (!form.email.match(/^[^\s@]+@[^\s@]+\.[^\s@]+$/)) {
+      setError(t("onboarding.errorInvalidEmail"));
+      return;
+    }
+    setLoading(true);
+    setError(null);
+    try {
+      const r = await fetch("/api/auth/login/start", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email: form.email }),
+      });
+      const data = await r.json() as { verificationId?: number; devCode?: string | null; error?: string };
+      if (!r.ok) {
+        setError(data.error || t("onboarding.errorGeneric"));
+        return;
+      }
+      setForm((f) => ({ ...f, verificationId: data.verificationId!, devCode: data.devCode ?? null }));
+      go("login-verify");
+    } catch {
+      setError(t("onboarding.errorNetwork"));
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleLoginVerify = async () => {
+    if (otp.length !== 6) { setError(t("onboarding.errorEnterCode")); return; }
+    setLoading(true);
+    setError(null);
+    try {
+      const r = await fetch("/api/auth/login/verify", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ verificationId: form.verificationId, code: otp }),
+      });
+      const data = await r.json() as { user?: Record<string, unknown>; sessionToken?: string; error?: string };
+      if (!r.ok) {
+        setError(data.error || t("onboarding.errorVerificationFailed"));
+        return;
+      }
+      login(data.sessionToken!, data.user as never);
+      closeOnboarding();
+    } catch {
+      setError(t("onboarding.errorNetwork"));
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const STEP_ORDER: Step[] = ["role", "profile", "avatar", "email", "verify", "welcome"];
   const stepIndex = STEP_ORDER.indexOf(step);
-  const progress = step === "welcome" ? 100 : (stepIndex / (STEP_ORDER.length - 1)) * 100;
+  const isLoginStep = step === "login-email" || step === "login-verify";
+  const progress = step === "welcome" ? 100 : isLoginStep ? 0 : (stepIndex / (STEP_ORDER.length - 1)) * 100;
 
-  const canGoBack = step !== "role" && step !== "welcome";
+  const canGoBack = !isLoginStep && step !== "role" && step !== "welcome";
   const backStep: Record<Step, Step> = {
     role: "role",
     profile: "role",
@@ -259,12 +321,14 @@ export default function OnboardingModal() {
     email: "avatar",
     verify: "email",
     welcome: "welcome",
+    "login-email": "login-email",
+    "login-verify": "login-email",
   };
 
   return (
     <Dialog open={showOnboarding} onOpenChange={(open) => { if (!open) closeOnboarding(); }}>
       <DialogContent className="sm:max-w-md p-0 gap-0 overflow-hidden border-0 shadow-2xl" aria-describedby={undefined}>
-        <DialogTitle className="sr-only">Join Open Local</DialogTitle>
+        <DialogTitle className="sr-only">{t("onboarding.joinTitle")}</DialogTitle>
 
         <div className="h-1 bg-muted/40 w-full">
           <motion.div
@@ -291,15 +355,15 @@ export default function OnboardingModal() {
                 <div className="px-8 pt-10 pb-8">
                   <div className="text-center mb-8">
                     <span className="inline-block font-serif text-4xl mb-3">🌿</span>
-                    <h2 className="font-serif font-bold text-2xl text-foreground mb-1">Welcome to Open Local</h2>
-                    <p className="text-muted-foreground text-sm">Local sourcing and experiences.</p>
+                    <h2 className="font-serif font-bold text-2xl text-foreground mb-1">{t("onboarding.welcomeTitle")}</h2>
+                    <p className="text-muted-foreground text-sm">{t("onboarding.welcomeSubtitle")}</p>
                   </div>
-                  <p className="text-center font-semibold text-sm text-foreground/70 mb-4 uppercase tracking-wide">I am a…</p>
+                  <p className="text-center font-semibold text-sm text-foreground/70 mb-4 uppercase tracking-wide">{t("onboarding.iAmA")}</p>
                   <div className="grid grid-cols-2 gap-4">
                     <RoleCard
                       icon={<ShoppingBag size={32} />}
-                      label="Shopper"
-                      desc="Discover local vendors & goods"
+                      label={t("onboarding.roleShopper")}
+                      desc={t("onboarding.roleShopperDesc")}
                       selected={form.role === "shopper"}
                       onClick={() => {
                         setForm((f) => ({ ...f, role: "shopper" }));
@@ -308,8 +372,8 @@ export default function OnboardingModal() {
                     />
                     <RoleCard
                       icon={<Store size={32} />}
-                      label="Vendor"
-                      desc="Sell my handmade & local products"
+                      label={t("onboarding.roleVendor")}
+                      desc={t("onboarding.roleVendorDesc")}
                       selected={form.role === "vendor"}
                       onClick={() => {
                         setForm((f) => ({ ...f, role: "vendor" }));
@@ -317,6 +381,96 @@ export default function OnboardingModal() {
                       }}
                     />
                   </div>
+                  <p className="text-center text-sm text-muted-foreground mt-6">
+                    {t("onboarding.alreadyHaveAccount")}{" "}
+                    <button
+                      onClick={() => go("login-email")}
+                      className="text-primary font-semibold hover:underline inline-flex items-center gap-1"
+                    >
+                      <LogIn size={13} /> {t("onboarding.signIn")}
+                    </button>
+                  </p>
+                </div>
+              </StepWrapper>
+            )}
+
+            {step === "login-email" && (
+              <StepWrapper key="login-email" custom={dir}>
+                <div className="px-8 pt-10 pb-8">
+                  <div className="text-center mb-6">
+                    <span className="inline-block font-serif text-4xl mb-3">👋</span>
+                    <h2 className="font-serif font-bold text-2xl text-foreground mb-1">{t("onboarding.welcomeBack")}</h2>
+                    <p className="text-muted-foreground text-sm">{t("onboarding.sendCodeHint")}</p>
+                  </div>
+                  <div>
+                    <Label htmlFor="login-email" className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">{t("onboarding.emailLabel")}</Label>
+                    <Input
+                      id="login-email"
+                      type="email"
+                      value={form.email}
+                      onChange={(e) => setForm((f) => ({ ...f, email: e.target.value }))}
+                      placeholder={t("onboarding.emailPlaceholder")}
+                      className="mt-1.5"
+                      autoFocus
+                      onKeyDown={(e) => { if (e.key === "Enter") handleLoginSendCode(); }}
+                    />
+                  </div>
+                  {error && <p className="text-red-500 text-sm mt-3">{error}</p>}
+                  <Button
+                    className="w-full mt-6 bg-primary text-primary-foreground hover:bg-primary/90"
+                    onClick={handleLoginSendCode}
+                    disabled={loading || !form.email}
+                  >
+                    {loading ? t("onboarding.sendingCode") : t("onboarding.sendLoginCode")} <ArrowRight size={16} className="ml-1" />
+                  </Button>
+                  <p className="text-center text-sm text-muted-foreground mt-4">
+                    {t("onboarding.noAccount")}{" "}
+                    <button
+                      onClick={() => { openOnboarding(); }}
+                      className="text-primary font-semibold hover:underline"
+                    >
+                      {t("onboarding.joinTitle")}
+                    </button>
+                  </p>
+                </div>
+              </StepWrapper>
+            )}
+
+            {step === "login-verify" && (
+              <StepWrapper key="login-verify" custom={dir}>
+                <div className="px-8 pt-10 pb-8">
+                  <h2 className="font-serif font-bold text-xl text-foreground mb-1">{t("onboarding.checkYourEmail")}</h2>
+                  <p className="text-muted-foreground text-sm mb-2">
+                    {t("onboarding.codeSentTo")} <strong className="text-foreground">{form.email}</strong>.
+                  </p>
+                  {form.devCode && (
+                    <div className="mb-4 bg-amber-50 border border-amber-200 rounded-lg px-3 py-2 text-xs text-amber-800">
+                      {t("onboarding.devModeCode")} <strong className="font-mono tracking-widest">{form.devCode}</strong>
+                    </div>
+                  )}
+                  <div className="flex justify-center my-6">
+                    <InputOTP maxLength={6} value={otp} onChange={setOtp} autoFocus>
+                      <InputOTPGroup>
+                        {[0, 1, 2, 3, 4, 5].map((i) => (
+                          <InputOTPSlot key={i} index={i} className="h-12 w-11 text-lg" />
+                        ))}
+                      </InputOTPGroup>
+                    </InputOTP>
+                  </div>
+                  {error && <p className="text-red-500 text-sm mb-3 text-center">{error}</p>}
+                  <Button
+                    className="w-full bg-primary text-primary-foreground hover:bg-primary/90"
+                    onClick={handleLoginVerify}
+                    disabled={loading || otp.length !== 6}
+                  >
+                    {loading ? t("onboarding.signingIn") : t("onboarding.signIn")} <ArrowRight size={16} className="ml-1" />
+                  </Button>
+                  <button
+                    onClick={() => { setOtp(""); setError(null); go("login-email", -1); }}
+                    className="flex items-center gap-1 mx-auto mt-4 text-xs text-muted-foreground hover:text-foreground transition-colors"
+                  >
+                    <RefreshCw size={12} /> {t("onboarding.useDifferentEmail")}
+                  </button>
                 </div>
               </StepWrapper>
             )}
@@ -324,34 +478,34 @@ export default function OnboardingModal() {
             {step === "profile" && (
               <StepWrapper key="profile" custom={dir}>
                 <div className="px-8 pt-10 pb-8">
-                  <h2 className="font-serif font-bold text-xl text-foreground mb-1">Create your profile</h2>
-                  <p className="text-muted-foreground text-sm mb-6">Choose a username the community will know you by.</p>
+                  <h2 className="font-serif font-bold text-xl text-foreground mb-1">{t("onboarding.createProfile")}</h2>
+                  <p className="text-muted-foreground text-sm mb-6">{t("onboarding.usernameHint")}</p>
                   <div className="space-y-4">
                     <div>
-                      <Label htmlFor="username" className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Username</Label>
+                      <Label htmlFor="username" className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">{t("onboarding.usernameLabel")}</Label>
                       <div className="relative mt-1.5">
                         <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground text-sm">@</span>
                         <Input
                           id="username"
                           value={form.username}
                           onChange={(e) => handleUsernameChange(e.target.value)}
-                          placeholder="your_name"
+                          placeholder={t("onboarding.usernamePlaceholder")}
                           className="pl-7"
                           maxLength={24}
                           autoFocus
                         />
                         <div className="absolute right-3 top-1/2 -translate-y-1/2 text-xs">
                           {usernameStatus === "checking" && <span className="text-muted-foreground">…</span>}
-                          {usernameStatus === "available" && <span className="text-emerald-600 font-medium">✓ available</span>}
-                          {usernameStatus === "taken" && <span className="text-red-500 font-medium">✗ taken</span>}
+                          {usernameStatus === "available" && <span className="text-emerald-600 font-medium">{t("onboarding.usernameAvailable")}</span>}
+                          {usernameStatus === "taken" && <span className="text-red-500 font-medium">{t("onboarding.usernameTaken")}</span>}
                         </div>
                       </div>
-                      <p className="text-xs text-muted-foreground mt-1">Letters, numbers, underscores. 3–24 characters.</p>
+                      <p className="text-xs text-muted-foreground mt-1">{t("onboarding.usernameRules")}</p>
                     </div>
                     <div>
                       <div className="flex items-center justify-between mb-1.5">
                         <Label htmlFor="zip" className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-                          Zip code <span className="font-normal normal-case">(optional)</span>
+                          {t("onboarding.zipCodeLabel")} <span className="font-normal normal-case">{t("onboarding.optional")}</span>
                         </Label>
                         <button
                           type="button"
@@ -360,8 +514,8 @@ export default function OnboardingModal() {
                           className="flex items-center gap-1 text-xs font-medium text-primary hover:text-primary/80 disabled:opacity-50 transition-colors"
                         >
                           {locationLoading
-                            ? <><Loader2 size={11} className="animate-spin" /> Detecting…</>
-                            : <><LocateFixed size={11} /> Use my location</>
+                            ? <><Loader2 size={11} className="animate-spin" /> {t("onboarding.detecting")}</>
+                            : <><LocateFixed size={11} /> {t("onboarding.useMyLocation")}</>
                           }
                         </button>
                       </div>
@@ -369,7 +523,7 @@ export default function OnboardingModal() {
                         id="zip"
                         value={form.zip}
                         onChange={(e) => setForm((f) => ({ ...f, zip: e.target.value }))}
-                        placeholder="e.g. 33101, 32801, 33602…"
+                        placeholder={t("onboarding.zipPlaceholder")}
                         maxLength={10}
                         inputMode="numeric"
                       />
@@ -384,7 +538,7 @@ export default function OnboardingModal() {
                     onClick={handleContinueToAvatar}
                     disabled={form.username.length < 3 || usernameStatus === "taken" || usernameStatus === "checking"}
                   >
-                    Continue <ArrowRight size={16} className="ml-1" />
+                    {t("onboarding.continue")} <ArrowRight size={16} className="ml-1" />
                   </Button>
                 </div>
               </StepWrapper>
@@ -393,8 +547,8 @@ export default function OnboardingModal() {
             {step === "avatar" && (
               <StepWrapper key="avatar" custom={dir}>
                 <div className="px-8 pt-10 pb-8">
-                  <h2 className="font-serif font-bold text-xl text-foreground mb-1">Choose your avatar</h2>
-                  <p className="text-muted-foreground text-sm mb-6">Pick the look that fits you best, @{form.username}.</p>
+                  <h2 className="font-serif font-bold text-xl text-foreground mb-1">{t("onboarding.chooseAvatar")}</h2>
+                  <p className="text-muted-foreground text-sm mb-6">{t("onboarding.chooseAvatarHint", { username: form.username })}</p>
                   <div className="grid grid-cols-3 sm:grid-cols-4 gap-3 max-h-[60vh] overflow-y-auto pr-1 -mr-1">
                     {AVATAR_STYLES.map(({ style, label }) => (
                       <button
@@ -422,7 +576,7 @@ export default function OnboardingModal() {
                     className="w-full mt-6 bg-primary text-primary-foreground hover:bg-primary/90"
                     onClick={handleContinueToEmail}
                   >
-                    Continue <ArrowRight size={16} className="ml-1" />
+                    {t("onboarding.continue")} <ArrowRight size={16} className="ml-1" />
                   </Button>
                 </div>
               </StepWrapper>
@@ -434,7 +588,7 @@ export default function OnboardingModal() {
                   <div className="flex items-center gap-4 mb-6">
                     <img
                       src={avatarUrl(avatarSeed, form.avatarStyle)}
-                      alt="Your avatar"
+                      alt={t("onboarding.yourAvatar")}
                       className="w-14 h-14 rounded-full bg-amber-50 border-2 border-primary/30 shrink-0"
                     />
                     <div>
@@ -442,16 +596,16 @@ export default function OnboardingModal() {
                       <p className="text-sm text-muted-foreground capitalize">{form.role}{form.zip ? ` · ${form.zip}` : ""}</p>
                     </div>
                   </div>
-                  <h2 className="font-serif font-bold text-xl text-foreground mb-1">Verify your email</h2>
-                  <p className="text-muted-foreground text-sm mb-6">We'll send a 6-digit code to confirm it's you.</p>
+                  <h2 className="font-serif font-bold text-xl text-foreground mb-1">{t("onboarding.verifyEmail")}</h2>
+                  <p className="text-muted-foreground text-sm mb-6">{t("onboarding.verifyEmailHint")}</p>
                   <div>
-                    <Label htmlFor="email" className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Email address</Label>
+                    <Label htmlFor="email" className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">{t("onboarding.emailLabel")}</Label>
                     <Input
                       id="email"
                       type="email"
                       value={form.email}
                       onChange={(e) => setForm((f) => ({ ...f, email: e.target.value }))}
-                      placeholder="you@example.com"
+                      placeholder={t("onboarding.emailPlaceholder")}
                       className="mt-1.5"
                       autoFocus
                       onKeyDown={(e) => { if (e.key === "Enter") handleSendCode(); }}
@@ -463,7 +617,7 @@ export default function OnboardingModal() {
                     onClick={handleSendCode}
                     disabled={loading || !form.email}
                   >
-                    {loading ? "Sending…" : "Send code"} <ArrowRight size={16} className="ml-1" />
+                    {loading ? t("onboarding.sendingCode") : t("onboarding.sendCode")} <ArrowRight size={16} className="ml-1" />
                   </Button>
                 </div>
               </StepWrapper>
@@ -472,13 +626,13 @@ export default function OnboardingModal() {
             {step === "verify" && (
               <StepWrapper key="verify" custom={dir}>
                 <div className="px-8 pt-10 pb-8">
-                  <h2 className="font-serif font-bold text-xl text-foreground mb-1">Enter your code</h2>
+                  <h2 className="font-serif font-bold text-xl text-foreground mb-1">{t("onboarding.enterCode")}</h2>
                   <p className="text-muted-foreground text-sm mb-2">
-                    We sent a 6-digit code to <strong className="text-foreground">{form.email}</strong>.
+                    {t("onboarding.codeSentTo")} <strong className="text-foreground">{form.email}</strong>.
                   </p>
                   {form.devCode && (
                     <div className="mb-4 bg-amber-50 border border-amber-200 rounded-lg px-3 py-2 text-xs text-amber-800">
-                      Dev mode — your code is <strong className="font-mono tracking-widest">{form.devCode}</strong>
+                      {t("onboarding.devModeCode")} <strong className="font-mono tracking-widest">{form.devCode}</strong>
                     </div>
                   )}
                   <div className="flex justify-center my-6">
@@ -501,14 +655,14 @@ export default function OnboardingModal() {
                     onClick={handleVerify}
                     disabled={loading || otp.length !== 6}
                   >
-                    {loading ? "Verifying…" : "Confirm"} <ArrowRight size={16} className="ml-1" />
+                    {loading ? t("onboarding.verifying") : t("onboarding.verifyCode")} <ArrowRight size={16} className="ml-1" />
                   </Button>
                   <button
                     onClick={handleResend}
                     disabled={loading}
                     className="flex items-center gap-1 mx-auto mt-4 text-xs text-muted-foreground hover:text-foreground transition-colors disabled:opacity-50"
                   >
-                    <RefreshCw size={12} /> Resend code
+                    <RefreshCw size={12} /> {t("onboarding.resendCode")}
                   </button>
                 </div>
               </StepWrapper>
@@ -526,7 +680,7 @@ export default function OnboardingModal() {
                     <div className="relative">
                       <img
                         src={avatarUrl(avatarSeed, form.avatarStyle)}
-                        alt="Your avatar"
+                        alt={t("onboarding.yourAvatar")}
                         className="w-24 h-24 rounded-full bg-amber-50 border-4 border-primary/30"
                       />
                       <span className="absolute -bottom-1 -right-1 bg-emerald-500 rounded-full p-0.5">
@@ -535,17 +689,17 @@ export default function OnboardingModal() {
                     </div>
                   </motion.div>
                   <h2 className="font-serif font-bold text-2xl text-foreground mb-1">
-                    You're in, @{form.username}!
+                    {t("onboarding.youreIn", { username: form.username })}
                   </h2>
                   <p className="text-muted-foreground text-sm mb-2">
-                    Welcome to Open Local{form.zip ? ` (${form.zip})` : ""}.<br />
-                    <span className="capitalize">{form.role === "shopper" ? "Start discovering local vendors near you." : "Ready to list your products?"}</span>
+                    {t("onboarding.welcomeToOpenLocal", { zip: form.zip ? ` (${form.zip})` : "" })}<br />
+                    <span className="capitalize">{form.role === "shopper" ? t("onboarding.welcomeShopperCta") : t("onboarding.welcomeVendorCta")}</span>
                   </p>
                   <Button
                     className="mt-6 bg-primary text-primary-foreground hover:bg-primary/90 px-8"
                     onClick={closeOnboarding}
                   >
-                    Start exploring
+                    {t("onboarding.getStarted")}
                   </Button>
                 </div>
               </StepWrapper>

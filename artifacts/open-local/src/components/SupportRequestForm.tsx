@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { useTranslation } from "react-i18next";
 import { Loader2, LifeBuoy, CheckCircle2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -14,6 +15,7 @@ interface CreatedTicket {
 }
 
 export default function SupportRequestForm() {
+  const { t } = useTranslation();
   const { toast } = useToast();
   const [subject, setSubject] = useState("");
   const [body, setBody] = useState("");
@@ -25,8 +27,8 @@ export default function SupportRequestForm() {
     if (subject.trim().length < 3 || body.trim().length < 10) {
       toast({
         variant: "destructive",
-        title: "Add a bit more detail",
-        description: "Tell us the subject and describe the issue (10+ characters).",
+        title: t("support.addMoreDetail"),
+        description: t("support.detailHint"),
       });
       return;
     }
@@ -36,8 +38,8 @@ export default function SupportRequestForm() {
       if (!token) {
         toast({
           variant: "destructive",
-          title: "Please sign in",
-          description: "You need to be signed in to submit a support request.",
+          title: t("support.signInRequired"),
+          description: t("support.signInHint"),
         });
         return;
       }
@@ -60,7 +62,7 @@ export default function SupportRequestForm() {
     } catch (err) {
       toast({
         variant: "destructive",
-        title: "Couldn't submit your request",
+        title: t("support.submitError"),
         description: (err as Error).message,
       });
     } finally {
@@ -75,12 +77,12 @@ export default function SupportRequestForm() {
           <CheckCircle2 className="mt-0.5 h-5 w-5 text-emerald-700" />
           <div className="flex-1">
             <h3 className="font-semibold text-emerald-900">
-              We've got your request
+              {t("support.requestReceived")}
             </h3>
             <p className="mt-1 text-sm text-emerald-800">
-              Your reference number is{" "}
+              {t("support.referenceNumber")}{" "}
               <span className="font-mono font-semibold">{submitted.reference}</span>.
-              You'll hear back from us within 24 hours — keep an eye on your inbox.
+              {" "}{t("support.hearBack")}
             </p>
             <Button
               variant="ghost"
@@ -88,7 +90,7 @@ export default function SupportRequestForm() {
               className="mt-3 text-emerald-900 hover:bg-emerald-100"
               onClick={() => setSubmitted(null)}
             >
-              Submit another request
+              {t("support.submitAnother")}
             </Button>
           </div>
         </div>
@@ -101,21 +103,20 @@ export default function SupportRequestForm() {
       <div className="flex items-start gap-3">
         <LifeBuoy className="mt-1 h-5 w-5 text-primary" />
         <div className="flex-1">
-          <h3 className="font-semibold">Get support</h3>
+          <h3 className="font-semibold">{t("support.getSupport")}</h3>
           <p className="text-sm text-muted-foreground">
-            Trouble with your storefront, payouts, or something else? Tell us and
-            we'll get back to you within 24 hours.
+            {t("support.description")}
           </p>
         </div>
       </div>
 
       <div>
         <label className="mb-1.5 block text-sm font-semibold" htmlFor="support-subject">
-          Subject
+          {t("support.subjectLabel")}
         </label>
         <Input
           id="support-subject"
-          placeholder="What do you need help with?"
+          placeholder={t("support.subjectPlaceholder")}
           value={subject}
           onChange={(e) => setSubject(e.target.value)}
           maxLength={200}
@@ -124,11 +125,11 @@ export default function SupportRequestForm() {
       </div>
       <div>
         <label className="mb-1.5 block text-sm font-semibold" htmlFor="support-body">
-          Details
+          {t("support.detailsLabel")}
         </label>
         <Textarea
           id="support-body"
-          placeholder="Tell us what's going on. The more detail, the faster we can help."
+          placeholder={t("support.bodyPlaceholder")}
           value={body}
           onChange={(e) => setBody(e.target.value)}
           rows={5}
@@ -139,7 +140,7 @@ export default function SupportRequestForm() {
       <div className="flex justify-end">
         <Button type="submit" disabled={submitting}>
           {submitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-          Submit request
+          {t("support.submitRequest")}
         </Button>
       </div>
     </form>

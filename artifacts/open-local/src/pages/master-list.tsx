@@ -26,6 +26,7 @@ import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Skeleton } from "@/components/ui/skeleton";
+import { useTranslation } from "react-i18next";
 
 type SortField = "name" | "vendorName" | "category" | "priceCents" | "createdAt";
 type SortDir = "asc" | "desc";
@@ -70,6 +71,7 @@ export default function MasterList() {
   const { data: products, isLoading: productsLoading } = useListProducts();
   const { data: vendors } = useListVendors();
   const { data: stats } = useGetMarketplaceStats();
+  const { t } = useTranslation();
 
   const [search, setSearch] = useState("");
   const [vendorFilter, setVendorFilter] = useState("all");
@@ -165,8 +167,8 @@ export default function MasterList() {
         <div className="container max-w-7xl mx-auto px-4 py-10">
           <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4">
             <div>
-              <p className="text-xs font-semibold uppercase tracking-widest text-primary mb-2">Admin · Catalog</p>
-              <h1 className="text-4xl font-serif font-bold text-foreground">Master Product List</h1>
+              <p className="text-xs font-semibold uppercase tracking-widest text-primary mb-2">{t("masterList.adminLabel")}</p>
+              <h1 className="text-4xl font-serif font-bold text-foreground">{t("masterList.title")}</h1>
               <p className="text-muted-foreground mt-1.5 font-sans">
                 Every product uploaded across all vendors — live, searchable, and exportable.
               </p>
@@ -183,10 +185,10 @@ export default function MasterList() {
           {/* Stats strip */}
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 mt-8">
             {[
-              { icon: Package, label: "Total Products", value: productsLoading ? "—" : (products?.length ?? 0) },
-              { icon: Store, label: "Vendors", value: vendorCount },
-              { icon: CircleCheck, label: "In Stock", value: productsLoading ? "—" : inStockCount },
-              { icon: Tag, label: "Categories", value: allCategories.length },
+              { icon: Package, label: t("masterList.totalProducts"), value: productsLoading ? "—" : (products?.length ?? 0) },
+              { icon: Store, label: t("masterList.vendors"), value: vendorCount },
+              { icon: CircleCheck, label: t("masterList.inStock"), value: productsLoading ? "—" : inStockCount },
+              { icon: Tag, label: t("masterList.categories"), value: allCategories.length },
             ].map(({ icon: Icon, label, value }) => (
               <div key={label} className="bg-background rounded-xl border border-border p-4 flex items-center gap-3">
                 <div className="w-9 h-9 rounded-full bg-primary/10 flex items-center justify-center flex-shrink-0">
@@ -208,7 +210,7 @@ export default function MasterList() {
           <div className="relative flex-1 min-w-0">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground pointer-events-none" />
             <Input
-              placeholder="Search by name, vendor, category…"
+              placeholder={t("masterList.searchPlaceholder")}
               value={search}
               onChange={(e) => setSearch(e.target.value)}
               className="pl-9"
@@ -220,7 +222,7 @@ export default function MasterList() {
               <SelectValue placeholder="Vendor" />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="all">All vendors</SelectItem>
+              <SelectItem value="all">{t("masterList.allVendors")}</SelectItem>
               {allVendors.map((v) => <SelectItem key={v} value={v}>{v}</SelectItem>)}
             </SelectContent>
           </Select>
@@ -230,7 +232,7 @@ export default function MasterList() {
               <SelectValue placeholder="Category" />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="all">All categories</SelectItem>
+              <SelectItem value="all">{t("common.allCategories")}</SelectItem>
               {allCategories.map((c) => <SelectItem key={c} value={c}>{c}</SelectItem>)}
             </SelectContent>
           </Select>
@@ -240,11 +242,11 @@ export default function MasterList() {
               <SelectValue placeholder="Type" />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="all">All types</SelectItem>
-              <SelectItem value="regular">Regular</SelectItem>
-              <SelectItem value="batch_drop">Batch Drop</SelectItem>
-              <SelectItem value="surplus">Surplus</SelectItem>
-              <SelectItem value="pre_order">Pre-Order</SelectItem>
+              <SelectItem value="all">{t("masterList.allTypes")}</SelectItem>
+              <SelectItem value="regular">{t("common.regular")}</SelectItem>
+              <SelectItem value="batch_drop">{t("common.batchDrop")}</SelectItem>
+              <SelectItem value="surplus">{t("common.surplus")}</SelectItem>
+              <SelectItem value="pre_order">{t("common.preOrder")}</SelectItem>
             </SelectContent>
           </Select>
           <Select value={stockFilter} onValueChange={setStockFilter}>
@@ -252,9 +254,9 @@ export default function MasterList() {
               <SelectValue placeholder="Stock" />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="all">All stock</SelectItem>
-              <SelectItem value="in">In stock</SelectItem>
-              <SelectItem value="out">Out of stock</SelectItem>
+              <SelectItem value="all">{t("masterList.allStock")}</SelectItem>
+              <SelectItem value="in">{t("masterList.inStock")}</SelectItem>
+              <SelectItem value="out">{t("masterList.outOfStock")}</SelectItem>
             </SelectContent>
           </Select>
         </div>
@@ -286,7 +288,7 @@ export default function MasterList() {
         ) : filtered.length === 0 ? (
           <div className="text-center py-20 text-muted-foreground">
             <Package className="w-10 h-10 mx-auto mb-3 opacity-30" />
-            <p className="font-medium">No products match your filters.</p>
+            <p className="font-medium">{t("masterList.noProductsMatch")}</p>
           </div>
         ) : (
           <div className="border border-border rounded-xl overflow-hidden">
@@ -296,33 +298,33 @@ export default function MasterList() {
                   <tr className="bg-muted border-b border-border">
                     <th className="px-4 py-3 text-left">
                       <SortButton field="name" active={sortField} dir={sortDir} onClick={handleSort}>
-                        Product
+                        {t("masterList.colName")}
                       </SortButton>
                     </th>
                     <th className="px-4 py-3 text-left">
                       <SortButton field="vendorName" active={sortField} dir={sortDir} onClick={handleSort}>
-                        Vendor
+                        {t("masterList.colVendor")}
                       </SortButton>
                     </th>
                     <th className="px-4 py-3 text-left">
                       <SortButton field="category" active={sortField} dir={sortDir} onClick={handleSort}>
-                        Category
+                        {t("masterList.colCategory")}
                       </SortButton>
                     </th>
                     <th className="px-4 py-3 text-left">
                       <SortButton field="priceCents" active={sortField} dir={sortDir} onClick={handleSort}>
-                        Price
+                        {t("masterList.colPrice")}
                       </SortButton>
                     </th>
                     <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-                      Type
+                      {t("masterList.colType")}
                     </th>
                     <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-                      Stock
+                      {t("masterList.colInStock")}
                     </th>
                     <th className="px-4 py-3 text-left">
                       <SortButton field="createdAt" active={sortField} dir={sortDir} onClick={handleSort}>
-                        Added
+                        {t("masterList.colAdded")}
                       </SortButton>
                     </th>
                   </tr>
@@ -384,11 +386,11 @@ export default function MasterList() {
                         <td className="px-4 py-3">
                           {product.inStock ? (
                             <span className="inline-flex items-center gap-1 text-xs font-medium text-emerald-700">
-                              <CircleCheck className="w-3.5 h-3.5" /> In stock
+                              <CircleCheck className="w-3.5 h-3.5" /> {t("masterList.inStock")}
                             </span>
                           ) : (
                             <span className="inline-flex items-center gap-1 text-xs font-medium text-muted-foreground">
-                              <CircleX className="w-3.5 h-3.5" /> Out of stock
+                              <CircleX className="w-3.5 h-3.5" /> {t("masterList.outOfStock")}
                             </span>
                           )}
                         </td>
