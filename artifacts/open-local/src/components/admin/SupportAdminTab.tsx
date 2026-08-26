@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { Loader2, AlertTriangle, CheckCircle2 } from "lucide-react";
+import { useTranslation } from "react-i18next";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import {
@@ -54,6 +55,7 @@ function hoursOpen(createdAt: string): number {
 }
 
 export default function SupportAdminTab() {
+  const { t } = useTranslation();
   const { toast } = useToast();
   const [rows, setRows] = useState<AdminSupportTicket[] | null>(null);
   const [loading, setLoading] = useState(true);
@@ -67,7 +69,7 @@ export default function SupportAdminTab() {
     try {
       const r = await fetch("/api/admin/support/tickets", { headers: authHeaders() });
       if (r.status === 401 || r.status === 403) {
-        setError("Admin access required. Make sure you're signed in with an admin account.");
+        setError(t("admin.adminAccessRequired"));
         setRows(null);
         return;
       }
@@ -95,17 +97,17 @@ export default function SupportAdminTab() {
       if (!r.ok) throw new Error(`HTTP ${r.status}`);
       const data = (await r.json()) as { webhookFired?: boolean };
       toast({
-        title: `Marked ${status.replace("_", " ")}`,
+        title: t("admin.supportMarked", { status: status.replace("_", " ") }),
         description:
           status === "resolved" && data.webhookFired
-            ? "Resolved check-in webhook fired to n8n."
+            ? t("admin.supportWebhookFired")
             : undefined,
       });
       await reload();
     } catch (e) {
       toast({
         variant: "destructive",
-        title: "Failed to update",
+        title: t("admin.supportUpdateFailed"),
         description: (e as Error).message,
       });
     } finally {
@@ -133,35 +135,35 @@ export default function SupportAdminTab() {
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead>Reference</TableHead>
-                  <TableHead>From</TableHead>
-                  <TableHead>Subject</TableHead>
-                  <TableHead>Age</TableHead>
-                  <TableHead>Status</TableHead>
-                  <TableHead className="text-right">Actions</TableHead>
+                  <TableHead>{t("admin.supportColReference")}</TableHead>
+                  <TableHead>{t("admin.supportColFrom")}</TableHead>
+                  <TableHead>{t("admin.supportColSubject")}</TableHead>
+                  <TableHead>{t("admin.supportColAge")}</TableHead>
+                  <TableHead>{t("admin.supportColStatus")}</TableHead>
+                  <TableHead className="text-right">{t("admin.colActions")}</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {rows.map((t) => {
-                  const expanded = openBodyId === t.id;
-                  const age = hoursOpen(t.createdAt);
+                {rows.map((ticket) => {
+                  const expanded = openBodyId === ticket.id;
+                  const age = hoursOpen(ticket.createdAt);
                   return (
                     <>
-                      <TableRow key={t.id}>
+                      <TableRow key={ticket.id}>
                         <TableCell className="font-mono text-xs">
-                          {t.reference}
-                          {t.flaggedStale && (
+                          {ticket.reference}
+                          {ticket.flaggedStale && (
                             <span className="ml-1 inline-flex items-center gap-1 text-amber-700">
                               <AlertTriangle className="w-3 h-3" />
-                              <span className="text-[10px] uppercase">stale</span>
+                              <span className="text-[10px] uppercase">{t("admin.supportStale")}</span>
                             </span>
                           )}
                         </TableCell>
                         <TableCell className="text-sm">
                           <div className="flex flex-col">
-                            <span className="font-medium">{t.username ?? "—"}</span>
+                            <span className="font-medium">{ticket.username ?? "—"}</span>
                             <span className="text-xs text-muted-foreground font-mono">
-                              {t.email ?? "—"}
+                              {ticket.email ?? "—"}
                             </span>
                           </div>
                         </TableCell>
@@ -169,55 +171,55 @@ export default function SupportAdminTab() {
                           <button
                             type="button"
                             className="text-left text-sm hover:underline"
-                            onClick={() => setOpenBodyId(expanded ? null : t.id)}
+                            onClick={() => setOpenBodyId(expanded ? null : ticket.id)}
                           >
-                            <span className="line-clamp-2">{t.subject}</span>
+                            <span className="line-clamp-2">{ticket.subject}</span>
                           </button>
                         </TableCell>
                         <TableCell className="text-sm text-muted-foreground">
-                          {t.status === "resolved" && t.resolvedAt
-                            ? `Resolved ${new Date(t.resolvedAt).toLocaleDateString()}`
+                          {ticket.status === "resolved" && ticket.resolvedAt
+                            ? t("admin.supportResolved", { date: new Date(ticket.resolvedAt).toLocaleDateString() })
                             : `${age}h`}
                         </TableCell>
                         <TableCell>
                           <Select
-                            value={t.status}
+                            value={ticket.status}
                             onValueChange={(v) =>
-                              setStatus(t.id, v as AdminSupportTicket["status"])
+                              setStatus(ticket.id, v as AdminSupportTicket["status"])
                             }
-                            disabled={busyId === t.id}
+                            disabled={busyId === ticket.id}
                           >
                             <SelectTrigger
-                              className={`w-36 h-8 capitalize ${STATUS_BADGES[t.status] ?? ""}`}
+                              className={`w-36 h-8 capitalize ${STATUS_BADGES[ticket.status] ?? ""}`}
                             >
                               <SelectValue />
                             </SelectTrigger>
                             <SelectContent>
-                              <SelectItem value="open">Open</SelectItem>
-                              <SelectItem value="in_progress">In progress</SelectItem>
-                              <SelectItem value="resolved">Resolved</SelectItem>
+                              <SelectItem value="open">{t("admin.supportStatusOpen")}</SelectItem>
+                              <SelectItem value="in_progress">{t("admin.supportStatusInProgress")}</SelectItem>
+                              <SelectItem value="resolved">{t("admin.supportStatusResolved")}</SelectItem>
                             </SelectContent>
                           </Select>
                         </TableCell>
                         <TableCell className="text-right">
-                          {t.status !== "resolved" && (
+                          {ticket.status !== "resolved" && (
                             <Button
                               variant="ghost"
                               size="sm"
-                              onClick={() => setStatus(t.id, "resolved")}
-                              disabled={busyId === t.id}
+                              onClick={() => setStatus(ticket.id, "resolved")}
+                              disabled={busyId === ticket.id}
                             >
                               <CheckCircle2 className="w-4 h-4 mr-1" />
-                              Mark resolved
+                              {t("admin.supportMarkResolved")}
                             </Button>
                           )}
                         </TableCell>
                       </TableRow>
                       {expanded && (
-                        <TableRow key={`${t.id}-body`}>
+                        <TableRow key={`${ticket.id}-body`}>
                           <TableCell colSpan={6} className="bg-muted/40">
                             <p className="whitespace-pre-wrap text-sm text-muted-foreground py-2">
-                              {t.body}
+                              {ticket.body}
                             </p>
                           </TableCell>
                         </TableRow>
@@ -230,7 +232,7 @@ export default function SupportAdminTab() {
           </div>
         ) : (
           <div className="text-center py-12 text-muted-foreground">
-            No support tickets yet.
+            {t("admin.noSupportTickets")}
           </div>
         )}
       </CardContent>

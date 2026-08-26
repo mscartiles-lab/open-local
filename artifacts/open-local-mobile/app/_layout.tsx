@@ -6,7 +6,9 @@ import {
   useFonts,
 } from "@expo-google-fonts/dm-sans";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { setBaseUrl } from "@/lib/api-client";
+import { setBaseUrl, setAuthTokenGetter } from "@/lib/api-client";
+import AsyncStorage from "@react-native-async-storage/async-storage";
+import "@/i18n";
 import { Stack } from "expo-router";
 import * as SplashScreen from "expo-splash-screen";
 import * as SystemUI from "expo-system-ui";
@@ -22,6 +24,10 @@ import { AuthProvider } from "@/context/AuthContext";
 import { ThemeProvider, useTheme } from "@/context/ThemeContext";
 
 setBaseUrl(`https://${process.env.EXPO_PUBLIC_DOMAIN}`);
+// Supply the session token to all generated API client hooks globally so
+// authenticated endpoints (e.g. PATCH /vendors/:id) receive an Authorization
+// header without each call site needing to configure it manually.
+setAuthTokenGetter(() => AsyncStorage.getItem("ol_session"));
 
 SplashScreen.preventAutoHideAsync();
 
@@ -40,8 +46,32 @@ function RootLayoutNav() {
         options={{ headerShown: false, presentation: "modal" }}
       />
       <Stack.Screen
+        name="(auth)/login"
+        options={{ headerShown: false, presentation: "modal" }}
+      />
+      <Stack.Screen
         name="settings"
         options={{ headerShown: false, presentation: "modal" }}
+      />
+      <Stack.Screen
+        name="about"
+        options={{ headerShown: false, presentation: "card" }}
+      />
+      <Stack.Screen
+        name="compliance"
+        options={{ headerShown: false, presentation: "card" }}
+      />
+      <Stack.Screen
+        name="language-picker"
+        options={{ headerShown: false, presentation: "card" }}
+      />
+      <Stack.Screen
+        name="messages/index"
+        options={{ headerShown: false, presentation: "card" }}
+      />
+      <Stack.Screen
+        name="messages/[id]"
+        options={{ headerShown: false, presentation: "card" }}
       />
     </Stack>
   );

@@ -1,19 +1,56 @@
 import { useParams } from "wouter";
 import { Link } from "wouter";
 import { motion } from "framer-motion";
-import { Store, Tag, MapPin, Heart } from "lucide-react";
+import { Store, Tag, MapPin, Heart, ShoppingCart, Loader2 } from "lucide-react";
 import Layout from "@/components/layout/Layout";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Card, CardContent } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
 import { useGetProduct, useGetVendor, useListVendorProducts, getGetProductQueryKey, getGetVendorQueryKey, getListVendorProductsQueryKey } from "@workspace/api-client-react";
 import NotFound from "./not-found";
 import { useFavorites } from "@/hooks/use-favorites";
+import { useUser } from "@/context/UserContext";
+import { useToast } from "@/hooks/use-toast";
+import { useState } from "react";
+import { useTranslation } from "react-i18next";
+
+const SESSION_KEY = "ol_session";
+function authHeaders(): Record<string, string> {
+  const token = localStorage.getItem(SESSION_KEY);
+  return token ? { Authorization: `Bearer ${token}` } : {};
+}
 
 export default function ProductDetail() {
   const params = useParams();
   const id = Number(params.id);
+  const { user, openOnboarding } = useUser();
+  const { toast } = useToast();
+  const [buyBusy, setBuyBusy] = useState(false);
+  const { t } = useTranslation();
 
   const { isFavoriteProduct, toggleProduct } = useFavorites();
+
+  const handleBuy = async () => {
+    if (!user) {
+      openOnboarding();
+      toast({ title: t("productDetail.signInPurchase"), description: t("productDetail.createAccountDescription") });
+      return;
+    }
+    setBuyBusy(true);
+    try {
+      const r = await fetch("/api/orders/checkout", {
+        method: "POST",
+        headers: { "Content-Type": "application/json", ...authHeaders() },
+        body: JSON.stringify({ productId: id, quantity: 1 }),
+      });
+      const data = await r.json();
+      if (!r.ok) throw new Error(data.error ?? `HTTP ${r.status}`);
+      window.location.href = data.url;
+    } catch (e) {
+      toast({ variant: "destructive", title: t("productDetail.checkoutError"), description: (e as Error).message });
+      setBuyBusy(false);
+    }
+  };
 
   const { data: product, isLoading: productLoading, error: productError } = useGetProduct(id, {
     query: {
@@ -73,22 +110,22 @@ export default function ProductDetail() {
                 )}
                 {product.listingType === "batch_drop" && (
                   <div className="absolute top-4 left-4 bg-amber-100 text-amber-900 text-sm px-3 py-1.5 uppercase tracking-wider font-bold border border-amber-200">
-                    Fresh Batch
+                    {t("common.freshBatch")}
                   </div>
                 )}
                 {product.listingType === "surplus" && (
                   <div className="absolute top-4 left-4 bg-amber-100 text-amber-900 text-sm px-3 py-1.5 uppercase tracking-wider font-bold border border-amber-200">
-                    Market Surplus
+                    {t("common.marketSurplus")}
                   </div>
                 )}
                 {product.listingType === "pre_order" && (
                   <div className="absolute top-4 left-4 bg-blue-50 text-blue-900 text-sm px-3 py-1.5 uppercase tracking-wider font-bold border border-blue-200">
-                    Pre-Order
+                    {t("common.preOrder")}
                   </div>
                 )}
                 {!product.inStock && (
                   <div className="absolute bottom-4 right-4 bg-background/90 text-foreground px-4 py-2 uppercase tracking-widest font-bold text-sm">
-                    Sold Out
+                    {t("common.soldOut")}
                   </div>
                 )}
               </div>
@@ -115,22 +152,41 @@ export default function ProductDetail() {
 
                 {product.availableUntil && (
                   <div className="text-sm font-bold text-foreground bg-muted p-3 mb-6 flex items-center gap-2 border border-border">
-                    Available until {new Date(product.availableUntil).toLocaleDateString()}
+                    {t("productDetail.availableUntil", { date: new Date(product.availableUntil).toLocaleDateString() })}
                   </div>
                 )}
 
                 {product.pickupNote && (
                   <div className="text-sm text-foreground bg-primary/5 p-4 mb-6 border border-primary/20">
-                    <strong>Pickup note: </strong>{product.pickupNote}
+                    <strong>{t("productDetail.pickupNote")}</strong>{product.pickupNote}
                   </div>
                 )}
 
-                <div className="prose prose-sm md:prose-base dark:prose-invert max-w-none text-foreground/80 font-sans leading-relaxed mb-12">
+                <div className="prose prose-sm md:prose-base dark:prose-invert max-w-none text-foreground/80 font-sans leading-relaxed mb-8">
                   <p>{product.description}</p>
                 </div>
 
+                {/* Buy button */}
+                {product.inStock ? (
+                  <div className="mb-8 space-y-2">
+                    <Button size="lg" className="w-full gap-2 text-base" onClick={handleBuy} disabled={buyBusy}>
+                      {buyBusy
+                        ? <><Loader2 className="w-5 h-5 animate-spin" /> {t("productDetail.redirecting")}</>
+                        : <><ShoppingCart className="w-5 h-5" />
+                          {product.listingType === "pre_order" ? t("productDetail.reserveAndPay") : t("productDetail.buyNow")} — ${(product.priceCents / 100).toFixed(2)}
+                        </>
+                      }
+                    </Button>
+                    <p className="text-xs text-center text-muted-foreground">{t("productDetail.secureCheckout")}</p>
+                  </div>
+                ) : (
+                  <div className="mb-8 rounded border border-border bg-muted px-4 py-3 text-sm text-muted-foreground text-center">
+                    {t("productDetail.outOfStock")}
+                  </div>
+                )}
+
                 <div className="bg-muted/30 border border-border p-6 mt-auto">
-                  <h3 className="text-sm font-bold uppercase tracking-widest mb-4">About the Producer</h3>
+                  <h3 className="text-sm font-bold uppercase tracking-widest mb-4">{t("productDetail.aboutProducer")}</h3>
                   {vendorLoading ? (
                     <Skeleton className="w-full h-16" />
                   ) : vendor ? (
@@ -152,7 +208,7 @@ export default function ProductDetail() {
             {moreProducts && moreProducts.length > 1 && (
               <div className="pt-12 border-t border-border">
                 <h2 className="text-2xl font-serif font-bold text-foreground mb-8">
-                  More from {product.vendorName}
+                  {t("productDetail.moreFrom", { vendor: product.vendorName })}
                 </h2>
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
                   {moreProducts.filter(p => p.id !== product.id).slice(0, 4).map((p, i) => (
@@ -181,17 +237,17 @@ export default function ProductDetail() {
                             )}
                             {p.listingType === "batch_drop" && (
                               <div className="absolute top-2 left-2 bg-amber-100 text-amber-900 text-[10px] px-2 py-1 uppercase tracking-wider font-bold border border-amber-200">
-                                Fresh Batch
+                                {t("common.freshBatch")}
                               </div>
                             )}
                             {p.listingType === "surplus" && (
                               <div className="absolute top-2 left-2 bg-amber-100 text-amber-900 text-[10px] px-2 py-1 uppercase tracking-wider font-bold border border-amber-200">
-                                Market Surplus
+                                {t("common.marketSurplus")}
                               </div>
                             )}
                             {p.listingType === "pre_order" && (
                               <div className="absolute top-2 left-2 bg-blue-50 text-blue-900 text-[10px] px-2 py-1 uppercase tracking-wider font-bold border border-blue-200">
-                                Pre-Order
+                                {t("common.preOrder")}
                               </div>
                             )}
                           </div>

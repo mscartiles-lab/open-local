@@ -2,6 +2,7 @@ import AsyncStorage from "@react-native-async-storage/async-storage";
 import { useRouter } from "expo-router";
 import { Feather } from "@expo/vector-icons";
 import React, { useCallback, useEffect, useState } from "react";
+import { useTranslation } from "react-i18next";
 import {
   FlatList,
   Platform,
@@ -50,6 +51,7 @@ export async function isFavorite(vendorId: number): Promise<boolean> {
 }
 
 export default function FavoritesScreen() {
+  const { t } = useTranslation();
   const colors = useColors();
   const insets = useSafeAreaInsets();
   const router = useRouter();
@@ -106,11 +108,11 @@ export default function FavoritesScreen() {
         ListHeaderComponent={
           <View>
             <View style={s.headerWrap}>
-              <Text style={s.title}>Saved</Text>
+              <Text style={s.title}>{t("favorites.title")}</Text>
               <Text style={s.subtitle}>
                 {favorites.length > 0
-                  ? `${favorites.length} vendor${favorites.length !== 1 ? "s" : ""}`
-                  : "Your saved vendors appear here"}
+                  ? t("favorites.vendorCount", { count: favorites.length })
+                  : t("favorites.noSavedVendors")}
               </Text>
             </View>
             <View style={s.mapWrap}>
@@ -120,8 +122,8 @@ export default function FavoritesScreen() {
                 height={180}
                 emptyHint={
                   favorites.length > 0
-                    ? "Your saved vendors aren't mapped yet"
-                    : "Save vendors to see them here"
+                    ? t("favorites.savedNotMapped")
+                    : t("favorites.saveToSeeHere")
                 }
               />
             </View>
@@ -130,9 +132,9 @@ export default function FavoritesScreen() {
         ListEmptyComponent={
           <View style={s.empty}>
             <Feather name="heart" size={40} color={colors.mutedForeground} />
-            <Text style={s.emptyTitle}>No saved vendors yet</Text>
+            <Text style={s.emptyTitle}>{t("favorites.noSavedVendors")}</Text>
             <Text style={s.emptySubtitle}>
-              Tap the heart on any vendor page to save them here.
+              {t("favorites.tapTheHeart")}
             </Text>
           </View>
         }

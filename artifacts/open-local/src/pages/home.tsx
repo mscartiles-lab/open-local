@@ -1,4 +1,5 @@
 import { useEffect } from "react";
+import { useTranslation } from "react-i18next";
 import { useListFeaturedVendors, useListFeaturedProducts, useGetMarketplaceStats, useListCategories, useListLocations, useGetLocalNowFeed } from "@workspace/api-client-react";
 import { Link } from "wouter";
 import { motion } from "framer-motion";
@@ -11,6 +12,7 @@ import HeroMap from "@/components/HeroMap";
 import { useUser } from "@/context/UserContext";
 
 export default function Home() {
+  const { t } = useTranslation();
   const { data: stats, isLoading: statsLoading } = useGetMarketplaceStats();
   const { data: featuredVendors, isLoading: vendorsLoading } = useListFeaturedVendors();
   const { data: featuredProducts, isLoading: productsLoading } = useListFeaturedProducts();
@@ -21,11 +23,11 @@ export default function Home() {
   useEffect(() => {
     if (userLoading || user) return;
     if (sessionStorage.getItem("ol:onboardingShown") === "1") return;
-    const t = setTimeout(() => {
+    const timer = setTimeout(() => {
       sessionStorage.setItem("ol:onboardingShown", "1");
       openOnboarding();
     }, 600);
-    return () => clearTimeout(t);
+    return () => clearTimeout(timer);
   }, [user, userLoading, openOnboarding]);
 
   return (
@@ -45,19 +47,19 @@ export default function Home() {
               <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                 <div className="flex flex-col items-center text-center bg-card border border-border rounded-2xl py-6 px-4 shadow-sm">
                   <span className="text-5xl font-serif font-bold text-primary">{stats.vendorCount}</span>
-                  <span className="text-sm text-muted-foreground font-semibold mt-2">Florida Vendors</span>
+                  <span className="text-sm text-muted-foreground font-semibold mt-2">{t("home.floridaVendors")}</span>
                 </div>
                 <div className="flex flex-col items-center text-center bg-card border border-border rounded-2xl py-6 px-4 shadow-sm">
                   <span className="text-5xl font-serif font-bold text-primary">{stats.productCount}</span>
-                  <span className="text-sm text-muted-foreground font-semibold mt-2">Unique Products</span>
+                  <span className="text-sm text-muted-foreground font-semibold mt-2">{t("home.uniqueProducts")}</span>
                 </div>
                 <div className="flex flex-col items-center text-center bg-card border border-border rounded-2xl py-6 px-4 shadow-sm">
                   <span className="text-5xl font-serif font-bold text-primary">{stats.locationCount}</span>
-                  <span className="text-sm text-muted-foreground font-semibold mt-2">Local Regions</span>
+                  <span className="text-sm text-muted-foreground font-semibold mt-2">{t("home.localRegions")}</span>
                 </div>
                 <div className="flex flex-col items-center text-center bg-card border border-border rounded-2xl py-6 px-4 shadow-sm">
                   <span className="text-5xl font-serif font-bold text-primary">{stats.categoryCount}</span>
-                  <span className="text-sm text-muted-foreground font-semibold mt-2">Craft Categories</span>
+                  <span className="text-sm text-muted-foreground font-semibold mt-2">{t("home.craftCategories")}</span>
                 </div>
               </div>
             ) : null}
@@ -68,8 +70,8 @@ export default function Home() {
         <section className="py-16 bg-card border-b border-border">
           <div className="container max-w-6xl mx-auto px-4">
             <div className="mb-10">
-              <h2 className="text-4xl font-serif font-bold text-foreground">Local Near Me Now</h2>
-              <p className="text-lg text-muted-foreground mt-2">Fresh drops, market surplus, and pre-orders.</p>
+              <h2 className="text-4xl font-serif font-bold text-foreground">{t("home.heroTitle")}</h2>
+              <p className="text-lg text-muted-foreground mt-2">{t("home.heroSubtitle")}</p>
             </div>
 
             {localNowFeedLoading ? (
@@ -89,9 +91,9 @@ export default function Home() {
                 <div>
                   <div className="flex items-center justify-between mb-6">
                     <h3 className="text-2xl font-serif font-bold flex items-center gap-2">
-                      <Flame className="w-6 h-6 text-amber-500" /> Fresh Batches Today
+                      <Flame className="w-6 h-6 text-amber-500" /> {t("home.freshBatchesTitle")}
                     </h3>
-                    <Link href="/products?listingType=batch_drop" className="flex items-center gap-1.5 text-sm font-semibold bg-secondary text-foreground hover:bg-primary hover:text-primary-foreground px-4 py-2 rounded-xl transition-all">View all <ArrowRight className="w-3.5 h-3.5" /></Link>
+                    <Link href="/products?listingType=batch_drop" className="flex items-center gap-1.5 text-sm font-semibold bg-secondary text-foreground hover:bg-primary hover:text-primary-foreground px-4 py-2 rounded-xl transition-all">{t("common.viewAll")} <ArrowRight className="w-3.5 h-3.5" /></Link>
                   </div>
                   {localNowFeed.batchDrops.length > 0 ? (
                     <div className="flex overflow-x-auto gap-6 pb-4 snap-x snap-mandatory hide-scrollbar">
@@ -114,7 +116,7 @@ export default function Home() {
                                   </div>
                                 )}
                                 <div className="absolute top-2 left-2 bg-amber-100 text-amber-900 text-[10px] px-2 py-1 uppercase tracking-wider font-bold border border-amber-200">
-                                  Fresh Batch
+                                  {t("common.freshBatch")}
                                 </div>
                               </div>
                               <CardContent className="p-4 flex-1 flex flex-col">
@@ -131,7 +133,7 @@ export default function Home() {
                     </div>
                   ) : (
                     <div className="p-6 bg-background border border-border text-muted-foreground text-sm flex items-center gap-2">
-                      <Flame className="w-4 h-4 opacity-50" /> No fresh batches reported right now. Check back later!
+                      <Flame className="w-4 h-4 opacity-50" /> {t("home.noBatches")}
                     </div>
                   )}
                 </div>
@@ -140,9 +142,9 @@ export default function Home() {
                 <div>
                   <div className="flex items-center justify-between mb-6">
                     <h3 className="text-2xl font-serif font-bold flex items-center gap-2">
-                      <Percent className="w-6 h-6 text-amber-600" /> Market Surplus
+                      <Percent className="w-6 h-6 text-amber-600" /> {t("home.marketSurplusTitle")}
                     </h3>
-                    <Link href="/products?listingType=surplus" className="flex items-center gap-1.5 text-sm font-semibold bg-secondary text-foreground hover:bg-primary hover:text-primary-foreground px-4 py-2 rounded-xl transition-all">View all <ArrowRight className="w-3.5 h-3.5" /></Link>
+                    <Link href="/products?listingType=surplus" className="flex items-center gap-1.5 text-sm font-semibold bg-secondary text-foreground hover:bg-primary hover:text-primary-foreground px-4 py-2 rounded-xl transition-all">{t("common.viewAll")} <ArrowRight className="w-3.5 h-3.5" /></Link>
                   </div>
                   {localNowFeed.surplus.length > 0 ? (
                     <div className="flex overflow-x-auto gap-6 pb-4 snap-x snap-mandatory hide-scrollbar">
@@ -165,7 +167,7 @@ export default function Home() {
                                   </div>
                                 )}
                                 <div className="absolute top-2 left-2 bg-amber-100 text-amber-900 text-[10px] px-2 py-1 uppercase tracking-wider font-bold border border-amber-200">
-                                  Market Surplus
+                                  {t("common.marketSurplus")}
                                 </div>
                               </div>
                               <CardContent className="p-4 flex-1 flex flex-col">
@@ -192,7 +194,7 @@ export default function Home() {
                     </div>
                   ) : (
                     <div className="p-6 bg-background border border-border text-muted-foreground text-sm flex items-center gap-2">
-                      <Percent className="w-4 h-4 opacity-50" /> Markets are cleared out for now!
+                      <Percent className="w-4 h-4 opacity-50" /> {t("home.noSurplus")}
                     </div>
                   )}
                 </div>
@@ -201,9 +203,9 @@ export default function Home() {
                 <div>
                   <div className="flex items-center justify-between mb-6">
                     <h3 className="text-2xl font-serif font-bold flex items-center gap-2">
-                      <CalendarClock className="w-6 h-6 text-blue-600" /> Reserve for Pickup
+                      <CalendarClock className="w-6 h-6 text-blue-600" /> {t("home.reserveForPickup")}
                     </h3>
-                    <Link href="/products?listingType=pre_order" className="flex items-center gap-1.5 text-sm font-semibold bg-secondary text-foreground hover:bg-primary hover:text-primary-foreground px-4 py-2 rounded-xl transition-all">View all <ArrowRight className="w-3.5 h-3.5" /></Link>
+                    <Link href="/products?listingType=pre_order" className="flex items-center gap-1.5 text-sm font-semibold bg-secondary text-foreground hover:bg-primary hover:text-primary-foreground px-4 py-2 rounded-xl transition-all">{t("common.viewAll")} <ArrowRight className="w-3.5 h-3.5" /></Link>
                   </div>
                   {localNowFeed.preOrders.length > 0 ? (
                     <div className="flex overflow-x-auto gap-6 pb-4 snap-x snap-mandatory hide-scrollbar">
@@ -226,7 +228,7 @@ export default function Home() {
                                   </div>
                                 )}
                                 <div className="absolute top-2 left-2 bg-blue-50 text-blue-900 text-[10px] px-2 py-1 uppercase tracking-wider font-bold border border-blue-200">
-                                  Pre-Order
+                                  {t("common.preOrder")}
                                 </div>
                               </div>
                               <CardContent className="p-4 flex-1 flex flex-col">
@@ -236,7 +238,7 @@ export default function Home() {
                                   <span className="font-serif font-medium">${(product.priceCents / 100).toFixed(2)}</span>
                                   {product.availableUntil && (
                                     <div className="text-[10px] text-muted-foreground mt-1">
-                                      Until {new Date(product.availableUntil).toLocaleDateString()}
+                                      {t("common.availableUntil", { date: new Date(product.availableUntil).toLocaleDateString() })}
                                     </div>
                                   )}
                                 </div>
@@ -248,7 +250,7 @@ export default function Home() {
                     </div>
                   ) : (
                     <div className="p-6 bg-background border border-border text-muted-foreground text-sm flex items-center gap-2">
-                      <CalendarClock className="w-4 h-4 opacity-50" /> No pre-orders available currently.
+                      <CalendarClock className="w-4 h-4 opacity-50" /> {t("home.noPreOrders")}
                     </div>
                   )}
                 </div>
@@ -262,11 +264,11 @@ export default function Home() {
           <div className="container max-w-6xl mx-auto px-4">
             <div className="flex justify-between items-center mb-10">
               <div>
-                <h2 className="text-4xl font-serif font-bold text-foreground">Featured Producers</h2>
-                <p className="text-lg text-muted-foreground mt-2">The hands behind the goods.</p>
+                <h2 className="text-4xl font-serif font-bold text-foreground">{t("home.featuredProducersTitle")}</h2>
+                <p className="text-lg text-muted-foreground mt-2">{t("home.featuredProducersSubtitle")}</p>
               </div>
               <Link href="/vendors" className="hidden sm:flex items-center gap-1.5 text-sm font-semibold bg-secondary text-foreground hover:bg-primary hover:text-primary-foreground px-5 py-2.5 rounded-xl transition-all">
-                View all <ArrowRight className="w-4 h-4" />
+                {t("common.viewAll")} <ArrowRight className="w-4 h-4" />
               </Link>
             </div>
 
@@ -325,11 +327,11 @@ export default function Home() {
           <div className="container max-w-6xl mx-auto px-4">
             <div className="flex justify-between items-center mb-10">
               <div>
-                <h2 className="text-4xl font-serif font-bold text-foreground">Market Highlights</h2>
-                <p className="text-lg text-muted-foreground mt-2">Small-batch goods fresh from the source.</p>
+                <h2 className="text-4xl font-serif font-bold text-foreground">{t("home.marketHighlightsTitle")}</h2>
+                <p className="text-lg text-muted-foreground mt-2">{t("home.marketHighlightsSubtitle")}</p>
               </div>
               <Link href="/products" className="hidden sm:flex items-center gap-1.5 text-sm font-semibold bg-secondary text-foreground hover:bg-primary hover:text-primary-foreground px-5 py-2.5 rounded-xl transition-all">
-                Browse all <ArrowRight className="w-4 h-4" />
+                {t("common.browseAll")} <ArrowRight className="w-4 h-4" />
               </Link>
             </div>
 
@@ -365,17 +367,17 @@ export default function Home() {
                           )}
                           {product.listingType === "batch_drop" && (
                             <div className="absolute top-2 left-2 bg-amber-100 text-amber-900 text-[10px] px-2 py-1 uppercase tracking-wider font-bold border border-amber-200">
-                              Fresh Batch
+                              {t("common.freshBatch")}
                             </div>
                           )}
                           {product.listingType === "surplus" && (
                             <div className="absolute top-2 left-2 bg-amber-100 text-amber-900 text-[10px] px-2 py-1 uppercase tracking-wider font-bold border border-amber-200">
-                              Market Surplus
+                              {t("common.marketSurplus")}
                             </div>
                           )}
                           {product.listingType === "pre_order" && (
                             <div className="absolute top-2 left-2 bg-blue-50 text-blue-900 text-[10px] px-2 py-1 uppercase tracking-wider font-bold border border-blue-200">
-                              Pre-Order
+                              {t("common.preOrder")}
                             </div>
                           )}
                         </div>
@@ -389,11 +391,11 @@ export default function Home() {
                                 <span className="text-muted-foreground line-through ml-2 text-sm">${(product.originalPriceCents / 100).toFixed(2)}</span>
                               )}
                             </span>
-                            <span className="text-xs text-muted-foreground">per {product.unit}</span>
+                            <span className="text-xs text-muted-foreground">{t("common.perUnit", { unit: product.unit })}</span>
                           </div>
                           {product.availableUntil && (
                             <div className="text-xs text-muted-foreground mt-2">
-                              Available until {new Date(product.availableUntil).toLocaleDateString()}
+                              {t("common.availableUntil", { date: new Date(product.availableUntil).toLocaleDateString() })}
                             </div>
                           )}
                         </CardContent>

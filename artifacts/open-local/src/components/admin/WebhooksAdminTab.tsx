@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { Loader2, Trash2, Plus, Eye, Copy, Check, RefreshCw } from "lucide-react";
+import { useTranslation } from "react-i18next";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -46,6 +47,7 @@ function authHeaders(): Record<string, string> {
 }
 
 export default function WebhooksAdminTab() {
+  const { t } = useTranslation();
   const { toast } = useToast();
   const [subs, setSubs] = useState<Subscription[] | null>(null);
   const [events, setEvents] = useState<string[]>([]);
@@ -76,7 +78,7 @@ export default function WebhooksAdminTab() {
       setSubs(sData.subscriptions);
       setEvents(eData.events);
     } catch (e) {
-      toast({ variant: "destructive", title: "Error", description: (e as Error).message });
+      toast({ variant: "destructive", title: t("admin.error"), description: (e as Error).message });
     } finally {
       setLoading(false);
     }
@@ -94,7 +96,7 @@ export default function WebhooksAdminTab() {
 
   const create = async () => {
     if (!label.trim() || !url.trim() || picked.size === 0) {
-      toast({ variant: "destructive", title: "Fill in label, URL, and at least one event." });
+      toast({ variant: "destructive", title: t("admin.webhookFillRequired") });
       return;
     }
     setCreating(true);
@@ -111,7 +113,7 @@ export default function WebhooksAdminTab() {
       setOpenCreate(false);
       await reload();
     } catch (e) {
-      toast({ variant: "destructive", title: "Error", description: (e as Error).message });
+      toast({ variant: "destructive", title: t("admin.error"), description: (e as Error).message });
     } finally {
       setCreating(false);
     }
@@ -128,7 +130,7 @@ export default function WebhooksAdminTab() {
 
   const remove = async (id: number) => {
     const r = await fetch(`/api/admin/webhooks/${id}`, { method: "DELETE", headers: authHeaders() });
-    if (r.ok) { toast({ title: "Webhook deleted" }); reload(); }
+    if (r.ok) { toast({ title: t("admin.webhookDeleted") }); reload(); }
   };
 
   const rotateSecret = async (id: number) => {
@@ -164,11 +166,11 @@ export default function WebhooksAdminTab() {
         ? ` Paused ${data.paused} expired-trial vendor${data.paused === 1 ? "" : "s"}.`
         : "";
       toast({
-        title: "Onboarding sweep complete",
+        title: t("admin.webhookSweepComplete"),
         description: `Scanned ${data.scanned} vendors. Sent ${totals} email${totals === 1 ? "" : "s"}${breakdown ? ` (${breakdown})` : ""}. Flagged ${data.flagged} for follow-up.${pausedBit}`,
       });
     } catch (e) {
-      toast({ variant: "destructive", title: "Sweep failed", description: (e as Error).message });
+      toast({ variant: "destructive", title: t("admin.webhookSweepFailed"), description: (e as Error).message });
     } finally {
       setSweeping(false);
     }
@@ -186,35 +188,37 @@ export default function WebhooksAdminTab() {
       <CardContent className="p-6">
         <div className="flex justify-between items-start mb-6">
           <div>
-            <h2 className="text-2xl font-serif font-bold">Webhooks</h2>
+            <h2 className="text-2xl font-serif font-bold">{t("admin.webhooks")}</h2>
             <p className="text-sm text-muted-foreground mt-1 max-w-2xl">
-              POST signed JSON to your URL whenever an event happens. Verify with the
+              {t("admin.webhookDescription")}{" "}
               <code className="mx-1 px-1.5 py-0.5 rounded bg-muted text-xs">X-OpenLocal-Signature</code>
-              header (HMAC‑SHA256 of <code className="mx-1 px-1.5 py-0.5 rounded bg-muted text-xs">{`{timestamp}.{rawBody}`}</code> using your secret).
+              {" "}{t("admin.webhookSignatureNote")}{" "}
+              <code className="mx-1 px-1.5 py-0.5 rounded bg-muted text-xs">{`{timestamp}.{rawBody}`}</code>{" "}
+              {t("admin.webhookUsingSecret")}
             </p>
           </div>
           <div className="flex items-center gap-2">
             <Button variant="outline" onClick={runSweep} disabled={sweeping} className="gap-2">
               {sweeping ? <Loader2 className="w-4 h-4 animate-spin" /> : <RefreshCw className="w-4 h-4" />}
-              Run onboarding sweep
+              {t("admin.webhookRunSweep")}
             </Button>
           <Dialog open={openCreate} onOpenChange={setOpenCreate}>
             <DialogTrigger asChild>
-              <Button className="gap-2"><Plus className="w-4 h-4" />Add webhook</Button>
+              <Button className="gap-2"><Plus className="w-4 h-4" />{t("admin.webhookAdd")}</Button>
             </DialogTrigger>
             <DialogContent className="max-w-2xl">
-              <DialogHeader><DialogTitle>New webhook</DialogTitle></DialogHeader>
+              <DialogHeader><DialogTitle>{t("admin.webhookNew")}</DialogTitle></DialogHeader>
               <div className="space-y-4">
                 <div>
-                  <Label>Label</Label>
+                  <Label>{t("admin.webhookLabel")}</Label>
                   <Input value={label} onChange={(e) => setLabel(e.target.value)} placeholder="Zapier — vendor signups" />
                 </div>
                 <div>
-                  <Label>POST URL</Label>
+                  <Label>{t("admin.webhookPostUrl")}</Label>
                   <Input value={url} onChange={(e) => setUrl(e.target.value)} placeholder="https://hooks.zapier.com/..." />
                 </div>
                 <div>
-                  <Label>Events</Label>
+                  <Label>{t("admin.webhookEvents")}</Label>
                   <div className="grid grid-cols-2 gap-2 mt-2 max-h-64 overflow-y-auto">
                     {events.map((ev) => (
                       <label key={ev} className="flex items-center gap-2 text-sm border rounded-lg px-3 py-2 cursor-pointer hover:bg-muted">
@@ -226,9 +230,9 @@ export default function WebhooksAdminTab() {
                 </div>
               </div>
               <DialogFooter>
-                <Button variant="ghost" onClick={() => setOpenCreate(false)}>Cancel</Button>
+                <Button variant="ghost" onClick={() => setOpenCreate(false)}>{t("admin.cancel")}</Button>
                 <Button onClick={create} disabled={creating}>
-                  {creating && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}Create
+                  {creating && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}{t("admin.webhookCreate")}
                 </Button>
               </DialogFooter>
             </DialogContent>
@@ -240,18 +244,18 @@ export default function WebhooksAdminTab() {
           <div className="flex justify-center p-8"><Loader2 className="w-8 h-8 animate-spin text-muted-foreground" /></div>
         ) : !subs || subs.length === 0 ? (
           <div className="text-center py-12 text-muted-foreground">
-            No webhooks yet. Add one to start sending events to Zapier, Make, n8n, or your own endpoint.
+            {t("admin.noWebhooks")}
           </div>
         ) : (
           <div className="overflow-x-auto">
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead>Label</TableHead>
-                  <TableHead>URL</TableHead>
-                  <TableHead>Events</TableHead>
-                  <TableHead>Active</TableHead>
-                  <TableHead className="text-right">Actions</TableHead>
+                  <TableHead>{t("admin.webhookColLabel")}</TableHead>
+                  <TableHead>{t("admin.webhookColUrl")}</TableHead>
+                  <TableHead>{t("admin.webhookColEvents")}</TableHead>
+                  <TableHead>{t("admin.webhookColActive")}</TableHead>
+                  <TableHead className="text-right">{t("admin.colActions")}</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -271,10 +275,10 @@ export default function WebhooksAdminTab() {
                     </TableCell>
                     <TableCell className="text-right">
                       <div className="flex items-center justify-end gap-1">
-                        <Button variant="ghost" size="icon" onClick={() => showDeliveries(s)} title="Recent deliveries">
+                        <Button variant="ghost" size="icon" onClick={() => showDeliveries(s)} title={t("admin.webhookRecentDeliveries")}>
                           <Eye className="w-4 h-4" />
                         </Button>
-                        <Button variant="ghost" size="icon" onClick={() => rotateSecret(s.id)} title="Rotate secret">
+                        <Button variant="ghost" size="icon" onClick={() => rotateSecret(s.id)} title={t("admin.webhookRotateSecret")}>
                           <RefreshCw className="w-4 h-4" />
                         </Button>
                         <AlertDialog>
@@ -285,12 +289,12 @@ export default function WebhooksAdminTab() {
                           </AlertDialogTrigger>
                           <AlertDialogContent>
                             <AlertDialogHeader>
-                              <AlertDialogTitle>Delete {s.label}?</AlertDialogTitle>
-                              <AlertDialogDescription>This webhook will stop receiving events immediately.</AlertDialogDescription>
+                              <AlertDialogTitle>{t("admin.deleteWebhookTitle", { label: s.label })}</AlertDialogTitle>
+                              <AlertDialogDescription>{t("admin.deleteWebhookWarning")}</AlertDialogDescription>
                             </AlertDialogHeader>
                             <AlertDialogFooter>
-                              <AlertDialogCancel>Cancel</AlertDialogCancel>
-                              <AlertDialogAction onClick={() => remove(s.id)} className="bg-destructive text-destructive-foreground">Delete</AlertDialogAction>
+                              <AlertDialogCancel>{t("admin.cancel")}</AlertDialogCancel>
+                              <AlertDialogAction onClick={() => remove(s.id)} className="bg-destructive text-destructive-foreground">{t("admin.delete")}</AlertDialogAction>
                             </AlertDialogFooter>
                           </AlertDialogContent>
                         </AlertDialog>
@@ -305,9 +309,9 @@ export default function WebhooksAdminTab() {
 
         <Dialog open={!!freshSecret} onOpenChange={(o) => !o && setFreshSecret(null)}>
           <DialogContent>
-            <DialogHeader><DialogTitle>Save your signing secret</DialogTitle></DialogHeader>
+            <DialogHeader><DialogTitle>{t("admin.webhookSaveSecret")}</DialogTitle></DialogHeader>
             <p className="text-sm text-muted-foreground">
-              This is the only time we'll show this secret. Copy it into your receiving system now — if you lose it, rotate it.
+              {t("admin.webhookSecretWarning")}
             </p>
             <div className="flex items-center gap-2 mt-3">
               <code className="flex-1 text-xs bg-muted px-3 py-2 rounded font-mono break-all">{freshSecret?.secret}</code>
@@ -315,17 +319,17 @@ export default function WebhooksAdminTab() {
                 {copied ? <Check className="w-4 h-4" /> : <Copy className="w-4 h-4" />}
               </Button>
             </div>
-            <DialogFooter><Button onClick={() => setFreshSecret(null)}>I've saved it</Button></DialogFooter>
+            <DialogFooter><Button onClick={() => setFreshSecret(null)}>{t("admin.webhookSavedIt")}</Button></DialogFooter>
           </DialogContent>
         </Dialog>
 
         <Dialog open={!!openDeliveries} onOpenChange={(o) => !o && setOpenDeliveries(null)}>
           <DialogContent className="max-w-3xl">
-            <DialogHeader><DialogTitle>Recent deliveries{openDeliveries ? ` — ${openDeliveries.label}` : ""}</DialogTitle></DialogHeader>
+            <DialogHeader><DialogTitle>{t("admin.webhookRecentDeliveries")}{openDeliveries ? ` — ${openDeliveries.label}` : ""}</DialogTitle></DialogHeader>
             {!deliveries ? (
               <div className="flex justify-center p-8"><Loader2 className="w-6 h-6 animate-spin text-muted-foreground" /></div>
             ) : deliveries.length === 0 ? (
-              <p className="text-sm text-muted-foreground py-6 text-center">No deliveries yet — trigger an event to test.</p>
+              <p className="text-sm text-muted-foreground py-6 text-center">{t("admin.webhookNoDeliveries")}</p>
             ) : (
               <div className="max-h-96 overflow-y-auto space-y-2">
                 {deliveries.map((d) => (

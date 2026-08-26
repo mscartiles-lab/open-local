@@ -1,6 +1,7 @@
 import { Feather } from "@expo/vector-icons";
 import * as Location from "expo-location";
 import React, { useEffect, useRef, useState } from "react";
+import { useTranslation } from "react-i18next";
 import {
   ActivityIndicator,
   Platform,
@@ -38,10 +39,11 @@ interface MiniMapProps {
   onPinPress?: (key: string) => void;
   onUserLocationChange?: (loc: { latitude: number; longitude: number } | null) => void;
   onRadiusChange?: (miles: number) => void;
+  onMapCenterChange?: (center: { latitude: number; longitude: number }) => void;
 }
 
 const FLORIDA_CENTER = { latitude: 27.9944024, longitude: -81.7602544 };
-const QUICK_PICKS = [5, 10, 25, 50] as const;
+const QUICK_PICKS = [0.5, 1, 2, 5] as const;
 
 function deltaForRadius(miles: number) {
   return latDeltaForMiles(miles);
@@ -49,18 +51,26 @@ function deltaForRadius(miles: number) {
 
 export function MiniMap({
   pins = [],
-  radiusMiles: initialRadius = 25,
-  height = 200,
+  radiusMiles: initialRadius = 0.5,
+  height,
   emptyHint,
   fullBleed = false,
   showControls = false,
   onPinPress,
   onUserLocationChange,
   onRadiusChange,
+  onMapCenterChange,
 }: MiniMapProps) {
+  const { t } = useTranslation();
   const colors = useColors();
   const [permission, requestPermission] = Location.useForegroundPermissions();
   const [userLocation, setUserLocation] = useState<{
+    latitude: number;
+    longitude: number;
+  } | null>(null);
+  // mapCenter tracks where the map is currently centred (updates on drag).
+  // Distance filtering uses this so dragging pans the list results too.
+  const [mapCenter, setMapCenter] = useState<{
     latitude: number;
     longitude: number;
   } | null>(null);
@@ -68,6 +78,12 @@ export function MiniMap({
   const [radius, setRadius] = useState(initialRadius);
   const [autoLocated, setAutoLocated] = useState(false);
   const mapRef = useRef<unknown>(null);
+  const currentRegionRef = useRef<{
+    latitude: number;
+    longitude: number;
+    latitudeDelta: number;
+    longitudeDelta: number;
+  } | null>(null);
 
   // Auto-request permission and locate on mount once permission state is known
   useEffect(() => {
@@ -84,28 +100,29 @@ export function MiniMap({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [permission?.status, permission?.granted]);
 
+  type AnimateToRegion = (r: { latitude: number; longitude: number; latitudeDelta: number; longitudeDelta: number }, duration: number) => void;
+
   // Animate map to user location when it becomes available
   useEffect(() => {
     if (!userLocation || !mapRef.current) return;
     const delta = deltaForRadius(radius);
-    (
-      mapRef.current as {
-        animateToRegion: (
-          r: {
-            latitude: number;
-            longitude: number;
-            latitudeDelta: number;
-            longitudeDelta: number;
-          },
-          duration: number,
-        ) => void;
-      }
-    ).animateToRegion(
+    (mapRef.current as { animateToRegion: AnimateToRegion }).animateToRegion(
       { ...userLocation, latitudeDelta: delta, longitudeDelta: delta },
       1200,
     );
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [userLocation]);
+
+  // Animate map when radius changes from picker
+  useEffect(() => {
+    if (!userLocation || !mapRef.current) return;
+    const delta = deltaForRadius(radius);
+    (mapRef.current as { animateToRegion: AnimateToRegion }).animateToRegion(
+      { ...userLocation, latitudeDelta: delta, longitudeDelta: delta },
+      600,
+    );
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [radius]);
 
   async function locateUser() {
     setLocating(true);
@@ -118,12 +135,42 @@ export function MiniMap({
         longitude: loc.coords.longitude,
       };
       setUserLocation(next);
+      setMapCenter(next);
       onUserLocationChange?.(next);
+      onMapCenterChange?.(next);
     } catch {
       // ignore — user stays on Florida center
     } finally {
       setLocating(false);
     }
+  }
+
+  function zoomIn() {
+    if (!mapRef.current) return;
+    const region = currentRegionRef.current ?? {
+      ...center,
+      latitudeDelta: delta,
+      longitudeDelta: delta,
+    };
+    const newDelta = Math.max(region.latitudeDelta / 2.5, 0.0005);
+    (mapRef.current as { animateToRegion: (r: object, d: number) => void }).animateToRegion(
+      { ...region, latitudeDelta: newDelta, longitudeDelta: newDelta },
+      250,
+    );
+  }
+
+  function zoomOut() {
+    if (!mapRef.current) return;
+    const region = currentRegionRef.current ?? {
+      ...center,
+      latitudeDelta: delta,
+      longitudeDelta: delta,
+    };
+    const newDelta = Math.min(region.latitudeDelta * 2.5, 90);
+    (mapRef.current as { animateToRegion: (r: object, d: number) => void }).animateToRegion(
+      { ...region, latitudeDelta: newDelta, longitudeDelta: newDelta },
+      250,
+    );
   }
 
   // Web fallback — Metro replaces this file with MiniMap.web.tsx on web builds,
@@ -143,11 +190,11 @@ export function MiniMap({
       >
         <Feather name="map" size={28} color={colors.mutedForeground} />
         <Text style={[styles.webText, { color: colors.mutedForeground }]}>
-          Map view available in the iOS/Android app
+          {t("miniMap.webFallback")}
         </Text>
         {pins.length > 0 && (
           <Text style={[styles.webHint, { color: colors.mutedForeground }]}>
-            {pins.length} location{pins.length !== 1 ? "s" : ""} nearby
+            {t("miniMap.locationsNearby", { count: pins.length })}
           </Text>
         )}
       </View>
@@ -164,24 +211,35 @@ export function MiniMap({
   const center = userLocation ?? FLORIDA_CENTER;
   const delta = deltaForRadius(radius);
 
-  // When the user's location is known, only show pins within the chosen radius.
-  const visiblePins = userLocation
+  // Use mapCenter (updated on drag) for filtering so the list and circle
+  // follow the map view rather than being locked to the GPS fix.
+  const filterCenter = mapCenter ?? userLocation;
+  const visiblePins = filterCenter
     ? pins.filter(
         (p) =>
           haversineDistanceMiles(
-            userLocation.latitude,
-            userLocation.longitude,
+            filterCenter.latitude,
+            filterCenter.longitude,
             p.latitude,
             p.longitude,
           ) <= radius,
       )
     : pins;
 
+  // Radius label map — built inside render so t() is available
+  const QUICK_PICK_LABELS: Record<number, string> = {
+    0.5: t("miniMap.radiusHalf"),
+    1: t("miniMap.radius1"),
+    2: t("miniMap.radius2"),
+    5: t("miniMap.radius5"),
+  };
+
   return (
     <View
       style={[
         styles.mapWrap,
-        { height, borderColor: colors.border },
+        { borderColor: colors.border },
+        height !== undefined && { height },
         fullBleed && styles.flush,
       ]}
     >
@@ -201,11 +259,17 @@ export function MiniMap({
         rotateEnabled={false}
         zoomEnabled
         scrollEnabled
+        onRegionChangeComplete={(region) => {
+          currentRegionRef.current = region;
+          const newCenter = { latitude: region.latitude, longitude: region.longitude };
+          setMapCenter(newCenter);
+          onMapCenterChange?.(newCenter);
+        }}
       >
-        {/* Radius circle around user */}
-        {locationGranted && userLocation && (
+        {/* Radius circle — follows the map centre as the user drags */}
+        {locationGranted && filterCenter && (
           <Circle
-            center={userLocation}
+            center={filterCenter}
             radius={milesToMeters(radius)}
             strokeColor={colors.primary}
             strokeWidth={1.5}
@@ -230,8 +294,9 @@ export function MiniMap({
                 latitude: pin.latitude,
                 longitude: pin.longitude,
               }}
+              onPress={() => onPinPress?.(pin.key)}
             >
-              {/* Custom pin shape */}
+              {/* Custom pin shape — tapping the marker navigates directly */}
               <View
                 style={[
                   styles.pin,
@@ -244,12 +309,13 @@ export function MiniMap({
               >
                 <Feather
                   name={pin.iconName ?? "map-pin"}
-                  size={11}
+                  size={13}
                   color="#fff"
                 />
               </View>
 
-              {/* Callout bubble on tap */}
+              {/* Callout — tapping it navigates on iOS (where marker onPress
+                  only opens the callout on first tap) */}
               {pin.label ? (
                 <Callout
                   tooltip={false}
@@ -267,7 +333,7 @@ export function MiniMap({
                           { color: pin.color ?? colors.primary },
                         ]}
                       >
-                        {distMi} mi away
+                        {t("miniMap.distAway", { dist: distMi })}
                       </Text>
                     ) : null}
                     {onPinPress ? (
@@ -277,7 +343,7 @@ export function MiniMap({
                           { color: pin.color ?? colors.primary },
                         ]}
                       >
-                        Tap to view →
+                        {t("miniMap.tapToOpen")}
                       </Text>
                     ) : null}
                   </View>
@@ -296,7 +362,7 @@ export function MiniMap({
           <View style={styles.legendRow}>
             <View style={[styles.legendDot, { backgroundColor: "#e8520a" }]} />
             <Text style={[styles.legendLabel, { color: colors.foreground }]}>
-              Vendors
+              {t("miniMap.legendVendors")}
             </Text>
           </View>
           <View style={styles.legendRow}>
@@ -308,7 +374,7 @@ export function MiniMap({
               ]}
             />
             <Text style={[styles.legendLabel, { color: colors.foreground }]}>
-              Businesses
+              {t("miniMap.legendBusinesses")}
             </Text>
           </View>
         </View>
@@ -334,8 +400,8 @@ export function MiniMap({
             </View>
             <Text style={[styles.countText, { color: colors.foreground }]}>
               {userLocation
-                ? `${visiblePins.length} place${visiblePins.length !== 1 ? "s" : ""} within ${radius} mi`
-                : `${pins.length} place${pins.length !== 1 ? "s" : ""} on the map`}
+                ? t("miniMap.placesWithin", { count: visiblePins.length, radius })
+                : t("miniMap.placesOnMap", { count: pins.length })}
             </Text>
           </View>
 
@@ -349,10 +415,10 @@ export function MiniMap({
               <Text
                 style={[styles.radiusLabel, { color: colors.mutedForeground }]}
               >
-                Radius
+                {t("miniMap.radius")}
               </Text>
               <Text style={[styles.radiusValue, { color: colors.primary }]}>
-                {radius} mi
+                {t("miniMap.radiusMi", { radius })}
               </Text>
             </View>
             <View style={styles.radiusBtns}>
@@ -371,13 +437,10 @@ export function MiniMap({
                   <Text
                     style={[
                       styles.radiusBtnText,
-                      {
-                        color:
-                          r === radius ? "#fff" : colors.mutedForeground,
-                      },
+                      { color: r === radius ? "#fff" : colors.mutedForeground },
                     ]}
                   >
-                    {r}
+                    {QUICK_PICK_LABELS[r] ?? `${r}`}
                   </Text>
                 </TouchableOpacity>
               ))}
@@ -385,6 +448,23 @@ export function MiniMap({
           </View>
         </View>
       )}
+
+      {/* Zoom +/- buttons — right side above recenter */}
+      <View
+        style={[
+          styles.zoomBtns,
+          fullBleed && styles.zoomBtnsFull,
+          { backgroundColor: colors.card },
+        ]}
+      >
+        <TouchableOpacity style={styles.zoomBtn} onPress={zoomIn} activeOpacity={0.7}>
+          <Feather name="plus" size={17} color={colors.foreground} />
+        </TouchableOpacity>
+        <View style={[styles.zoomDivider, { backgroundColor: colors.border }]} />
+        <TouchableOpacity style={styles.zoomBtn} onPress={zoomOut} activeOpacity={0.7}>
+          <Feather name="minus" size={17} color={colors.foreground} />
+        </TouchableOpacity>
+      </View>
 
       {/* Locate-me / recenter — bottom-right */}
       <TouchableOpacity
@@ -395,6 +475,7 @@ export function MiniMap({
         ]}
         onPress={locationGranted ? locateUser : requestPermission}
         disabled={locating}
+        accessibilityLabel={locationGranted ? t("miniMap.recenter") : t("miniMap.enableLocation")}
       >
         {locating ? (
           <ActivityIndicator size="small" color={colors.primary} />
@@ -417,7 +498,7 @@ export function MiniMap({
           <Text
             style={[styles.locationPillText, { color: colors.foreground }]}
           >
-            Enable location
+            {t("miniMap.enableLocation")}
           </Text>
         </TouchableOpacity>
       )}
@@ -438,6 +519,7 @@ export function MiniMap({
 
 const styles = StyleSheet.create({
   mapWrap: {
+    flex: 1,
     borderRadius: 16,
     overflow: "hidden",
     borderWidth: 1,
@@ -618,6 +700,34 @@ const styles = StyleSheet.create({
   radiusBtnText: {
     fontFamily: "DMSans_600SemiBold",
     fontSize: 11,
+  },
+  // Zoom +/- buttons
+  zoomBtns: {
+    position: "absolute",
+    bottom: 56,
+    right: 10,
+    borderRadius: 10,
+    overflow: "hidden",
+    shadowColor: "#000",
+    shadowOpacity: 0.15,
+    shadowRadius: 4,
+    shadowOffset: { width: 0, height: 2 },
+    elevation: 3,
+  },
+  zoomBtnsFull: {
+    bottom: undefined,
+    top: 200,
+    right: 16,
+  },
+  zoomBtn: {
+    width: 36,
+    height: 36,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  zoomDivider: {
+    height: 1,
+    marginHorizontal: 6,
   },
   // Recenter button
   recenterBtn: {

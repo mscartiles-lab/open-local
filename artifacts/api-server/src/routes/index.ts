@@ -16,6 +16,18 @@ import analyticsRouter from "./analytics";
 import webhooksRouter from "./webhooks";
 import onboardingRouter from "./onboarding";
 import supportRouter from "./support";
+import messagesRouter from "./messages";
+import reviewsRouter from "./reviews";
+import certificationsRouter from "./certifications";
+import productVariationsRouter from "./product-variations";
+import productBulkRouter from "./product-bulk";
+import storageRouter from "./storage";
+import ordersRouter from "./orders";
+import connectRouter from "./connect";
+import dashboardOtpRouter from "./dashboard-otp";
+import inviteRouter from "./invite";
+import marketsRouter from "./markets";
+import wholesaleRouter from "./wholesale";
 
 const router: IRouter = Router();
 
@@ -36,5 +48,17 @@ router.use(analyticsRouter);
 router.use(webhooksRouter);
 router.use(onboardingRouter);
 router.use(supportRouter);
+router.use(messagesRouter);
+router.use(reviewsRouter);
+router.use(certificationsRouter);
+router.use(productVariationsRouter);
+router.use(productBulkRouter);
+router.use(storageRouter);
+router.use(ordersRouter);
+router.use(connectRouter);
+router.use(dashboardOtpRouter);
+router.use(inviteRouter);
+router.use(marketsRouter);
+router.use(wholesaleRouter);
 
 export default router;

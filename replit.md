@@ -131,7 +131,7 @@ Shared workspace packages:
 
 ## Domain model
 
-- **Vendors** — `id, name, slug (unique), tagline, description, category, location, region, contactEmail, websiteUrl, imageUrl, established, featured, phone?, instagramHandle?, facebookUrl?, marketsText?, latitude?, longitude?, createdAt`.
+- **Vendors** — `id, name, slug (unique), tagline, description, category, location, region, contactEmail, websiteUrl, imageUrl, established, featured, phone?, instagramHandle?, facebookUrl?, marketsText?, pickupAddress?, openDays (jsonb string[])?, openHours?, howToOrder?, latitude?, longitude?, createdAt`.
 - **Products** — `id, vendorId (FK cascade), name, description, priceCents, unit, category, imageUrl, inStock, featured, listingType, originalPriceCents?, availableUntil?, pickupNote?, createdAt`. Prices in cents.
 - **EmailVerifications** — `id, email, code, vendorPayload (jsonb), expiresAt, attempts, consumed, createdAt`. For vendor onboarding only.
 - **Users** — `id, email (unique), username (unique), avatarSeed, avatarStyle, role ('vendor'|'shopper'), city?, state, tier, stripeCustomerId?, stripeSubscriptionId?, trialStartedAt?, trialEndsAt?, trialRemindersSent (jsonb string[]), paused (bool), equippedUnlocks (jsonb string[]), createdAt`. App user accounts.
@@ -146,7 +146,7 @@ Shared workspace packages:
 - `/vendors`, `/vendors/:id` — Directory + profile (markets, phone, Instagram, Facebook, vendor's products).
 - `/products`, `/products/:id` — Browse + detail. Filter chips for listing type, syncing with `?listingType=` URL.
 - `/favorites` — localStorage-backed saved producers + saved goods (key: `open-local:favorites`).
-- `/submit` — 4-step onboarding wizard: (1) tap a category card, (2) name/tagline/story/city with FL city chips, (3) email + optional cover/socials/markets, (4) **email verification** — enter a 6-digit code we email; only then is the vendor created. Auto-generates slug, picks a category-themed default cover when no image URL is given, defaults region to Florida.
+- `/submit` — 5-step vendor onboarding wizard: (1) tap a category card, (2) name/tagline/story/city with FL city chips, (3) **availability & ordering** — pickup address, day-of-week chips (Mon–Sun), hours text, how-to-order chips (walk-in / DM / website / email / pre-order / market), markets list, (4) email + optional cover/socials/year-established, (5) **email verification** — enter a 6-digit code we email; only then is the vendor created. Auto-generates slug, picks a category-themed default cover when no image URL is given, defaults region to Florida.
 - `/admin` — Toggle featured / in-stock, delete, add product (full listing-type fields).
 
 ## API

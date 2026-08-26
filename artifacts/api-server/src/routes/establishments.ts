@@ -75,7 +75,7 @@ router.post("/establishments/submit", async (req, res): Promise<void> => {
 
   const [row] = await db
     .insert(establishmentsTable)
-    .values({ ...rest, tier, status: "pending", isTrial: true })
+    .values({ ...rest, tier, status: "active", isTrial: true })
     .returning();
 
   req.log.info({ establishmentId: row.id, tier }, "establishment submitted");

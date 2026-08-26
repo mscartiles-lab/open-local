@@ -43,6 +43,17 @@ export interface Vendor {
   createdAt: string;
   onboardingEmailsSent: string[];
   flaggedForFollowup: boolean;
+  /** @nullable */
+  storeTheme: string | null;
+  /** @nullable */
+  storePrimaryColor: string | null;
+  /** @nullable */
+  storeFont: string | null;
+  /** @nullable */
+  storeLayout: string | null;
+  /** @nullable */
+  storeBannerUrl: string | null;
+  storeCustomizationEnabled: boolean;
 }
 
 export interface VendorInput {
@@ -461,6 +472,7 @@ export type ListVendorsParams = {
   category?: string;
   location?: string;
   featured?: boolean;
+  marketName?: string;
 };
 
 export type ListProductsParams = {
@@ -494,4 +506,68 @@ export type ListListingsParams = {
   category?: string;
   city?: string;
   search?: string;
+};
+
+// ─── Wholesale Exchange ───────────────────────────────────────────────────────
+
+export interface WholesaleListing {
+  id: number;
+  vendorId: number;
+  vendorName: string;
+  vendorSlug: string;
+  vendorImageUrl: string | null;
+  title: string;
+  description: string | null;
+  category: string | null;
+  pricePerUnit: number | null;
+  unit: string | null;
+  minOrderQty: number;
+  availableQty: number | null;
+  imageUrl: string | null;
+  expiresAt: string | null;
+  active: boolean;
+  createdAt: string;
+}
+
+export type ListWholesaleParams = {
+  search?: string;
+  category?: string;
+  vendorId?: number;
+};
+
+// ─── Markets ──────────────────────────────────────────────────────────────────
+
+export interface Market {
+  id: number;
+  name: string;
+  slug: string | null;
+  city: string;
+  region: string;
+  address: string | null;
+  day: string | null;
+  time: string | null;
+  description: string | null;
+  imageUrl: string | null;
+  logoUrl: string | null;
+  featuredImageUrl: string | null;
+  websiteUrl: string | null;
+  contactEmail: string | null;
+  instagramHandle: string | null;
+  facebookUrl: string | null;
+  twitterHandle: string | null;
+  latitude: number | null;
+  longitude: number | null;
+  managerId: number | null;
+  verified: boolean;
+  vendorCount: number;
+  tags: string[];
+  active: boolean;
+  createdAt: string;
+}
+
+export type ListMarketsParams = {
+  search?: string;
+  city?: string;
+  region?: string;
+  day?: string;
 };

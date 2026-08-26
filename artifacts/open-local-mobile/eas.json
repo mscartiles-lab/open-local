@@ -1,7 +1,6 @@
 {
   "cli": {
-    "version": ">= 12.0.0",
-    "appVersionSource": "remote"
+    "version": ">= 12.0.0"
   },
   "build": {
     "development": {
@@ -15,24 +14,24 @@
       },
       "ios": {
         "simulator": false
+      },
+      "env": {
+        "EXPO_PUBLIC_DOMAIN": "openlocalapp.com"
       }
     },
     "production": {
+      "channel": "production",
       "autoIncrement": true,
-      "resourceClass": "medium",
-      "node": "20.19.4",
-      "ios": {
-        "image": "latest"
-      },
       "env": {
-        "EXPO_PUBLIC_DOMAIN": "mvp-upload.replit.app"
+        "EXPO_PUBLIC_DOMAIN": "openlocalapp.com"
       }
     }
   },
   "submit": {
     "production": {
       "ios": {
-        "appleTeamId": "622CLN8RK7"
+        "appleTeamId": "622CLN8RK7",
+        "ascAppId": "6778445620"
       }
     }
   }

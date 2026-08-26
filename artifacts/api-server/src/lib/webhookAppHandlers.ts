@@ -1,6 +1,6 @@
 import type Stripe from "stripe";
 import { eq } from "drizzle-orm";
-import { db, usersTable, establishmentsTable, productsTable } from "@workspace/db";
+import { db, usersTable, establishmentsTable, productsTable, ordersTable } from "@workspace/db";
 import { logger } from "./logger";
 import { fireTrialStart } from "./trialReminders";
 import { FEATURE_BOOST_DURATION_DAYS } from "./tiers";
@@ -45,6 +45,27 @@ export async function handleAppWebhookEvent(event: Stripe.Event): Promise<void> 
 }
 
 async function onCheckoutCompleted(session: Stripe.Checkout.Session): Promise<void> {
+  // Product purchase — mark the order as paid and store the payment intent id.
+  if (session.mode === "payment" && session.metadata?.kind === "product_purchase") {
+    const orderId = Number(session.metadata.orderId);
+    if (!Number.isInteger(orderId) || orderId <= 0) {
+      logger.warn({ sessionId: session.id, meta: session.metadata }, "[webhook] product_purchase without orderId");
+      return;
+    }
+    const paymentIntentId =
+      typeof session.payment_intent === "string"
+        ? session.payment_intent
+        : session.payment_intent?.id ?? null;
+
+    await db
+      .update(ordersTable)
+      .set({ status: "paid", stripePaymentIntentId: paymentIntentId ?? undefined, updatedAt: new Date() })
+      .where(eq(ordersTable.id, orderId));
+
+    logger.info({ orderId, paymentIntentId, sessionId: session.id }, "[webhook] order marked paid");
+    return;
+  }
+
   // One-time $5 listing-boost checkout. Sets featured_until = NOW() + 14d so
   // the featuredExpr in routes/products.ts surfaces it in featured queries.
   if (session.mode === "payment" && session.metadata?.kind === "feature_boost") {

@@ -1,4 +1,5 @@
 import React from "react";
+import { useTranslation } from "react-i18next";
 import { StyleSheet, Text, View } from "react-native";
 import { Image } from "expo-image";
 
@@ -14,6 +15,7 @@ interface Props {
 }
 
 export function ProductListItem({ product }: Props) {
+  const { t } = useTranslation();
   const colors = useColors();
   const s = styles(colors);
 
@@ -37,7 +39,7 @@ export function ProductListItem({ product }: Props) {
             {formatPrice(product.priceCents)}/{product.unit}
           </Text>
           {!product.inStock && (
-            <Text style={s.outOfStock}>· Out of stock</Text>
+            <Text style={s.outOfStock}>{t("productListItem.outOfStock")}</Text>
           )}
         </View>
       </View>

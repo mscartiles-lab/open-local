@@ -20,7 +20,7 @@ import { eq } from "drizzle-orm";
 
 const router: IRouter = Router();
 
-const VENDOR_EARLY_COHORT_SIZE = 150;
+const VENDOR_EARLY_COHORT_SIZE = 100;
 const VENDOR_EARLY_TRIAL_DAYS = 60;
 const VENDOR_STANDARD_TRIAL_DAYS = 30;
 

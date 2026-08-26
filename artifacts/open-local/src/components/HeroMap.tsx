@@ -12,6 +12,7 @@ import {
 } from "react-leaflet";
 import { Link } from "wouter";
 import { useState, useEffect, useCallback } from "react";
+import { useTranslation } from "react-i18next";
 
 // Fix Leaflet marker icons broken by bundlers
 delete (L.Icon.Default.prototype as unknown as Record<string, unknown>)._getIconUrl;
@@ -47,7 +48,7 @@ const EST_ICON = L.divIcon({
 
 const FLORIDA_CENTER: [number, number] = [27.6, -82.5];
 const MILES_TO_METERS = 1609.344;
-const QUICK_PICKS = [5, 10, 25, 50] as const;
+const QUICK_PICKS = [0.5, 1, 2, 5] as const;
 
 function haversineMiles(lat1: number, lng1: number, lat2: number, lng2: number) {
   const R = 3958.8;
@@ -62,11 +63,13 @@ function haversineMiles(lat1: number, lng1: number, lat2: number, lng2: number) 
 }
 
 function zoomForRadius(miles: number): number {
-  // Hyper-local at small radius, regional at large
-  if (miles <= 5) return 13;
-  if (miles <= 10) return 12;
-  if (miles <= 25) return 11;
-  return 10;
+  if (miles <= 0.5) return 15;
+  if (miles <= 1) return 14;
+  if (miles <= 2) return 13;
+  if (miles <= 5) return 12;
+  if (miles <= 10) return 11;
+  if (miles <= 25) return 10;
+  return 9;
 }
 
 function MapFlyTo({ position, zoom }: { position: [number, number]; zoom: number }) {
@@ -81,18 +84,53 @@ function MapFlyTo({ position, zoom }: { position: [number, number]; zoom: number
   return null;
 }
 
+function ZoomButtons() {
+  const map = useMap();
+  const { t } = useTranslation();
+  return (
+    <div
+      className="absolute right-4 bottom-24 flex flex-col rounded-xl bg-white shadow-lg overflow-hidden pointer-events-auto"
+      style={{ zIndex: 10 }}
+    >
+      <button
+        onClick={() => map.zoomIn()}
+        className="w-9 h-9 flex items-center justify-center hover:bg-gray-50 transition-colors text-[#7a3f08] font-bold text-lg"
+        title={t("heroMap.zoomIn")}
+      >
+        +
+      </button>
+      <div className="h-px bg-gray-200" />
+      <button
+        onClick={() => map.zoomOut()}
+        className="w-9 h-9 flex items-center justify-center hover:bg-gray-50 transition-colors text-[#7a3f08] font-bold text-lg"
+        title={t("heroMap.zoomOut")}
+      >
+        −
+      </button>
+    </div>
+  );
+}
+
 export default function HeroMap() {
+  const { t } = useTranslation();
   const { data: vendors } = useListVendors();
   const { data: establishments } = useListEstablishments();
 
   const [userPos, setUserPos] = useState<[number, number] | null>(null);
   const [locating, setLocating] = useState(false);
   const [locationError, setLocationError] = useState<string | null>(null);
-  const [radius, setRadius] = useState(5);
+  const [radius, setRadius] = useState(1);
+
+  const QUICK_PICK_LABELS: Record<number, string> = {
+    0.5: t("heroMap.halfMi"),
+    1: t("heroMap.oneMi"),
+    2: t("heroMap.twoMi"),
+    5: t("heroMap.fiveMi"),
+  };
 
   const locate = useCallback(() => {
     if (!navigator.geolocation) {
-      setLocationError("Geolocation not supported by your browser.");
+      setLocationError(t("heroMap.geolocationNotSupported"));
       return;
     }
     setLocating(true);
@@ -105,8 +143,8 @@ export default function HeroMap() {
       (err) => {
         setLocationError(
           err.code === err.PERMISSION_DENIED
-            ? "Location access denied. Enable it in your browser settings."
-            : "Couldn't pinpoint you. Try the locate button again.",
+            ? t("heroMap.locationDenied")
+            : t("heroMap.locationError"),
         );
         setLocating(false);
       },
@@ -114,7 +152,7 @@ export default function HeroMap() {
       // maximumAge: 0 forces a fresh fix instead of a stale cached one.
       { enableHighAccuracy: true, timeout: 15000, maximumAge: 0 },
     );
-  }, []);
+  }, [t]);
 
   useEffect(() => { locate(); }, []);
 
@@ -145,7 +183,7 @@ export default function HeroMap() {
         center={FLORIDA_CENTER}
         zoom={9}
         scrollWheelZoom
-        zoomControl={true}
+        zoomControl={false}
         minZoom={3}
         maxZoom={18}
         doubleClickZoom
@@ -159,6 +197,7 @@ export default function HeroMap() {
         />
 
         {userPos && <MapFlyTo position={userPos} zoom={zoomForRadius(radius)} />}
+        <ZoomButtons />
 
         {userPos && (
           <Circle
@@ -189,16 +228,16 @@ export default function HeroMap() {
         {visibleVendors.map((v) => (
           <Marker key={`v-${v.id}`} position={[v.latitude!, v.longitude!]} icon={VENDOR_ICON}>
             <Popup>
-              <div className="text-xs font-semibold uppercase tracking-wide text-[#7a3f08] mb-0.5">Vendor</div>
+              <div className="text-xs font-semibold uppercase tracking-wide text-[#7a3f08] mb-0.5">{t("heroMap.vendor")}</div>
               <div className="text-sm font-medium leading-snug">{v.name}</div>
               <div className="text-xs text-gray-500 mb-1">{v.location}</div>
               {userPos && (
                 <div className="text-xs text-[#7a3f08] font-medium mb-1">
-                  {haversineMiles(userPos[0], userPos[1], v.latitude!, v.longitude!).toFixed(1)} mi away
+                  {t("heroMap.distanceAway", { distance: haversineMiles(userPos[0], userPos[1], v.latitude!, v.longitude!).toFixed(1) })}
                 </div>
               )}
               <a href={`/vendors/${v.slug}`} className="text-xs text-[#c07218] font-semibold hover:underline">
-                View vendor →
+                {t("heroMap.viewVendor")}
               </a>
             </Popup>
           </Marker>
@@ -212,12 +251,12 @@ export default function HeroMap() {
               <div className="text-xs text-gray-500 mb-1">{e.city}, {e.state}</div>
               {userPos && (
                 <div className="text-xs text-[#c0622f] font-medium mb-1">
-                  {haversineMiles(userPos[0], userPos[1], e.latitude!, e.longitude!).toFixed(1)} mi away
+                  {t("heroMap.distanceAway", { distance: haversineMiles(userPos[0], userPos[1], e.latitude!, e.longitude!).toFixed(1) })}
                 </div>
               )}
               {e.website && (
                 <a href={e.website} target="_blank" rel="noopener noreferrer" className="text-xs text-[#c0622f] font-semibold hover:underline">
-                  Visit website →
+                  {t("heroMap.visitWebsite")}
                 </a>
               )}
             </Popup>
@@ -239,14 +278,14 @@ export default function HeroMap() {
             href="/products"
             className="bg-white/95 backdrop-blur-sm text-[#7a3f08] px-4 py-2 rounded-full text-sm font-semibold shadow-md hover:bg-white transition-colors"
           >
-            Browse Goods
+            {t("heroMap.browseGoods")}
           </Link>
           <Link
             href="/pin-your-business"
             className="bg-[#c07218] text-white px-4 py-2 rounded-full text-sm font-semibold shadow-md hover:bg-[#a85e10] transition-colors flex items-center gap-1.5"
           >
             <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
-            Pin Your Business
+            {t("heroMap.pinYourBusiness")}
           </Link>
         </div>
       </div>
@@ -258,8 +297,8 @@ export default function HeroMap() {
       >
         <div className="bg-white/95 backdrop-blur-sm rounded-2xl shadow-lg px-3 py-2.5 flex flex-col gap-2">
           <div className="flex items-center justify-between gap-3">
-            <span className="text-xs font-semibold text-gray-500 uppercase tracking-wide">Radius</span>
-            <span className="text-sm font-bold text-[#7a3f08]">{radius} mi</span>
+            <span className="text-xs font-semibold text-gray-500 uppercase tracking-wide">{t("heroMap.nearby")}</span>
+            <span className="text-sm font-bold text-[#7a3f08]">{QUICK_PICK_LABELS[radius] ?? t("heroMap.radiusMi", { radius })}</span>
           </div>
           <div className="flex gap-1.5">
             {QUICK_PICKS.map((r) => (
@@ -272,7 +311,7 @@ export default function HeroMap() {
                     : "bg-gray-100 text-gray-600 hover:bg-gray-200"
                 }`}
               >
-                {r} mi
+                {QUICK_PICK_LABELS[r] ?? t("heroMap.radiusMi", { radius: r })}
               </button>
             ))}
           </div>
@@ -285,8 +324,8 @@ export default function HeroMap() {
           </div>
           <span className="text-xs text-gray-700">
             {userPos
-              ? `${totalVisible} place${totalVisible !== 1 ? "s" : ""} within ${radius} mi`
-              : `${totalVisible} place${totalVisible !== 1 ? "s" : ""} on the map`}
+              ? t("heroMap.placesWithin", { count: totalVisible, radius: QUICK_PICK_LABELS[radius] ?? t("heroMap.radiusMi", { radius }) })
+              : t("heroMap.placesOnMap", { count: totalVisible })}
           </span>
         </div>
 
@@ -301,7 +340,7 @@ export default function HeroMap() {
       <button
         onClick={locate}
         disabled={locating}
-        title="Use my location"
+        title={locating ? t("heroMap.locating") : t("heroMap.useMyLocation")}
         className="absolute bottom-6 right-4 w-11 h-11 rounded-full bg-white shadow-lg flex items-center justify-center hover:bg-gray-50 transition-colors disabled:opacity-60 pointer-events-auto"
         style={{ zIndex: 10 }}
       >
@@ -325,11 +364,11 @@ export default function HeroMap() {
       >
         <div className="flex items-center gap-2">
           <div className="w-3.5 h-3.5 rounded-full bg-[#c07218] flex-shrink-0" />
-          <span className="text-xs text-gray-700 font-medium">Vendors</span>
+          <span className="text-xs text-gray-700 font-medium">{t("heroMap.vendors")}</span>
         </div>
         <div className="flex items-center gap-2">
           <div className="w-3.5 h-3.5 rounded-[3px] bg-[#c0622f] flex-shrink-0" />
-          <span className="text-xs text-gray-700 font-medium">Establishments</span>
+          <span className="text-xs text-gray-700 font-medium">{t("heroMap.establishments")}</span>
         </div>
       </div>
     </section>

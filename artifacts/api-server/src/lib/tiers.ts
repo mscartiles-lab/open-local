@@ -26,8 +26,18 @@ export function tierAllowsPreOrder(tier: TierId | null | undefined): boolean {
 }
 
 export function tierIncludedFeaturedCount(tier: TierId | null | undefined): number {
-  return tier === "premium" ? 2 : 0;
+  return tier === "premium" ? 3 : 0;
 }
+
+export function tierAllowsMultiplePins(tier: TierId | null | undefined): boolean {
+  return tier === "premium";
+}
+
+/** Number of selling location pins included in the Premium tier at no extra charge. */
+export const PREMIUM_INCLUDED_LOCATIONS = 3;
+
+/** Monthly cost in cents for each location pin beyond the included count. */
+export const ADDITIONAL_LOCATION_PRICE_MONTHLY_CENTS = 500;
 
 // À-la-carte feature boost (any vendor, any tier — purchased one-off)
 export const FEATURE_BOOST_PRICE_CENTS = 500;

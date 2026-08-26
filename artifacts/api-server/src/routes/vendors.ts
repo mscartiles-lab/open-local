@@ -1,9 +1,11 @@
 import { Router, type IRouter } from "express";
-import { eq, and, ilike, or, sql, notExists, gt } from "drizzle-orm";
+import { eq, and, ilike, or, sql, notExists, gt, isNull } from "drizzle-orm";
 import { db, vendorsTable, productsTable, usersTable, sessionsTable } from "@workspace/db";
 import { isAdminEmail } from "../lib/requireAdmin";
+import { requireAuth, type AuthRequest } from "../lib/requireAuth";
 import { emitEvent } from "../lib/webhooks";
 import { fireWelcome } from "../lib/onboarding";
+import { geocodeVendor } from "../lib/geocode";
 import {
   ListVendorsQueryParams,
   CreateVendorBody,
@@ -47,7 +49,7 @@ router.get("/vendors", async (req, res): Promise<void> => {
     return;
   }
 
-  const { search, category, location, featured } = parsed.data;
+  const { search, category, location, featured, marketName } = parsed.data;
   const conditions: ReturnType<typeof and>[] = [notPausedVendorCondition()];
   if (search) {
     conditions.push(
@@ -61,6 +63,7 @@ router.get("/vendors", async (req, res): Promise<void> => {
   if (category) conditions.push(eq(vendorsTable.category, category));
   if (location) conditions.push(eq(vendorsTable.location, location));
   if (featured !== undefined) conditions.push(eq(vendorsTable.featured, featured));
+  if (marketName) conditions.push(ilike(vendorsTable.marketsText, `%${marketName}%`));
 
   const rows = await db
     .select()
@@ -86,7 +89,18 @@ router.post("/vendors", async (req, res): Promise<void> => {
     res.status(400).json({ error: parsed.error.message });
     return;
   }
-  const [row] = await db.insert(vendorsTable).values(parsed.data).returning();
+
+  // Auto-geocode when the vendor didn't manually place a pin
+  const values = { ...parsed.data };
+  if (values.latitude == null || values.longitude == null) {
+    const coords = await geocodeVendor(values.zipCode, values.location);
+    if (coords) {
+      values.latitude = coords.latitude;
+      values.longitude = coords.longitude;
+    }
+  }
+
+  const [row] = await db.insert(vendorsTable).values(values).returning();
   emitEvent("vendor.created", {
     vendorId: row.id,
     name: row.name,
@@ -169,7 +183,7 @@ router.get("/vendors/:id", async (req, res): Promise<void> => {
   res.json(GetVendorResponse.parse(row));
 });
 
-router.patch("/vendors/:id", async (req, res): Promise<void> => {
+router.patch("/vendors/:id", requireAuth, async (req, res): Promise<void> => {
   const params = UpdateVendorParams.safeParse(req.params);
   if (!params.success) {
     res.status(400).json({ error: params.error.message });
@@ -180,6 +194,32 @@ router.patch("/vendors/:id", async (req, res): Promise<void> => {
     res.status(400).json({ error: body.error.message });
     return;
   }
+
+  // Resolve the authenticated caller.
+  const userId = (req as AuthRequest).userId;
+  const [caller] = await db.select().from(usersTable).where(eq(usersTable.id, userId));
+  if (!caller) {
+    res.status(401).json({ error: "Not authenticated" });
+    return;
+  }
+
+  // Load the target vendor to verify ownership before mutating.
+  const [existing] = await db
+    .select()
+    .from(vendorsTable)
+    .where(eq(vendorsTable.id, params.data.id));
+  if (!existing) {
+    res.status(404).json({ error: "Vendor not found" });
+    return;
+  }
+
+  const isOwner = existing.contactEmail.toLowerCase() === caller.email.toLowerCase();
+  const isAdmin = caller.role === "admin" || isAdminEmail(caller.email);
+  if (!isOwner && !isAdmin) {
+    res.status(403).json({ error: "Forbidden" });
+    return;
+  }
+
   const [row] = await db
     .update(vendorsTable)
     .set(body.data)
@@ -221,6 +261,54 @@ router.get("/vendors/:id/products", async (req, res): Promise<void> => {
     .where(eq(productsTable.vendorId, params.data.id))
     .orderBy(productsTable.name);
   res.json(ListVendorProductsResponse.parse(rows));
+});
+
+/**
+ * POST /vendors/geocode-missing  (admin only)
+ * Backfills lat/lng for any vendor that was created without a pin.
+ * Safe to call repeatedly — only touches rows with NULL lat or lng.
+ */
+router.post("/vendors/geocode-missing", async (req, res): Promise<void> => {
+  const authHeader = req.headers.authorization;
+  if (!authHeader?.startsWith("Bearer ")) {
+    res.status(401).json({ error: "Unauthorized" });
+    return;
+  }
+  const token = authHeader.slice(7);
+  const [session] = await db
+    .select()
+    .from(sessionsTable)
+    .where(and(eq(sessionsTable.token, token), gt(sessionsTable.expiresAt, new Date())));
+  if (!session) { res.status(401).json({ error: "Unauthorized" }); return; }
+  const [user] = await db.select().from(usersTable).where(eq(usersTable.id, session.userId));
+  if (!user || (user.role !== "admin" && !isAdminEmail(user.email))) {
+    res.status(403).json({ error: "Forbidden" });
+    return;
+  }
+
+  const missing = await db
+    .select({ id: vendorsTable.id, zipCode: vendorsTable.zipCode, location: vendorsTable.location })
+    .from(vendorsTable)
+    .where(or(isNull(vendorsTable.latitude), isNull(vendorsTable.longitude)));
+
+  let updated = 0;
+  let failed = 0;
+  for (const v of missing) {
+    const coords = await geocodeVendor(v.zipCode, v.location);
+    if (coords) {
+      await db
+        .update(vendorsTable)
+        .set({ latitude: coords.latitude, longitude: coords.longitude })
+        .where(eq(vendorsTable.id, v.id));
+      updated++;
+    } else {
+      failed++;
+    }
+    // Respect Nominatim rate limit (1 req/s)
+    await new Promise((r) => setTimeout(r, 1100));
+  }
+
+  res.json({ total: missing.length, updated, failed });
 });
 
 // Suppress unused-import lint

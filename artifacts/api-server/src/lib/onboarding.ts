@@ -1,6 +1,7 @@
 import { and, eq, sql, count } from "drizzle-orm";
 import { db, vendorsTable, productsTable, type Vendor } from "@workspace/db";
 import { emitEvent, type WebhookEvent } from "./webhooks";
+import { sendDirectEmail } from "./email";
 import { logger } from "./logger";
 
 // Email-type keys recorded in `vendors.onboardingEmailsSent`. These are the
@@ -93,9 +94,79 @@ export function buildOnboardingPayload(args: BuildPayloadArgs): Record<string, u
   return base;
 }
 
-// Atomic mark-and-emit. Returns true only if we won the race to record this
-// email type — that's our duplicate-send guard. Concurrent cron + manual
-// triggers can both call this safely; only one will emit.
+// ─── Direct email composers ───────────────────────────────────────────────────
+// Each function returns { subject, message } for its email type.
+
+import { getAppUrl } from "./appUrl";
+
+const APP_URL = getAppUrl();
+
+function vendorEmailContent(
+  type: OnboardingEmailType,
+  vendor: Vendor,
+): { subject: string; message: string } | null {
+  const name = vendor.name;
+  const dashboardUrl = `${APP_URL}/dashboard/${vendor.slug}`;
+  const billingUrl = `${APP_URL}/billing`;
+
+  switch (type) {
+    case "welcome":
+      return {
+        subject: `Welcome to Open Local, ${name}!`,
+        message: `Hi ${name},\n\nYour business is now live on Open Local — Florida's marketplace for local producers, makers, and artisans.\n\nHere's your private dashboard where you can manage listings, drop fresh batches, and mark surplus:\n${dashboardUrl}\n\nBookmark it — anyone with the link can manage your account.\n\nA few tips to get started:\n• Add a great cover photo so shoppers know who you are\n• Write a short bio that tells your story\n• Post your first listing — even a single product makes a difference\n\nWelcome to the community!\n\nThe Open Local team`,
+      };
+
+    case "day2_profile_incomplete":
+      return {
+        subject: `Complete your Open Local profile, ${name}`,
+        message: `Hi ${name},\n\nYou're on Open Local — but your profile isn't finished yet, which means shoppers might scroll past you.\n\nTake 2 minutes to:\n• Add a cover photo (a real photo of your products or workspace)\n• Write a short bio — even just a sentence or two\n• Confirm your location\n\nA complete profile gets up to 3× more views.\n\nEdit your profile here:\n${dashboardUrl}\n\nThe Open Local team`,
+      };
+
+    case "day3_no_products":
+      return {
+        subject: `Ready to add your first listing, ${name}?`,
+        message: `Hi ${name},\n\nYou joined Open Local 3 days ago — time to get your first listing up so local shoppers can find you!\n\nFrom your dashboard you can:\n• Drop a fresh batch (something just out of the oven/studio)\n• Mark surplus (end-of-market leftovers at a discount)\n• Add a regular product to your storefront\n\nIt takes under a minute:\n${dashboardUrl}\n\nThe Open Local team`,
+      };
+
+    case "day5_no_products_howto":
+      return {
+        subject: `How to add your first listing on Open Local`,
+        message: `Hi ${name},\n\nIt looks like you haven't listed anything yet. Here's exactly how to do it:\n\n1. Go to your dashboard: ${dashboardUrl}\n2. Click "Drop a batch", "Mark surplus", or "Add a product"\n3. Fill in a name, description, price, and unit\n4. Hit save — your listing goes live immediately\n\nThat's it. No approval needed, no waiting.\n\nIf you're running into any trouble, reply to this email and we'll help you out personally.\n\nThe Open Local team`,
+      };
+
+    case "day7_inactive":
+      return {
+        subject: `We'd love to help you get started on Open Local`,
+        message: `Hi ${name},\n\nIt's been a week since you joined Open Local and we haven't seen your first listing yet.\n\nWe know starting can feel daunting — but your neighbors are already looking for producers like you.\n\nIf there's anything getting in the way — technical issues, questions about pricing, or just not sure what to list — reply to this email and we'll personally help you get your first product up.\n\nYour dashboard is always here:\n${dashboardUrl}\n\nThe Open Local team`,
+      };
+
+    case "no_photo_day3":
+      return {
+        subject: `Add a cover photo to stand out on Open Local`,
+        message: `Hi ${name},\n\nListings with photos get significantly more clicks. Your profile currently shows a placeholder image.\n\nAdd a real photo of your products, your workspace, or your market stall — anything that shows shoppers who you are.\n\nUpdate your profile:\n${dashboardUrl}\n\nThe Open Local team`,
+      };
+
+    case "no_bio_day3":
+      return {
+        subject: `Tell your story on Open Local, ${name}`,
+        message: `Hi ${name},\n\nShoppers on Open Local love buying from people they feel connected to — but your bio is still empty.\n\nYou don't need much. Even two sentences work:\n• What do you make or grow?\n• What makes your products special?\n\nAdd your story here:\n${dashboardUrl}\n\nThe Open Local team`,
+      };
+
+    case "products_no_storefront":
+      return {
+        subject: `Your products are live — now add a cover photo`,
+        message: `Hi ${name},\n\nGreat news — you have products listed! But your profile photo is still the default placeholder, which makes it harder for shoppers to trust and click through.\n\nSwap in a real photo and your storefront will look the part.\n\nUpdate here:\n${dashboardUrl}\n\nThe Open Local team`,
+      };
+
+    default:
+      return null;
+  }
+}
+
+// ─── Atomic mark-and-emit ─────────────────────────────────────────────────────
+// Returns true only if we won the race to record this email type — that's our
+// duplicate-send guard. Concurrent cron + manual triggers can both call this
+// safely; only one will emit AND send.
 export async function recordAndEmit(
   vendor: Vendor,
   emailType: OnboardingEmailType,
@@ -128,6 +199,22 @@ export async function recordAndEmit(
     productCount,
   });
   emitEvent(event, payload);
+
+  // Also send directly via EmailJS — fires even without an external platform
+  // (n8n/Zapier) configured. Fire-and-forget; a failed send never rolls back
+  // the duplicate guard above.
+  const emailContent = vendorEmailContent(emailType, vendor);
+  if (emailContent) {
+    void sendDirectEmail({
+      to: vendor.contactEmail,
+      toName: vendor.name,
+      subject: emailContent.subject,
+      message: emailContent.message,
+    }).catch((err) =>
+      logger.error({ err, vendorId: vendor.id, emailType }, "direct email send failed"),
+    );
+  }
+
   return true;
 }
 

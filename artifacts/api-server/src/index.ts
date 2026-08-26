@@ -2,6 +2,12 @@ import { runMigrations } from "stripe-replit-sync";
 import { getStripeSync } from "./stripeClient";
 import app from "./app";
 import { logger } from "./lib/logger";
+import { runOnboardingSweep } from "./lib/onboarding";
+import { runTrialReminderSweep } from "./lib/trialReminders";
+import { runSupportTicketSweep } from "./lib/supportTickets";
+import { runWaitlistReminderSweep } from "./lib/waitlistReminders";
+import { getAppUrl } from "./lib/appUrl";
+import { backfillMissingGeocodes } from "./lib/backfillGeocodes";
 
 async function initStripe() {
   const databaseUrl = process.env.DATABASE_URL;
@@ -52,4 +58,56 @@ app.listen(port, (err) => {
     process.exit(1);
   }
   logger.info({ port }, "Server listening");
+
+  // Backfill any vendors that signed up before auto-geocoding was in place.
+  // Fire-and-forget — a failure here never crashes the server.
+  backfillMissingGeocodes()
+    .then(() => logger.info("geocode backfill finished"))
+    .catch((err: unknown) => logger.error({ err }, "geocode backfill error"));
 });
+
+// ─── Daily sweep scheduler ────────────────────────────────────────────────────
+// Runs onboarding + trial-reminder + support-ticket sweeps once every 24 hours,
+// anchored to 9 AM UTC.  Fire-and-forget — a sweep failure never crashes the
+// server.  The same sweeps are also reachable via POST /api/admin/onboarding/run-daily
+// for manual or Scheduled-Deployment triggers.
+
+const MS_PER_DAY = 24 * 60 * 60 * 1000;
+
+async function runDailySweep(): Promise<void> {
+  logger.info("daily sweep starting");
+  try {
+    const reactivationUrl = `${getAppUrl()}/billing?reactivate=1`;
+
+    const [onboarding, trial, support, waitlist] = await Promise.all([
+      runOnboardingSweep(),
+      runTrialReminderSweep({ reactivationUrl }),
+      runSupportTicketSweep(),
+      runWaitlistReminderSweep(),
+    ]);
+    logger.info({ onboarding, trial, support, waitlist }, "daily sweep complete");
+  } catch (err) {
+    logger.error({ err }, "daily sweep failed");
+  }
+}
+
+function scheduleDailySweep(): void {
+  const now = new Date();
+  const nextRun = new Date(
+    Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate(), 9, 0, 0),
+  );
+  if (nextRun.getTime() <= now.getTime()) {
+    nextRun.setUTCDate(nextRun.getUTCDate() + 1);
+  }
+  const msUntilFirst = nextRun.getTime() - now.getTime();
+  logger.info(
+    { nextRunAt: nextRun.toISOString(), msUntilFirst },
+    "daily sweep scheduled",
+  );
+  setTimeout(() => {
+    void runDailySweep();
+    setInterval(() => void runDailySweep(), MS_PER_DAY);
+  }, msUntilFirst);
+}
+
+scheduleDailySweep();

@@ -1,0 +1,1 @@
+export { MarketsMapView } from "./MarketsMapView.web";

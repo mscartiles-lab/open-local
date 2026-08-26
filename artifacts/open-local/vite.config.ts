@@ -18,6 +18,9 @@ const basePath = process.env.BASE_PATH || "/";
 
 export default defineConfig({
   base: basePath,
+  define: {
+    __EXPO_DEV_DOMAIN__: JSON.stringify(process.env.REPLIT_EXPO_DEV_DOMAIN ?? ""),
+  },
   plugins: [react(), tailwindcss()],
   resolve: {
     alias: {

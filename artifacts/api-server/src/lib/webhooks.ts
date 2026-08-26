@@ -44,6 +44,11 @@ export const WEBHOOK_EVENTS = [
   "support.ticket.submitted",
   "support.ticket.unresolved_48h",
   "support.ticket.resolved",
+  // Reviews & certifications lifecycle.
+  "vendor.review_submitted",
+  "vendor.certification_requested",
+  "vendor.certification_approved",
+  "vendor.certification_rejected",
   // Reserved for future flows that don't have triggers yet:
   "purchase.completed",
   "reminder.sent",

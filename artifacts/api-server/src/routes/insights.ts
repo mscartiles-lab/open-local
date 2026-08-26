@@ -2,6 +2,7 @@ import { Router, type IRouter } from "express";
 import { sql, count, sum, desc } from "drizzle-orm";
 import { db, searchLogsTable } from "@workspace/db";
 import { LogSearchBody } from "@workspace/api-zod";
+import { requireAdmin } from "../lib/requireAdmin";
 
 const router: IRouter = Router();
 
@@ -29,7 +30,7 @@ router.post("/search-logs", async (req, res): Promise<void> => {
   res.status(204).end();
 });
 
-router.get("/search-insights", async (_req, res): Promise<void> => {
+router.get("/search-insights", requireAdmin, async (_req, res): Promise<void> => {
   // Fetch all raw rows — efficient since search_logs stays small in early stage
   const allRows = await db
     .select({
