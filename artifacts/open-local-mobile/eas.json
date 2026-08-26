@@ -1,6 +1,7 @@
 {
   "cli": {
-    "version": ">= 12.0.0"
+    "version": ">= 12.0.0",
+    "appVersionSource": "remote"
   },
   "build": {
     "development": {
@@ -22,6 +23,11 @@
     "production": {
       "channel": "production",
       "autoIncrement": true,
+      "resourceClass": "medium",
+      "node": "20.19.4",
+      "ios": {
+        "image": "latest"
+      },
       "env": {
         "EXPO_PUBLIC_DOMAIN": "openlocalapp.com"
       }

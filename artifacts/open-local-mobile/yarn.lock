@@ -1193,7 +1193,7 @@
     "@expo/ngrok-bin-win32-ia32" "2.3.41"
     "@expo/ngrok-bin-win32-x64" "2.3.41"
 
-"@expo/ngrok@^4.1.0":
+"@expo/ngrok@^4.1.3":
   version "4.1.3"
   resolved "https://registry.npmjs.org/@expo/ngrok/-/ngrok-4.1.3.tgz#a3dc692958f3f48a5221e30f4a8c3648c79e8450"
   integrity sha512-AESYaROGIGKWwWmUyQoUXcbvaUZjmpecC5buArXxYou+RID813F8T0Y5jQ2HUY49mZpYfJiy9oh4VSN37GgrXA==
@@ -3028,7 +3028,7 @@ expo-linking@~8.0.10:
 
 expo-localization@^57.0.1:
   version "57.0.1"
-  resolved "http://package-firewall.replit.local/npm/expo-localization/-/expo-localization-57.0.1.tgz#62d7a99f5d548bcf01bfd36d2411b47f38db9c48"
+  resolved "https://registry.npmjs.org/expo-localization/-/expo-localization-57.0.1.tgz#62d7a99f5d548bcf01bfd36d2411b47f38db9c48"
   integrity sha512-8Ffl4UTbOsQeGT0v5fxMbyPHyPMPnhSPDFQJa8p9rjJrthFoAtNi+fL6Ssmrvf1/7dmPq1mVY52MEt0TMEfgjA==
   dependencies:
     rtl-detect "^1.0.2"
@@ -3446,7 +3446,7 @@ hosted-git-info@^7.0.0:
 
 html-parse-stringify@^4.0.1:
   version "4.0.1"
-  resolved "http://package-firewall.replit.local/npm/html-parse-stringify/-/html-parse-stringify-4.0.1.tgz#7264be901df0fef8829eb04632191be0aa94f55e"
+  resolved "https://registry.npmjs.org/html-parse-stringify/-/html-parse-stringify-4.0.1.tgz#7264be901df0fef8829eb04632191be0aa94f55e"
   integrity sha512-0zHsZJrK7S3K2aucXWL6ycoYJ/iNtIcFHC/nYQgFklPtrv5LpJctIiSCroWZWeuoXvuyFdzp6KzjJQ+OT5MfFw==
 
 http-cache-semantics@^4.0.0:
@@ -3488,7 +3488,7 @@ hyphenate-style-name@^1.0.3:
 
 i18next@^26.3.6:
   version "26.4.0"
-  resolved "http://package-firewall.replit.local/npm/i18next/-/i18next-26.4.0.tgz#721c4f0ae295a5c237e25b01abfc8489831c1204"
+  resolved "https://registry.npmjs.org/i18next/-/i18next-26.4.0.tgz#721c4f0ae295a5c237e25b01abfc8489831c1204"
   integrity sha512-rsmK5bFqsD1AetSFSIa43wtNR4WpvvH4p0tLEsTxkC7QTrfdFm06nbQ95bh8Og4wwaCnUEcm9DVYL2cgxitiQg==
 
 ieee754@^1.1.13:
@@ -3712,7 +3712,7 @@ jimp-compact@0.16.1:
 
 js-yaml@4.3.1, js-yaml@^3.13.1, js-yaml@^4.1.0:
   version "4.3.1"
-  resolved "http://package-firewall.replit.local/npm/js-yaml/-/js-yaml-4.3.1.tgz#01216c001d67f48e2cd560d708c7af21090a3848"
+  resolved "https://registry.npmjs.org/js-yaml/-/js-yaml-4.3.1.tgz#01216c001d67f48e2cd560d708c7af21090a3848"
   integrity sha512-CY6crGq313MX8GkwvB7tzgp99vjQxY1++5y10/BKN/GUfHqWaOGQMNZkBvqSzsZKWk/ijwHlWzzkLulsGHhjWQ==
   dependencies:
     argparse "^2.0.1"
@@ -4444,7 +4444,7 @@ mz@^2.7.0:
 
 nanoid@3.3.18, nanoid@^3.3.11, nanoid@^3.3.16, nanoid@^3.3.8:
   version "3.3.18"
-  resolved "http://package-firewall.replit.local/npm/nanoid/-/nanoid-3.3.18.tgz#f66a2de1199ffde0fcf21c8a5f13106b1c081913"
+  resolved "https://registry.npmjs.org/nanoid/-/nanoid-3.3.18.tgz#f66a2de1199ffde0fcf21c8a5f13106b1c081913"
   integrity sha512-DTg4MJbGMWkfi6VZFdNt2/caMbQy4Ou+Op/hJQvGEWcnVfoA1QA+xzRKAzw9jD6+GVOOeYr/mIcuDSdug6F6+w==
 
 negotiator@0.6.3:
@@ -4719,7 +4719,7 @@ postcss-value-parser@^4.2.0:
 
 postcss@8.5.23, postcss@~8.4.32:
   version "8.5.23"
-  resolved "http://package-firewall.replit.local/npm/postcss/-/postcss-8.5.23.tgz#3493550116f478487298301d2c2e8dc5a56e6594"
+  resolved "https://registry.npmjs.org/postcss/-/postcss-8.5.23.tgz#3493550116f478487298301d2c2e8dc5a56e6594"
   integrity sha512-g50586zr4bZmwFiTlflMu8E0bDTb5I5gertgwAKmsdUlTQIhZtunzUlD1WSzwcVWPoAVpsrA6vlfCD7oXvRwgg==
   dependencies:
     nanoid "^3.3.16"
@@ -4847,7 +4847,7 @@ react-freeze@^1.0.0:
 
 react-i18next@^17.0.11:
   version "17.0.12"
-  resolved "http://package-firewall.replit.local/npm/react-i18next/-/react-i18next-17.0.12.tgz#8f7254800c81644a284be2fd0908e895df9a1d18"
+  resolved "https://registry.npmjs.org/react-i18next/-/react-i18next-17.0.12.tgz#8f7254800c81644a284be2fd0908e895df9a1d18"
   integrity sha512-lFWPEGkxQ6RhusdUkysFBD58VHfSSzvHBzqMgN0SvfVpdQGfwtNkStTqdy08/sJd7s807qqutgx93fRpD0DJ3Q==
   dependencies:
     "@babel/runtime" "^7.29.7"
@@ -5157,7 +5157,7 @@ rimraf@^3.0.2:
 
 rtl-detect@^1.0.2:
   version "1.1.2"
-  resolved "http://package-firewall.replit.local/npm/rtl-detect/-/rtl-detect-1.1.2.tgz#ca7f0330af5c6bb626c15675c642ba85ad6273c6"
+  resolved "https://registry.npmjs.org/rtl-detect/-/rtl-detect-1.1.2.tgz#ca7f0330af5c6bb626c15675c642ba85ad6273c6"
   integrity sha512-PGMBq03+TTG/p/cRB7HCLKJ1MgDIi07+QU1faSjiYRfmY5UsAttV9Hs08jDAHVwcOwmVLcSJkpwyfXszVjWfIQ==
 
 safe-buffer@5.2.1:
@@ -5593,7 +5593,7 @@ undici-types@~8.3.0:
 
 undici@8.9.0, undici@^6.18.2:
   version "8.9.0"
-  resolved "http://package-firewall.replit.local/npm/undici/-/undici-8.9.0.tgz#f51154fe38c56e3ff21ab62a5ed484e70de53d8d"
+  resolved "https://registry.npmjs.org/undici/-/undici-8.9.0.tgz#f51154fe38c56e3ff21ab62a5ed484e70de53d8d"
   integrity sha512-aWZpUj7XoGonMClx4gdDRfgBjqeA+F473aDmROQQbM9n6PRfK/u1q/a0X4wMTgcHfT8H6fpbt98PFuDUwFg2YA==
 
 unicode-canonical-property-names-ecmascript@^2.0.0:
@@ -5662,15 +5662,10 @@ utils-merge@1.0.1:
   resolved "https://registry.npmjs.org/utils-merge/-/utils-merge-1.0.1.tgz#9f95710f50a267947b2ccc124741c1028427e713"
   integrity sha512-pMZTvIkT1d+TFGvDOqodOclx0QWkkgi6Tdoa8gC8ffGAAqz9pzPTZWAybbsHHoED/ztMtkv/VoYTYyShUn81hA==
 
-uuid@^3.3.2:
-  version "3.4.0"
-  resolved "https://registry.npmjs.org/uuid/-/uuid-3.4.0.tgz#b23e4358afa8a202fe7a100af1f5f883f02007ee"
-  integrity sha512-HjSDRw6gZE5JMggctHBcjVak08+KEVhSIiDzFnT9S9aegmp85S/bReBVTb4QTFaRNptJ9kuYaNhnbNEOkbKb/A==
-
-uuid@^7.0.3:
-  version "7.0.3"
-  resolved "https://registry.npmjs.org/uuid/-/uuid-7.0.3.tgz#c5c9f2c8cf25dc0a372c4df1441c41f5bd0c680b"
-  integrity sha512-DPSke0pXhTZgoF/d+WSt2QaKMCFSfx7QegxEWT+JOuHF5aWrKEn0G+ztjuJg/gG8/ItK+rbPCD/yNv8yyih6Cg==
+uuid@11.1.1, uuid@^3.3.2, uuid@^7.0.3:
+  version "11.1.1"
+  resolved "https://registry.npmjs.org/uuid/-/uuid-11.1.1.tgz#f6d81d2e1c65d00762e5e29b16c5d2d995e208ad"
+  integrity sha512-vIYxrBCC/N/K+Js3qSN88go7kIfNPssr/hHCesKCQNAjmgvYS2oqr69kIufEG+O4+PfezOH4EbIeHCfFov8ZgQ==
 
 validate-npm-package-name@^5.0.0:
   version "5.0.1"
