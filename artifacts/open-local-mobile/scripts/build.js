@@ -238,7 +238,7 @@ async function downloadFile(url, outputPath) {
 
 async function downloadBundle(platform, timestamp) {
   const entryPath = path.resolve(projectRoot, "node_modules", "expo-router", "entry");
-  const bundlePath = path.relative(workspaceRoot, entryPath);
+  const bundlePath = path.relative(projectRoot, entryPath);
   const url = new URL(`${metroBaseUrl}/${bundlePath}.bundle`);
   url.searchParams.set("platform", platform);
   url.searchParams.set("dev", "false");
