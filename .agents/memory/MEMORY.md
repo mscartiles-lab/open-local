@@ -3,3 +3,4 @@
 - [Mobile-web feature parity](mobile-web-parity.md) — any workflow or feature added to mobile must also be applied to the equivalent web page in the same task
 - [Expo native-map web bundling](expo-native-map-web-bundling.md) — Metro follows conditional native map imports; use platform-specific modules to keep web bundles loadable
 - [OTA API domain injection](ota-api-domain-injection.md) — public Expo API domains must be present when publishing OTA updates, not only native builds
+- [Secret refresh for publishing](secret-refresh-for-publishing.md) — updated Replit Secrets may require a fresh managed process before publishing tools see them
