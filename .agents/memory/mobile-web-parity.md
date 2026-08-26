@@ -14,7 +14,7 @@ description: Standing rule — any workflow or feature added to the mobile app m
 **Mobile → Web page map:**
 - `app/(tabs)/index.tsx` (The Locals) → `pages/vendors.tsx` + `components/HeroMap.tsx`
 - `app/(tabs)/goods.tsx` → `pages/products.tsx`
-- `app/(tabs)/sale.tsx` → `pages/surplus.tsx`  
+- `app/(tabs)/sale.tsx` → `pages/surplus.tsx`
 - `app/(tabs)/final-sale.tsx` → `pages/surplus.tsx`
 - `app/(tabs)/events.tsx` → `pages/events.tsx`
 - `app/(tabs)/listings.tsx` → `pages/listings.tsx`

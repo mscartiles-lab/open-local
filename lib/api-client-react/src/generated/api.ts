@@ -31,11 +31,14 @@ import type {
   ListMarketsParams,
   ListProductsParams,
   ListVendorsParams,
+  ListWholesaleListingsParams,
   ListingInput,
   ListingItem,
   LocalNowFeed,
   LocationCount,
   Market,
+  MarketRegistrationInput,
+  MarketUpdateInput,
   MarketplaceStats,
   Product,
   ProductInput,
@@ -53,9 +56,9 @@ import type {
   VendorUpdate,
   VerifyEmailRequest,
   WholesaleListing,
-  ListWholesaleParams,
-  CreateWholesaleListingBody,
-  RegisterMarketBody,
+  WholesaleListingInput,
+  WholesaleListingRecord,
+  WholesaleListingUpdate,
 } from "./api.schemas";
 
 import { customFetch } from "../custom-fetch";
@@ -2700,6 +2703,874 @@ export const useCreateListing = <
 };
 
 /**
+ * @summary List active markets
+ */
+export const getListMarketsUrl = (params?: ListMarketsParams) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? "null" : value.toString());
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0
+    ? `/api/markets?${stringifiedParams}`
+    : `/api/markets`;
+};
+
+export const listMarkets = async (
+  params?: ListMarketsParams,
+  options?: RequestInit,
+): Promise<Market[]> => {
+  return customFetch<Market[]>(getListMarketsUrl(params), {
+    ...options,
+    method: "GET",
+  });
+};
+
+export const getListMarketsQueryKey = (params?: ListMarketsParams) => {
+  return [`/api/markets`, ...(params ? [params] : [])] as const;
+};
+
+export const getListMarketsQueryOptions = <
+  TData = Awaited<ReturnType<typeof listMarkets>>,
+  TError = ErrorType<unknown>,
+>(
+  params?: ListMarketsParams,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof listMarkets>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey = queryOptions?.queryKey ?? getListMarketsQueryKey(params);
+
+  const queryFn: QueryFunction<Awaited<ReturnType<typeof listMarkets>>> = ({
+    signal,
+  }) => listMarkets(params, { signal, ...requestOptions });
+
+  return { queryKey, queryFn, ...queryOptions } as UseQueryOptions<
+    Awaited<ReturnType<typeof listMarkets>>,
+    TError,
+    TData
+  > & { queryKey: QueryKey };
+};
+
+export type ListMarketsQueryResult = NonNullable<
+  Awaited<ReturnType<typeof listMarkets>>
+>;
+export type ListMarketsQueryError = ErrorType<unknown>;
+
+/**
+ * @summary List active markets
+ */
+
+export function useListMarkets<
+  TData = Awaited<ReturnType<typeof listMarkets>>,
+  TError = ErrorType<unknown>,
+>(
+  params?: ListMarketsParams,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof listMarkets>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+  const queryOptions = getListMarketsQueryOptions(params, options);
+
+  const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
+    queryKey: QueryKey;
+  };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+/**
+ * @summary Register a market for review
+ */
+export const getRegisterMarketUrl = () => {
+  return `/api/markets/register`;
+};
+
+export const registerMarket = async (
+  marketRegistrationInput: MarketRegistrationInput,
+  options?: RequestInit,
+): Promise<Market> => {
+  return customFetch<Market>(getRegisterMarketUrl(), {
+    ...options,
+    method: "POST",
+    headers: { "Content-Type": "application/json", ...options?.headers },
+    body: JSON.stringify(marketRegistrationInput),
+  });
+};
+
+export const getRegisterMarketMutationOptions = <
+  TError = ErrorType<ErrorResponse>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof registerMarket>>,
+    TError,
+    { data: BodyType<MarketRegistrationInput> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof registerMarket>>,
+  TError,
+  { data: BodyType<MarketRegistrationInput> },
+  TContext
+> => {
+  const mutationKey = ["registerMarket"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof registerMarket>>,
+    { data: BodyType<MarketRegistrationInput> }
+  > = (props) => {
+    const { data } = props ?? {};
+
+    return registerMarket(data, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type RegisterMarketMutationResult = NonNullable<
+  Awaited<ReturnType<typeof registerMarket>>
+>;
+export type RegisterMarketMutationBody = BodyType<MarketRegistrationInput>;
+export type RegisterMarketMutationError = ErrorType<ErrorResponse>;
+
+/**
+ * @summary Register a market for review
+ */
+export const useRegisterMarket = <
+  TError = ErrorType<ErrorResponse>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof registerMarket>>,
+    TError,
+    { data: BodyType<MarketRegistrationInput> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof registerMarket>>,
+  TError,
+  { data: BodyType<MarketRegistrationInput> },
+  TContext
+> => {
+  return useMutation(getRegisterMarketMutationOptions(options));
+};
+
+/**
+ * @summary Get the authenticated manager's market
+ */
+export const getGetMyMarketUrl = () => {
+  return `/api/markets/mine`;
+};
+
+export const getMyMarket = async (options?: RequestInit): Promise<Market> => {
+  return customFetch<Market>(getGetMyMarketUrl(), {
+    ...options,
+    method: "GET",
+  });
+};
+
+export const getGetMyMarketQueryKey = () => {
+  return [`/api/markets/mine`] as const;
+};
+
+export const getGetMyMarketQueryOptions = <
+  TData = Awaited<ReturnType<typeof getMyMarket>>,
+  TError = ErrorType<ErrorResponse>,
+>(options?: {
+  query?: UseQueryOptions<
+    Awaited<ReturnType<typeof getMyMarket>>,
+    TError,
+    TData
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey = queryOptions?.queryKey ?? getGetMyMarketQueryKey();
+
+  const queryFn: QueryFunction<Awaited<ReturnType<typeof getMyMarket>>> = ({
+    signal,
+  }) => getMyMarket({ signal, ...requestOptions });
+
+  return { queryKey, queryFn, ...queryOptions } as UseQueryOptions<
+    Awaited<ReturnType<typeof getMyMarket>>,
+    TError,
+    TData
+  > & { queryKey: QueryKey };
+};
+
+export type GetMyMarketQueryResult = NonNullable<
+  Awaited<ReturnType<typeof getMyMarket>>
+>;
+export type GetMyMarketQueryError = ErrorType<ErrorResponse>;
+
+/**
+ * @summary Get the authenticated manager's market
+ */
+
+export function useGetMyMarket<
+  TData = Awaited<ReturnType<typeof getMyMarket>>,
+  TError = ErrorType<ErrorResponse>,
+>(options?: {
+  query?: UseQueryOptions<
+    Awaited<ReturnType<typeof getMyMarket>>,
+    TError,
+    TData
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+  const queryOptions = getGetMyMarketQueryOptions(options);
+
+  const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
+    queryKey: QueryKey;
+  };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+/**
+ * @summary Get a market by slug
+ */
+export const getGetMarketUrl = (slug: string) => {
+  return `/api/markets/${slug}`;
+};
+
+export const getMarket = async (
+  slug: string,
+  options?: RequestInit,
+): Promise<Market> => {
+  return customFetch<Market>(getGetMarketUrl(slug), {
+    ...options,
+    method: "GET",
+  });
+};
+
+export const getGetMarketQueryKey = (slug: string) => {
+  return [`/api/markets/${slug}`] as const;
+};
+
+export const getGetMarketQueryOptions = <
+  TData = Awaited<ReturnType<typeof getMarket>>,
+  TError = ErrorType<ErrorResponse>,
+>(
+  slug: string,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof getMarket>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey = queryOptions?.queryKey ?? getGetMarketQueryKey(slug);
+
+  const queryFn: QueryFunction<Awaited<ReturnType<typeof getMarket>>> = ({
+    signal,
+  }) => getMarket(slug, { signal, ...requestOptions });
+
+  return {
+    queryKey,
+    queryFn,
+    enabled: !!slug,
+    ...queryOptions,
+  } as UseQueryOptions<Awaited<ReturnType<typeof getMarket>>, TError, TData> & {
+    queryKey: QueryKey;
+  };
+};
+
+export type GetMarketQueryResult = NonNullable<
+  Awaited<ReturnType<typeof getMarket>>
+>;
+export type GetMarketQueryError = ErrorType<ErrorResponse>;
+
+/**
+ * @summary Get a market by slug
+ */
+
+export function useGetMarket<
+  TData = Awaited<ReturnType<typeof getMarket>>,
+  TError = ErrorType<ErrorResponse>,
+>(
+  slug: string,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof getMarket>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+  const queryOptions = getGetMarketQueryOptions(slug, options);
+
+  const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
+    queryKey: QueryKey;
+  };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+/**
+ * @summary Update a managed market
+ */
+export const getUpdateMarketUrl = (slug: string) => {
+  return `/api/markets/${slug}`;
+};
+
+export const updateMarket = async (
+  slug: string,
+  marketUpdateInput: MarketUpdateInput,
+  options?: RequestInit,
+): Promise<Market> => {
+  return customFetch<Market>(getUpdateMarketUrl(slug), {
+    ...options,
+    method: "PATCH",
+    headers: { "Content-Type": "application/json", ...options?.headers },
+    body: JSON.stringify(marketUpdateInput),
+  });
+};
+
+export const getUpdateMarketMutationOptions = <
+  TError = ErrorType<ErrorResponse>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof updateMarket>>,
+    TError,
+    { slug: string; data: BodyType<MarketUpdateInput> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof updateMarket>>,
+  TError,
+  { slug: string; data: BodyType<MarketUpdateInput> },
+  TContext
+> => {
+  const mutationKey = ["updateMarket"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof updateMarket>>,
+    { slug: string; data: BodyType<MarketUpdateInput> }
+  > = (props) => {
+    const { slug, data } = props ?? {};
+
+    return updateMarket(slug, data, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type UpdateMarketMutationResult = NonNullable<
+  Awaited<ReturnType<typeof updateMarket>>
+>;
+export type UpdateMarketMutationBody = BodyType<MarketUpdateInput>;
+export type UpdateMarketMutationError = ErrorType<ErrorResponse>;
+
+/**
+ * @summary Update a managed market
+ */
+export const useUpdateMarket = <
+  TError = ErrorType<ErrorResponse>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof updateMarket>>,
+    TError,
+    { slug: string; data: BodyType<MarketUpdateInput> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof updateMarket>>,
+  TError,
+  { slug: string; data: BodyType<MarketUpdateInput> },
+  TContext
+> => {
+  return useMutation(getUpdateMarketMutationOptions(options));
+};
+
+/**
+ * @summary Claim management of a market
+ */
+export const getClaimMarketUrl = (slug: string) => {
+  return `/api/markets/${slug}/claim`;
+};
+
+export const claimMarket = async (
+  slug: string,
+  options?: RequestInit,
+): Promise<Market> => {
+  return customFetch<Market>(getClaimMarketUrl(slug), {
+    ...options,
+    method: "POST",
+  });
+};
+
+export const getClaimMarketMutationOptions = <
+  TError = ErrorType<ErrorResponse>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof claimMarket>>,
+    TError,
+    { slug: string },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof claimMarket>>,
+  TError,
+  { slug: string },
+  TContext
+> => {
+  const mutationKey = ["claimMarket"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof claimMarket>>,
+    { slug: string }
+  > = (props) => {
+    const { slug } = props ?? {};
+
+    return claimMarket(slug, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type ClaimMarketMutationResult = NonNullable<
+  Awaited<ReturnType<typeof claimMarket>>
+>;
+
+export type ClaimMarketMutationError = ErrorType<ErrorResponse>;
+
+/**
+ * @summary Claim management of a market
+ */
+export const useClaimMarket = <
+  TError = ErrorType<ErrorResponse>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof claimMarket>>,
+    TError,
+    { slug: string },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof claimMarket>>,
+  TError,
+  { slug: string },
+  TContext
+> => {
+  return useMutation(getClaimMarketMutationOptions(options));
+};
+
+/**
+ * @summary List active wholesale listings
+ */
+export const getListWholesaleListingsUrl = (
+  params?: ListWholesaleListingsParams,
+) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? "null" : value.toString());
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0
+    ? `/api/wholesale?${stringifiedParams}`
+    : `/api/wholesale`;
+};
+
+export const listWholesaleListings = async (
+  params?: ListWholesaleListingsParams,
+  options?: RequestInit,
+): Promise<WholesaleListing[]> => {
+  return customFetch<WholesaleListing[]>(getListWholesaleListingsUrl(params), {
+    ...options,
+    method: "GET",
+  });
+};
+
+export const getListWholesaleListingsQueryKey = (
+  params?: ListWholesaleListingsParams,
+) => {
+  return [`/api/wholesale`, ...(params ? [params] : [])] as const;
+};
+
+export const getListWholesaleListingsQueryOptions = <
+  TData = Awaited<ReturnType<typeof listWholesaleListings>>,
+  TError = ErrorType<unknown>,
+>(
+  params?: ListWholesaleListingsParams,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof listWholesaleListings>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey =
+    queryOptions?.queryKey ?? getListWholesaleListingsQueryKey(params);
+
+  const queryFn: QueryFunction<
+    Awaited<ReturnType<typeof listWholesaleListings>>
+  > = ({ signal }) =>
+    listWholesaleListings(params, { signal, ...requestOptions });
+
+  return { queryKey, queryFn, ...queryOptions } as UseQueryOptions<
+    Awaited<ReturnType<typeof listWholesaleListings>>,
+    TError,
+    TData
+  > & { queryKey: QueryKey };
+};
+
+export type ListWholesaleListingsQueryResult = NonNullable<
+  Awaited<ReturnType<typeof listWholesaleListings>>
+>;
+export type ListWholesaleListingsQueryError = ErrorType<unknown>;
+
+/**
+ * @summary List active wholesale listings
+ */
+
+export function useListWholesaleListings<
+  TData = Awaited<ReturnType<typeof listWholesaleListings>>,
+  TError = ErrorType<unknown>,
+>(
+  params?: ListWholesaleListingsParams,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof listWholesaleListings>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+  const queryOptions = getListWholesaleListingsQueryOptions(params, options);
+
+  const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
+    queryKey: QueryKey;
+  };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+/**
+ * @summary Create a wholesale listing
+ */
+export const getCreateWholesaleListingUrl = () => {
+  return `/api/wholesale`;
+};
+
+export const createWholesaleListing = async (
+  wholesaleListingInput: WholesaleListingInput,
+  options?: RequestInit,
+): Promise<WholesaleListingRecord> => {
+  return customFetch<WholesaleListingRecord>(getCreateWholesaleListingUrl(), {
+    ...options,
+    method: "POST",
+    headers: { "Content-Type": "application/json", ...options?.headers },
+    body: JSON.stringify(wholesaleListingInput),
+  });
+};
+
+export const getCreateWholesaleListingMutationOptions = <
+  TError = ErrorType<ErrorResponse>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof createWholesaleListing>>,
+    TError,
+    { data: BodyType<WholesaleListingInput> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof createWholesaleListing>>,
+  TError,
+  { data: BodyType<WholesaleListingInput> },
+  TContext
+> => {
+  const mutationKey = ["createWholesaleListing"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof createWholesaleListing>>,
+    { data: BodyType<WholesaleListingInput> }
+  > = (props) => {
+    const { data } = props ?? {};
+
+    return createWholesaleListing(data, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type CreateWholesaleListingMutationResult = NonNullable<
+  Awaited<ReturnType<typeof createWholesaleListing>>
+>;
+export type CreateWholesaleListingMutationBody =
+  BodyType<WholesaleListingInput>;
+export type CreateWholesaleListingMutationError = ErrorType<ErrorResponse>;
+
+/**
+ * @summary Create a wholesale listing
+ */
+export const useCreateWholesaleListing = <
+  TError = ErrorType<ErrorResponse>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof createWholesaleListing>>,
+    TError,
+    { data: BodyType<WholesaleListingInput> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof createWholesaleListing>>,
+  TError,
+  { data: BodyType<WholesaleListingInput> },
+  TContext
+> => {
+  return useMutation(getCreateWholesaleListingMutationOptions(options));
+};
+
+/**
+ * @summary Update a wholesale listing
+ */
+export const getUpdateWholesaleListingUrl = (id: number) => {
+  return `/api/wholesale/${id}`;
+};
+
+export const updateWholesaleListing = async (
+  id: number,
+  wholesaleListingUpdate: WholesaleListingUpdate,
+  options?: RequestInit,
+): Promise<WholesaleListingRecord> => {
+  return customFetch<WholesaleListingRecord>(getUpdateWholesaleListingUrl(id), {
+    ...options,
+    method: "PATCH",
+    headers: { "Content-Type": "application/json", ...options?.headers },
+    body: JSON.stringify(wholesaleListingUpdate),
+  });
+};
+
+export const getUpdateWholesaleListingMutationOptions = <
+  TError = ErrorType<ErrorResponse>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof updateWholesaleListing>>,
+    TError,
+    { id: number; data: BodyType<WholesaleListingUpdate> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof updateWholesaleListing>>,
+  TError,
+  { id: number; data: BodyType<WholesaleListingUpdate> },
+  TContext
+> => {
+  const mutationKey = ["updateWholesaleListing"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof updateWholesaleListing>>,
+    { id: number; data: BodyType<WholesaleListingUpdate> }
+  > = (props) => {
+    const { id, data } = props ?? {};
+
+    return updateWholesaleListing(id, data, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type UpdateWholesaleListingMutationResult = NonNullable<
+  Awaited<ReturnType<typeof updateWholesaleListing>>
+>;
+export type UpdateWholesaleListingMutationBody =
+  BodyType<WholesaleListingUpdate>;
+export type UpdateWholesaleListingMutationError = ErrorType<ErrorResponse>;
+
+/**
+ * @summary Update a wholesale listing
+ */
+export const useUpdateWholesaleListing = <
+  TError = ErrorType<ErrorResponse>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof updateWholesaleListing>>,
+    TError,
+    { id: number; data: BodyType<WholesaleListingUpdate> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof updateWholesaleListing>>,
+  TError,
+  { id: number; data: BodyType<WholesaleListingUpdate> },
+  TContext
+> => {
+  return useMutation(getUpdateWholesaleListingMutationOptions(options));
+};
+
+/**
+ * @summary Remove a wholesale listing
+ */
+export const getDeleteWholesaleListingUrl = (id: number) => {
+  return `/api/wholesale/${id}`;
+};
+
+export const deleteWholesaleListing = async (
+  id: number,
+  options?: RequestInit,
+): Promise<void> => {
+  return customFetch<void>(getDeleteWholesaleListingUrl(id), {
+    ...options,
+    method: "DELETE",
+  });
+};
+
+export const getDeleteWholesaleListingMutationOptions = <
+  TError = ErrorType<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof deleteWholesaleListing>>,
+    TError,
+    { id: number },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof deleteWholesaleListing>>,
+  TError,
+  { id: number },
+  TContext
+> => {
+  const mutationKey = ["deleteWholesaleListing"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof deleteWholesaleListing>>,
+    { id: number }
+  > = (props) => {
+    const { id } = props ?? {};
+
+    return deleteWholesaleListing(id, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type DeleteWholesaleListingMutationResult = NonNullable<
+  Awaited<ReturnType<typeof deleteWholesaleListing>>
+>;
+
+export type DeleteWholesaleListingMutationError = ErrorType<unknown>;
+
+/**
+ * @summary Remove a wholesale listing
+ */
+export const useDeleteWholesaleListing = <
+  TError = ErrorType<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof deleteWholesaleListing>>,
+    TError,
+    { id: number },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof deleteWholesaleListing>>,
+  TError,
+  { id: number },
+  TContext
+> => {
+  return useMutation(getDeleteWholesaleListingMutationOptions(options));
+};
+
+/**
  * Returns a presigned GCS URL for direct upload. The client sends JSON
 metadata here, then uploads the file directly to the returned URL.
 
@@ -2944,63 +3815,6 @@ export type GetStorageObjectQueryResult = NonNullable<
 >;
 export type GetStorageObjectQueryError = ErrorType<ErrorResponse>;
 
-// ─── Markets ─────────────────────────────────────────────────────────────────
-
-export const getListMarketsUrl = (params?: ListMarketsParams) => {
-  const url = new URL(`/api/markets`, "http://n");
-  if (params?.search) url.searchParams.set("search", params.search);
-  if (params?.city) url.searchParams.set("city", params.city);
-  if (params?.region) url.searchParams.set("region", params.region);
-  if (params?.day) url.searchParams.set("day", params.day);
-  return url.pathname + url.search;
-};
-
-export const listMarkets = async (
-  params?: ListMarketsParams,
-  options?: SecondParameter<typeof customFetch>,
-): Promise<Market[]> => {
-  return customFetch<Market[]>(getListMarketsUrl(params), { method: "GET", ...options });
-};
-
-export const getListMarketsQueryKey = (params?: ListMarketsParams) =>
-  [`/api/markets`, ...(params ? [params] : [])] as const;
-
-export const getListMarketsQueryOptions = <
-  TData = Awaited<ReturnType<typeof listMarkets>>,
-  TError = ErrorType<ErrorResponse>,
->(
-  params?: ListMarketsParams,
-  options?: {
-    query?: UseQueryOptions<Awaited<ReturnType<typeof listMarkets>>, TError, TData>;
-    request?: SecondParameter<typeof customFetch>;
-  },
-) => {
-  const { query: queryOptions, request: requestOptions } = options ?? {};
-  const queryKey = queryOptions?.queryKey ?? getListMarketsQueryKey(params);
-  const queryFn: QueryFunction<Awaited<ReturnType<typeof listMarkets>>> = () =>
-    listMarkets(params, requestOptions);
-  return { queryKey, queryFn, ...queryOptions } as UseQueryOptions<
-    Awaited<ReturnType<typeof listMarkets>>,
-    TError,
-    TData
-  >;
-};
-
-export function useListMarkets<
-  TData = Awaited<ReturnType<typeof listMarkets>>,
-  TError = ErrorType<ErrorResponse>,
->(
-  params?: ListMarketsParams,
-  options?: {
-    query?: UseQueryOptions<Awaited<ReturnType<typeof listMarkets>>, TError, TData>;
-    request?: SecondParameter<typeof customFetch>;
-  },
-): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
-  const queryOptions = getListMarketsQueryOptions(params, options);
-  const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & { queryKey: QueryKey };
-  return { ...query, queryKey: queryOptions.queryKey };
-}
-
 /**
  * @summary Serve an object entity from PRIVATE_OBJECT_DIR
  */
@@ -3027,499 +3841,3 @@ export function useGetStorageObject<
 
   return { ...query, queryKey: queryOptions.queryKey };
 }
-
-// ─── Wholesale Exchange ───────────────────────────────────────────────────────
-
-export const getListWholesaleUrl = (params?: ListWholesaleParams) => {
-  const query = new URLSearchParams();
-  if (params?.search) query.set("search", params.search);
-  if (params?.category) query.set("category", params.category);
-  if (params?.vendorId !== undefined) query.set("vendorId", String(params.vendorId));
-  const qs = query.toString();
-  return `/api/wholesale${qs ? `?${qs}` : ""}`;
-};
-
-export const getListWholesaleQueryKey = (params?: ListWholesaleParams) =>
-  ["listWholesale", params] as const;
-
-export const listWholesaleListings = async (
-  params?: ListWholesaleParams,
-  options?: RequestInit,
-): Promise<WholesaleListing[]> => {
-  return customFetch<WholesaleListing[]>(getListWholesaleUrl(params), options);
-};
-
-export const getListWholesaleQueryOptions = <
-  TData = Awaited<ReturnType<typeof listWholesaleListings>>,
-  TError = ErrorType<unknown>,
->(
-  params?: ListWholesaleParams,
-  options?: {
-    query?: UseQueryOptions<Awaited<ReturnType<typeof listWholesaleListings>>, TError, TData>;
-    request?: SecondParameter<typeof customFetch>;
-  },
-) => {
-  const { query: queryOptions, request: requestOptions } = options ?? {};
-  const queryKey = queryOptions?.queryKey ?? getListWholesaleQueryKey(params);
-  const queryFn: QueryFunction<Awaited<ReturnType<typeof listWholesaleListings>>> = () =>
-    listWholesaleListings(params, requestOptions);
-  return { queryKey, queryFn, ...queryOptions } as UseQueryOptions<
-    Awaited<ReturnType<typeof listWholesaleListings>>,
-    TError,
-    TData
-  >;
-};
-
-export function useListWholesaleListings<
-  TData = Awaited<ReturnType<typeof listWholesaleListings>>,
-  TError = ErrorType<unknown>,
->(
-  params?: ListWholesaleParams,
-  options?: {
-    query?: UseQueryOptions<Awaited<ReturnType<typeof listWholesaleListings>>, TError, TData>;
-    request?: SecondParameter<typeof customFetch>;
-  },
-): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
-  const queryOptions = getListWholesaleQueryOptions(params, options);
-  const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & { queryKey: QueryKey };
-  return { ...query, queryKey: queryOptions.queryKey };
-}
-
-// Create
-export const getCreateWholesaleListingUrl = () => `/api/wholesale`;
-
-export const createWholesaleListing = async (
-  body: CreateWholesaleListingBody,
-  options?: RequestInit,
-): Promise<WholesaleListing> => {
-  return customFetch<WholesaleListing>(getCreateWholesaleListingUrl(), {
-    ...options,
-    method: "POST",
-    headers: { "Content-Type": "application/json", ...options?.headers },
-    body: JSON.stringify(body),
-  });
-};
-
-export const getCreateWholesaleListingMutationOptions = <
-  TError = ErrorType<unknown>,
-  TContext = unknown,
->(options?: {
-  mutation?: UseMutationOptions<
-    Awaited<ReturnType<typeof createWholesaleListing>>,
-    TError,
-    { data: BodyType<CreateWholesaleListingBody> },
-    TContext
-  >;
-  request?: SecondParameter<typeof customFetch>;
-}): UseMutationOptions<
-  Awaited<ReturnType<typeof createWholesaleListing>>,
-  TError,
-  { data: BodyType<CreateWholesaleListingBody> },
-  TContext
-> => {
-  const mutationKey = ["createWholesaleListing"];
-  const { mutation: mutationOptions, request: requestOptions } = options
-    ? options.mutation && "mutationKey" in options.mutation && options.mutation.mutationKey
-      ? options
-      : { ...options, mutation: { ...options.mutation, mutationKey } }
-    : { mutation: { mutationKey }, request: undefined };
-  const mutationFn: MutationFunction<
-    Awaited<ReturnType<typeof createWholesaleListing>>,
-    { data: BodyType<CreateWholesaleListingBody> }
-  > = (props) => createWholesaleListing(props.data, requestOptions);
-  return { mutationFn, ...mutationOptions };
-};
-
-export const useCreateWholesaleListing = <
-  TError = ErrorType<unknown>,
-  TContext = unknown,
->(options?: {
-  mutation?: UseMutationOptions<
-    Awaited<ReturnType<typeof createWholesaleListing>>,
-    TError,
-    { data: BodyType<CreateWholesaleListingBody> },
-    TContext
-  >;
-  request?: SecondParameter<typeof customFetch>;
-}): UseMutationResult<
-  Awaited<ReturnType<typeof createWholesaleListing>>,
-  TError,
-  { data: BodyType<CreateWholesaleListingBody> },
-  TContext
-> => {
-  return useMutation(getCreateWholesaleListingMutationOptions(options));
-};
-
-// Update
-export const getUpdateWholesaleListingUrl = (id: number) => `/api/wholesale/${id}`;
-
-export const updateWholesaleListing = async (
-  id: number,
-  body: Partial<CreateWholesaleListingBody>,
-  options?: RequestInit,
-): Promise<WholesaleListing> => {
-  return customFetch<WholesaleListing>(getUpdateWholesaleListingUrl(id), {
-    ...options,
-    method: "PATCH",
-    headers: { "Content-Type": "application/json", ...options?.headers },
-    body: JSON.stringify(body),
-  });
-};
-
-export const getUpdateWholesaleListingMutationOptions = <
-  TError = ErrorType<unknown>,
-  TContext = unknown,
->(options?: {
-  mutation?: UseMutationOptions<
-    Awaited<ReturnType<typeof updateWholesaleListing>>,
-    TError,
-    { id: number; data: BodyType<Partial<CreateWholesaleListingBody>> },
-    TContext
-  >;
-  request?: SecondParameter<typeof customFetch>;
-}): UseMutationOptions<
-  Awaited<ReturnType<typeof updateWholesaleListing>>,
-  TError,
-  { id: number; data: BodyType<Partial<CreateWholesaleListingBody>> },
-  TContext
-> => {
-  const mutationKey = ["updateWholesaleListing"];
-  const { mutation: mutationOptions, request: requestOptions } = options
-    ? options.mutation && "mutationKey" in options.mutation && options.mutation.mutationKey
-      ? options
-      : { ...options, mutation: { ...options.mutation, mutationKey } }
-    : { mutation: { mutationKey }, request: undefined };
-  const mutationFn: MutationFunction<
-    Awaited<ReturnType<typeof updateWholesaleListing>>,
-    { id: number; data: BodyType<Partial<CreateWholesaleListingBody>> }
-  > = (props) => updateWholesaleListing(props.id, props.data, requestOptions);
-  return { mutationFn, ...mutationOptions };
-};
-
-export const useUpdateWholesaleListing = <
-  TError = ErrorType<unknown>,
-  TContext = unknown,
->(options?: {
-  mutation?: UseMutationOptions<
-    Awaited<ReturnType<typeof updateWholesaleListing>>,
-    TError,
-    { id: number; data: BodyType<Partial<CreateWholesaleListingBody>> },
-    TContext
-  >;
-  request?: SecondParameter<typeof customFetch>;
-}): UseMutationResult<
-  Awaited<ReturnType<typeof updateWholesaleListing>>,
-  TError,
-  { id: number; data: BodyType<Partial<CreateWholesaleListingBody>> },
-  TContext
-> => {
-  return useMutation(getUpdateWholesaleListingMutationOptions(options));
-};
-
-// Delete
-export const getDeleteWholesaleListingUrl = (id: number) => `/api/wholesale/${id}`;
-
-export const deleteWholesaleListing = async (
-  id: number,
-  options?: RequestInit,
-): Promise<void> => {
-  return customFetch<void>(getDeleteWholesaleListingUrl(id), {
-    ...options,
-    method: "DELETE",
-  });
-};
-
-export const getDeleteWholesaleListingMutationOptions = <
-  TError = ErrorType<unknown>,
-  TContext = unknown,
->(options?: {
-  mutation?: UseMutationOptions<
-    Awaited<ReturnType<typeof deleteWholesaleListing>>,
-    TError,
-    { id: number },
-    TContext
-  >;
-  request?: SecondParameter<typeof customFetch>;
-}): UseMutationOptions<
-  Awaited<ReturnType<typeof deleteWholesaleListing>>,
-  TError,
-  { id: number },
-  TContext
-> => {
-  const mutationKey = ["deleteWholesaleListing"];
-  const { mutation: mutationOptions, request: requestOptions } = options
-    ? options.mutation && "mutationKey" in options.mutation && options.mutation.mutationKey
-      ? options
-      : { ...options, mutation: { ...options.mutation, mutationKey } }
-    : { mutation: { mutationKey }, request: undefined };
-  const mutationFn: MutationFunction<
-    Awaited<ReturnType<typeof deleteWholesaleListing>>,
-    { id: number }
-  > = (props) => deleteWholesaleListing(props.id, requestOptions);
-  return { mutationFn, ...mutationOptions };
-};
-
-export const useDeleteWholesaleListing = <
-  TError = ErrorType<unknown>,
-  TContext = unknown,
->(options?: {
-  mutation?: UseMutationOptions<
-    Awaited<ReturnType<typeof deleteWholesaleListing>>,
-    TError,
-    { id: number },
-    TContext
-  >;
-  request?: SecondParameter<typeof customFetch>;
-}): UseMutationResult<
-  Awaited<ReturnType<typeof deleteWholesaleListing>>,
-  TError,
-  { id: number },
-  TContext
-> => {
-  return useMutation(getDeleteWholesaleListingMutationOptions(options));
-};
-
-// ─── Markets: GET /api/markets/:slug ─────────────────────────────────────────
-
-export const getGetMarketUrl = (slug: string) => `/api/markets/${slug}`;
-
-export const getGetMarketQueryKey = (slug: string) =>
-  ["getMarket", slug] as const;
-
-export const getMarket = async (
-  slug: string,
-  options?: RequestInit,
-): Promise<Market> => {
-  return customFetch<Market>(getGetMarketUrl(slug), { method: "GET", ...options });
-};
-
-export const getGetMarketQueryOptions = <
-  TData = Awaited<ReturnType<typeof getMarket>>,
-  TError = ErrorType<unknown>,
->(
-  slug: string,
-  options?: {
-    query?: UseQueryOptions<Awaited<ReturnType<typeof getMarket>>, TError, TData>;
-    request?: SecondParameter<typeof customFetch>;
-  },
-) => {
-  const { query: queryOptions, request: requestOptions } = options ?? {};
-  const queryKey = queryOptions?.queryKey ?? getGetMarketQueryKey(slug);
-  const queryFn: QueryFunction<Awaited<ReturnType<typeof getMarket>>> = ({ signal }) =>
-    getMarket(slug, { signal, ...requestOptions });
-  return { queryKey, queryFn, enabled: !!slug, ...queryOptions } as UseQueryOptions<
-    Awaited<ReturnType<typeof getMarket>>,
-    TError,
-    TData
-  >;
-};
-
-export function useGetMarket<
-  TData = Awaited<ReturnType<typeof getMarket>>,
-  TError = ErrorType<unknown>,
->(
-  slug: string,
-  options?: {
-    query?: UseQueryOptions<Awaited<ReturnType<typeof getMarket>>, TError, TData>;
-    request?: SecondParameter<typeof customFetch>;
-  },
-): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
-  const queryOptions = getGetMarketQueryOptions(slug, options);
-  const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & { queryKey: QueryKey };
-  return { ...query, queryKey: queryOptions.queryKey };
-}
-
-// ─── Markets: POST /api/markets/register ─────────────────────────────────────
-
-export const getRegisterMarketUrl = () => `/api/markets/register`;
-
-export const registerMarket = async (
-  data: BodyType<RegisterMarketBody>,
-  options?: RequestInit,
-): Promise<Market> => {
-  return customFetch<Market>(getRegisterMarketUrl(), {
-    ...options,
-    method: "POST",
-    body: JSON.stringify(data),
-  });
-};
-
-export const getRegisterMarketMutationOptions = <
-  TError = ErrorType<unknown>,
-  TContext = unknown,
->(options?: {
-  mutation?: UseMutationOptions<
-    Awaited<ReturnType<typeof registerMarket>>,
-    TError,
-    { data: BodyType<RegisterMarketBody> },
-    TContext
-  >;
-  request?: SecondParameter<typeof customFetch>;
-}): UseMutationOptions<
-  Awaited<ReturnType<typeof registerMarket>>,
-  TError,
-  { data: BodyType<RegisterMarketBody> },
-  TContext
-> => {
-  const mutationKey = ["registerMarket"];
-  const { mutation: mutationOptions, request: requestOptions } = options
-    ? options.mutation && "mutationKey" in options.mutation && options.mutation.mutationKey
-      ? options
-      : { ...options, mutation: { ...options.mutation, mutationKey } }
-    : { mutation: { mutationKey }, request: undefined };
-  const mutationFn: MutationFunction<
-    Awaited<ReturnType<typeof registerMarket>>,
-    { data: BodyType<RegisterMarketBody> }
-  > = (props) => registerMarket(props.data, requestOptions);
-  return { mutationFn, ...mutationOptions };
-};
-
-export const useRegisterMarket = <
-  TError = ErrorType<unknown>,
-  TContext = unknown,
->(options?: {
-  mutation?: UseMutationOptions<
-    Awaited<ReturnType<typeof registerMarket>>,
-    TError,
-    { data: BodyType<RegisterMarketBody> },
-    TContext
-  >;
-  request?: SecondParameter<typeof customFetch>;
-}): UseMutationResult<
-  Awaited<ReturnType<typeof registerMarket>>,
-  TError,
-  { data: BodyType<RegisterMarketBody> },
-  TContext
-> => {
-  return useMutation(getRegisterMarketMutationOptions(options));
-};
-
-// ─── Markets: PATCH /api/markets/:slug ────────────────────────────────────────
-
-export const getUpdateMarketUrl = (slug: string) => `/api/markets/${slug}`;
-
-export const updateMarket = async (
-  slug: string,
-  data: BodyType<Partial<RegisterMarketBody>>,
-  options?: RequestInit,
-): Promise<Market> => {
-  return customFetch<Market>(getUpdateMarketUrl(slug), {
-    ...options,
-    method: "PATCH",
-    body: JSON.stringify(data),
-  });
-};
-
-export const getUpdateMarketMutationOptions = <
-  TError = ErrorType<unknown>,
-  TContext = unknown,
->(options?: {
-  mutation?: UseMutationOptions<
-    Awaited<ReturnType<typeof updateMarket>>,
-    TError,
-    { slug: string; data: BodyType<Partial<RegisterMarketBody>> },
-    TContext
-  >;
-  request?: SecondParameter<typeof customFetch>;
-}): UseMutationOptions<
-  Awaited<ReturnType<typeof updateMarket>>,
-  TError,
-  { slug: string; data: BodyType<Partial<RegisterMarketBody>> },
-  TContext
-> => {
-  const mutationKey = ["updateMarket"];
-  const { mutation: mutationOptions, request: requestOptions } = options
-    ? options.mutation && "mutationKey" in options.mutation && options.mutation.mutationKey
-      ? options
-      : { ...options, mutation: { ...options.mutation, mutationKey } }
-    : { mutation: { mutationKey }, request: undefined };
-  const mutationFn: MutationFunction<
-    Awaited<ReturnType<typeof updateMarket>>,
-    { slug: string; data: BodyType<Partial<RegisterMarketBody>> }
-  > = (props) => updateMarket(props.slug, props.data, requestOptions);
-  return { mutationFn, ...mutationOptions };
-};
-
-export const useUpdateMarket = <
-  TError = ErrorType<unknown>,
-  TContext = unknown,
->(options?: {
-  mutation?: UseMutationOptions<
-    Awaited<ReturnType<typeof updateMarket>>,
-    TError,
-    { slug: string; data: BodyType<Partial<RegisterMarketBody>> },
-    TContext
-  >;
-  request?: SecondParameter<typeof customFetch>;
-}): UseMutationResult<
-  Awaited<ReturnType<typeof updateMarket>>,
-  TError,
-  { slug: string; data: BodyType<Partial<RegisterMarketBody>> },
-  TContext
-> => {
-  return useMutation(getUpdateMarketMutationOptions(options));
-};
-
-// ─── Markets: POST /api/markets/:slug/claim ────────────────────────────────────
-
-export const getClaimMarketUrl = (slug: string) => `/api/markets/${slug}/claim`;
-
-export const claimMarket = async (
-  slug: string,
-  options?: RequestInit,
-): Promise<Market> => {
-  return customFetch<Market>(getClaimMarketUrl(slug), {
-    ...options,
-    method: "POST",
-  });
-};
-
-export const getClaimMarketMutationOptions = <
-  TError = ErrorType<unknown>,
-  TContext = unknown,
->(options?: {
-  mutation?: UseMutationOptions<
-    Awaited<ReturnType<typeof claimMarket>>,
-    TError,
-    { slug: string },
-    TContext
-  >;
-  request?: SecondParameter<typeof customFetch>;
-}): UseMutationOptions<
-  Awaited<ReturnType<typeof claimMarket>>,
-  TError,
-  { slug: string },
-  TContext
-> => {
-  const mutationKey = ["claimMarket"];
-  const { mutation: mutationOptions, request: requestOptions } = options
-    ? options.mutation && "mutationKey" in options.mutation && options.mutation.mutationKey
-      ? options
-      : { ...options, mutation: { ...options.mutation, mutationKey } }
-    : { mutation: { mutationKey }, request: undefined };
-  const mutationFn: MutationFunction<
-    Awaited<ReturnType<typeof claimMarket>>,
-    { slug: string }
-  > = (props) => claimMarket(props.slug, requestOptions);
-  return { mutationFn, ...mutationOptions };
-};
-
-export const useClaimMarket = <
-  TError = ErrorType<unknown>,
-  TContext = unknown,
->(options?: {
-  mutation?: UseMutationOptions<
-    Awaited<ReturnType<typeof claimMarket>>,
-    TError,
-    { slug: string },
-    TContext
-  >;
-  request?: SecondParameter<typeof customFetch>;
-}): UseMutationResult<
-  Awaited<ReturnType<typeof claimMarket>>,
-  TError,
-  { slug: string },
-  TContext
-> => {
-  return useMutation(getClaimMarketMutationOptions(options));
-};

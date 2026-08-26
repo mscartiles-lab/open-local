@@ -12,7 +12,6 @@ const USER_AGENT = "OpenLocalApp/1.0 (openlocalapp.com)";
 interface NominatimResult {
   lat: string;
   lon: string;
-  display_name: string;
 }
 
 /**
@@ -56,11 +55,16 @@ async function nominatimSearch(
 
     if (!response.ok) return null;
 
-    const results: NominatimResult[] = await response.json();
-    if (!results.length) return null;
+    const results: unknown = await response.json();
+    if (!Array.isArray(results) || !results.length) return null;
 
-    const lat = parseFloat(results[0].lat);
-    const lon = parseFloat(results[0].lon);
+    const first = results[0] as Partial<NominatimResult>;
+    if (typeof first.lat !== "string" || typeof first.lon !== "string") {
+      return null;
+    }
+
+    const lat = parseFloat(first.lat);
+    const lon = parseFloat(first.lon);
     if (isNaN(lat) || isNaN(lon)) return null;
 
     return { latitude: lat, longitude: lon };

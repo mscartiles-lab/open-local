@@ -14,6 +14,8 @@ export interface VendorInput {
   description: string;
   category: string;
   location: string;
+  /** @nullable */
+  zipCode?: string | null;
   region: string;
   contactEmail: string;
   /** @nullable */

@@ -39,12 +39,210 @@ export interface ErrorResponse {
   error: string;
 }
 
+export interface Market {
+  id: number;
+  name: string;
+  /** @nullable */
+  slug: string | null;
+  city: string;
+  region: string;
+  /** @nullable */
+  address: string | null;
+  /** @nullable */
+  day: string | null;
+  /** @nullable */
+  time: string | null;
+  /** @nullable */
+  description: string | null;
+  /** @nullable */
+  imageUrl: string | null;
+  /** @nullable */
+  logoUrl: string | null;
+  /** @nullable */
+  featuredImageUrl: string | null;
+  /** @nullable */
+  websiteUrl: string | null;
+  /** @nullable */
+  contactEmail: string | null;
+  /** @nullable */
+  instagramHandle: string | null;
+  /** @nullable */
+  facebookUrl: string | null;
+  /** @nullable */
+  twitterHandle: string | null;
+  /** @nullable */
+  latitude: number | null;
+  /** @nullable */
+  longitude: number | null;
+  /** @nullable */
+  managerId: number | null;
+  verified: boolean;
+  vendorCount: number;
+  tags: string[];
+  active: boolean;
+  createdAt: string;
+}
+
+export interface MarketRegistrationInput {
+  /** @minLength 2 */
+  name: string;
+  /** @minLength 1 */
+  city: string;
+  region?: string;
+  address?: string;
+  day?: string;
+  time?: string;
+  description?: string;
+  contactEmail: string;
+  phone?: string;
+  websiteUrl?: string;
+  instagramHandle?: string;
+  facebookUrl?: string;
+  twitterHandle?: string;
+  logoUrl?: string;
+  featuredImageUrl?: string;
+  tags?: string[];
+  latitude?: number;
+  longitude?: number;
+}
+
+export interface MarketUpdateInput {
+  /** @minLength 2 */
+  name?: string;
+  /** @minLength 1 */
+  city?: string;
+  region?: string;
+  /** @nullable */
+  address?: string | null;
+  /** @nullable */
+  day?: string | null;
+  /** @nullable */
+  time?: string | null;
+  /** @nullable */
+  description?: string | null;
+  contactEmail?: string;
+  /** @nullable */
+  websiteUrl?: string | null;
+  /** @nullable */
+  instagramHandle?: string | null;
+  /** @nullable */
+  facebookUrl?: string | null;
+  /** @nullable */
+  twitterHandle?: string | null;
+  /** @nullable */
+  logoUrl?: string | null;
+  /** @nullable */
+  featuredImageUrl?: string | null;
+  tags?: string[];
+}
+
+export interface WholesaleListingRecord {
+  id: number;
+  vendorId: number;
+  title: string;
+  /** @nullable */
+  description: string | null;
+  /** @nullable */
+  category: string | null;
+  /** @nullable */
+  pricePerUnit: number | null;
+  /** @nullable */
+  unit: string | null;
+  minOrderQty: number;
+  /** @nullable */
+  availableQty: number | null;
+  /** @nullable */
+  imageUrl: string | null;
+  /** @nullable */
+  expiresAt: string | null;
+  active: boolean;
+  createdAt: string;
+}
+
+export type WholesaleListing = WholesaleListingRecord & {
+  vendorName: string;
+  vendorSlug: string;
+  vendorImageUrl: string;
+};
+
+export interface WholesaleListingInput {
+  /** @minLength 2 */
+  title: string;
+  description?: string;
+  category?: string;
+  /** @exclusiveMinimum 0 */
+  pricePerUnit?: number;
+  unit?: string;
+  /** @minimum 1 */
+  minOrderQty?: number;
+  /** @minimum 1 */
+  availableQty?: number;
+  imageUrl?: string;
+  expiresAt?: string;
+}
+
+export interface WholesaleListingUpdate {
+  /** @minLength 2 */
+  title?: string;
+  description?: string;
+  category?: string;
+  /** @exclusiveMinimum 0 */
+  pricePerUnit?: number;
+  unit?: string;
+  /** @minimum 1 */
+  minOrderQty?: number;
+  /** @minimum 1 */
+  availableQty?: number;
+  imageUrl?: string;
+  expiresAt?: string;
+}
+
 export type VendorAdditionalLocationsItem = {
   lat: number;
   lng: number;
   /** @nullable */
   label?: string | null;
 };
+
+/**
+ * @nullable
+ */
+export type VendorStoreTheme =
+  | (typeof VendorStoreTheme)[keyof typeof VendorStoreTheme]
+  | null;
+
+export const VendorStoreTheme = {
+  rustic: "rustic",
+  modern: "modern",
+  bold: "bold",
+  minimal: "minimal",
+} as const;
+
+/**
+ * @nullable
+ */
+export type VendorStoreFont =
+  | (typeof VendorStoreFont)[keyof typeof VendorStoreFont]
+  | null;
+
+export const VendorStoreFont = {
+  serif: "serif",
+  sans: "sans",
+  handwritten: "handwritten",
+} as const;
+
+/**
+ * @nullable
+ */
+export type VendorStoreLayout =
+  | (typeof VendorStoreLayout)[keyof typeof VendorStoreLayout]
+  | null;
+
+export const VendorStoreLayout = {
+  grid: "grid",
+  list: "list",
+  hero: "hero",
+} as const;
 
 export interface Vendor {
   id: number;
@@ -54,6 +252,8 @@ export interface Vendor {
   description: string;
   category: string;
   location: string;
+  /** @nullable */
+  zipCode: string | null;
   region: string;
   contactEmail: string;
   /** @nullable */
@@ -87,13 +287,13 @@ export interface Vendor {
   onboardingEmailsSent: string[];
   flaggedForFollowup: boolean;
   /** @nullable */
-  storeTheme: string | null;
+  storeTheme: VendorStoreTheme;
   /** @nullable */
   storePrimaryColor: string | null;
   /** @nullable */
-  storeFont: string | null;
+  storeFont: VendorStoreFont;
   /** @nullable */
-  storeLayout: string | null;
+  storeLayout: VendorStoreLayout;
   /** @nullable */
   storeBannerUrl: string | null;
   storeCustomizationEnabled: boolean;
@@ -113,6 +313,8 @@ export interface VendorInput {
   description: string;
   category: string;
   location: string;
+  /** @nullable */
+  zipCode?: string | null;
   region: string;
   contactEmail: string;
   /** @nullable */
@@ -151,6 +353,46 @@ export type VendorUpdateAdditionalLocationsItem = {
   label?: string | null;
 };
 
+/**
+ * @nullable
+ */
+export type VendorUpdateStoreTheme =
+  | (typeof VendorUpdateStoreTheme)[keyof typeof VendorUpdateStoreTheme]
+  | null;
+
+export const VendorUpdateStoreTheme = {
+  rustic: "rustic",
+  modern: "modern",
+  bold: "bold",
+  minimal: "minimal",
+} as const;
+
+/**
+ * @nullable
+ */
+export type VendorUpdateStoreFont =
+  | (typeof VendorUpdateStoreFont)[keyof typeof VendorUpdateStoreFont]
+  | null;
+
+export const VendorUpdateStoreFont = {
+  serif: "serif",
+  sans: "sans",
+  handwritten: "handwritten",
+} as const;
+
+/**
+ * @nullable
+ */
+export type VendorUpdateStoreLayout =
+  | (typeof VendorUpdateStoreLayout)[keyof typeof VendorUpdateStoreLayout]
+  | null;
+
+export const VendorUpdateStoreLayout = {
+  grid: "grid",
+  list: "list",
+  hero: "hero",
+} as const;
+
 export interface VendorUpdate {
   name?: string;
   slug?: string;
@@ -158,6 +400,8 @@ export interface VendorUpdate {
   description?: string;
   category?: string;
   location?: string;
+  /** @nullable */
+  zipCode?: string | null;
   region?: string;
   contactEmail?: string;
   /** @nullable */
@@ -188,13 +432,13 @@ export interface VendorUpdate {
   /** @nullable */
   additionalLocations?: VendorUpdateAdditionalLocationsItem[] | null;
   /** @nullable */
-  storeTheme?: string | null;
+  storeTheme?: VendorUpdateStoreTheme;
   /** @nullable */
   storePrimaryColor?: string | null;
   /** @nullable */
-  storeFont?: string | null;
+  storeFont?: VendorUpdateStoreFont;
   /** @nullable */
-  storeLayout?: string | null;
+  storeLayout?: VendorUpdateStoreLayout;
   /** @nullable */
   storeBannerUrl?: string | null;
   storeCustomizationEnabled?: boolean;
@@ -596,50 +840,6 @@ export type ListListingsParams = {
   search?: string;
 };
 
-export interface Market {
-  id: number;
-  name: string;
-  /** @nullable */
-  slug: string | null;
-  city: string;
-  region: string;
-  /** @nullable */
-  address: string | null;
-  /** @nullable */
-  day: string | null;
-  /** @nullable */
-  time: string | null;
-  /** @nullable */
-  description: string | null;
-  /** @nullable */
-  imageUrl: string | null;
-  /** @nullable */
-  logoUrl: string | null;
-  /** @nullable */
-  featuredImageUrl: string | null;
-  /** @nullable */
-  websiteUrl: string | null;
-  /** @nullable */
-  contactEmail: string | null;
-  /** @nullable */
-  instagramHandle: string | null;
-  /** @nullable */
-  facebookUrl: string | null;
-  /** @nullable */
-  twitterHandle: string | null;
-  /** @nullable */
-  latitude: number | null;
-  /** @nullable */
-  longitude: number | null;
-  /** @nullable */
-  managerId: number | null;
-  verified: boolean;
-  vendorCount: number;
-  tags: string[];
-  active: boolean;
-  createdAt: string;
-}
-
 export type ListMarketsParams = {
   search?: string;
   city?: string;
@@ -647,62 +847,11 @@ export type ListMarketsParams = {
   day?: string;
 };
 
-export interface RegisterMarketBody {
-  name: string;
-  city: string;
-  region?: string;
-  address?: string;
-  day?: string;
-  time?: string;
-  description?: string;
-  contactEmail: string;
-  phone?: string;
-  websiteUrl?: string;
-  instagramHandle?: string;
-  facebookUrl?: string;
-  twitterHandle?: string;
-  logoUrl?: string;
-  featuredImageUrl?: string;
-  tags?: string[];
-  latitude?: number;
-  longitude?: number;
-}
-
-// ─── Wholesale Exchange ───────────────────────────────────────────────────────
-
-export interface WholesaleListing {
-  id: number;
-  vendorId: number;
-  vendorName: string;
-  vendorSlug: string;
-  vendorImageUrl: string | null;
-  title: string;
-  description: string | null;
-  category: string | null;
-  pricePerUnit: number | null;
-  unit: string | null;
-  minOrderQty: number;
-  availableQty: number | null;
-  imageUrl: string | null;
-  expiresAt: string | null;
-  active: boolean;
-  createdAt: string;
-}
-
-export type ListWholesaleParams = {
+export type ListWholesaleListingsParams = {
   search?: string;
   category?: string;
+  /**
+   * @minimum 1
+   */
   vendorId?: number;
 };
-
-export interface CreateWholesaleListingBody {
-  title: string;
-  description?: string;
-  category?: string;
-  pricePerUnit?: number;
-  unit?: string;
-  minOrderQty?: number;
-  availableQty?: number;
-  imageUrl?: string;
-  expiresAt?: string;
-}

@@ -33,6 +33,7 @@ export const ListVendorsResponseItem = zod.object({
   description: zod.string(),
   category: zod.string(),
   location: zod.string(),
+  zipCode: zod.string().nullable(),
   region: zod.string(),
   contactEmail: zod.string(),
   websiteUrl: zod.string().nullable(),
@@ -61,10 +62,32 @@ export const ListVendorsResponseItem = zod.object({
   createdAt: zod.coerce.date(),
   onboardingEmailsSent: zod.array(zod.string()),
   flaggedForFollowup: zod.boolean(),
-  storeTheme: zod.string().nullable(),
+  storeTheme: zod
+    .union([
+      zod.literal("rustic"),
+      zod.literal("modern"),
+      zod.literal("bold"),
+      zod.literal("minimal"),
+      zod.literal(null),
+    ])
+    .nullable(),
   storePrimaryColor: zod.string().nullable(),
-  storeFont: zod.string().nullable(),
-  storeLayout: zod.string().nullable(),
+  storeFont: zod
+    .union([
+      zod.literal("serif"),
+      zod.literal("sans"),
+      zod.literal("handwritten"),
+      zod.literal(null),
+    ])
+    .nullable(),
+  storeLayout: zod
+    .union([
+      zod.literal("grid"),
+      zod.literal("list"),
+      zod.literal("hero"),
+      zod.literal(null),
+    ])
+    .nullable(),
   storeBannerUrl: zod.string().nullable(),
   storeCustomizationEnabled: zod.boolean(),
 });
@@ -80,6 +103,7 @@ export const CreateVendorBody = zod.object({
   description: zod.string(),
   category: zod.string(),
   location: zod.string(),
+  zipCode: zod.string().nullish(),
   region: zod.string(),
   contactEmail: zod.string(),
   websiteUrl: zod.string().nullish(),
@@ -118,6 +142,7 @@ export const ListFeaturedVendorsResponseItem = zod.object({
   description: zod.string(),
   category: zod.string(),
   location: zod.string(),
+  zipCode: zod.string().nullable(),
   region: zod.string(),
   contactEmail: zod.string(),
   websiteUrl: zod.string().nullable(),
@@ -146,10 +171,32 @@ export const ListFeaturedVendorsResponseItem = zod.object({
   createdAt: zod.coerce.date(),
   onboardingEmailsSent: zod.array(zod.string()),
   flaggedForFollowup: zod.boolean(),
-  storeTheme: zod.string().nullable(),
+  storeTheme: zod
+    .union([
+      zod.literal("rustic"),
+      zod.literal("modern"),
+      zod.literal("bold"),
+      zod.literal("minimal"),
+      zod.literal(null),
+    ])
+    .nullable(),
   storePrimaryColor: zod.string().nullable(),
-  storeFont: zod.string().nullable(),
-  storeLayout: zod.string().nullable(),
+  storeFont: zod
+    .union([
+      zod.literal("serif"),
+      zod.literal("sans"),
+      zod.literal("handwritten"),
+      zod.literal(null),
+    ])
+    .nullable(),
+  storeLayout: zod
+    .union([
+      zod.literal("grid"),
+      zod.literal("list"),
+      zod.literal("hero"),
+      zod.literal(null),
+    ])
+    .nullable(),
   storeBannerUrl: zod.string().nullable(),
   storeCustomizationEnabled: zod.boolean(),
 });
@@ -172,6 +219,7 @@ export const GetVendorResponse = zod.object({
   description: zod.string(),
   category: zod.string(),
   location: zod.string(),
+  zipCode: zod.string().nullable(),
   region: zod.string(),
   contactEmail: zod.string(),
   websiteUrl: zod.string().nullable(),
@@ -200,10 +248,32 @@ export const GetVendorResponse = zod.object({
   createdAt: zod.coerce.date(),
   onboardingEmailsSent: zod.array(zod.string()),
   flaggedForFollowup: zod.boolean(),
-  storeTheme: zod.string().nullable(),
+  storeTheme: zod
+    .union([
+      zod.literal("rustic"),
+      zod.literal("modern"),
+      zod.literal("bold"),
+      zod.literal("minimal"),
+      zod.literal(null),
+    ])
+    .nullable(),
   storePrimaryColor: zod.string().nullable(),
-  storeFont: zod.string().nullable(),
-  storeLayout: zod.string().nullable(),
+  storeFont: zod
+    .union([
+      zod.literal("serif"),
+      zod.literal("sans"),
+      zod.literal("handwritten"),
+      zod.literal(null),
+    ])
+    .nullable(),
+  storeLayout: zod
+    .union([
+      zod.literal("grid"),
+      zod.literal("list"),
+      zod.literal("hero"),
+      zod.literal(null),
+    ])
+    .nullable(),
   storeBannerUrl: zod.string().nullable(),
   storeCustomizationEnabled: zod.boolean(),
 });
@@ -222,6 +292,7 @@ export const UpdateVendorBody = zod.object({
   description: zod.string().optional(),
   category: zod.string().optional(),
   location: zod.string().optional(),
+  zipCode: zod.string().nullish(),
   region: zod.string().optional(),
   contactEmail: zod.string().optional(),
   websiteUrl: zod.string().nullish(),
@@ -247,10 +318,32 @@ export const UpdateVendorBody = zod.object({
       }),
     )
     .nullish(),
-  storeTheme: zod.string().nullish(),
+  storeTheme: zod
+    .union([
+      zod.literal("rustic"),
+      zod.literal("modern"),
+      zod.literal("bold"),
+      zod.literal("minimal"),
+      zod.literal(null),
+    ])
+    .nullish(),
   storePrimaryColor: zod.string().nullish(),
-  storeFont: zod.string().nullish(),
-  storeLayout: zod.string().nullish(),
+  storeFont: zod
+    .union([
+      zod.literal("serif"),
+      zod.literal("sans"),
+      zod.literal("handwritten"),
+      zod.literal(null),
+    ])
+    .nullish(),
+  storeLayout: zod
+    .union([
+      zod.literal("grid"),
+      zod.literal("list"),
+      zod.literal("hero"),
+      zod.literal(null),
+    ])
+    .nullish(),
   storeBannerUrl: zod.string().nullish(),
   storeCustomizationEnabled: zod.boolean().optional(),
 });
@@ -263,6 +356,7 @@ export const UpdateVendorResponse = zod.object({
   description: zod.string(),
   category: zod.string(),
   location: zod.string(),
+  zipCode: zod.string().nullable(),
   region: zod.string(),
   contactEmail: zod.string(),
   websiteUrl: zod.string().nullable(),
@@ -291,10 +385,32 @@ export const UpdateVendorResponse = zod.object({
   createdAt: zod.coerce.date(),
   onboardingEmailsSent: zod.array(zod.string()),
   flaggedForFollowup: zod.boolean(),
-  storeTheme: zod.string().nullable(),
+  storeTheme: zod
+    .union([
+      zod.literal("rustic"),
+      zod.literal("modern"),
+      zod.literal("bold"),
+      zod.literal("minimal"),
+      zod.literal(null),
+    ])
+    .nullable(),
   storePrimaryColor: zod.string().nullable(),
-  storeFont: zod.string().nullable(),
-  storeLayout: zod.string().nullable(),
+  storeFont: zod
+    .union([
+      zod.literal("serif"),
+      zod.literal("sans"),
+      zod.literal("handwritten"),
+      zod.literal(null),
+    ])
+    .nullable(),
+  storeLayout: zod
+    .union([
+      zod.literal("grid"),
+      zod.literal("list"),
+      zod.literal("hero"),
+      zod.literal(null),
+    ])
+    .nullable(),
   storeBannerUrl: zod.string().nullable(),
   storeCustomizationEnabled: zod.boolean(),
 });
@@ -576,6 +692,7 @@ export const GetVendorBySlugResponse = zod.object({
   description: zod.string(),
   category: zod.string(),
   location: zod.string(),
+  zipCode: zod.string().nullable(),
   region: zod.string(),
   contactEmail: zod.string(),
   websiteUrl: zod.string().nullable(),
@@ -604,10 +721,32 @@ export const GetVendorBySlugResponse = zod.object({
   createdAt: zod.coerce.date(),
   onboardingEmailsSent: zod.array(zod.string()),
   flaggedForFollowup: zod.boolean(),
-  storeTheme: zod.string().nullable(),
+  storeTheme: zod
+    .union([
+      zod.literal("rustic"),
+      zod.literal("modern"),
+      zod.literal("bold"),
+      zod.literal("minimal"),
+      zod.literal(null),
+    ])
+    .nullable(),
   storePrimaryColor: zod.string().nullable(),
-  storeFont: zod.string().nullable(),
-  storeLayout: zod.string().nullable(),
+  storeFont: zod
+    .union([
+      zod.literal("serif"),
+      zod.literal("sans"),
+      zod.literal("handwritten"),
+      zod.literal(null),
+    ])
+    .nullable(),
+  storeLayout: zod
+    .union([
+      zod.literal("grid"),
+      zod.literal("list"),
+      zod.literal("hero"),
+      zod.literal(null),
+    ])
+    .nullable(),
   storeBannerUrl: zod.string().nullable(),
   storeCustomizationEnabled: zod.boolean(),
 });
@@ -624,6 +763,7 @@ export const StartEmailVerificationBody = zod.object({
     description: zod.string(),
     category: zod.string(),
     location: zod.string(),
+    zipCode: zod.string().nullish(),
     region: zod.string(),
     contactEmail: zod.string(),
     websiteUrl: zod.string().nullish(),
@@ -1024,6 +1164,342 @@ export const CreateListingBody = zod.object({
 });
 
 /**
+ * @summary List active markets
+ */
+export const ListMarketsQueryParams = zod.object({
+  search: zod.coerce.string().optional(),
+  city: zod.coerce.string().optional(),
+  region: zod.coerce.string().optional(),
+  day: zod.coerce.string().optional(),
+});
+
+export const ListMarketsResponseItem = zod.object({
+  id: zod.number(),
+  name: zod.string(),
+  slug: zod.string().nullable(),
+  city: zod.string(),
+  region: zod.string(),
+  address: zod.string().nullable(),
+  day: zod.string().nullable(),
+  time: zod.string().nullable(),
+  description: zod.string().nullable(),
+  imageUrl: zod.string().nullable(),
+  logoUrl: zod.string().nullable(),
+  featuredImageUrl: zod.string().nullable(),
+  websiteUrl: zod.string().nullable(),
+  contactEmail: zod.string().nullable(),
+  instagramHandle: zod.string().nullable(),
+  facebookUrl: zod.string().nullable(),
+  twitterHandle: zod.string().nullable(),
+  latitude: zod.number().nullable(),
+  longitude: zod.number().nullable(),
+  managerId: zod.number().nullable(),
+  verified: zod.boolean(),
+  vendorCount: zod.number(),
+  tags: zod.array(zod.string()),
+  active: zod.boolean(),
+  createdAt: zod.coerce.date(),
+});
+export const ListMarketsResponse = zod.array(ListMarketsResponseItem);
+
+/**
+ * @summary Register a market for review
+ */
+export const registerMarketBodyNameMin = 2;
+
+export const registerMarketBodyRegionDefault = `FL`;
+
+export const RegisterMarketBody = zod.object({
+  name: zod.string().min(registerMarketBodyNameMin),
+  city: zod.string().min(1),
+  region: zod.string().default(registerMarketBodyRegionDefault),
+  address: zod.string().optional(),
+  day: zod.string().optional(),
+  time: zod.string().optional(),
+  description: zod.string().optional(),
+  contactEmail: zod.string().email(),
+  phone: zod.string().optional(),
+  websiteUrl: zod.string().url().optional(),
+  instagramHandle: zod.string().optional(),
+  facebookUrl: zod.string().url().optional(),
+  twitterHandle: zod.string().optional(),
+  logoUrl: zod.string().url().optional(),
+  featuredImageUrl: zod.string().url().optional(),
+  tags: zod.array(zod.string()).optional(),
+  latitude: zod.number().optional(),
+  longitude: zod.number().optional(),
+});
+
+/**
+ * @summary Get the authenticated manager's market
+ */
+export const GetMyMarketResponse = zod.object({
+  id: zod.number(),
+  name: zod.string(),
+  slug: zod.string().nullable(),
+  city: zod.string(),
+  region: zod.string(),
+  address: zod.string().nullable(),
+  day: zod.string().nullable(),
+  time: zod.string().nullable(),
+  description: zod.string().nullable(),
+  imageUrl: zod.string().nullable(),
+  logoUrl: zod.string().nullable(),
+  featuredImageUrl: zod.string().nullable(),
+  websiteUrl: zod.string().nullable(),
+  contactEmail: zod.string().nullable(),
+  instagramHandle: zod.string().nullable(),
+  facebookUrl: zod.string().nullable(),
+  twitterHandle: zod.string().nullable(),
+  latitude: zod.number().nullable(),
+  longitude: zod.number().nullable(),
+  managerId: zod.number().nullable(),
+  verified: zod.boolean(),
+  vendorCount: zod.number(),
+  tags: zod.array(zod.string()),
+  active: zod.boolean(),
+  createdAt: zod.coerce.date(),
+});
+
+/**
+ * @summary Get a market by slug
+ */
+export const GetMarketParams = zod.object({
+  slug: zod.coerce.string(),
+});
+
+export const GetMarketResponse = zod.object({
+  id: zod.number(),
+  name: zod.string(),
+  slug: zod.string().nullable(),
+  city: zod.string(),
+  region: zod.string(),
+  address: zod.string().nullable(),
+  day: zod.string().nullable(),
+  time: zod.string().nullable(),
+  description: zod.string().nullable(),
+  imageUrl: zod.string().nullable(),
+  logoUrl: zod.string().nullable(),
+  featuredImageUrl: zod.string().nullable(),
+  websiteUrl: zod.string().nullable(),
+  contactEmail: zod.string().nullable(),
+  instagramHandle: zod.string().nullable(),
+  facebookUrl: zod.string().nullable(),
+  twitterHandle: zod.string().nullable(),
+  latitude: zod.number().nullable(),
+  longitude: zod.number().nullable(),
+  managerId: zod.number().nullable(),
+  verified: zod.boolean(),
+  vendorCount: zod.number(),
+  tags: zod.array(zod.string()),
+  active: zod.boolean(),
+  createdAt: zod.coerce.date(),
+});
+
+/**
+ * @summary Update a managed market
+ */
+export const UpdateMarketParams = zod.object({
+  slug: zod.coerce.string(),
+});
+
+export const updateMarketBodyNameMin = 2;
+
+export const UpdateMarketBody = zod.object({
+  name: zod.string().min(updateMarketBodyNameMin).optional(),
+  city: zod.string().min(1).optional(),
+  region: zod.string().optional(),
+  address: zod.string().nullish(),
+  day: zod.string().nullish(),
+  time: zod.string().nullish(),
+  description: zod.string().nullish(),
+  contactEmail: zod.string().email().optional(),
+  websiteUrl: zod.string().url().nullish(),
+  instagramHandle: zod.string().nullish(),
+  facebookUrl: zod.string().url().nullish(),
+  twitterHandle: zod.string().nullish(),
+  logoUrl: zod.string().url().nullish(),
+  featuredImageUrl: zod.string().url().nullish(),
+  tags: zod.array(zod.string()).optional(),
+});
+
+export const UpdateMarketResponse = zod.object({
+  id: zod.number(),
+  name: zod.string(),
+  slug: zod.string().nullable(),
+  city: zod.string(),
+  region: zod.string(),
+  address: zod.string().nullable(),
+  day: zod.string().nullable(),
+  time: zod.string().nullable(),
+  description: zod.string().nullable(),
+  imageUrl: zod.string().nullable(),
+  logoUrl: zod.string().nullable(),
+  featuredImageUrl: zod.string().nullable(),
+  websiteUrl: zod.string().nullable(),
+  contactEmail: zod.string().nullable(),
+  instagramHandle: zod.string().nullable(),
+  facebookUrl: zod.string().nullable(),
+  twitterHandle: zod.string().nullable(),
+  latitude: zod.number().nullable(),
+  longitude: zod.number().nullable(),
+  managerId: zod.number().nullable(),
+  verified: zod.boolean(),
+  vendorCount: zod.number(),
+  tags: zod.array(zod.string()),
+  active: zod.boolean(),
+  createdAt: zod.coerce.date(),
+});
+
+/**
+ * @summary Claim management of a market
+ */
+export const ClaimMarketParams = zod.object({
+  slug: zod.coerce.string(),
+});
+
+export const ClaimMarketResponse = zod.object({
+  id: zod.number(),
+  name: zod.string(),
+  slug: zod.string().nullable(),
+  city: zod.string(),
+  region: zod.string(),
+  address: zod.string().nullable(),
+  day: zod.string().nullable(),
+  time: zod.string().nullable(),
+  description: zod.string().nullable(),
+  imageUrl: zod.string().nullable(),
+  logoUrl: zod.string().nullable(),
+  featuredImageUrl: zod.string().nullable(),
+  websiteUrl: zod.string().nullable(),
+  contactEmail: zod.string().nullable(),
+  instagramHandle: zod.string().nullable(),
+  facebookUrl: zod.string().nullable(),
+  twitterHandle: zod.string().nullable(),
+  latitude: zod.number().nullable(),
+  longitude: zod.number().nullable(),
+  managerId: zod.number().nullable(),
+  verified: zod.boolean(),
+  vendorCount: zod.number(),
+  tags: zod.array(zod.string()),
+  active: zod.boolean(),
+  createdAt: zod.coerce.date(),
+});
+
+/**
+ * @summary List active wholesale listings
+ */
+
+export const ListWholesaleListingsQueryParams = zod.object({
+  search: zod.coerce.string().optional(),
+  category: zod.coerce.string().optional(),
+  vendorId: zod.coerce.number().min(1).optional(),
+});
+
+export const ListWholesaleListingsResponseItem = zod
+  .object({
+    id: zod.number(),
+    vendorId: zod.number(),
+    title: zod.string(),
+    description: zod.string().nullable(),
+    category: zod.string().nullable(),
+    pricePerUnit: zod.number().nullable(),
+    unit: zod.string().nullable(),
+    minOrderQty: zod.number(),
+    availableQty: zod.number().nullable(),
+    imageUrl: zod.string().nullable(),
+    expiresAt: zod.coerce.date().nullable(),
+    active: zod.boolean(),
+    createdAt: zod.coerce.date(),
+  })
+  .and(
+    zod.object({
+      vendorName: zod.string(),
+      vendorSlug: zod.string(),
+      vendorImageUrl: zod.string(),
+    }),
+  );
+export const ListWholesaleListingsResponse = zod.array(
+  ListWholesaleListingsResponseItem,
+);
+
+/**
+ * @summary Create a wholesale listing
+ */
+export const createWholesaleListingBodyTitleMin = 2;
+
+export const createWholesaleListingBodyPricePerUnitExclusiveMin = 0;
+
+export const createWholesaleListingBodyMinOrderQtyDefault = 1;
+
+export const CreateWholesaleListingBody = zod.object({
+  title: zod.string().min(createWholesaleListingBodyTitleMin),
+  description: zod.string().optional(),
+  category: zod.string().optional(),
+  pricePerUnit: zod
+    .number()
+    .gt(createWholesaleListingBodyPricePerUnitExclusiveMin)
+    .optional(),
+  unit: zod.string().optional(),
+  minOrderQty: zod
+    .number()
+    .min(1)
+    .default(createWholesaleListingBodyMinOrderQtyDefault),
+  availableQty: zod.number().min(1).optional(),
+  imageUrl: zod.string().url().optional(),
+  expiresAt: zod.coerce.date().optional(),
+});
+
+/**
+ * @summary Update a wholesale listing
+ */
+export const UpdateWholesaleListingParams = zod.object({
+  id: zod.coerce.number(),
+});
+
+export const updateWholesaleListingBodyTitleMin = 2;
+
+export const updateWholesaleListingBodyPricePerUnitExclusiveMin = 0;
+
+export const UpdateWholesaleListingBody = zod.object({
+  title: zod.string().min(updateWholesaleListingBodyTitleMin).optional(),
+  description: zod.string().optional(),
+  category: zod.string().optional(),
+  pricePerUnit: zod
+    .number()
+    .gt(updateWholesaleListingBodyPricePerUnitExclusiveMin)
+    .optional(),
+  unit: zod.string().optional(),
+  minOrderQty: zod.number().min(1).optional(),
+  availableQty: zod.number().min(1).optional(),
+  imageUrl: zod.string().url().optional(),
+  expiresAt: zod.coerce.date().optional(),
+});
+
+export const UpdateWholesaleListingResponse = zod.object({
+  id: zod.number(),
+  vendorId: zod.number(),
+  title: zod.string(),
+  description: zod.string().nullable(),
+  category: zod.string().nullable(),
+  pricePerUnit: zod.number().nullable(),
+  unit: zod.string().nullable(),
+  minOrderQty: zod.number(),
+  availableQty: zod.number().nullable(),
+  imageUrl: zod.string().nullable(),
+  expiresAt: zod.coerce.date().nullable(),
+  active: zod.boolean(),
+  createdAt: zod.coerce.date(),
+});
+
+/**
+ * @summary Remove a wholesale listing
+ */
+export const DeleteWholesaleListingParams = zod.object({
+  id: zod.coerce.number(),
+});
+
+/**
  * Returns a presigned GCS URL for direct upload. The client sends JSON
 metadata here, then uploads the file directly to the returned URL.
 
@@ -1082,47 +1558,4 @@ export const GetStorageObjectParams = zod.object({
     .describe(
       "Object path within the private object dir (e.g. `uploads\/some-uuid`).",
     ),
-});
-
-// ─── Wholesale Exchange ───────────────────────────────────────────────────────
-
-export const ListWholesaleQueryParams = zod.object({
-  search: zod.string().optional(),
-  category: zod.string().optional(),
-  vendorId: zod.coerce.number().int().positive().optional(),
-});
-
-export const CreateWholesaleListingBody = zod.object({
-  title: zod.string().min(2),
-  description: zod.string().optional(),
-  category: zod.string().optional(),
-  pricePerUnit: zod.number().positive().optional(),
-  unit: zod.string().optional(),
-  minOrderQty: zod.number().int().min(1).default(1),
-  availableQty: zod.number().int().min(1).optional(),
-  imageUrl: zod.string().url().optional(),
-  expiresAt: zod.string().datetime().optional(),
-});
-
-export const UpdateWholesaleListingBody = CreateWholesaleListingBody.partial();
-
-// ─── Markets ──────────────────────────────────────────────────────────────────
-
-export const RegisterMarketBodySchema = zod.object({
-  name: zod.string().min(2),
-  city: zod.string().min(1),
-  region: zod.string().optional(),
-  address: zod.string().optional(),
-  day: zod.string().optional(),
-  time: zod.string().optional(),
-  description: zod.string().optional(),
-  contactEmail: zod.string().email(),
-  phone: zod.string().optional(),
-  websiteUrl: zod.string().url().optional(),
-  instagramHandle: zod.string().optional(),
-  facebookUrl: zod.string().url().optional(),
-  twitterHandle: zod.string().optional(),
-  logoUrl: zod.string().url().optional(),
-  featuredImageUrl: zod.string().url().optional(),
-  tags: zod.array(zod.string()).optional(),
 });

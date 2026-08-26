@@ -37,7 +37,7 @@ import {
   useCreateWholesaleListing,
   useUpdateWholesaleListing,
   useDeleteWholesaleListing,
-  getListWholesaleQueryKey,
+  getListWholesaleListingsQueryKey,
   type WholesaleListing,
 } from "@workspace/api-client-react";
 import { useUser } from "@/context/UserContext";
@@ -296,7 +296,9 @@ function ListingModal({
         await create.mutateAsync({ data: payload });
         toast({ title: t("wholesale.listingPosted") });
       }
-      queryClient.invalidateQueries({ queryKey: getListWholesaleQueryKey() });
+      queryClient.invalidateQueries({
+        queryKey: getListWholesaleListingsQueryKey(),
+      });
       onClose();
     } catch {
       toast({ title: t("wholesale.somethingWentWrong"), variant: "destructive" });
@@ -436,7 +438,14 @@ export default function WholesalePage() {
       search: search.trim() || undefined,
       category: categoryFilter !== "all" ? categoryFilter : undefined,
     },
-    { query: { queryKey: getListWholesaleQueryKey({ search: search.trim() || undefined, category: categoryFilter !== "all" ? categoryFilter : undefined }) } },
+    {
+      query: {
+        queryKey: getListWholesaleListingsQueryKey({
+          search: search.trim() || undefined,
+          category: categoryFilter !== "all" ? categoryFilter : undefined,
+        }),
+      },
+    },
   );
 
   const deleteM = useDeleteWholesaleListing();
@@ -458,7 +467,9 @@ export default function WholesalePage() {
     if (!confirm(t("wholesale.removeTitle"))) return;
     try {
       await deleteM.mutateAsync({ id });
-      queryClient.invalidateQueries({ queryKey: getListWholesaleQueryKey() });
+      queryClient.invalidateQueries({
+        queryKey: getListWholesaleListingsQueryKey(),
+      });
       toast({ title: t("wholesale.removed") });
     } catch {
       toast({ title: t("wholesale.removeFailed"), variant: "destructive" });

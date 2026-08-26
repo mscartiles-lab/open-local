@@ -6,6 +6,9 @@
  * OpenAPI spec version: 0.1.0
  */
 import type { VendorUpdateAdditionalLocationsItem } from "./vendorUpdateAdditionalLocationsItem";
+import type { VendorUpdateStoreFont } from "./vendorUpdateStoreFont";
+import type { VendorUpdateStoreLayout } from "./vendorUpdateStoreLayout";
+import type { VendorUpdateStoreTheme } from "./vendorUpdateStoreTheme";
 
 export interface VendorUpdate {
   name?: string;
@@ -14,6 +17,8 @@ export interface VendorUpdate {
   description?: string;
   category?: string;
   location?: string;
+  /** @nullable */
+  zipCode?: string | null;
   region?: string;
   contactEmail?: string;
   /** @nullable */
@@ -44,13 +49,13 @@ export interface VendorUpdate {
   /** @nullable */
   additionalLocations?: VendorUpdateAdditionalLocationsItem[] | null;
   /** @nullable */
-  storeTheme?: string | null;
+  storeTheme?: VendorUpdateStoreTheme;
   /** @nullable */
   storePrimaryColor?: string | null;
   /** @nullable */
-  storeFont?: string | null;
+  storeFont?: VendorUpdateStoreFont;
   /** @nullable */
-  storeLayout?: string | null;
+  storeLayout?: VendorUpdateStoreLayout;
   /** @nullable */
   storeBannerUrl?: string | null;
   storeCustomizationEnabled?: boolean;

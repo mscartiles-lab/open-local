@@ -62,7 +62,7 @@ import {
   getListProductsQueryKey,
   getGetLocalNowFeedQueryKey,
   getGetMarketplaceStatsQueryKey,
-  getListWholesaleQueryKey,
+  getListWholesaleListingsQueryKey,
   getGetMarketQueryKey,
   type Vendor,
   type Product,
@@ -601,8 +601,12 @@ function StoreEditorTab({ vendor, tier }: { vendor: Vendor; tier: TierId }) {
   const [customEnabled, setCustomEnabled] = useState(vendor.storeCustomizationEnabled ?? true);
   const [storeTheme, setStoreTheme] = useState(vendor.storeTheme ?? "");
   const [storeColor, setStoreColor] = useState(vendor.storePrimaryColor ?? "#3c4a26");
-  const [storeFont, setStoreFont] = useState(vendor.storeFont ?? "sans");
-  const [storeLayout, setStoreLayout] = useState(vendor.storeLayout ?? "grid");
+  const [storeFont, setStoreFont] = useState<"serif" | "sans" | "handwritten">(
+    vendor.storeFont ?? "sans",
+  );
+  const [storeLayout, setStoreLayout] = useState<"grid" | "list" | "hero">(
+    vendor.storeLayout ?? "grid",
+  );
   const [storeBanner, setStoreBanner] = useState(vendor.storeBannerUrl ?? "");
   const [bannerUploading, setBannerUploading] = useState(false);
   const isPremium = tier === "premium";
@@ -861,11 +865,11 @@ function StoreEditorTab({ vendor, tier }: { vendor: Vendor; tier: TierId }) {
                     <Type className="h-4 w-4 text-muted-foreground" /> {t("dashboard.headingFont")}
                   </label>
                   <div className="flex gap-2">
-                    {[
+                    {([
                       { id: "sans",        label: "Clean",       preview: "Aa", cls: "font-sans" },
                       { id: "serif",       label: "Serif",       preview: "Aa", cls: "font-['Playfair_Display']" },
                       { id: "handwritten", label: "Handwritten", preview: "Aa", cls: "font-['Caveat']" },
-                    ].map((f) => (
+                    ] as const).map((f) => (
                       <button
                         key={f.id}
                         type="button"
@@ -888,11 +892,11 @@ function StoreEditorTab({ vendor, tier }: { vendor: Vendor; tier: TierId }) {
                     <LayoutGrid className="h-4 w-4 text-muted-foreground" /> Product layout
                   </label>
                   <div className="flex gap-2">
-                    {[
+                    {([
                       { id: "grid", label: "Grid",   icon: LayoutGrid,    desc: "4-column cards" },
                       { id: "list", label: "List",   icon: List,          desc: t("dashboard.layoutListDesc") },
                       { id: "hero", label: "Hero",   icon: LayoutTemplate, desc: t("dashboard.layoutHeroDesc") },
-                    ].map((l) => (
+                    ] as const).map((l) => (
                       <button
                         key={l.id}
                         type="button"
@@ -1063,7 +1067,11 @@ function WholesaleTab({ vendorId }: { vendorId: number }) {
 
   const { data: listings = [], isLoading } = useListWholesaleListings(
     { vendorId },
-    { query: { queryKey: getListWholesaleQueryKey({ vendorId }) } },
+    {
+      query: {
+        queryKey: getListWholesaleListingsQueryKey({ vendorId }),
+      },
+    },
   );
 
   const createM = useCreateWholesaleListing();
@@ -1086,8 +1094,12 @@ function WholesaleTab({ vendorId }: { vendorId: number }) {
   };
 
   const invalidate = () => {
-    queryClient.invalidateQueries({ queryKey: getListWholesaleQueryKey({ vendorId }) });
-    queryClient.invalidateQueries({ queryKey: getListWholesaleQueryKey() });
+    queryClient.invalidateQueries({
+      queryKey: getListWholesaleListingsQueryKey({ vendorId }),
+    });
+    queryClient.invalidateQueries({
+      queryKey: getListWholesaleListingsQueryKey(),
+    });
   };
 
   const handleSubmit = async () => {

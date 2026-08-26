@@ -6,6 +6,9 @@
  * OpenAPI spec version: 0.1.0
  */
 import type { VendorAdditionalLocationsItem } from "./vendorAdditionalLocationsItem";
+import type { VendorStoreFont } from "./vendorStoreFont";
+import type { VendorStoreLayout } from "./vendorStoreLayout";
+import type { VendorStoreTheme } from "./vendorStoreTheme";
 
 export interface Vendor {
   id: number;
@@ -15,6 +18,8 @@ export interface Vendor {
   description: string;
   category: string;
   location: string;
+  /** @nullable */
+  zipCode: string | null;
   region: string;
   contactEmail: string;
   /** @nullable */
@@ -48,13 +53,13 @@ export interface Vendor {
   onboardingEmailsSent: string[];
   flaggedForFollowup: boolean;
   /** @nullable */
-  storeTheme: string | null;
+  storeTheme: VendorStoreTheme;
   /** @nullable */
   storePrimaryColor: string | null;
   /** @nullable */
-  storeFont: string | null;
+  storeFont: VendorStoreFont;
   /** @nullable */
-  storeLayout: string | null;
+  storeLayout: VendorStoreLayout;
   /** @nullable */
   storeBannerUrl: string | null;
   storeCustomizationEnabled: boolean;
