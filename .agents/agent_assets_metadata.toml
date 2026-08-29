@@ -137,3 +137,10 @@ id = "R4div1EbW0_Q7D279oyr4"
 uri = "file://artifacts/open-local-mobile/assets/images/icon.png"
 type = "image"
 title = "Open Local App Icon (1024×1024)"
+
+[[outputs]]
+id = "nb3FOmS4RGubvTp6mxHfb"
+uri = "file://exports/open-local-app-store-qr.png"
+type = "image"
+title = "Open Local App Store QR Code"
+description = "High-resolution QR code directing users to the official Open Local listing on the Apple App Store."
