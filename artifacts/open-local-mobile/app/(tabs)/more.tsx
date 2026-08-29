@@ -191,6 +191,26 @@ export default function MoreScreen() {
                 </>
               )}
 
+              {/* Admin-only section */}
+              {user.isAdmin && (
+                <>
+                  <TouchableOpacity
+                    style={[s.row, s.rowBorder]}
+                    onPress={() => router.push("/admin/qr-code-share" as any)}
+                    activeOpacity={0.7}
+                  >
+                    <View style={[s.iconWrap, { backgroundColor: colors.primary + "18" }]}>
+                      <Feather name="share" size={18} color={colors.primary} />
+                    </View>
+                    <View style={s.rowText}>
+                      <Text style={s.rowLabel}>{t("more.shareQRCode")}</Text>
+                      <Text style={s.rowSubtitle}>{t("more.shareQRCodeSubtitle")}</Text>
+                    </View>
+                    <Feather name="chevron-right" size={16} color={colors.mutedForeground} />
+                  </TouchableOpacity>
+                </>
+              )}
+
               <TouchableOpacity
                 style={s.row}
                 onPress={handleLogout}

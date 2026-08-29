@@ -61,6 +61,7 @@ function generateToken(): string {
 
 function userPublic(user: typeof usersTable.$inferSelect) {
   const effectiveRole = (user.role === "admin" || isAdminEmail(user.email)) ? "admin" : user.role;
+  const isAdmin = user.role === "admin" || isAdminEmail(user.email);
   return {
     id: user.id,
     email: user.email,
@@ -68,6 +69,7 @@ function userPublic(user: typeof usersTable.$inferSelect) {
     avatarSeed: user.avatarSeed,
     avatarStyle: user.avatarStyle,
     role: effectiveRole,
+    isAdmin,
     zip: user.zip,
     state: user.state,
     tier: user.tier ?? null,
