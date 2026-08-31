@@ -148,7 +148,7 @@ router.post("/orders/checkout", requireAuth, async (req: Request, res: Response)
         },
       },
       success_url: `${baseUrl}/orders?order=success&session_id={CHECKOUT_SESSION_ID}`,
-      cancel_url: `${baseUrl}/products/${productId}?order=cancel`,
+      cancel_url: `${baseUrl}/dashboard/${row.vendorSlug}?order=cancel&product=${productId}`,
       metadata: {
         kind: "product_purchase",
         orderId: String(order.id),
