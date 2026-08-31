@@ -190,6 +190,8 @@
     "myDashboardSubtitle": "Manage your vendor profile",
     "billingPlan": "Billing & Plan",
     "billingPlanSubtitle": "Manage your subscription",
+    "shareQRCode": "Share QR Code",
+    "shareQRCodeSubtitle": "Generate app download QR codes",
     "joinOpenLocalSubtitle": "Create a free account",
     "signInSubtitle": "Sign in to your account",
     "signOut": "Sign out",
@@ -723,5 +725,20 @@
     "vietnamese": "Tiếng Việt",
     "portuguese": "Português (BR)",
     "french": "Français"
+  },
+  "adminQR": {
+    "title": "Share QR Code",
+    "qrType": "QR CODE TYPE",
+    "optionDeepLink": "App Link",
+    "optionDeepLinkDesc": "Opens in the app if installed",
+    "optionAppStore": "App Store",
+    "optionAppStoreDesc": "Download from the App Store",
+    "openInApp": "Opens Open Local directly when scanned",
+    "downloadFromStore": "Opens the App Store download page",
+    "screenshotTitle": "Screenshot the QR Code",
+    "screenshotMessage": "Take a screenshot to share this QR code with users.",
+    "screenshotTip": "Take Screenshot to Share",
+    "hint": "Print this QR code and place it at your market booth or event to let customers scan and download the app.",
+    "unauthorized": "Admin access only"
   }
 }

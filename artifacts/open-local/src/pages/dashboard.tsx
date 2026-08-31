@@ -371,7 +371,7 @@ function AnalyticsTab({ vendorId, products }: { vendorId: number; products: Prod
         <StatCard icon={TrendingDown} label={t("dashboard.liveSurplus")} value={liveSurplus} accent="text-emerald-700" />
       </div>
       <AnalyticsPanel kind="vendor" id={vendorId} />
-      <PayoutsPanel vendorSlug={""} />
+      <PayoutsPanel vendorSlug={vendor.slug} />
       <VendorOrdersPanel vendorId={vendorId} />
       <VisitRequestsPanel vendorId={vendorId} />
       <CustomerVerificationPanel vendorId={vendorId} />

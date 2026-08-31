@@ -19,7 +19,8 @@ export interface AppUser {
   username: string;
   avatarSeed: string;
   avatarStyle: AvatarStyle;
-  role: "vendor" | "shopper";
+  role: "vendor" | "shopper" | "admin";
+  isAdmin: boolean;
   zip: string | null;
   state: string;
   paused: boolean;

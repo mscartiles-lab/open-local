@@ -115,8 +115,8 @@ router.post("/billing/vendor/checkout", requireAuth, async (req: Request, res: R
         ...(trialDays > 0 ? { trial_period_days: trialDays } : {}),
         metadata: { tier, userId: String(user.id) },
       },
-      success_url: `${baseUrl}/?billing=success`,
-      cancel_url: `${baseUrl}/?billing=cancel`,
+      success_url: `${baseUrl}/billing?billing=success`,
+      cancel_url: `${baseUrl}/billing?billing=cancel`,
       metadata: { tier, userId: String(user.id) },
     });
 
@@ -179,9 +179,9 @@ router.post("/billing/business/checkout", async (req: Request, res: Response): P
         ...(trialDays > 0 ? { trial_period_days: trialDays } : {}),
         metadata: { tier, establishmentId: String(est.id) },
       },
-      success_url: `${baseUrl}/?billing=success`,
-      cancel_url: `${baseUrl}/?billing=cancel`,
-      metadata: { tier, establishmentId: String(est.id) },
+      success_url: `${baseUrl}/billing?billing=success`,
+      cancel_url: `${baseUrl}/billing?billing=cancel`,
+      metadata: { tier, establishmentId: String(establishmentId) },
     });
 
     res.json({ url: session.url, trialDays, tier });

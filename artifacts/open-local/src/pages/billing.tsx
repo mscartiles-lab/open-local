@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Layout from "@/components/layout/Layout";
 import { useUser } from "@/context/UserContext";
 import { Loader2, CheckCircle, Store, Gift, Sparkles } from "lucide-react";
@@ -10,6 +10,19 @@ export default function Billing() {
   const { user, isLoading } = useUser();
   const [selected, setSelected] = useState<TierId>("middle");
   const { t } = useTranslation();
+  const [billingResult, setBillingResult] = useState<"success" | "cancel" | null>(null);
+
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const result = params.get("billing");
+    if (result === "success" || result === "cancel") {
+      setBillingResult(result);
+      // Clean URL without reload
+      const url = new URL(window.location.href);
+      url.searchParams.delete("billing");
+      window.history.replaceState({}, "", url.toString());
+    }
+  }, []);
 
   if (isLoading) {
     return (
@@ -53,6 +66,30 @@ export default function Billing() {
   return (
     <Layout>
       <div className="max-w-4xl mx-auto px-4 py-12">
+        {billingResult === "success" && (
+          <div className="mb-8 rounded-2xl border-2 border-green-300 bg-green-50 px-6 py-5 flex items-start gap-4">
+            <div className="w-10 h-10 rounded-full bg-green-100 flex items-center justify-center shrink-0 mt-0.5">
+              <CheckCircle className="w-5 h-5 text-green-700" />
+            </div>
+            <div>
+              <p className="font-semibold text-green-900 mb-1">Subscription activated!</p>
+              <p className="text-sm text-green-800">Your plan is now active. Welcome to Open Local!</p>
+            </div>
+          </div>
+        )}
+
+        {billingResult === "cancel" && (
+          <div className="mb-8 rounded-2xl border-2 border-amber-200 bg-amber-50 px-6 py-5 flex items-start gap-4">
+            <div className="w-10 h-10 rounded-full bg-amber-100 flex items-center justify-center shrink-0 mt-0.5">
+              <Store className="w-5 h-5 text-amber-700" />
+            </div>
+            <div>
+              <p className="font-semibold text-amber-900 mb-1">Checkout cancelled</p>
+              <p className="text-sm text-amber-800">No worries — your plan hasn't changed. You can try again anytime.</p>
+            </div>
+          </div>
+        )}
+
         <div className="mb-10">
           <h1 className="text-4xl font-serif font-bold text-foreground mb-2">{t("billing.title")}</h1>
           <p className="text-muted-foreground">{t("billing.subtitle")}</p>
