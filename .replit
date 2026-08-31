@@ -29,6 +29,12 @@ packages = ["glib", "nss", "nspr", "atk", "at-spi2-atk", "cups", "libdrm", "dbus
 [userenv.shared]
 ADMIN_EMAILS = "mscartiles@gmail.com"
 
+[userenv.development]
+MAIL_FROM = "Open Local <support@openlocalapp.com>"
+
+[userenv.production]
+MAIL_FROM = "Open Local <support@openlocalapp.com>"
+
 [[ports]]
 localPort = 8080
 externalPort = 8080

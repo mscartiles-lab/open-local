@@ -60,9 +60,9 @@ export async function sendVerificationEmail(
       const body = await resp.text().catch(() => "");
       logger.warn(
         { to: opts.to, status: resp.status, body },
-        "[email] Resend verification send failed — falling back to dev mode",
+        "[email] Resend verification send failed",
       );
-      return { sent: false, devFallback: true };
+      throw new Error(`Resend rejected verification email with HTTP ${resp.status}`);
     }
 
     logger.info({ to: opts.to }, "[email] verification sent via Resend");
@@ -70,9 +70,9 @@ export async function sendVerificationEmail(
   } catch (err) {
     logger.warn(
       { err, to: opts.to },
-      "[email] Resend request failed — falling back to dev mode",
+      "[email] Resend request failed",
     );
-    return { sent: false, devFallback: true };
+    throw err instanceof Error ? err : new Error("Resend request failed");
   }
 }
 
