@@ -1,0 +1,37 @@
+name: Ops Task
+description: Deployment, infrastructure, or workflow task
+labels: ["ops"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        ## Ops Task
+
+  - type: textarea
+    id: description
+    attributes:
+      label: What needs to happen?
+    validations:
+      required: true
+
+  - type: dropdown
+    id: action
+    attributes:
+      label: Action needed
+      options:
+        - Chrissy deploys (web / mobile / both)
+        - Chrissy pulls latest main to Replit
+        - Both review before deploy
+        - Infrastructure only (no deploy)
+    validations:
+      required: true
+
+  - type: checkboxes
+    id: chrissy-informed
+    attributes:
+      label: Chrissy Status
+      options:
+        - label: "Chrissy has been informed"
+          required: false
+        - label: "Chrissy has confirmed ready to deploy"
+          required: false

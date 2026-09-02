@@ -1,0 +1,55 @@
+name: Bug Report
+description: Report a broken workflow or unexpected behavior
+labels: ["bug"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        ## Bug Report
+
+  - type: textarea
+    id: steps
+    attributes:
+      label: Steps to reproduce
+      description: How do we trigger this bug?
+    validations:
+      required: true
+
+  - type: textarea
+    id: expected
+    attributes:
+      label: Expected behavior
+    validations:
+      required: true
+
+  - type: textarea
+    id: actual
+    attributes:
+      label: Actual behavior
+    validations:
+      required: true
+
+  - type: dropdown
+    id: artifact
+    attributes:
+      label: Which artifact is affected?
+      options:
+        - Web App (open-local)
+        - Mobile App (open-local-mobile)
+        - API Server (api-server)
+        - All three
+        - Not sure
+    validations:
+      required: true
+
+  - type: dropdown
+    id: severity
+    attributes:
+      label: Severity
+      options:
+        - Critical — app down, data loss risk
+        - High — major feature broken
+        - Medium — workaround exists
+        - Low — cosmetic issue
+    validations:
+      required: true

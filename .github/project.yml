@@ -1,0 +1,43 @@
+version: 2.1
+
+projects:
+  - name: Open Local Ops
+    description: Tracking all Open Local development, ops, and deployment tasks
+    readme: docs/ops/README.md
+    home_template: docs/ops/PROJECT.md
+
+columns:
+  - name: Backlog
+    position: 0
+  - name: In Progress
+    position: 1
+  - name: Review / Ready
+    position: 2
+  - name: Deployed
+    position: 3
+
+labels:
+  - name: bug
+    color: FF0000
+    description: Something is broken
+  - name: enhancement
+    color: 00FF00
+    description: New feature or improvement
+  - name: ops
+    color: FF9900
+    description: Deployment or infrastructure task
+  - name: web
+    color: 0988E8
+    description: Affects the web app
+  - name: mobile
+    color: 9B59B6
+    description: Affects the mobile app
+  - name: api
+    color: 00A86B
+    description: Affects the API server
+  - name: chrissy-ready
+    color: FFA500
+    description: Chrissy has been informed, ready to deploy
+  - name: blocked
+    color: 808080
+    description: Waiting on something — cannot proceed
