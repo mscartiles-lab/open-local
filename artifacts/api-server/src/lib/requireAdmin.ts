@@ -2,6 +2,7 @@ import type { Request, Response, NextFunction } from "express";
 import { eq, and, gt } from "drizzle-orm";
 import { db, sessionsTable, usersTable } from "@workspace/db";
 import type { AuthRequest } from "./requireAuth";
+import { isBlockedUserId } from "./blockedUsers";
 
 function getAdminEmails(): Set<string> {
   return new Set(
@@ -43,6 +44,11 @@ export async function requireAdmin(req: Request, res: Response, next: NextFuncti
 
   if (!session) {
     res.status(401).json({ error: "Invalid or expired session" });
+    return;
+  }
+
+  if (isBlockedUserId(session.userId)) {
+    res.status(403).json({ error: "Account access disabled" });
     return;
   }
 

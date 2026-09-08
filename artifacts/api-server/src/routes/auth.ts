@@ -6,6 +6,7 @@ import { generateVerificationCode, sendVerificationEmail, sendDirectEmail } from
 import { logger } from "../lib/logger";
 import { emitEvent } from "../lib/webhooks";
 import { isAdminEmail, isReplitWorkspaceRequest } from "../lib/requireAdmin";
+import { isBlockedUserId } from "../lib/blockedUsers";
 import { logIp, extractIp } from "../lib/ipLogger";
 import { getAppUrl } from "../lib/appUrl";
 
@@ -363,6 +364,13 @@ router.post("/auth/login/start", async (req: Request, res: Response): Promise<vo
     return;
   }
 
+  if (isBlockedUserId(user.id)) {
+    res.status(200).json({
+      message: "If an account exists for this email, a login code has been sent.",
+    });
+    return;
+  }
+
   const code = generateVerificationCode();
   const expiresAt = new Date(Date.now() + VERIFICATION_TTL_MS);
 
@@ -460,6 +468,11 @@ router.post("/auth/login/verify", async (req: Request, res: Response): Promise<v
 
   if (!user) {
     res.status(404).json({ error: "Account not found." });
+    return;
+  }
+
+  if (isBlockedUserId(user.id)) {
+    res.status(403).json({ error: "Account access disabled" });
     return;
   }
 

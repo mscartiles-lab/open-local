@@ -31,9 +31,11 @@ ADMIN_EMAILS = "mscartiles@gmail.com"
 
 [userenv.development]
 MAIL_FROM = "Open Local <support@openlocalapp.com>"
+BLOCKED_USER_IDS = "30"
 
 [userenv.production]
 MAIL_FROM = "Open Local <support@openlocalapp.com>"
+BLOCKED_USER_IDS = "30"
 
 [[ports]]
 localPort = 8080

@@ -1,6 +1,7 @@
 import type { Request, Response, NextFunction } from "express";
 import { eq, and, gt } from "drizzle-orm";
 import { db, sessionsTable } from "@workspace/db";
+import { isBlockedUserId } from "./blockedUsers";
 
 export interface AuthRequest extends Request {
   userId: number;
@@ -21,6 +22,11 @@ export async function requireAuth(req: Request, res: Response, next: NextFunctio
 
   if (!session) {
     res.status(401).json({ error: "Invalid or expired session" });
+    return;
+  }
+
+  if (isBlockedUserId(session.userId)) {
+    res.status(403).json({ error: "Account access disabled" });
     return;
   }
 
