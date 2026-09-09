@@ -368,7 +368,15 @@ function ListingPromoActions({ productId, featured }: { productId: number; featu
 
 // ─── Analytics tab ───────────────────────────────────────────────────────────
 
-function AnalyticsTab({ vendorId, products }: { vendorId: number; products: Product[] }) {
+function AnalyticsTab({
+  vendorId,
+  vendorSlug,
+  products,
+}: {
+  vendorId: number;
+  vendorSlug: string;
+  products: Product[];
+}) {
   const { t } = useTranslation();
   const inStockCount = products.filter((p) => p.inStock).length;
   const liveBatchDrops = products.filter((p) => p.listingType === "batch_drop" && p.inStock).length;
@@ -383,7 +391,7 @@ function AnalyticsTab({ vendorId, products }: { vendorId: number; products: Prod
         <StatCard icon={TrendingDown} label={t("dashboard.liveSurplus")} value={liveSurplus} accent="text-emerald-700" />
       </div>
       <AnalyticsPanel kind="vendor" id={vendorId} />
-      <PayoutsPanel vendorSlug={vendor.slug} />
+      <PayoutsPanel vendorSlug={vendorSlug} />
       <VendorOrdersPanel vendorId={vendorId} />
       <VisitRequestsPanel vendorId={vendorId} />
       <CustomerVerificationPanel vendorId={vendorId} />
@@ -1781,6 +1789,21 @@ export default function Dashboard() {
     setUploadOpen(true);
   };
 
+  const TABS: { id: Tab; label: string; icon: typeof BarChart3 }[] = useMemo(() => {
+    const base: { id: Tab; label: string; icon: typeof BarChart3 }[] = [
+      { id: "analytics", label: t("dashboard.tabAnalytics"), icon: BarChart3 },
+      { id: "inventory", label: t("dashboard.tabInventory"), icon: Layers },
+      { id: "store", label: t("dashboard.tabStoreEditor"), icon: Store },
+      { id: "markets", label: t("dashboard.tabFindMarkets"), icon: MapPin },
+      { id: "wholesale", label: t("dashboard.tabWholesale"), icon: Box },
+      { id: "settings", label: t("dashboard.tabSettings"), icon: Settings },
+    ];
+    if (managedMarket) {
+      base.splice(4, 0, { id: "my-market", label: t("dashboard.tabMyMarket"), icon: Crown });
+    }
+    return base;
+  }, [managedMarket, t]);
+
   if (userLoading || isLoading) {
     return (
       <Layout>
@@ -1848,21 +1871,6 @@ export default function Dashboard() {
 
   const tier = (user?.tier ?? "basic") as TierId;
 
-  const TABS: { id: Tab; label: string; icon: typeof BarChart3 }[] = useMemo(() => {
-    const base: { id: Tab; label: string; icon: typeof BarChart3 }[] = [
-      { id: "analytics", label: t("dashboard.tabAnalytics"), icon: BarChart3 },
-      { id: "inventory", label: t("dashboard.tabInventory"), icon: Layers },
-      { id: "store", label: t("dashboard.tabStoreEditor"), icon: Store },
-      { id: "markets", label: t("dashboard.tabFindMarkets"), icon: MapPin },
-      { id: "wholesale", label: t("dashboard.tabWholesale"), icon: Box },
-      { id: "settings", label: t("dashboard.tabSettings"), icon: Settings },
-    ];
-    if (managedMarket) {
-      base.splice(4, 0, { id: "my-market", label: t("dashboard.tabMyMarket"), icon: Crown });
-    }
-    return base;
-  }, [managedMarket, t]);
-
   return (
     <Layout>
       {/* Header */}
@@ -1928,7 +1936,7 @@ export default function Dashboard() {
       {/* Tab content */}
       <div className="container mx-auto max-w-6xl px-4 py-8">
         {activeTab === "analytics" && (
-          <AnalyticsTab vendorId={vendor.id} products={products} />
+          <AnalyticsTab vendorId={vendor.id} vendorSlug={vendor.slug} products={products} />
         )}
         {activeTab === "inventory" && (
           <InventoryTab
