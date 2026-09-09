@@ -19,7 +19,7 @@ localPort = 24149
 run = "pnpm run dev"
 
 [services.production]
-build = [ "pnpm", "--dir", "artifacts/open-local-mobile", "run", "build" ]
+build = [ "sh", "-c", "yarn --cwd artifacts/open-local-mobile install --frozen-lockfile --ignore-scripts --non-interactive && pnpm --dir artifacts/open-local-mobile run build" ]
 run = [ "pnpm", "--dir", "artifacts/open-local-mobile", "run", "serve" ]
 
 [services.env]

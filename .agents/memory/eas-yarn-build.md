@@ -14,7 +14,7 @@ EAS builds run with yarn. The pnpm monorepo root confuses EAS in several ways.
 3. **package.json**: remove `@workspace/*` dep, move `expo` + all runtime packages to `dependencies` (not devDeps — EAS reads app config before installing devDeps), set `"packageManager": "yarn@1.22.22"`, rename from `@workspace/open-local-mobile` to `open-local-mobile`
 4. **tsconfig.json**: remove `references` array pointing to `../../lib/api-client-react`
 5. **yarn.lock**: generate a FULL lockfile using `yarn install --cache-folder /tmp/yarn-cache --ignore-scripts` from within `artifacts/open-local-mobile/`. EAS uses `yarn install --frozen-lockfile` so a minimal 2-line stub fails immediately.
-   - **CRITICAL**: Replit generates yarn.lock with internal `http://package-firewall.replit.local/npm/` URLs. EAS build servers cannot reach these. Rewrite with: `sed -i 's|http://package-firewall\.replit\.local/npm/|https://registry.npmjs.org/|g' yarn.lock`
+   - **CRITICAL**: Replit may generate yarn.lock URLs under either `package-firewall.replit.local` or `package-firewall.replit.internal`. External build servers cannot reach either hostname; rewrite both to `https://registry.npmjs.org/`.
 6. **Root `.easignore`**: When `.easignore` exists at the git root, EAS replaces ALL `.gitignore` rules with it (plus only `node_modules` and `.git` as defaults). Every path from `.gitignore` that matters must be listed explicitly. Key patterns:
    - `.local`, `.cache` — pnpm content-addressable store (842MB) and cache (958MB); gitignored but not auto-excluded once `.easignore` exists
    - `pnpm-lock.yaml`, `pnpm-workspace.yaml` — prevent pnpm detection
