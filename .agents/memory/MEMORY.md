@@ -5,3 +5,4 @@
 - [OTA API domain injection](ota-api-domain-injection.md) — public Expo API domains must be present when publishing OTA updates, not only native builds
 - [Secret refresh for publishing](secret-refresh-for-publishing.md) — updated Replit Secrets may require a fresh managed process before publishing tools see them
 - [Standalone mobile publish commands](standalone-mobile-publish-commands.md) — production commands must explicitly target the mobile directory when it is outside the pnpm workspace
+- [Schema-lag tolerant authentication](schema-lag-tolerant-auth.md) — authentication lookups should select only required columns so additive schema drift cannot block login
