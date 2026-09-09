@@ -125,4 +125,10 @@ app.use(ipLoggingMiddleware);
 
 app.use("/api", router);
 
+app.use((err: unknown, req: Request, res: Response, _next: NextFunction) => {
+  logger.error({ err, method: req.method, path: req.path }, "Unhandled API error");
+  if (res.headersSent) return;
+  res.status(500).json({ error: "Internal server error" });
+});
+
 export default app;

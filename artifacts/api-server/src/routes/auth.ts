@@ -351,7 +351,10 @@ router.post("/auth/login/start", async (req: Request, res: Response): Promise<vo
   const normalizedEmail = parsed.data.email.toLowerCase();
 
   const [user] = await db
-    .select()
+    .select({
+      id: usersTable.id,
+      username: usersTable.username,
+    })
     .from(usersTable)
     .where(eq(usersTable.email, normalizedEmail));
 

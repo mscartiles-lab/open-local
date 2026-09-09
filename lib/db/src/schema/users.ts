@@ -15,6 +15,7 @@ export const usersTable = pgTable("users", {
   avatarStyle: text("avatar_style").notNull().default("thumbs"),
   role: text("role").notNull().default("shopper"),
   isAdmin: boolean("is_admin").notNull().default(false),
+  emailUnsubscribed: boolean("email_unsubscribed").notNull().default(false),
   zip: text("zip"),
   state: text("state").notNull().default("FL"),
   tier: text("tier").notNull().default("middle"),
