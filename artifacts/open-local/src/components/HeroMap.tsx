@@ -236,7 +236,7 @@ export default function HeroMap() {
                   {t("heroMap.distanceAway", { distance: haversineMiles(userPos[0], userPos[1], v.latitude!, v.longitude!).toFixed(1) })}
                 </div>
               )}
-              <a href={`/vendors/${v.slug}`} className="text-xs text-[#c07218] font-semibold hover:underline">
+              <a href={`/vendors/${v.id}`} className="text-xs text-[#c07218] font-semibold hover:underline">
                 {t("heroMap.viewVendor")}
               </a>
             </Popup>

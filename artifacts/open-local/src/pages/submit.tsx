@@ -130,7 +130,12 @@ export default function Submit() {
   const [, setLocation] = useLocation();
   const { toast } = useToast();
   const queryClient = useQueryClient();
-  const startVerification = useStartEmailVerification();
+  const sessionToken =
+    typeof window !== "undefined" ? window.localStorage.getItem("ol_session") : null;
+  const authenticatedRequest = sessionToken
+    ? { headers: { Authorization: `Bearer ${sessionToken}` } }
+    : undefined;
+  const startVerification = useStartEmailVerification({ request: authenticatedRequest });
   const resendVerification = useResendEmailVerification();
   const verifyCode = useVerifyEmailCode();
 

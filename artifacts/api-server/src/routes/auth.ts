@@ -7,6 +7,7 @@ import { logger } from "../lib/logger";
 import { emitEvent } from "../lib/webhooks";
 import { isAdminEmail, isReplitWorkspaceRequest } from "../lib/requireAdmin";
 import { isBlockedUserId } from "../lib/blockedUsers";
+import { getVendorForUser } from "../lib/vendorOwnership";
 import { logIp, extractIp } from "../lib/ipLogger";
 import { getAppUrl } from "../lib/appUrl";
 
@@ -499,6 +500,7 @@ router.post("/auth/login/verify", async (req: Request, res: Response): Promise<v
 // ─── Me / Logout ─────────────────────────────────────────────────────────────
 
 router.get("/auth/me", async (req: Request, res: Response): Promise<void> => {
+  res.setHeader("Cache-Control", "no-store");
   const authHeader = req.headers.authorization;
   if (!authHeader?.startsWith("Bearer ")) {
     res.status(401).json({ error: "Not authenticated" });
@@ -533,11 +535,7 @@ router.get("/auth/me", async (req: Request, res: Response): Promise<void> => {
 
   let vendorSlug: string | null = null;
   if (user.role === "vendor") {
-    const [vendor] = await db
-      .select({ slug: vendorsTable.slug })
-      .from(vendorsTable)
-      .where(eq(vendorsTable.contactEmail, user.email))
-      .limit(1);
+    const vendor = await getVendorForUser(user.id);
     vendorSlug = vendor?.slug ?? null;
   }
 

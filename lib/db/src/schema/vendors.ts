@@ -8,9 +8,13 @@ import {
   doublePrecision,
   jsonb,
 } from "drizzle-orm/pg-core";
+import { usersTable } from "./users";
 
 export const vendorsTable = pgTable("vendors", {
   id: serial("id").primaryKey(),
+  ownerUserId: integer("owner_user_id").references(() => usersTable.id, {
+    onDelete: "set null",
+  }),
   name: text("name").notNull(),
   slug: text("slug").notNull().unique(),
   tagline: text("tagline").notNull(),

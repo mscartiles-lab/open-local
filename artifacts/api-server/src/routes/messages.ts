@@ -16,21 +16,14 @@ import {
   vendorsTable,
 } from "@workspace/db";
 import { requireAuth, type AuthRequest } from "../lib/requireAuth";
+import { getVendorForUser } from "../lib/vendorOwnership";
 
 const router: IRouter = Router();
 
 // Resolve the vendor row owned by the authenticated user (if any).
 async function getMyVendor(userId: number) {
-  const [user] = await db
-    .select({ email: usersTable.email })
-    .from(usersTable)
-    .where(eq(usersTable.id, userId));
-  if (!user) return null;
-  const [vendor] = await db
-    .select({ id: vendorsTable.id })
-    .from(vendorsTable)
-    .where(eq(vendorsTable.contactEmail, user.email));
-  return vendor ?? null;
+  const vendor = await getVendorForUser(userId);
+  return vendor ? { id: vendor.id } : null;
 }
 
 // Assert the caller is a participant in the conversation.

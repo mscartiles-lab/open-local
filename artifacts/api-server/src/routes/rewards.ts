@@ -9,6 +9,7 @@ import {
   avatarUnlocksTable,
 } from "@workspace/db";
 import { requireAuth, type AuthRequest } from "../lib/requireAuth";
+import { userOwnsVendor } from "../lib/vendorOwnership";
 import { UNLOCK_CATALOG, unlocksEarnedFor } from "../lib/avatarCatalog";
 import { emitEvent } from "../lib/webhooks";
 
@@ -133,21 +134,6 @@ async function loadUserEmail(userId: number): Promise<string | null> {
     .from(usersTable)
     .where(eq(usersTable.id, userId));
   return u?.email ?? null;
-}
-
-async function userOwnsVendor(userId: number, vendorId: number): Promise<boolean> {
-  const [u] = await db
-    .select({ email: usersTable.email, role: usersTable.role })
-    .from(usersTable)
-    .where(eq(usersTable.id, userId));
-  if (!u) return false;
-  if (u.role === "admin") return true;
-  const [v] = await db
-    .select({ contactEmail: vendorsTable.contactEmail })
-    .from(vendorsTable)
-    .where(eq(vendorsTable.id, vendorId));
-  if (!v) return false;
-  return v.contactEmail.toLowerCase() === u.email.toLowerCase();
 }
 
 // Vendor lists the pending visit requests for one of their shops.

@@ -89,7 +89,15 @@ const SESSION_OTP_KEY = "ol_dashboard_verified";
 
 // ─── Dashboard OTP gate ──────────────────────────────────────────────────────
 
-function DashboardOtpGate({ onVerified }: { onVerified: () => void }) {
+function DashboardOtpGate({
+  vendorSlug,
+  verificationKey,
+  onVerified,
+}: {
+  vendorSlug: string;
+  verificationKey: string;
+  onVerified: () => void;
+}) {
   const { t } = useTranslation();
   const { toast } = useToast();
   const [phase, setPhase] = useState<"idle" | "sending" | "sent" | "verifying">("idle");
@@ -108,7 +116,11 @@ function DashboardOtpGate({ onVerified }: { onVerified: () => void }) {
     try {
       const res = await fetch("/api/dashboard/otp/send", {
         method: "POST",
-        headers: { Authorization: `Bearer ${sessionToken}` },
+        headers: {
+          Authorization: `Bearer ${sessionToken}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ vendorSlug }),
       });
       const data = await res.json() as { sent?: boolean; devFallback?: boolean; devCode?: string; email?: string; error?: string };
       if (!res.ok) {
@@ -135,7 +147,7 @@ function DashboardOtpGate({ onVerified }: { onVerified: () => void }) {
       const res = await fetch("/api/dashboard/otp/verify", {
         method: "POST",
         headers: { Authorization: `Bearer ${sessionToken}`, "Content-Type": "application/json" },
-        body: JSON.stringify({ code: code.trim() }),
+        body: JSON.stringify({ code: code.trim(), vendorSlug }),
       });
       const data = await res.json() as { valid?: boolean; error?: string };
       if (!res.ok || !data.valid) {
@@ -143,13 +155,13 @@ function DashboardOtpGate({ onVerified }: { onVerified: () => void }) {
         setPhase("sent");
         return;
       }
-      sessionStorage.setItem(SESSION_OTP_KEY, "1");
+      sessionStorage.setItem(verificationKey, "1");
       onVerified();
     } catch {
       setError(t("common.somethingWentWrong"));
       setPhase("sent");
     }
-  }, [sessionToken, code, onVerified, t]);
+  }, [sessionToken, code, onVerified, t, vendorSlug, verificationKey]);
 
   return (
     <Layout>
@@ -1706,7 +1718,7 @@ function SettingsTab({ vendor }: { vendor: Vendor }) {
 export default function Dashboard() {
   const { t } = useTranslation();
   const { slug } = useParams<{ slug: string }>();
-  const { user } = useUser();
+  const { user, isLoading: userLoading, openLogin, refreshUser } = useUser();
   const queryClient = useQueryClient();
   const [activeTab, setActiveTab] = useState<Tab>("analytics");
   const [uploadOpen, setUploadOpen] = useState(false);
@@ -1715,11 +1727,19 @@ export default function Dashboard() {
   // Managed market state — fetched once after OTP is verified
   const [managedMarket, setManagedMarket] = useState<Market | null>(null);
 
-  // Session-level 2FA: check once per browser session
+  const verificationKey = `${SESSION_OTP_KEY}:${user?.id ?? "anonymous"}:${slug ?? "unknown"}`;
+  const sessionToken =
+    typeof window !== "undefined" ? window.localStorage.getItem("ol_session") : null;
+
+  // Session-level 2FA, scoped to both the signed-in account and vendor.
   const [otpVerified, setOtpVerified] = useState(() => {
     if (typeof window === "undefined") return false;
-    return sessionStorage.getItem(SESSION_OTP_KEY) === "1";
+    return sessionStorage.getItem(verificationKey) === "1";
   });
+
+  useEffect(() => {
+    setOtpVerified(sessionStorage.getItem(verificationKey) === "1");
+  }, [verificationKey]);
 
   const {
     data: vendor,
@@ -1727,6 +1747,9 @@ export default function Dashboard() {
     error,
   } = useGetVendorBySlug(slug ?? "", {
     query: { enabled: !!slug, queryKey: ["vendor", slug] },
+    request: sessionToken
+      ? { headers: { Authorization: `Bearer ${sessionToken}` } }
+      : undefined,
   });
 
   const { data: products = [] } = useListVendorProducts(vendor?.id ?? 0, {
@@ -1758,13 +1781,54 @@ export default function Dashboard() {
     setUploadOpen(true);
   };
 
-  if (isLoading) {
+  if (userLoading || isLoading) {
     return (
       <Layout>
         <div className="flex h-96 items-center justify-center">
           <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
         </div>
       </Layout>
+    );
+  }
+
+  if (!user) {
+    return (
+      <Layout>
+        <div className="container mx-auto max-w-2xl px-4 py-20 text-center">
+          <h1 className="font-serif text-3xl font-bold">Log in to open this dashboard</h1>
+          <p className="mt-2 text-muted-foreground">Vendor dashboards are available only to the account that manages the store.</p>
+          <Button className="mt-6" onClick={openLogin}>Log in</Button>
+        </div>
+      </Layout>
+    );
+  }
+
+  if (user.role !== "vendor" && user.role !== "admin") {
+    return (
+      <Layout>
+        <div className="container mx-auto max-w-2xl px-4 py-20 text-center">
+          <h1 className="font-serif text-3xl font-bold">Vendor account required</h1>
+          <p className="mt-2 text-muted-foreground">This dashboard is only available to vendor accounts.</p>
+          <Link href="/for-vendors"><Button className="mt-6">Learn about joining as a vendor</Button></Link>
+        </div>
+      </Layout>
+    );
+  }
+
+  // Vendor accounts can verify and claim a legacy listing even when its
+  // contact email differs from their login email.
+  const needsOtp = user.role === "vendor" && !otpVerified;
+  if (needsOtp) {
+    return (
+      <DashboardOtpGate
+        vendorSlug={slug ?? ""}
+        verificationKey={verificationKey}
+        onVerified={() => {
+          setOtpVerified(true);
+          void refreshUser();
+          void queryClient.invalidateQueries({ queryKey: ["vendor", slug] });
+        }}
+      />
     );
   }
 
@@ -1780,12 +1844,6 @@ export default function Dashboard() {
         </div>
       </Layout>
     );
-  }
-
-  // Show 2FA gate for vendor accounts (or when not logged in via session)
-  const needsOtp = user?.role === "vendor" && !otpVerified;
-  if (needsOtp) {
-    return <DashboardOtpGate onVerified={() => setOtpVerified(true)} />;
   }
 
   const tier = (user?.tier ?? "basic") as TierId;

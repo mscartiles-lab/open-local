@@ -67,7 +67,13 @@ async function getVendorOwner(vendorId: number): Promise<{
     .from(vendorsTable)
     .leftJoin(
       usersTable,
-      sql`lower(${usersTable.email}) = lower(${vendorsTable.contactEmail})`,
+      or(
+        eq(usersTable.id, vendorsTable.ownerUserId),
+        and(
+          isNull(vendorsTable.ownerUserId),
+          sql`lower(${usersTable.email}) = lower(${vendorsTable.contactEmail})`,
+        ),
+      ),
     )
     .where(eq(vendorsTable.id, vendorId));
   if (!row) return null;

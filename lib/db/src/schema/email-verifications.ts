@@ -7,9 +7,13 @@ import {
   boolean,
   jsonb,
 } from "drizzle-orm/pg-core";
+import { usersTable } from "./users";
 
 export const emailVerificationsTable = pgTable("email_verifications", {
   id: serial("id").primaryKey(),
+  ownerUserId: integer("owner_user_id").references(() => usersTable.id, {
+    onDelete: "set null",
+  }),
   email: text("email").notNull(),
   code: text("code").notNull(),
   vendorPayload: jsonb("vendor_payload").notNull(),

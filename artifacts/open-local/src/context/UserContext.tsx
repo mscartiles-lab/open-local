@@ -37,6 +37,7 @@ export interface AppUser {
   equippedUnlocks?: string[];
   paused?: boolean;
   trialEndsAt?: string | null;
+  vendorSlug?: string | null;
 }
 
 // Plain DiceBear URL for the base avatar. Equipped wardrobe items are now
@@ -56,6 +57,7 @@ interface UserContextType {
   user: AppUser | null;
   isLoading: boolean;
   login: (sessionToken: string, user: AppUser) => void;
+  refreshUser: () => Promise<AppUser | null>;
   logout: () => void;
   showOnboarding: boolean;
   loginMode: boolean;
@@ -72,36 +74,46 @@ export function UserProvider({ children }: { children: ReactNode }) {
   const [showOnboarding, setShowOnboarding] = useState(false);
   const [loginMode, setLoginMode] = useState(false);
 
-  useEffect(() => {
+  const refreshUser = useCallback(async (): Promise<AppUser | null> => {
     const token = localStorage.getItem(SESSION_KEY);
     if (!token) {
-      setIsLoading(false);
-      return;
+      setUser(null);
+      return null;
     }
+    try {
+      const response = await fetch("/api/auth/me", {
+        headers: { Authorization: `Bearer ${token}` },
+        cache: "no-store",
+      });
+      const data = response.ok ? await response.json() : null;
+      if (data?.user) {
+        const currentUser = data.user as AppUser;
+        setUser(currentUser);
+        return currentUser;
+      }
+      localStorage.removeItem(SESSION_KEY);
+      setUser(null);
+      return null;
+    } catch {
+      return null;
+    }
+  }, []);
 
-    fetch("/api/auth/me", {
-      headers: { Authorization: `Bearer ${token}` },
-    })
-      .then((r) => (r.ok ? r.json() : null))
-      .then((data) => {
-        if (data?.user) {
-          setUser(data.user as AppUser);
-        } else {
-          localStorage.removeItem(SESSION_KEY);
-        }
-      })
+  useEffect(() => {
+    refreshUser()
       .catch(() => {
         localStorage.removeItem(SESSION_KEY);
       })
       .finally(() => setIsLoading(false));
-  }, []);
+  }, [refreshUser]);
 
   const login = useCallback((sessionToken: string, loggedInUser: AppUser) => {
     localStorage.setItem(SESSION_KEY, sessionToken);
     localStorage.removeItem(ONBOARDING_DISMISSED_KEY);
     setUser(loggedInUser);
     setShowOnboarding(false);
-  }, []);
+    void refreshUser();
+  }, [refreshUser]);
 
   const logout = useCallback(() => {
     const token = localStorage.getItem(SESSION_KEY);
@@ -133,7 +145,7 @@ export function UserProvider({ children }: { children: ReactNode }) {
 
   return (
     <UserContext.Provider
-      value={{ user, isLoading, login, logout, showOnboarding, loginMode, openOnboarding, openLogin, closeOnboarding }}
+      value={{ user, isLoading, login, refreshUser, logout, showOnboarding, loginMode, openOnboarding, openLogin, closeOnboarding }}
     >
       {children}
     </UserContext.Provider>

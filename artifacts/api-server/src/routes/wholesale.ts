@@ -1,9 +1,10 @@
 import { Router, type IRouter } from "express";
 import { z } from "zod";
 import { eq, and, ilike, sql, desc } from "drizzle-orm";
-import { db, wholesaleListingsTable, vendorsTable, usersTable } from "@workspace/db";
+import { db, wholesaleListingsTable, vendorsTable } from "@workspace/db";
 import { requireAuth, type AuthRequest } from "../lib/requireAuth";
 import { logger } from "../lib/logger";
+import { getVendorForUser } from "../lib/vendorOwnership";
 
 const router: IRouter = Router();
 
@@ -32,18 +33,10 @@ const UpdateWholesaleBody = CreateWholesaleBody.partial();
 // ─── Helper: find vendor for the authenticated user ──────────────────────────
 
 async function getVendorForUserId(userId: number) {
-  const [user] = await db
-    .select({ email: usersTable.email })
-    .from(usersTable)
-    .where(eq(usersTable.id, userId));
-  if (!user) return null;
-
-  const [vendor] = await db
-    .select({ id: vendorsTable.id, contactEmail: vendorsTable.contactEmail })
-    .from(vendorsTable)
-    .where(sql`lower(${vendorsTable.contactEmail}) = lower(${user.email})`);
-
-  return vendor ?? null;
+  const vendor = await getVendorForUser(userId);
+  return vendor
+    ? { id: vendor.id, contactEmail: vendor.contactEmail }
+    : null;
 }
 
 // ─── GET /api/wholesale ──────────────────────────────────────────────────────

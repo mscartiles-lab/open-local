@@ -2,10 +2,11 @@ import { Router, type IRouter } from "express";
 import { eq, and, ilike, or, sql, notExists, gt, isNull } from "drizzle-orm";
 import { db, vendorsTable, productsTable, usersTable, sessionsTable } from "@workspace/db";
 import { isAdminEmail } from "../lib/requireAdmin";
-import { requireAuth, type AuthRequest } from "../lib/requireAuth";
+import { getOptionalAuthUserId, requireAuth, type AuthRequest } from "../lib/requireAuth";
 import { emitEvent } from "../lib/webhooks";
 import { fireWelcome } from "../lib/onboarding";
 import { geocodeVendor } from "../lib/geocode";
+import { userOwnsVendor } from "../lib/vendorOwnership";
 import {
   ListVendorsQueryParams,
   CreateVendorBody,
@@ -23,7 +24,7 @@ import {
 
 const router: IRouter = Router();
 
-// Hides any vendor whose contactEmail matches a user row that's paused
+// Hides any vendor whose owner (or legacy contact-email match) is paused
 // (i.e. their trial expired with no live subscription). The vendor's own
 // dashboard route doesn't apply this filter — they can still log in and
 // re-subscribe through /billing.
@@ -34,7 +35,13 @@ function notPausedVendorCondition() {
       .from(usersTable)
       .where(
         and(
-          eq(usersTable.email, vendorsTable.contactEmail),
+          or(
+            eq(usersTable.id, vendorsTable.ownerUserId),
+            and(
+              isNull(vendorsTable.ownerUserId),
+              sql`lower(${usersTable.email}) = lower(${vendorsTable.contactEmail})`,
+            ),
+          ),
           eq(usersTable.paused, true),
         ),
       ),
@@ -91,7 +98,16 @@ router.post("/vendors", async (req, res): Promise<void> => {
   }
 
   // Auto-geocode when the vendor didn't manually place a pin
-  const values = { ...parsed.data };
+  let ownerUserId = await getOptionalAuthUserId(req);
+  if (ownerUserId === null) {
+    const [matchingUser] = await db
+      .select({ id: usersTable.id })
+      .from(usersTable)
+      .where(sql`lower(${usersTable.email}) = lower(${parsed.data.contactEmail})`)
+      .limit(1);
+    ownerUserId = matchingUser?.id ?? null;
+  }
+  const values = { ...parsed.data, ownerUserId };
   if (values.latitude == null || values.longitude == null) {
     const coords = await geocodeVendor(values.zipCode, values.location);
     if (coords) {
@@ -101,6 +117,12 @@ router.post("/vendors", async (req, res): Promise<void> => {
   }
 
   const [row] = await db.insert(vendorsTable).values(values).returning();
+  if (ownerUserId !== null) {
+    await db
+      .update(usersTable)
+      .set({ role: "vendor" })
+      .where(eq(usersTable.id, ownerUserId));
+  }
   emitEvent("vendor.created", {
     vendorId: row.id,
     name: row.name,
@@ -124,17 +146,20 @@ router.post("/vendors", async (req, res): Promise<void> => {
 // Used by /vendors/by-slug/:slug to bypass the paused-vendor filter when the
 // caller owns the vendor or is an admin (so a paused vendor's dashboard still
 // loads), while keeping anonymous discovery filtered.
-async function resolveOptionalUser(req: { headers: { authorization?: string } }): Promise<{ email: string; role: string } | null> {
+async function resolveOptionalUser(req: { headers: { authorization?: string } }): Promise<{ id: number; email: string; role: string } | null> {
   const authHeader = req.headers.authorization;
   if (!authHeader?.startsWith("Bearer ")) return null;
   const token = authHeader.slice(7);
   const [session] = await db
-    .select()
+    .select({ userId: sessionsTable.userId })
     .from(sessionsTable)
     .where(and(eq(sessionsTable.token, token), gt(sessionsTable.expiresAt, new Date())));
   if (!session) return null;
-  const [user] = await db.select().from(usersTable).where(eq(usersTable.id, session.userId));
-  return user ? { email: user.email, role: user.role } : null;
+  const [user] = await db
+    .select({ id: usersTable.id, email: usersTable.email, role: usersTable.role })
+    .from(usersTable)
+    .where(eq(usersTable.id, session.userId));
+  return user ? { id: user.id, email: user.email, role: user.role } : null;
 }
 
 router.get("/vendors/by-slug/:slug", async (req, res): Promise<void> => {
@@ -154,7 +179,11 @@ router.get("/vendors/by-slug/:slug", async (req, res): Promise<void> => {
         .select()
         .from(vendorsTable)
         .where(eq(vendorsTable.slug, slug));
-      const isOwner = maybe && maybe.contactEmail.toLowerCase() === caller.email.toLowerCase();
+      const isOwner =
+        maybe &&
+        (maybe.ownerUserId === caller.id ||
+          (maybe.ownerUserId === null &&
+            maybe.contactEmail.toLowerCase() === caller.email.toLowerCase()));
       const isAdmin = caller.role === "admin" || isAdminEmail(caller.email);
       if (maybe && (isOwner || isAdmin)) vendor = maybe;
     }
@@ -197,12 +226,6 @@ router.patch("/vendors/:id", requireAuth, async (req, res): Promise<void> => {
 
   // Resolve the authenticated caller.
   const userId = (req as AuthRequest).userId;
-  const [caller] = await db.select().from(usersTable).where(eq(usersTable.id, userId));
-  if (!caller) {
-    res.status(401).json({ error: "Not authenticated" });
-    return;
-  }
-
   // Load the target vendor to verify ownership before mutating.
   const [existing] = await db
     .select()
@@ -213,9 +236,7 @@ router.patch("/vendors/:id", requireAuth, async (req, res): Promise<void> => {
     return;
   }
 
-  const isOwner = existing.contactEmail.toLowerCase() === caller.email.toLowerCase();
-  const isAdmin = caller.role === "admin" || isAdminEmail(caller.email);
-  if (!isOwner && !isAdmin) {
+  if (!(await userOwnsVendor(userId, params.data.id))) {
     res.status(403).json({ error: "Forbidden" });
     return;
   }
@@ -232,10 +253,15 @@ router.patch("/vendors/:id", requireAuth, async (req, res): Promise<void> => {
   res.json(UpdateVendorResponse.parse(row));
 });
 
-router.delete("/vendors/:id", async (req, res): Promise<void> => {
+router.delete("/vendors/:id", requireAuth, async (req, res): Promise<void> => {
   const params = DeleteVendorParams.safeParse(req.params);
   if (!params.success) {
     res.status(400).json({ error: params.error.message });
+    return;
+  }
+  const userId = (req as AuthRequest).userId;
+  if (!(await userOwnsVendor(userId, params.data.id))) {
+    res.status(403).json({ error: "Forbidden" });
     return;
   }
   const [row] = await db

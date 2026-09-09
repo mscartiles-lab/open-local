@@ -1,7 +1,7 @@
 import { Router, type IRouter } from "express";
-import { eq } from "drizzle-orm";
+import { eq, sql } from "drizzle-orm";
 import { z } from "zod";
-import { db, emailVerificationsTable, vendorsTable } from "@workspace/db";
+import { db, emailVerificationsTable, usersTable, vendorsTable } from "@workspace/db";
 import {
   CreateVendorBody,
   GetVendorResponse,
@@ -11,6 +11,7 @@ import { logger } from "../lib/logger";
 import { emitEvent } from "../lib/webhooks";
 import { fireWelcome } from "../lib/onboarding";
 import { isReplitWorkspaceRequest } from "../lib/requireAdmin";
+import { getOptionalAuthUserId } from "../lib/requireAuth";
 
 const router: IRouter = Router();
 
@@ -48,11 +49,21 @@ router.post("/auth/email/start", async (req, res): Promise<void> => {
 
   const code = generateVerificationCode();
   const expiresAt = new Date(Date.now() + VERIFICATION_TTL_MS);
+  let ownerUserId = await getOptionalAuthUserId(req);
+  if (ownerUserId === null) {
+    const [matchingUser] = await db
+      .select({ id: usersTable.id })
+      .from(usersTable)
+      .where(sql`lower(${usersTable.email}) = lower(${email})`)
+      .limit(1);
+    ownerUserId = matchingUser?.id ?? null;
+  }
 
   const [row] = await db
     .insert(emailVerificationsTable)
     .values({
       email,
+      ownerUserId,
       code,
       vendorPayload,
       expiresAt,
@@ -197,10 +208,17 @@ router.post("/auth/email/verify", async (req, res): Promise<void> => {
     }
   }
 
+  const vendorValues = payload as typeof vendorsTable.$inferInsert;
   const [vendor] = await db
     .insert(vendorsTable)
-    .values(payload as never)
+    .values({ ...vendorValues, ownerUserId: existing.ownerUserId })
     .returning();
+  if (existing.ownerUserId !== null) {
+    await db
+      .update(usersTable)
+      .set({ role: "vendor" })
+      .where(eq(usersTable.id, existing.ownerUserId));
+  }
 
   await db
     .update(emailVerificationsTable)

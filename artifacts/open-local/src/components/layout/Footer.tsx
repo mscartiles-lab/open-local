@@ -1,8 +1,16 @@
 import { Link } from "wouter";
 import { useTranslation } from "react-i18next";
+import { useUser } from "@/context/UserContext";
 
 export function Footer() {
   const { t } = useTranslation();
+  const { user } = useUser();
+  const vendorDashboardHref =
+    user?.role === "vendor"
+      ? user.vendorSlug
+        ? `/dashboard/${user.vendorSlug}`
+        : "/dashboard"
+      : null;
   return (
     <footer className="border-t border-border bg-card py-12 mt-auto">
       <div className="container mx-auto px-4 md:px-8">
@@ -32,7 +40,15 @@ export function Footer() {
           <div>
             <h3 className="font-medium mb-4 text-foreground">{t("footer.platform")}</h3>
             <ul className="space-y-2 text-sm text-muted-foreground">
-              <li><Link href="/admin" className="hover:text-primary transition-colors">{t("footer.vendorWorkspace")}</Link></li>
+              {vendorDashboardHref && (
+                <li><Link href={vendorDashboardHref} className="hover:text-primary transition-colors">{t("footer.vendorWorkspace")}</Link></li>
+              )}
+              {user?.role === "admin" && (
+                <li><Link href="/admin" className="hover:text-primary transition-colors">{t("nav.admin")}</Link></li>
+              )}
+              {!user && (
+                <li><Link href="/for-vendors" className="hover:text-primary transition-colors">{t("nav.onboard")}</Link></li>
+              )}
               <li><a href="mailto:support@openlocalapp.com" className="hover:text-primary transition-colors">{t("common.contact")}</a></li>
             </ul>
           </div>

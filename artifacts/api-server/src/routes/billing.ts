@@ -2,6 +2,7 @@ import { Router, type IRouter, type Request, type Response } from "express";
 import { getUncachableStripeClient } from "../stripeClient";
 import { stripeStorage } from "../stripeStorage";
 import { logger } from "../lib/logger";
+import { userOwnsVendor } from "../lib/vendorOwnership";
 import { requireAuth, type AuthRequest } from "../lib/requireAuth";
 import { verifyBusinessBillingToken } from "../lib/billingToken";
 import {
@@ -279,9 +280,7 @@ router.post("/billing/feature-boost/checkout", requireAuth, async (req: Request,
       res.status(404).json({ error: "Listing not found" });
       return;
     }
-    const isOwner = row.contactEmail.toLowerCase() === user.email.toLowerCase();
-    const isAdmin = user.role === "admin";
-    if (!isOwner && !isAdmin) {
+    if (!(await userOwnsVendor(userId, row.vendorId))) {
       res.status(403).json({ error: "You don't own this listing" });
       return;
     }

@@ -5,6 +5,7 @@ import { sendVerificationEmail } from "../lib/email";
 import { db, usersTable, vendorsTable } from "@workspace/db";
 import { eq } from "drizzle-orm";
 import { logger } from "../lib/logger";
+import { claimVendorForUser } from "../lib/vendorOwnership";
 
 const router: IRouter = Router();
 
@@ -13,6 +14,8 @@ const router: IRouter = Router();
 interface OtpEntry {
   code: string;
   email: string;
+  vendorId: number;
+  vendorSlug: string;
   expiresAt: number;
   devFallback: boolean;
 }
@@ -32,7 +35,17 @@ router.post("/dashboard/otp/send", requireAuth, async (req: Request, res: Respon
   const { userId } = req as AuthRequest;
 
   try {
-    const [user] = await db.select().from(usersTable).where(eq(usersTable.id, userId)).limit(1);
+    const vendorSlug =
+      typeof req.body?.vendorSlug === "string" ? req.body.vendorSlug.trim() : "";
+    if (!vendorSlug) {
+      res.status(400).json({ error: "vendorSlug is required" });
+      return;
+    }
+    const [user] = await db
+      .select({ id: usersTable.id, role: usersTable.role, username: usersTable.username })
+      .from(usersTable)
+      .where(eq(usersTable.id, userId))
+      .limit(1);
     if (!user) {
       res.status(404).json({ error: "User not found" });
       return;
@@ -42,29 +55,51 @@ router.post("/dashboard/otp/send", requireAuth, async (req: Request, res: Respon
       return;
     }
 
+    const [vendor] = await db
+      .select({
+        id: vendorsTable.id,
+        slug: vendorsTable.slug,
+        name: vendorsTable.name,
+        contactEmail: vendorsTable.contactEmail,
+        ownerUserId: vendorsTable.ownerUserId,
+      })
+      .from(vendorsTable)
+      .where(eq(vendorsTable.slug, vendorSlug))
+      .limit(1);
+    if (!vendor) {
+      res.status(404).json({ error: "Vendor profile not found" });
+      return;
+    }
+    if (vendor.ownerUserId !== null && vendor.ownerUserId !== userId) {
+      res.status(403).json({ error: "This vendor profile is managed by another account." });
+      return;
+    }
+
     const code = generateCode();
     const expiresAt = Date.now() + 10 * 60 * 1000; // 10 min
 
     const result = await sendVerificationEmail({
-      to: user.email,
+      to: vendor.contactEmail,
       code,
-      businessName: user.username ?? "there",
+      businessName: vendor.name,
     });
 
     otpStore.set(userId, {
       code,
-      email: user.email,
+      email: vendor.contactEmail,
+      vendorId: vendor.id,
+      vendorSlug: vendor.slug,
       expiresAt,
       devFallback: result.devFallback,
     });
 
-    logger.info({ userId, email: user.email }, "[dashboard-otp] code sent");
+    logger.info({ userId, vendorId: vendor.id }, "[dashboard-otp] code sent");
 
     res.json({
       sent: result.sent,
       devFallback: result.devFallback,
       devCode: result.devFallback ? code : null,
-      email: user.email,
+      email: vendor.contactEmail,
     });
   } catch (err) {
     logger.error({ err }, "[dashboard-otp] send error");
@@ -78,7 +113,7 @@ router.post("/dashboard/otp/send", requireAuth, async (req: Request, res: Respon
  */
 router.post("/dashboard/otp/verify", requireAuth, async (req: Request, res: Response): Promise<void> => {
   const { userId } = req as AuthRequest;
-  const { code } = req.body as { code?: string };
+  const { code, vendorSlug } = req.body as { code?: string; vendorSlug?: string };
 
   if (!code || typeof code !== "string") {
     res.status(400).json({ error: "code is required" });
@@ -99,10 +134,19 @@ router.post("/dashboard/otp/verify", requireAuth, async (req: Request, res: Resp
     res.status(400).json({ error: "Incorrect code" });
     return;
   }
+  if (!vendorSlug || entry.vendorSlug !== vendorSlug) {
+    res.status(400).json({ error: "This code was requested for a different vendor profile." });
+    return;
+  }
+  if (!(await claimVendorForUser(userId, entry.vendorId))) {
+    otpStore.delete(userId);
+    res.status(409).json({ error: "This vendor profile is already managed by another account." });
+    return;
+  }
 
   otpStore.delete(userId);
-  logger.info({ userId }, "[dashboard-otp] verified");
-  res.json({ valid: true });
+  logger.info({ userId, vendorId: entry.vendorId }, "[dashboard-otp] verified and linked");
+  res.json({ valid: true, vendorSlug: entry.vendorSlug });
 });
 
 export default router;

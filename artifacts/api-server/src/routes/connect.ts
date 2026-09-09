@@ -1,9 +1,10 @@
 import { Router, type IRouter, type Request, type Response } from "express";
 import { eq } from "drizzle-orm";
-import { db, vendorsTable, usersTable } from "@workspace/db";
+import { db, vendorsTable } from "@workspace/db";
 import { requireAuth, type AuthRequest } from "../lib/requireAuth";
 import { getUncachableStripeClient } from "../stripeClient";
 import { logger } from "../lib/logger";
+import { getVendorForUser } from "../lib/vendorOwnership";
 
 const router: IRouter = Router();
 
@@ -13,21 +14,9 @@ function getBaseUrl(req: Request): string {
   return `${req.protocol}://${req.get("host")}`;
 }
 
-/** Find the vendor owned by the calling user (matches by contact_email). */
+/** Find the vendor owned by the calling user. */
 async function getCallerVendor(userId: number) {
-  const [user] = await db
-    .select({ email: usersTable.email, role: usersTable.role })
-    .from(usersTable)
-    .where(eq(usersTable.id, userId));
-  if (!user) return null;
-
-  if (user.role === "admin") return null; // admins don't have a personal vendor
-
-  const [vendor] = await db
-    .select()
-    .from(vendorsTable)
-    .where(eq(vendorsTable.contactEmail, user.email));
-  return vendor ?? null;
+  return getVendorForUser(userId);
 }
 
 // ── POST /api/billing/connect/onboard ────────────────────────────────────────

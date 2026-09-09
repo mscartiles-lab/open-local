@@ -11,6 +11,7 @@ import {
 } from "@workspace/db";
 import { requireAuth, type AuthRequest } from "../lib/requireAuth";
 import { isAdminEmail } from "../lib/requireAdmin";
+import { userOwnsVendor } from "../lib/vendorOwnership";
 
 const router: IRouter = Router();
 
@@ -90,12 +91,7 @@ router.get("/analytics/vendor/:vendorId", requireAuth, async (req, res): Promise
     return;
   }
 
-  const viewerEmail = await getViewerEmail(userId);
-  const admin = await isAdminUser(userId);
-  const owns =
-    viewerEmail !== null &&
-    viewerEmail.toLowerCase() === vendor.contactEmail.toLowerCase();
-  if (!owns && !admin) {
+  if (!(await userOwnsVendor(userId, vendorId))) {
     res.status(403).json({ error: "You don't manage this shop." });
     return;
   }

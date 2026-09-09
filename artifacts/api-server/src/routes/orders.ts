@@ -9,6 +9,7 @@ import {
   usersTable,
 } from "@workspace/db";
 import { requireAuth, type AuthRequest } from "../lib/requireAuth";
+import { userOwnsVendor } from "../lib/vendorOwnership";
 import { getUncachableStripeClient } from "../stripeClient";
 import { logger } from "../lib/logger";
 
@@ -227,13 +228,12 @@ router.get("/vendors/:vendorId/orders", requireAuth, async (req: Request, res: R
     if (!caller) { res.status(401).json({ error: "Not authenticated" }); return; }
 
     const [vendor] = await db
-      .select({ contactEmail: vendorsTable.contactEmail })
+      .select({ id: vendorsTable.id })
       .from(vendorsTable)
       .where(eq(vendorsTable.id, vendorId));
     if (!vendor) { res.status(404).json({ error: "Vendor not found" }); return; }
 
-    const isOwner = vendor.contactEmail.toLowerCase() === caller.email.toLowerCase();
-    if (!isOwner && caller.role !== "admin") {
+    if (!(await userOwnsVendor(userId, vendorId))) {
       res.status(403).json({ error: "You don't manage this shop." });
       return;
     }

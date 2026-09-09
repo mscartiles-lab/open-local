@@ -12,6 +12,7 @@ import Products from "@/pages/products";
 import ProductDetail from "@/pages/product-detail";
 import Submit from "@/pages/submit";
 import Dashboard from "@/pages/dashboard";
+import DashboardIndex from "@/pages/dashboard-index";
 import BusinessDashboard from "@/pages/business-dashboard";
 import Admin from "@/pages/admin";
 import RequireAdmin from "@/components/RequireAdmin";
@@ -60,6 +61,7 @@ function Router() {
       <Route path="/products/:id" component={ProductDetail} />
       <Route path="/favorites" component={Favorites} />
       <Route path="/submit" component={Submit} />
+      <Route path="/dashboard" component={DashboardIndex} />
       <Route path="/dashboard/:slug" component={Dashboard} />
       <Route path="/business-dashboard/:id" component={BusinessDashboard} />
       <Route path="/admin" component={() => <RequireAdmin><Admin /></RequireAdmin>} />

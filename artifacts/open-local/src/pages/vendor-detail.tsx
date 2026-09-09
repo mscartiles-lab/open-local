@@ -5,7 +5,7 @@ import { MapPin, Globe, Mail, Clock, Store, Tag, Heart, Phone, Instagram, Facebo
 import Layout from "@/components/layout/Layout";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Card, CardContent } from "@/components/ui/card";
-import { useGetVendor, useListVendorProducts, getGetVendorQueryKey, getListVendorProductsQueryKey, type Vendor } from "@workspace/api-client-react";
+import { useGetVendor, useGetVendorBySlug, useListVendorProducts, getGetVendorQueryKey, getGetVendorBySlugQueryKey, getListVendorProductsQueryKey, type Vendor } from "@workspace/api-client-react";
 import NotFound from "./not-found";
 import { useFavorites } from "@/hooks/use-favorites";
 import CheckInButton from "@/components/CheckInButton";
@@ -38,7 +38,9 @@ function resolveStoreStyle(vendor: Vendor) {
 
 export default function VendorDetail() {
   const params = useParams();
-  const id = Number(params.id);
+  const routeValue = String(params.id ?? "");
+  const numericId = Number(routeValue);
+  const usesNumericId = Number.isInteger(numericId) && numericId > 0;
   const [, setLocation] = useLocation();
   const { user } = useUser();
   const { t } = useTranslation();
@@ -52,26 +54,37 @@ export default function VendorDetail() {
     const res = await fetch(`${base}/api/messages/conversations`, {
       method: "POST",
       headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
-      body: JSON.stringify({ vendorId: id }),
+      body: JSON.stringify({ vendorId: vendor?.id }),
     });
     if (res.ok) setLocation("/messages");
   };
 
-  const { data: vendor, isLoading: vendorLoading, error: vendorError } = useGetVendor(id, {
+  const numericVendor = useGetVendor(numericId, {
     query: {
-      enabled: !isNaN(id),
-      queryKey: getGetVendorQueryKey(id)
+      enabled: usesNumericId,
+      queryKey: getGetVendorQueryKey(numericId)
     }
   });
 
-  const { data: products, isLoading: productsLoading } = useListVendorProducts(id, {
+  const slugVendor = useGetVendorBySlug(routeValue, {
     query: {
-      enabled: !isNaN(id),
-      queryKey: getListVendorProductsQueryKey(id)
+      enabled: !usesNumericId && routeValue.length > 0,
+      queryKey: getGetVendorBySlugQueryKey(routeValue),
+    },
+  });
+
+  const vendor = numericVendor.data ?? slugVendor.data;
+  const vendorLoading = numericVendor.isLoading || slugVendor.isLoading;
+  const vendorError = numericVendor.error ?? slugVendor.error;
+
+  const { data: products, isLoading: productsLoading } = useListVendorProducts(vendor?.id ?? 0, {
+    query: {
+      enabled: Boolean(vendor?.id),
+      queryKey: getListVendorProductsQueryKey(vendor?.id ?? 0)
     }
   });
 
-  if (isNaN(id) || (vendorError && (vendorError as any).status === 404)) {
+  if (!routeValue || (vendorError && (vendorError as any).status === 404)) {
     return <NotFound />;
   }
 

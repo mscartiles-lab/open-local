@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { Link, useLocation } from "wouter";
-import { Store, ShoppingBag, PlusCircle, Settings, Menu, Heart, Zap, Percent, CalendarDays, LogOut, LogIn, User, CreditCard, Sparkles, Search as SearchIcon, LifeBuoy, MessageCircle, Package, Smartphone, MapPin, Globe } from "lucide-react";
+import { Store, ShoppingBag, PlusCircle, Settings, Menu, Heart, Zap, Percent, CalendarDays, LogOut, LogIn, User, CreditCard, Sparkles, Search as SearchIcon, LifeBuoy, MessageCircle, Package, Smartphone, MapPin, Globe, LayoutDashboard } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 import {
@@ -105,6 +105,13 @@ export function Navbar() {
               <p className="text-xs text-muted-foreground capitalize">{user.role}{user.zip ? ` · ${user.zip}` : ""}</p>
             </div>
             <DropdownMenuSeparator />
+            {user.role === "vendor" && (
+              <DropdownMenuItem asChild className="gap-2 cursor-pointer">
+                <Link href={user.vendorSlug ? `/dashboard/${user.vendorSlug}` : "/dashboard"}>
+                  <LayoutDashboard size={14} /> {t("footer.vendorWorkspace")}
+                </Link>
+              </DropdownMenuItem>
+            )}
             <DropdownMenuItem asChild className="gap-2 cursor-pointer">
               <Link href="/orders">
                 <Package size={14} /> {t("nav.myOrders")}
@@ -227,9 +234,11 @@ export function Navbar() {
             <Smartphone className="w-5 h-5" />
           </Link>
           <LanguageSwitcher />
-          <Link href="/admin" className="p-2.5 rounded-xl text-muted-foreground hover:bg-secondary hover:text-primary transition-all duration-150">
-            <Settings className="w-5 h-5" />
-          </Link>
+          {user?.role === "admin" && (
+            <Link href="/admin" title={t("nav.admin")} className="p-2.5 rounded-xl text-muted-foreground hover:bg-secondary hover:text-primary transition-all duration-150">
+              <Settings className="w-5 h-5" />
+            </Link>
+          )}
           <UserArea />
         </div>
 
@@ -301,6 +310,15 @@ export function Navbar() {
                   <PlusCircle className="w-5 h-5 shrink-0" />
                   {t("nav.onboard")}
                 </Link>
+                {user?.role === "vendor" && (
+                  <Link
+                    href={user.vendorSlug ? `/dashboard/${user.vendorSlug}` : "/dashboard"}
+                    className="flex items-center gap-4 px-4 py-3.5 rounded-xl text-base font-semibold text-primary hover:bg-secondary transition-all"
+                  >
+                    <LayoutDashboard className="w-5 h-5 shrink-0" />
+                    {t("footer.vendorWorkspace")}
+                  </Link>
+                )}
                 <div className="w-full h-px bg-border my-2" />
                 {/* Language switcher in mobile menu */}
                 <div className="px-4 py-2">
@@ -326,10 +344,12 @@ export function Navbar() {
                   <LifeBuoy className="w-5 h-5 shrink-0" />
                   {t("nav.contactSupport")}
                 </Link>
-                <Link href="/admin" className="flex items-center gap-4 px-4 py-3.5 rounded-xl text-base font-semibold text-muted-foreground hover:bg-secondary hover:text-foreground transition-all">
-                  <Settings className="w-5 h-5 shrink-0" />
-                  {t("nav.admin")}
-                </Link>
+                {user?.role === "admin" && (
+                  <Link href="/admin" className="flex items-center gap-4 px-4 py-3.5 rounded-xl text-base font-semibold text-muted-foreground hover:bg-secondary hover:text-foreground transition-all">
+                    <Settings className="w-5 h-5 shrink-0" />
+                    {t("nav.admin")}
+                  </Link>
+                )}
                 {user ? (
                   <button
                     onClick={logout}
