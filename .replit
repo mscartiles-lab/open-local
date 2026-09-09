@@ -30,11 +30,11 @@ packages = ["glib", "nss", "nspr", "atk", "at-spi2-atk", "cups", "libdrm", "dbus
 ADMIN_EMAILS = "mscartiles@gmail.com"
 
 [userenv.development]
-MAIL_FROM = "Open Local <support@openlocalapp.com>"
+MAIL_FROM = "Open Local <support@openlocalmail.com>"
 BLOCKED_USER_IDS = "30"
 
 [userenv.production]
-MAIL_FROM = "Open Local <support@openlocalapp.com>"
+MAIL_FROM = "Open Local <support@openlocalmail.com>"
 BLOCKED_USER_IDS = "30"
 
 [[ports]]
@@ -52,3 +52,6 @@ externalPort = 3000
 [[ports]]
 localPort = 25681
 externalPort = 80
+
+[objectStorage]
+defaultBucketID = "replit-objstore-08227b24-8d81-4171-9a51-8c60aeafb0d9"
